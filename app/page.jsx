@@ -1659,6 +1659,14 @@ export default function OTNavigatorDashboard() {
                 <span className="hidden sm:inline">신규 등록</span>
               </button>
 
+              <a
+                href="/admin"
+                className="flex items-center gap-1.5 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-300 transition hover:border-fuchsia-500/60 active:scale-95"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">관리자</span>
+              </a>
+
               {tab === 1 && (
                 <>
                   <div className="hidden text-right sm:block">
