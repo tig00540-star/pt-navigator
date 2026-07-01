@@ -542,31 +542,112 @@ const CRM_OFFER = {
 
 const CRM_SCRIPT = [
   {
+    n: "01",
+    tag: "결과 리뷰",
+    icon: TrendingUp,
+    tone: "담담하게, 데이터로",
+    when: "잔여 6~8회 시점",
+    line:
+      "지금 8주차 인바디 보시면 체지방이 눈에 띄게 빠졌어요. 이 곡선 그대로면 예식날 목표에 도달합니다.",
+  },
+  {
+    n: "02",
+    tag: "데드라인 상기",
+    icon: CalendarDays,
+    tone: "차분하게, 사실만",
+    when: "결과 공유 직후",
+    line:
+      "예식까지 남은 기간 세보면, 지금 페이스 유지가 관건이에요. 잔여 세션만으론 살짝 빠듯합니다.",
+  },
+  {
+    n: "03",
     tag: "스트레스 케어",
     icon: Heart,
-    line: "결혼 준비하시느라 정신없으시죠. 이럴 때일수록 컨디션 관리가 예식날 얼굴로 나와요.",
+    tone: "공감하며, 부드럽게",
+    when: "제안 전 분위기 조성",
+    line:
+      "결혼 준비에 돈 들어갈 데 많으신 거 압니다. 그래서 큰 결제 권하는 거 아니에요.",
   },
   {
-    tag: "부담 인정",
-    icon: Wallet,
-    line: "지금 큰 결제가 부담되시는 거 압니다. 그래서 30회 권해드리는 거 아니에요.",
-  },
-  {
+    n: "04",
     tag: "최소 필요량 (역산)",
     icon: Target,
-    line: "예식까지 남은 주수 × 주 2회 = 딱 10회. 예식날 컨디션을 피크로 맞추는 최소량이에요. 계산해서 보여드릴게요.",
+    tone: "논리적으로, 브리핑하듯",
+    when: "제안 시작",
+    line:
+      "예식날 컨디션을 피크로 맞추는 데 딱 10회. 주 2회 × 남은 주수로 계산한 최소량이에요.",
   },
   {
+    n: "05",
     tag: "분납 제안",
     icon: CreditCard,
-    line: "이 10회를 2개월 분납으로 나누면 월 부담이 확 줄어요. 결혼 지출이랑 안 겹치게 설계했어요.",
+    tone: "담백하게",
+    when: "부담 해소",
+    line:
+      "10회를 2개월 분납으로 나누면 월 32.5만. 결혼 지출이랑 안 겹치게 결제 시점도 맞춰드릴게요.",
   },
   {
+    n: "06",
     tag: "클로징",
     icon: Handshake,
-    line: "무리한 투자 권하는 거 아니에요. 데드라인에 맞춘 최소 세션만, 부담 없이. 판단은 숫자 보고 하세요.",
+    tone: "압박 없이, 결정권은 회원에게",
+    when: "운동 종료 후 브리핑",
+    line:
+      "지금 연장하면 예식날 컨디션이 보장돼요. 무리한 투자 아니에요. 숫자 보시고 편하게 결정하세요.",
   },
 ];
+
+const RESIGN_DIRECTION = [
+  "압박이 아니라 '계획'으로 — 만기 강매 대신 예식 역산 스케줄로 접근.",
+  "크기가 아니라 '최소 필요량' — 30회가 아닌 딱 필요한 10회 + 분납으로 저항 최소화.",
+  "감정이 아니라 '데이터'로 — ISTJ는 수치·역산 근거를 줄 때 스스로 납득하고 등록.",
+];
+
+const RESIGN_TIMING = {
+  total: 24,
+  windowStart: 16,
+  windowEnd: 20,
+  reasons: [
+    { t: "결과 가시화", d: "12주 중 8주차 전후 → 인바디 변화가 수치로 잡혀 설득 근거가 생김." },
+    { t: "심리적 여유", d: "만기 임박 전이라 '쫓기는 결제'가 아닌 '계획된 연장'으로 프레이밍 가능." },
+    { t: "데드라인 역산", d: "예식까지 남은 주수와 잔여 세션이 맞물려 '지금 연장' 논리가 자연스러움." },
+    { t: "감정 고점", d: "운동 직후 만족도가 높을 때 대화를 열되, 결제 근거는 데이터로 마무리." },
+  ],
+  avoid: ["만기 당일 대형 결제 강요", "컨디션·기분 안 좋은 날", "결혼 지출이 몰리는 시기"],
+};
+
+function timingStatus(done, T) {
+  const remain = T.total - done;
+  if (done >= T.total)
+    return {
+      label: "만기 도달",
+      tone: "red",
+      msg: "재등록보다 재방문 리마인드·복귀 혜택 전략으로 전환.",
+    };
+  if (done > T.windowEnd)
+    return {
+      label: "마감 임박",
+      tone: "orange",
+      msg: `잔여 ${remain}회. 지금 바로 클로징 + 분납 카드로 이탈 방지.`,
+    };
+  if (done >= T.windowStart)
+    return {
+      label: "최적 윈도우",
+      tone: "lime",
+      msg: `잔여 ${remain}회. 결과 브리핑 + 연장 제안의 골든타임.`,
+    };
+  if (done >= T.total * 0.5)
+    return {
+      label: "예열 구간",
+      tone: "sky",
+      msg: "결과 씨앗 심기 — 인바디 변화만 각인하고, 제안은 아직 이르다.",
+    };
+  return {
+    label: "관계 형성기",
+    tone: "zinc",
+    msg: "세일즈보다 신뢰·운동 습관 정착에 집중할 시기.",
+  };
+}
 
 /* =========================================================================
    PURGE-SAFE COLOR TOKENS
@@ -862,6 +943,19 @@ function SecondOTTab() {
    ========================================================================= */
 
 function CRMTab() {
+  const [sessDone, setSessDone] = useState(18);
+  const status = timingStatus(sessDone, RESIGN_TIMING);
+  const toneCls = (tone) =>
+    ({
+      lime: "text-lime-400 border-lime-500/40 bg-lime-500/10",
+      orange: "text-orange-400 border-orange-500/40 bg-orange-500/10",
+      sky: "text-sky-400 border-sky-500/40 bg-sky-500/10",
+      red: "text-red-400 border-red-500/40 bg-red-500/10",
+      zinc: "text-zinc-300 border-zinc-700 bg-zinc-800/60",
+    }[tone]);
+
+  const pct = (n) => (n / RESIGN_TIMING.total) * 100;
+
   return (
     <div className="space-y-8">
       {/* Risk & Opportunity */}
@@ -928,9 +1022,130 @@ function CRMTab() {
         </div>
       </section>
 
+      {/* 재등록 타이밍 */}
+      <section>
+        <Eyebrow icon={CalendarDays}>재등록 타이밍 · 잔여 세션으로 판정</Eyebrow>
+
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
+          {/* 현재 상태 배지 */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+                진행 · 24회 패키지 기준
+              </div>
+              <div className="font-mono text-2xl font-bold text-zinc-50">
+                {sessDone}
+                <span className="text-base font-normal text-zinc-500">
+                  {" "}
+                  / {RESIGN_TIMING.total}회
+                </span>
+              </div>
+            </div>
+            <div
+              className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${toneCls(
+                status.tone
+              )}`}
+            >
+              {status.label}
+            </div>
+          </div>
+
+          {/* 게이지 */}
+          <div className="mt-4">
+            <div className="relative h-3 overflow-hidden rounded-full bg-zinc-800">
+              {/* 최적 윈도우 밴드 */}
+              <div
+                className="absolute inset-y-0 bg-lime-500/25"
+                style={{
+                  left: `${pct(RESIGN_TIMING.windowStart)}%`,
+                  width: `${pct(
+                    RESIGN_TIMING.windowEnd - RESIGN_TIMING.windowStart
+                  )}%`,
+                }}
+              />
+              {/* 진행 마커 */}
+              <div
+                className="absolute inset-y-0 w-1 rounded-full bg-lime-400"
+                style={{ left: `calc(${pct(sessDone)}% - 2px)` }}
+              />
+            </div>
+            <div className="mt-1 flex justify-between text-[10px] text-zinc-600">
+              <span>0</span>
+              <span className="text-lime-500">
+                최적 {RESIGN_TIMING.windowStart}~{RESIGN_TIMING.windowEnd}회
+              </span>
+              <span>{RESIGN_TIMING.total}</span>
+            </div>
+
+            {/* 슬라이더 */}
+            <input
+              type="range"
+              min={0}
+              max={RESIGN_TIMING.total}
+              value={sessDone}
+              onChange={(e) => setSessDone(Number(e.target.value))}
+              className="mt-3 w-full accent-lime-400"
+              aria-label="완료 세션 수"
+            />
+          </div>
+
+          {/* 판정 메시지 */}
+          <div className={`mt-2 rounded-lg border px-3 py-2 text-sm ${toneCls(status.tone)}`}>
+            {status.msg}
+          </div>
+
+          {/* 근거 + 피해야 할 타이밍 */}
+          <div className="mt-4 grid gap-3 border-t border-zinc-800 pt-4 sm:grid-cols-2">
+            <div>
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+                이 시점을 노리는 근거
+              </div>
+              <ul className="space-y-2">
+                {RESIGN_TIMING.reasons.map((r, i) => (
+                  <li key={i} className="flex gap-2">
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lime-400" />
+                    <span className="text-xs leading-relaxed text-zinc-400">
+                      <span className="font-semibold text-zinc-200">{r.t}</span> — {r.d}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-red-400">
+                피해야 할 타이밍
+              </div>
+              <ul className="space-y-2">
+                {RESIGN_TIMING.avoid.map((a, i) => (
+                  <li key={i} className="flex gap-2">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
+                    <span className="text-xs leading-relaxed text-zinc-400">{a}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 타겟 제안 + 대본 */}
       <section>
-        <Eyebrow icon={Handshake}>타겟 세일즈 · 단기 연장 제안 대본</Eyebrow>
+        <Eyebrow icon={Handshake}>재등록 세일즈 방향 & 흐름</Eyebrow>
+
+        {/* 세일즈 방향 3원칙 */}
+        <div className="mb-4 grid gap-2 sm:grid-cols-3">
+          {RESIGN_DIRECTION.map((d, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-lime-500/20 bg-lime-500/5 p-3"
+            >
+              <div className="font-mono text-xs font-bold text-lime-400">
+                방향 0{i + 1}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-300">{d}</p>
+            </div>
+          ))}
+        </div>
 
         <div className="grid gap-4 lg:grid-cols-5">
           {/* 제안 패키지 카드 */}
@@ -976,22 +1191,31 @@ function CRMTab() {
             </div>
           </div>
 
-          {/* 대본 */}
+          {/* 세일즈 흐름 (단계별 대본) */}
           <div className="space-y-2.5 lg:col-span-3">
             {CRM_SCRIPT.map((s) => {
               const Icon = s.icon;
               return (
                 <div
-                  key={s.tag}
+                  key={s.n}
                   className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
                 >
-                  <div className="mb-1.5 flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-lime-400">
+                      {s.n}
+                    </span>
                     <Icon className="h-3.5 w-3.5 text-lime-400" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-lime-400">
-                      {s.tag}
+                    <span className="text-sm font-semibold text-zinc-100">{s.tag}</span>
+                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-400">
+                      🗣 {s.tone}
+                    </span>
+                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-500">
+                      ⏱ {s.when}
                     </span>
                   </div>
-                  <p className="text-sm leading-relaxed text-zinc-300">“{s.line}”</p>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                    “{s.line}”
+                  </p>
                 </div>
               );
             })}
