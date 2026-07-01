@@ -27,6 +27,7 @@ import {
   Pause,
   Play,
   Repeat,
+  Search,
   Send,
   ShieldCheck,
   Smile,
@@ -358,6 +359,7 @@ const MOBILITY = [
 
 /* ---- 탭 메타 ---- */
 const TABS = [
+  { id: 0, label: "회원" },
   { id: 1, label: "1차 OT" },
   { id: 2, label: "2차 OT" },
   { id: 3, label: "재등록 CRM" },
@@ -1406,6 +1408,107 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
 }
 
 /* =========================================================================
+   회원 목록 (전용 탭)
+   ========================================================================= */
+
+function MemberListTab({ members, selectedId, onSelect, onAdd }) {
+  const [q, setQ] = useState("");
+  const list = q.trim()
+    ? members.filter((m) =>
+        `${m.name} ${m.job}`.toLowerCase().includes(q.trim().toLowerCase())
+      )
+    : members;
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="회원 검색 (이름·직업)"
+            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 pl-9 pr-3 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+          />
+        </div>
+        <button
+          onClick={onAdd}
+          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 px-3 py-2.5 text-sm font-semibold text-zinc-950 transition active:scale-95"
+        >
+          <UserPlus className="h-4 w-4" /> 등록
+        </button>
+      </div>
+
+      <div className="mb-3 text-xs text-zinc-500">전체 {members.length}명</div>
+
+      {list.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
+          <User className="mx-auto h-8 w-8 text-zinc-700" />
+          <p className="mt-3 text-sm text-zinc-400">
+            {members.length === 0
+              ? "아직 등록된 회원이 없어요."
+              : "검색 결과가 없어요."}
+          </p>
+          {members.length === 0 && (
+            <button
+              onClick={onAdd}
+              className="mt-4 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-200 transition hover:border-lime-500/50"
+            >
+              첫 회원 등록하기
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {list.map((m) => {
+            const on = m.id === selectedId;
+            return (
+              <button
+                key={m.id}
+                onClick={() => onSelect(m.id)}
+                className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
+                  on
+                    ? "border-lime-500/40 bg-lime-500/5"
+                    : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"
+                }`}
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 text-sm font-bold text-lime-400">
+                  {m.name ? m.name.slice(0, 1) : "?"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-zinc-100">{m.name}</span>
+                    <span className="font-mono text-xs text-zinc-500">{m.age}세</span>
+                    {on && (
+                      <span className="rounded bg-lime-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-lime-400">
+                        선택됨
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-xs text-zinc-400">{m.job}</div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    <span className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                      {m.mbti}
+                    </span>
+                    <span className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                      {m.pain}
+                    </span>
+                    <span className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                      목표 {m.goal}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-zinc-600 group-hover:text-lime-400" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================================
    MAIN
    ========================================================================= */
 
@@ -1538,7 +1641,7 @@ export default function OTNavigatorDashboard() {
                 <select
                   value={selectedId || ""}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="hidden max-w-[130px] rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-lime-500/50 sm:block"
+                  className="max-w-[110px] rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-lime-500/50 sm:max-w-[130px]"
                   aria-label="회원 선택"
                 >
                   {members.map((m) => (
@@ -1584,7 +1687,7 @@ export default function OTNavigatorDashboard() {
           </div>
 
           {/* 탭 네비게이션 */}
-          <nav className="-mb-px flex gap-1">
+          <nav className="-mb-px flex gap-1 overflow-x-auto whitespace-nowrap">
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -1612,6 +1715,18 @@ export default function OTNavigatorDashboard() {
       )}
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        {tab === 0 && (
+          <MemberListTab
+            members={members}
+            selectedId={selectedId}
+            onSelect={(id) => {
+              setSelectedId(id);
+              setTab(1);
+            }}
+            onAdd={() => setShowForm(true)}
+          />
+        )}
+
         {tab === 1 && (
           <>
             {/* ================= HERO ================= */}
