@@ -34,15 +34,18 @@ import {
   Target,
   TrendingUp,
   User,
+  UserPlus,
   Wallet,
+  X,
   Zap,
 } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
    ========================================================================= */
 
-const MEMBER = {
+const DEMO_MEMBER = {
   name: "김철수",
   age: 34,
   job: "IT 개발자",
@@ -57,6 +60,25 @@ const MEMBER = {
     "목표(바디프로필)가 명확 → 감성 어필보다 수치·마일스톤·역산 계획에 강하게 반응.",
   ],
 };
+
+/* Supabase user_table 한 행 → 화면이 기대하는 회원 형태로 매핑 */
+function mapMemberRow(r) {
+  return {
+    id: r.id,
+    name: r.name,
+    age: r.age ?? "-",
+    job: r.job ?? "-",
+    residence: r.residence ?? "-",
+    mbti: r.mbti ?? "-",
+    pain: r.pain ?? "-",
+    goal: r.goal ?? "미설정",
+    machines: r.machines ?? [],
+    session: "1차 OT",
+    summary: r.name === DEMO_MEMBER.name
+      ? DEMO_MEMBER.summary
+      : ["AI 성향 요약은 회원 데이터를 바탕으로 곧 생성됩니다."],
+  };
+}
 
 const SALES_SCRIPT = [
   {
@@ -1231,11 +1253,206 @@ function CRMTab() {
 }
 
 /* =========================================================================
+   신규 회원 사전 정보 등록 폼 (모달)
+   ========================================================================= */
+
+function MemberForm({ machineOptions, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    name: "",
+    age: "",
+    job: "",
+    residence: "",
+    mbti: "",
+    pain: "",
+    goal: "",
+  });
+  const [picked, setPicked] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const toggleMachine = (label) =>
+    setPicked((p) => (p.includes(label) ? p.filter((x) => x !== label) : [...p, label]));
+
+  const save = async () => {
+    if (!form.name.trim()) {
+      setErr("이름은 필수입니다.");
+      return;
+    }
+    if (!supabase) {
+      setErr("Supabase가 아직 설정되지 않았어요. .env.local의 키를 확인하세요.");
+      return;
+    }
+    setSaving(true);
+    setErr("");
+    const { error } = await supabase.from("user_table").insert({
+      name: form.name.trim(),
+      age: form.age ? Number(form.age) : null,
+      job: form.job || null,
+      residence: form.residence || null,
+      mbti: form.mbti || null,
+      pain: form.pain || null,
+      goal: form.goal || null,
+      machines: picked,
+    });
+    setSaving(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    onSaved();
+  };
+
+  const fields = [
+    { k: "name", label: "이름", ph: "김철수" },
+    { k: "age", label: "나이", ph: "34", type: "number" },
+    { k: "job", label: "직업", ph: "IT 개발자" },
+    { k: "residence", label: "거주지", ph: "센터 인근 오피스텔" },
+    { k: "mbti", label: "MBTI", ph: "ISTJ" },
+    { k: "pain", label: "불편 부위", ph: "우측 무릎 통증" },
+    { k: "goal", label: "목적", ph: "바디프로필" },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-zinc-800 bg-zinc-950 p-5 sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-lime-400" />
+            <h2 className="text-base font-semibold text-zinc-100">신규 회원 사전 정보 등록</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+            aria-label="닫기"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {fields.map((f) => (
+            <div key={f.k} className={f.k === "name" ? "col-span-2" : ""}>
+              <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+                {f.label}
+                {f.k === "name" && <span className="text-lime-400"> *</span>}
+              </label>
+              <input
+                type={f.type || "text"}
+                value={form[f.k]}
+                onChange={set(f.k)}
+                placeholder={f.ph}
+                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* 보유머신 */}
+        <div className="mt-3">
+          <label className="mb-1.5 block text-[11px] font-medium text-zinc-500">
+            보유머신 {machineOptions.length === 0 && "(center_machine 시드 필요)"}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {machineOptions.map((label) => {
+              const on = picked.includes(label);
+              return (
+                <button
+                  key={label}
+                  onClick={() => toggleMachine(label)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                    on
+                      ? "border-lime-500/40 bg-lime-500/10 text-lime-400"
+                      : "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {err && (
+          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+            {err}
+          </div>
+        )}
+
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-700"
+          >
+            취소
+          </button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="flex-1 rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 py-2.5 text-sm font-semibold text-zinc-950 transition active:scale-95 disabled:opacity-60"
+          >
+            {saving ? "저장 중…" : "저장"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================================
    MAIN
    ========================================================================= */
 
 export default function OTNavigatorDashboard() {
   const [tab, setTab] = useState(1);
+
+  // --- Supabase 연동 상태 ---
+  const [members, setMembers] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [machineOptions, setMachineOptions] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [dbNote, setDbNote] = useState("");
+
+  const loadMembers = async () => {
+    if (!supabase) {
+      setDbNote("데모 모드 — Supabase 키를 설정하면 실데이터가 연결됩니다.");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("user_table")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      setDbNote("불러오기 실패: " + error.message);
+      return;
+    }
+    const mapped = (data || []).map(mapMemberRow);
+    setMembers(mapped);
+    setDbNote("");
+    setSelectedId((prev) => prev ?? (mapped[0] ? mapped[0].id : null));
+  };
+
+  const loadMachines = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.from("center_machine").select("*");
+    setMachineOptions((data || []).map((m) => `${m.brand} ${m.name}`));
+  };
+
+  useEffect(() => {
+    loadMembers();
+    loadMachines();
+  }, []);
+
+  // DB 회원이 있으면 선택된 회원을, 없으면 데모 회원을 렌더
+  const member =
+    members.find((m) => m.id === selectedId) || members[0] || DEMO_MEMBER;
+
   const [activeId, setActiveId] = useState("assess");
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
@@ -1310,36 +1527,60 @@ export default function OTNavigatorDashboard() {
                   OT Navigator
                 </div>
                 <div className="text-sm font-semibold text-zinc-100">
-                  {MEMBER.name}
+                  {member.name}
                   <span className="font-normal text-zinc-500"> · 세일즈 네비게이터</span>
                 </div>
               </div>
             </div>
 
-            {tab === 1 && (
-              <div className="flex items-center gap-3">
-                <div className="hidden text-right sm:block">
-                  <div className="text-[10px] uppercase tracking-wider text-zinc-500">
-                    {active.n} · {active.title.split(" ")[0]}
-                  </div>
-                  <div
-                    className={`font-mono text-sm font-semibold ${
-                      overtime ? "text-red-400" : C[active.color].text
-                    }`}
-                  >
-                    {fmt(elapsed)}{" "}
-                    <span className="text-zinc-600">/ {active.duration}:00</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setRunning((r) => !r)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
-                  aria-label={running ? "타이머 일시정지" : "타이머 시작"}
+            <div className="flex items-center gap-2">
+              {members.length > 0 && (
+                <select
+                  value={selectedId || ""}
+                  onChange={(e) => setSelectedId(e.target.value)}
+                  className="hidden max-w-[130px] rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-lime-500/50 sm:block"
+                  aria-label="회원 선택"
                 >
-                  {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                </button>
-              </div>
-            )}
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">신규 등록</span>
+              </button>
+
+              {tab === 1 && (
+                <>
+                  <div className="hidden text-right sm:block">
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+                      {active.n} · {active.title.split(" ")[0]}
+                    </div>
+                    <div
+                      className={`font-mono text-sm font-semibold ${
+                        overtime ? "text-red-400" : C[active.color].text
+                      }`}
+                    >
+                      {fmt(elapsed)}{" "}
+                      <span className="text-zinc-600">/ {active.duration}:00</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setRunning((r) => !r)}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
+                    aria-label={running ? "타이머 일시정지" : "타이머 시작"}
+                  >
+                    {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* 탭 네비게이션 */}
@@ -1362,6 +1603,14 @@ export default function OTNavigatorDashboard() {
         </div>
       </header>
 
+      {dbNote && (
+        <div className="mx-auto max-w-5xl px-4 pt-3 sm:px-6">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-[11px] text-zinc-400">
+            {dbNote}
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {tab === 1 && (
           <>
@@ -1375,26 +1624,26 @@ export default function OTNavigatorDashboard() {
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-lime-500/30 bg-lime-500/10 px-3 py-1">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime-400" />
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-lime-400">
-                    {MEMBER.session} · LIVE
+                    {member.session} · LIVE
                   </span>
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl">
-                  {MEMBER.name}
+                  {member.name}
                   <span className="ml-2 font-mono text-lg font-normal text-zinc-500">
-                    {MEMBER.age}세
+                    {member.age}세
                   </span>
                 </h1>
                 <p className="mt-1 text-sm text-zinc-400">
-                  {MEMBER.job} · 목표{" "}
-                  <span className="font-semibold text-lime-400">{MEMBER.goal}</span>
+                  {member.job} · 목표{" "}
+                  <span className="font-semibold text-lime-400">{member.goal}</span>
                 </p>
               </div>
 
               <div className="grid shrink-0 grid-cols-2 gap-2 sm:w-64">
-                <Chip icon={MapPin} label="거주" value={MEMBER.residence} />
-                <Chip icon={Brain} label="MBTI" value={MEMBER.mbti} />
-                <Chip icon={Briefcase} label="직업" value={MEMBER.job} />
-                <Chip icon={Activity} label="불편 부위" value={MEMBER.pain} />
+                <Chip icon={MapPin} label="거주" value={member.residence} />
+                <Chip icon={Brain} label="MBTI" value={member.mbti} />
+                <Chip icon={Briefcase} label="직업" value={member.job} />
+                <Chip icon={Activity} label="불편 부위" value={member.pain} />
               </div>
             </div>
 
@@ -1402,7 +1651,7 @@ export default function OTNavigatorDashboard() {
             <div className="relative mt-5 border-t border-zinc-800 pt-5">
               <Eyebrow icon={Brain}>개발자 맞춤 성향 분석</Eyebrow>
               <ul className="space-y-2.5">
-                {MEMBER.summary.map((s, i) => (
+                {member.summary.map((s, i) => (
                   <li key={i} className="flex gap-3">
                     <span className="mt-0.5 font-mono text-xs font-semibold text-lime-400">
                       0{i + 1}
@@ -1916,6 +2165,18 @@ export default function OTNavigatorDashboard() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* ================= 신규 회원 등록 모달 ================= */}
+      {showForm && (
+        <MemberForm
+          machineOptions={machineOptions}
+          onClose={() => setShowForm(false)}
+          onSaved={() => {
+            setShowForm(false);
+            loadMembers();
+          }}
+        />
       )}
     </div>
   );
