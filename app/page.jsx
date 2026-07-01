@@ -3,21 +3,30 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  AlertTriangle,
+  Armchair,
   Brain,
   Briefcase,
+  CalendarDays,
   CheckCircle2,
   ChevronRight,
   Circle,
   Clock,
+  CreditCard,
   Dumbbell,
+  Filter,
   Flame,
+  Footprints,
   Gauge,
   Handshake,
   Heart,
+  Lightbulb,
   MapPin,
   MessageSquareQuote,
+  Microscope,
   Pause,
   Play,
+  Repeat,
   Send,
   ShieldCheck,
   Smile,
@@ -26,6 +35,7 @@ import {
   TrendingUp,
   User,
   Wallet,
+  Zap,
 } from "lucide-react";
 
 /* =========================================================================
@@ -251,6 +261,278 @@ function buildClosing(state, pkg) {
   ];
 }
 
+/* ---- 상황별 즉효 스트레칭 & 기능성 운동 (기구 루틴 보완) ---- */
+const MOBILITY_CATS = {
+  desk: { label: "좌식 해소", icon: Armchair, color: "sky" },
+  knee: { label: "무릎 안정", icon: Footprints, color: "orange" },
+  activation: { label: "즉효 활성", icon: Zap, color: "lime" },
+};
+
+const MOBILITY = [
+  {
+    id: "m1",
+    cat: "desk",
+    name: "하프닐링 힙 플렉서 스트레칭",
+    equip: "맨몸",
+    dose: "30초 × 좌우 2회",
+    effect: "단축된 장요근 이완 → 골반 전방경사·무릎 앞쪽 당김이 즉시 풀림",
+    cue: "반무릎 자세에서 뒷다리 쪽 엉덩이를 앞으로, 골반은 뒤로 말아 유지.",
+  },
+  {
+    id: "m2",
+    cat: "desk",
+    name: "오픈북 흉추 회전",
+    equip: "맨몸",
+    dose: "8회 × 좌우",
+    effect: "라운드 숄더 완화 → 상체 회전·호흡이 그 자리에서 트임",
+    cue: "옆으로 누워 무릎 고정, 위쪽 팔을 크게 펼쳐 가슴을 천장으로.",
+  },
+  {
+    id: "m3",
+    cat: "knee",
+    name: "무릎-벽 발목 가동성 (도살플렉션)",
+    equip: "벽",
+    dose: "10회 × 좌우",
+    effect: "발목 가동범위 확보 → 스쿼트 시 무릎 전방 부하가 분산됨",
+    cue: "발끝 벽에서 한 뼘, 무릎으로 벽 터치. 뒤꿈치 떨어지지 않게.",
+  },
+  {
+    id: "m4",
+    cat: "knee",
+    name: "밴드 클램쉘",
+    equip: "미니밴드",
+    dose: "15회 × 3 좌우",
+    effect: "중둔근 즉시 활성 → 무릎 안쪽 무너짐(밸구스) 억제",
+    cue: "옆으로 누워 무릎에 밴드, 발 붙인 채 위 무릎만 조개처럼 벌리기.",
+  },
+  {
+    id: "m5",
+    cat: "knee",
+    name: "터미널 니 익스텐션 (TKE)",
+    equip: "미니밴드",
+    dose: "15회 × 3",
+    effect: "내측광근(VMO) 활성 → 슬개골 정렬·무릎 안정성 즉각 향상",
+    cue: "밴드를 무릎 뒤에 걸고, 무릎을 끝까지 펴며 허벅지 안쪽에 힘.",
+  },
+  {
+    id: "m6",
+    cat: "activation",
+    name: "90/90 힙 스위치",
+    equip: "맨몸",
+    dose: "8회 × 좌우",
+    effect: "고관절 내·외회전 가동성 확보 → 하체 운동 전 즉효 워밍업",
+    cue: "앉아서 양 무릎 90도, 좌우로 무릎 눕히며 골반 회전.",
+  },
+  {
+    id: "m7",
+    cat: "activation",
+    name: "글루트 브리지 마치",
+    equip: "맨몸",
+    dose: "10회 × 2",
+    effect: "둔근·코어 점화 → 하체 세션 직전 신경 활성으로 자극 효율↑",
+    cue: "브리지 상태 유지하며 무릎 번갈아 들기, 골반 수평 유지.",
+  },
+];
+
+/* ---- 탭 메타 ---- */
+const TABS = [
+  { id: 1, label: "1차 OT" },
+  { id: 2, label: "2차 OT" },
+  { id: 3, label: "재등록 CRM" },
+];
+
+/* =========================================================================
+   TAB 2 DATA  —  2차 OT (피드백 분석 + 둔근 100% 루틴)
+   ========================================================================= */
+
+const RAW_FEEDBACK =
+  "무릎은 하나도 안 아파서 신기했는데, 엉덩이(둔근)에 자극이 잘 안 오고 허벅지 앞쪽만 힘이 들어가는 느낌이었어요.";
+
+const FEEDBACK_ANALYSIS = {
+  headline: "대퇴사두 우세 + 둔근 신경 활성 미흡",
+  cause: [
+    {
+      t: "골반 전방경사",
+      d: "좌식 근무로 장요근이 단축 → 골반이 앞으로 기울며 둔근이 늘어난 채 약화(신장성 약화).",
+    },
+    {
+      t: "대퇴사두 우세 (Quad-dominant)",
+      d: "하체 동작에서 앞허벅지가 먼저 동원 → 둔근이 개입할 타이밍을 빼앗김.",
+    },
+    {
+      t: "둔근 신경 지연",
+      d: "평소 미사용으로 둔근 점화 신호가 느림 → '자극이 안 온다'는 체감의 실체.",
+    },
+  ],
+  win: "무릎 통증 0 = 1차 우회 세팅은 성공. 2차 과제는 '대퇴사두 차단 → 둔근 단독 자극' 재교육.",
+};
+
+const ADJUST_TIPS = [
+  {
+    icon: Gauge,
+    t: "상체 각도",
+    d: "상체를 15° 앞으로 힙힌지 → 대둔근 상부·중둔근 개입↑, 대퇴근막장근(TFL) 개입↓.",
+  },
+  {
+    icon: ShieldCheck,
+    t: "골반 고정",
+    d: "반대손으로 패드 고정, 코어로 골반 회전 차단 → 허리·허벅지 보상 제거.",
+  },
+  {
+    icon: Footprints,
+    t: "발끝 방향",
+    d: "발끝 살짝 안쪽(내회전) → 중둔근 타겟. 바깥으로 벌어지면 TFL이 자극을 훔쳐감.",
+  },
+  {
+    icon: Repeat,
+    t: "템포",
+    d: "벌릴 때 2초 · 끝 정지 1초 · 복귀 3초. 신장성 구간을 늘려 둔근 긴장 시간 확보.",
+  },
+];
+
+const SECOND_ACT = [
+  { id: "yes", label: "엉덩이 자극 왔다", tone: "lime" },
+  { id: "partial", label: "조금 왔다", tone: "orange" },
+  { id: "no", label: "아직 안 옴", tone: "red" },
+];
+
+/* 오늘 둔근 활성 결과 → 2차 세일즈 흐름 조립 (1차 연결 → 증명 → 클로징) */
+function buildSecondSales(act) {
+  const proof = {
+    yes: "지금 엉덩이에 딱 오죠? 같은 Gym80인데 세팅만 바꾼 거예요. 몸이 바로 반응했어요.",
+    partial:
+      "아까보단 엉덩이에 오시죠? 아직 100%는 아니지만 방향은 확실히 잡혔어요. 반복하면 완전히 옵니다.",
+    no: "아직 잘 안 오시는군요. 신경 활성이 더뎌서 그래요 — 오히려 PT가 필요하다는 확실한 신호예요.",
+  }[act];
+
+  const close = {
+    yes: "오늘 이 감각, 혼자선 다시 찾기 어려워요. 이 세팅을 몸에 새기는 게 앞으로의 과제예요. 계속 옆에서 잡아드릴게요.",
+    partial:
+      "오늘 방향을 잡았으니, 이걸 몸에 정착시키는 데 몇 세션이 필요해요. 짧게라도 이어서 확실히 마무리하죠.",
+    no: "혼자 하면 계속 앞허벅지만 쓰게 돼요. 이 패턴 교정은 옆에서 봐줘야 잡힙니다. 그래서 다음 세션이 중요해요.",
+  }[act];
+
+  return [
+    {
+      n: "01",
+      stage: "1차 소환",
+      icon: MessageSquareQuote,
+      tone: "담담하게, 기록을 짚듯",
+      when: "2차 워밍업 중",
+      line:
+        "철수님, 지난 1차 때 '무릎은 괜찮은데 엉덩이 자극이 안 온다'고 하셨죠. 오늘은 그 원인부터 잡고 갑니다.",
+    },
+    {
+      n: "02",
+      stage: "원인 공유",
+      icon: Microscope,
+      tone: "논리적으로, 브리핑하듯",
+      when: "사전 활성 직전",
+      line:
+        "앞허벅지가 먼저 일하는 패턴이었어요. 그래서 오늘은 상체 각도랑 골반을 고정해서 엉덩이만 일하게 세팅합니다.",
+    },
+    {
+      n: "03",
+      stage: "실시간 증명",
+      icon: Flame,
+      tone: "확신 있게, 살짝 텐션",
+      when: "Gym80 전경사 세트 직후",
+      line: proof,
+      adaptive: true,
+    },
+    {
+      n: "04",
+      stage: "차이 각인",
+      icon: Brain,
+      tone: "차분하게 못 박듯",
+      when: "세트 사이 휴식",
+      line:
+        "이 차이는 운이 아니에요. 지난주 데이터로 원인을 찾아 세팅 하나를 바꾼 결과예요. 감으로 운동하면 안 나오는 반응이에요.",
+    },
+    {
+      n: "05",
+      stage: "결과 예고",
+      icon: TrendingUp,
+      tone: "신뢰감 있게, 그림 그려주듯",
+      when: "마무리 운동 중",
+      line:
+        "매 세션 이렇게 안 되는 부위를 진단하고 고쳐나가면, 바디프로필까지 군살 없이 갑니다.",
+    },
+    {
+      n: "06",
+      stage: "클로징",
+      icon: Handshake,
+      tone: "담백하게, 압박 없이",
+      when: "운동 종료 후 브리핑",
+      line: close,
+      adaptive: true,
+    },
+  ];
+}
+
+/* =========================================================================
+   TAB 3 DATA  —  라이프사이클 CRM (재등록 전략)
+   ========================================================================= */
+
+const CRM_SIGNALS = [
+  { k: "목적", v: "바디프로필", tone: "lime" },
+  { k: "이벤트", v: "가을 결혼 예정", tone: "sky" },
+  { k: "재정", v: "부담 인지", tone: "orange" },
+  { k: "성향", v: "ISTJ", tone: "sky" },
+  { k: "1차 결과", v: "무릎 통증 우회 성공", tone: "lime" },
+];
+
+const CRM_PSYCH =
+  "동기는 오히려 강해졌습니다(결혼 → 바디프로필 니즈 강화). 다만 재정 부담이 '큰 결제 회피' 심리를 만들어, 만기 시 대형 패키지를 들이밀면 이탈 위험이 급상승합니다.";
+
+const CRM_RISK = [
+  "만기 시 30회 등 대형 결제 압박 → 부담 회피로 미등록·이탈.",
+  "결혼 준비 스트레스와 지출이 겹쳐 '지금은 무리'라는 방어 심리 활성.",
+];
+
+const CRM_OPP = [
+  "결혼이라는 명확한 데드라인 존재 → 짧고 저부담 패키지면 재등록 확률↑.",
+  "결혼 준비 스트레스를 케어해주면 신뢰 레버가 강하게 작동.",
+  "ISTJ 특성상 '필요 최소량'을 수치로 제시하면 합리적 결정으로 수용.",
+];
+
+const CRM_OFFER = {
+  name: "단기 연장 · 결혼 스퍼트",
+  sessions: 10,
+  plan: "2개월 분납",
+  perSession: 65000,
+  total: 650000,
+  monthly: 325000,
+};
+
+const CRM_SCRIPT = [
+  {
+    tag: "스트레스 케어",
+    icon: Heart,
+    line: "결혼 준비하시느라 정신없으시죠. 이럴 때일수록 컨디션 관리가 예식날 얼굴로 나와요.",
+  },
+  {
+    tag: "부담 인정",
+    icon: Wallet,
+    line: "지금 큰 결제가 부담되시는 거 압니다. 그래서 30회 권해드리는 거 아니에요.",
+  },
+  {
+    tag: "최소 필요량 (역산)",
+    icon: Target,
+    line: "예식까지 남은 주수 × 주 2회 = 딱 10회. 예식날 컨디션을 피크로 맞추는 최소량이에요. 계산해서 보여드릴게요.",
+  },
+  {
+    tag: "분납 제안",
+    icon: CreditCard,
+    line: "이 10회를 2개월 분납으로 나누면 월 부담이 확 줄어요. 결혼 지출이랑 안 겹치게 설계했어요.",
+  },
+  {
+    tag: "클로징",
+    icon: Handshake,
+    line: "무리한 투자 권하는 거 아니에요. 데드라인에 맞춘 최소 세션만, 부담 없이. 판단은 숫자 보고 하세요.",
+  },
+];
+
 /* =========================================================================
    PURGE-SAFE COLOR TOKENS
    ========================================================================= */
@@ -325,10 +607,376 @@ function Eyebrow({ icon: Icon, children }) {
 }
 
 /* =========================================================================
+   TAB 2  —  2차 OT 내비게이터
+   ========================================================================= */
+
+function SecondOTTab() {
+  const [act, setAct] = useState("yes");
+  const flow = buildSecondSales(act);
+
+  const actCls = (tone, on) => {
+    if (!on) return "border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700";
+    return {
+      lime: "border-lime-500/40 bg-lime-500/10 text-lime-400",
+      orange: "border-orange-500/40 bg-orange-500/10 text-orange-400",
+      red: "border-red-500/40 bg-red-500/10 text-red-400",
+    }[tone];
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* 피드백 분석 카드 */}
+      <section>
+        <Eyebrow icon={Microscope}>회원 피드백 AI 분석</Eyebrow>
+
+        <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
+          {/* 날것의 피드백 */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              <MessageSquareQuote className="h-3.5 w-3.5" /> 1차 OT 직후 · 회원의 말
+            </div>
+            <p className="text-sm italic leading-relaxed text-zinc-200">
+              “{RAW_FEEDBACK}”
+            </p>
+          </div>
+
+          {/* AI 진단 헤드라인 */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="rounded-md bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-400">
+              AI 진단
+            </span>
+            <span className="text-sm font-semibold text-zinc-100">
+              {FEEDBACK_ANALYSIS.headline}
+            </span>
+          </div>
+
+          {/* 원인 3가지 */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {FEEDBACK_ANALYSIS.cause.map((c, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-orange-400">
+                    0{i + 1}
+                  </span>
+                  <span className="text-sm font-semibold text-zinc-100">{c.t}</span>
+                </div>
+                <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">{c.d}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* 결론 */}
+          <div className="mt-4 flex gap-2 rounded-xl border border-lime-500/20 bg-lime-500/5 p-3.5">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-lime-400" />
+            <p className="text-sm leading-relaxed text-zinc-200">{FEEDBACK_ANALYSIS.win}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 조정 팁 + 2차 루틴 */}
+      <section>
+        <Eyebrow icon={Target}>둔근 100% · 조정 팁 & 2차 루틴</Eyebrow>
+
+        <div className="grid gap-4 lg:grid-cols-5">
+          {/* 핵심 조정 팁 */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 lg:col-span-2">
+            <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Gym80 아웃싸이 · 대퇴사두 차단 세팅
+            </div>
+            <div className="space-y-2.5">
+              {ADJUST_TIPS.map((tip) => {
+                const Icon = tip.icon;
+                return (
+                  <div key={tip.t} className="flex gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10">
+                      <Icon className="h-4 w-4 text-orange-400" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-zinc-100">{tip.t}</div>
+                      <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">{tip.d}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2차 루틴 카드 */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:col-span-3">
+            {ROUTINE_2.map((r) => (
+              <div
+                key={r.id}
+                className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-zinc-100">{r.name}</h4>
+                  <span className="shrink-0 rounded-md border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 font-mono text-[10px] font-semibold text-zinc-300">
+                    {r.machine}
+                  </span>
+                </div>
+                <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400">
+                  <span className="text-orange-400">◆</span> {r.tip}
+                </p>
+                <div className="mt-3 flex items-center gap-2 border-t border-zinc-800 pt-2">
+                  <span className="font-mono text-xs font-semibold text-lime-400">
+                    {r.sets}
+                  </span>
+                  <span className="text-zinc-700">·</span>
+                  <div className="flex flex-wrap gap-1">
+                    {r.muscles.map((m) => (
+                      <span
+                        key={m}
+                        className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400"
+                      >
+                        #{m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 2차 세일즈 흐름 */}
+      <section>
+        <Eyebrow icon={Handshake}>
+          2차 세일즈 흐름 · 1차 연결 → 실시간 증명 → 클로징
+        </Eyebrow>
+
+        {/* 오늘 결과 토글 */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-zinc-500">오늘 둔근 자극 결과:</span>
+          {SECOND_ACT.map((o) => (
+            <button
+              key={o.id}
+              onClick={() => setAct(o.id)}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${actCls(
+                o.tone,
+                act === o.id
+              )}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 대화 흐름 타임라인 */}
+        <div className="space-y-2.5">
+          {flow.map((step) => {
+            const Icon = step.icon;
+            return (
+              <div
+                key={step.n}
+                className={`flex gap-3 rounded-xl border p-4 ${
+                  step.adaptive
+                    ? "border-lime-500/30 bg-lime-500/5"
+                    : "border-zinc-800 bg-zinc-900/40"
+                }`}
+              >
+                <div className="flex shrink-0 flex-col items-center">
+                  <span className="font-mono text-xs font-bold text-lime-400">
+                    {step.n}
+                  </span>
+                  <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950">
+                    <Icon className="h-4 w-4 text-lime-400" />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-zinc-100">
+                      {step.stage}
+                    </span>
+                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-400">
+                      🗣 {step.tone}
+                    </span>
+                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-500">
+                      ⏱ {step.when}
+                    </span>
+                    {step.adaptive && (
+                      <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-semibold text-lime-400">
+                        상황 연동
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-200">
+                    “{step.line}”
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="mt-3 text-[10px] leading-relaxed text-zinc-600">
+          핵심은 '말'이 아니라 '몸의 변화'로 파는 흐름입니다. 1차 불만 → 원인 진단 →
+          같은 기구·다른 세팅으로 실시간 증명 → 차이를 데이터로 각인하는 순서가 ISTJ에게
+          가장 잘 먹힙니다.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+/* =========================================================================
+   TAB 3  —  라이프사이클 CRM (재등록 전략)
+   ========================================================================= */
+
+function CRMTab() {
+  return (
+    <div className="space-y-8">
+      {/* Risk & Opportunity */}
+      <section>
+        <Eyebrow icon={Brain}>리스크 & 기회 분석</Eyebrow>
+
+        <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
+          {/* 시그널 칩 */}
+          <div className="flex flex-wrap gap-2">
+            {CRM_SIGNALS.map((s) => {
+              const c = C[s.tone];
+              return (
+                <div
+                  key={s.k}
+                  className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 ${c.border} ${c.soft}`}
+                >
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500">
+                    {s.k}
+                  </span>
+                  <span className={`text-xs font-semibold ${c.text}`}>{s.v}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 심리 요약 */}
+          <div className="mt-4 flex gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-lime-400" />
+            <div>
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+                심리 상태 진단
+              </div>
+              <p className="text-sm leading-relaxed text-zinc-200">{CRM_PSYCH}</p>
+            </div>
+          </div>
+
+          {/* Risk / Opportunity 2열 */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-red-400">
+                <AlertTriangle className="h-4 w-4" /> 이탈 리스크
+              </div>
+              <ul className="space-y-2">
+                {CRM_RISK.map((r, i) => (
+                  <li key={i} className="text-xs leading-relaxed text-zinc-300">
+                    · {r}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                <Lightbulb className="h-4 w-4" /> 재등록 기회
+              </div>
+              <ul className="space-y-2">
+                {CRM_OPP.map((o, i) => (
+                  <li key={i} className="text-xs leading-relaxed text-zinc-300">
+                    · {o}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 타겟 제안 + 대본 */}
+      <section>
+        <Eyebrow icon={Handshake}>타겟 세일즈 · 단기 연장 제안 대본</Eyebrow>
+
+        <div className="grid gap-4 lg:grid-cols-5">
+          {/* 제안 패키지 카드 */}
+          <div className="lg:col-span-2">
+            <div className="rounded-2xl border border-lime-500/40 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/10">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-lime-400" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+                  추천 제안
+                </span>
+              </div>
+              <div className="mt-2 text-lg font-bold text-zinc-50">{CRM_OFFER.name}</div>
+
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="font-mono text-2xl font-bold text-zinc-50">
+                  {CRM_OFFER.sessions}
+                </span>
+                <span className="text-sm text-zinc-500">회 · {CRM_OFFER.plan}</span>
+              </div>
+
+              <div className="mt-4 space-y-1.5 border-t border-zinc-800 pt-4 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">총액</span>
+                  <span className="font-mono font-semibold text-zinc-200">
+                    {won(CRM_OFFER.total)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">회당</span>
+                  <span className="font-mono text-zinc-300">{won(CRM_OFFER.perSession)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">월 부담 (분납)</span>
+                  <span className="font-mono font-semibold text-lime-400">
+                    {won(CRM_OFFER.monthly)}
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-4 text-[11px] leading-relaxed text-zinc-500">
+                대형 결제 대신 데드라인 맞춤 최소량 + 분납으로 심리적 저항을 낮춘 설계.
+              </p>
+            </div>
+          </div>
+
+          {/* 대본 */}
+          <div className="space-y-2.5 lg:col-span-3">
+            {CRM_SCRIPT.map((s) => {
+              const Icon = s.icon;
+              return (
+                <div
+                  key={s.tag}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
+                >
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <Icon className="h-3.5 w-3.5 text-lime-400" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+                      {s.tag}
+                    </span>
+                  </div>
+                  <p className="text-sm leading-relaxed text-zinc-300">“{s.line}”</p>
+                </div>
+              );
+            })}
+            <p className="pt-1 text-[10px] leading-relaxed text-zinc-600">
+              ※ 회원이 사석에서 언급한 개인사(결혼·재정)는 민감 정보입니다. 상담에 활용하기
+              전 회원 동의·기록 관리 원칙을 팀 차원에서 정해두는 걸 권장해요.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/* =========================================================================
    MAIN
    ========================================================================= */
 
 export default function OTNavigatorDashboard() {
+  const [tab, setTab] = useState(1);
   const [activeId, setActiveId] = useState("assess");
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
@@ -348,6 +996,13 @@ export default function OTNavigatorDashboard() {
     setStimulus((prev) =>
       prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]
     );
+
+  // 상황별 즉효 운동 필터
+  const [mobFilter, setMobFilter] = useState("all");
+  const mobList =
+    mobFilter === "all"
+      ? MOBILITY
+      : MOBILITY.filter((m) => m.cat === mobFilter);
 
   const active = PHASES.find((p) => p.id === activeId);
   const cap = active.duration * 60;
@@ -385,46 +1040,73 @@ export default function OTNavigatorDashboard() {
     <div className="min-h-screen bg-zinc-950 pb-28 text-zinc-100 antialiased selection:bg-lime-400/30">
       {/* ================= TOP BAR ================= */}
       <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 shadow-lg shadow-lime-500/30">
-              <Activity className="h-5 w-5 text-zinc-950" strokeWidth={2.5} />
-            </div>
-            <div className="leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-lime-400">
-                OT Navigator
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 shadow-lg shadow-lime-500/30">
+                <Activity className="h-5 w-5 text-zinc-950" strokeWidth={2.5} />
               </div>
-              <div className="text-sm font-semibold text-zinc-100">세일즈 네비게이터</div>
+              <div className="leading-tight">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-lime-400">
+                  OT Navigator
+                </div>
+                <div className="text-sm font-semibold text-zinc-100">
+                  {MEMBER.name}
+                  <span className="font-normal text-zinc-500"> · 세일즈 네비게이터</span>
+                </div>
+              </div>
             </div>
+
+            {tab === 1 && (
+              <div className="flex items-center gap-3">
+                <div className="hidden text-right sm:block">
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+                    {active.n} · {active.title.split(" ")[0]}
+                  </div>
+                  <div
+                    className={`font-mono text-sm font-semibold ${
+                      overtime ? "text-red-400" : C[active.color].text
+                    }`}
+                  >
+                    {fmt(elapsed)}{" "}
+                    <span className="text-zinc-600">/ {active.duration}:00</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setRunning((r) => !r)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
+                  aria-label={running ? "타이머 일시정지" : "타이머 시작"}
+                >
+                  {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <div className="text-[10px] uppercase tracking-wider text-zinc-500">
-                {active.n} · {active.title.split(" ")[0]}
-              </div>
-              <div
-                className={`font-mono text-sm font-semibold ${
-                  overtime ? "text-red-400" : C[active.color].text
+          {/* 탭 네비게이션 */}
+          <nav className="-mb-px flex gap-1">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
+                  tab === t.id ? "text-lime-400" : "text-zinc-500 hover:text-zinc-300"
                 }`}
               >
-                {fmt(elapsed)}{" "}
-                <span className="text-zinc-600">/ {active.duration}:00</span>
-              </div>
-            </div>
-            <button
-              onClick={() => setRunning((r) => !r)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
-              aria-label={running ? "타이머 일시정지" : "타이머 시작"}
-            >
-              {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </button>
-          </div>
+                {t.label}
+                {tab === t.id && (
+                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-lime-400" />
+                )}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-        {/* ================= HERO ================= */}
+        {tab === 1 && (
+          <>
+            {/* ================= HERO ================= */}
         <section className="mb-6">
           <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
             <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-lime-500/10 blur-3xl" />
@@ -674,6 +1356,93 @@ export default function OTNavigatorDashboard() {
           </div>
         </div>
 
+        {/* ================= 상황별 즉효 스트레칭 & 기능성 운동 ================= */}
+        <section className="mt-8">
+          <Eyebrow icon={Activity}>상황별 즉효 스트레칭 · 기능성 운동</Eyebrow>
+
+          {/* 필터 칩 */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <Filter className="h-3.5 w-3.5 text-zinc-600" />
+            <button
+              onClick={() => setMobFilter("all")}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                mobFilter === "all"
+                  ? "border-zinc-500 bg-zinc-800 text-zinc-100"
+                  : "border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700"
+              }`}
+            >
+              전체
+            </button>
+            {Object.entries(MOBILITY_CATS).map(([key, meta]) => {
+              const on = mobFilter === key;
+              const c = C[meta.color];
+              const Icon = meta.icon;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setMobFilter(key)}
+                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                    on
+                      ? `${c.border} ${c.soft} ${c.text}`
+                      : "border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 카드 그리드 */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {mobList.map((m) => {
+              const meta = MOBILITY_CATS[m.cat];
+              const c = C[meta.color];
+              const Icon = meta.icon;
+              return (
+                <div
+                  key={m.id}
+                  className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 transition hover:border-zinc-700"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className={`flex items-center gap-1.5 ${c.text}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">
+                        {meta.label}
+                      </span>
+                    </div>
+                    <span className="rounded-md border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 font-mono text-[10px] font-semibold text-zinc-300">
+                      {m.equip}
+                    </span>
+                  </div>
+
+                  <h4 className="mt-2 text-sm font-semibold text-zinc-100">{m.name}</h4>
+
+                  <div className={`mt-2 rounded-lg ${c.soft} px-2.5 py-2`}>
+                    <p className={`text-[11px] font-medium leading-relaxed ${c.text}`}>
+                      ⚡ {m.effect}
+                    </p>
+                  </div>
+
+                  <p className="mt-2 flex-1 text-[11px] leading-relaxed text-zinc-400">
+                    {m.cue}
+                  </p>
+
+                  <div className="mt-3 border-t border-zinc-800 pt-2 font-mono text-xs font-semibold text-zinc-300">
+                    {m.dose}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="mt-3 text-[10px] leading-relaxed text-zinc-600">
+            ※ 일반적인 기능성·교정 운동 가이드입니다. 무릎에 날카롭거나 지속되는 통증,
+            붓기가 있으면 운동을 멈추고 정형외과·물리치료 전문가 확인을 권하세요.
+          </p>
+        </section>
+
         {/* ================= 재정 추정 & 가격 제안 ================= */}
         <section className="mt-8">
           <Eyebrow icon={Wallet}>재정 추정 · PT 패키지 제안</Eyebrow>
@@ -861,27 +1630,34 @@ export default function OTNavigatorDashboard() {
             ))}
           </div>
         )}
+          </>
+        )}
+
+        {tab === 2 && <SecondOTTab />}
+        {tab === 3 && <CRMTab />}
       </main>
 
-      {/* ================= MINIMAL QUICK-LOG BAR ================= */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:px-6">
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addNote()}
-            placeholder="현장 메모 빠르게 남기기…"
-            className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-lime-500/50"
-          />
-          <button
-            onClick={addNote}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95"
-            aria-label="메모 저장"
-          >
-            <Send className="h-4 w-4" strokeWidth={2.5} />
-          </button>
+      {/* ================= MINIMAL QUICK-LOG BAR (Tab 1) ================= */}
+      {tab === 1 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:px-6">
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addNote()}
+              placeholder="현장 메모 빠르게 남기기…"
+              className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-lime-500/50"
+            />
+            <button
+              onClick={addNote}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95"
+              aria-label="메모 저장"
+            >
+              <Send className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
