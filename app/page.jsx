@@ -390,6 +390,41 @@ const ADJUST_TIPS = [
   },
 ];
 
+const ROUTINE_2 = [
+  {
+    id: "a1",
+    name: "밴드 클램쉘 (사전 활성)",
+    machine: "미니밴드",
+    sets: "20회 × 2",
+    tip: "머신 들어가기 전에 둔근 신경부터 깨우기.",
+    muscles: ["중둔근"],
+  },
+  {
+    id: "a2",
+    name: "Gym80 아웃싸이 · 전경사 세팅",
+    machine: "Gym80",
+    sets: "15회 × 4",
+    tip: "상체 15° 숙이고 발끝 안쪽, 골반 고정. 앞허벅지 힘 빠지는 지점을 찾기.",
+    muscles: ["중둔근", "대둔근"],
+  },
+  {
+    id: "a3",
+    name: "Gym80 아웃싸이 · 끝범위 홀드",
+    machine: "Gym80",
+    sets: "12회 × 3",
+    tip: "최대 외전 지점에서 2초 정지. 둔근 등척성 자극 극대화.",
+    muscles: ["중둔근"],
+  },
+  {
+    id: "a4",
+    name: "글루트 브리지 마치 (마무리)",
+    machine: "맨몸",
+    sets: "20회 × 3",
+    tip: "앞허벅지 아닌 엉덩이로 밀어 올리는 감각으로 마감.",
+    muscles: ["대둔근", "코어"],
+  },
+];
+
 const SECOND_ACT = [
   { id: "yes", label: "엉덩이 자극 왔다", tone: "lime" },
   { id: "partial", label: "조금 왔다", tone: "orange" },
