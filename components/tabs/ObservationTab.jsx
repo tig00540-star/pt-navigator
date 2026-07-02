@@ -1,14 +1,17 @@
 "use client";
 
 /* =========================================================================
-   TAB 5  —  1차 OT 관찰 기록 (입력폼 UI)
-   트레이너가 회원 관찰 3덩어리(움직임·반응·목적)를 입력하는 폼.
-   저장/프리필(ot_log 연동)은 다음 커밋에서 붙인다.
+   TAB 5  —  1차 OT 관찰 기록 (데이터 뼈대, AI 없음)
+   트레이너가 회원 관찰 3덩어리(움직임·반응·목적)를 입력 → ot_log 저장/업서트.
+   회원당 1차(ot_round=1) 1행 유지. supabase/회원 미설정 시 저장 비활성 + 안내.
    ========================================================================= */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Footprints, Plus, Save, Smile, Target, X } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 
 /* 라벨(한글) ↔ 저장값(영문 키) 분리 — 통계·AI가 값으로 다루기 쉽게. */
 const STIMULUS_OPTS = [
@@ -40,13 +43,87 @@ function emptyForm() {
   };
 }
 
+/* ot_log 행 → 폼 상태 (report jsonb 방어적 파싱). */
+function rowToForm(row) {
+  const r = row?.report || {};
+  const movements =
+    Array.isArray(r.movements) && r.movements.length
+      ? r.movements.map((m) => ({
+          observation: m?.observation || "",
+          memberAware: !!m?.memberAware,
+          plan2nd: m?.plan2nd || "",
+        }))
+      : [emptyMovement()];
+  return {
+    movements,
+    reaction: {
+      stimulus: r.reaction?.stimulus || "normal",
+      attitudeTags: Array.isArray(r.reaction?.attitudeTags)
+        ? r.reaction.attitudeTags
+        : [],
+      memo: r.reaction?.memo || "",
+    },
+    goal: {
+      identified: !!r.goal?.identified,
+      type: r.goal?.type || "appearance",
+      detail: r.goal?.detail || "",
+    },
+  };
+}
+
 const inputCls =
   "w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50";
 
 export default function ObservationTab({ member }) {
   const [form, setForm] = useState(emptyForm);
+  const [existingRowId, setExistingRowId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { toast, showToast } = useToast();
 
-  const canEdit = Boolean(member?.id);
+  const canEdit = Boolean(supabase && member?.id);
+
+  // 회원 선택 시 기존 1차 관찰 프리필 (없으면 빈 폼) — 회원당 1행 유지.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!canEdit) {
+        if (!cancelled) {
+          setForm(emptyForm());
+          setExistingRowId(null);
+        }
+        return;
+      }
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("ot_log")
+        .select("*")
+        .eq("user_id", member.id)
+        .eq("ot_round", 1)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      setLoading(false);
+      if (error) {
+        setForm(emptyForm());
+        setExistingRowId(null);
+        showToast("불러오기 실패: " + error.message);
+        return;
+      }
+      const row = data?.[0];
+      if (row) {
+        setForm(rowToForm(row));
+        setExistingRowId(row.id);
+      } else {
+        setForm(emptyForm());
+        setExistingRowId(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member?.id]);
 
   // ---- 폼 setter들 ----
   const setMovement = (i, key, val) =>
@@ -82,6 +159,53 @@ export default function ObservationTab({ member }) {
   const setGoal = (key, val) =>
     setForm((f) => ({ ...f, goal: { ...f.goal, [key]: val } }));
 
+  const save = async () => {
+    if (!canEdit || saving) return;
+    setSaving(true);
+    try {
+      const report = {
+        movements: form.movements,
+        reaction: form.reaction,
+        goal: form.goal,
+      };
+      // goal_type / goal_identified 는 report.goal 값을 미러링(조회 편의).
+      const payload = {
+        user_id: member.id,
+        ot_round: 1,
+        goal_type: form.goal.type,
+        goal_identified: form.goal.identified,
+        report,
+      };
+      if (existingRowId) {
+        // .select()로 갱신된 행을 돌려받는다. error 없이 0행이면 RLS/정책 문제(조용한 실패) → 명시적 안내.
+        const { data, error } = await supabase
+          .from("ot_log")
+          .update(payload)
+          .eq("id", existingRowId)
+          .select();
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          showToast("저장 안 됨 — 권한/정책을 확인하세요 (0행 갱신)");
+          return;
+        }
+        showToast("관찰 기록이 수정되었습니다");
+      } else {
+        const { data, error } = await supabase
+          .from("ot_log")
+          .insert(payload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (data?.id) setExistingRowId(data.id);
+        showToast("관찰 기록이 저장되었습니다");
+      }
+    } catch (e) {
+      showToast("저장 실패: " + (e?.message || "unknown"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const goalIdentifiedValue = form.goal.identified ? "identified" : "unclear";
 
   return (
@@ -93,13 +217,30 @@ export default function ObservationTab({ member }) {
         <div className="text-sm text-zinc-300">
           <span className="font-semibold text-zinc-100">{member.name}</span> 회원 · 1차 OT 관찰
         </div>
+        {canEdit && (
+          <span
+            className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
+              existingRowId
+                ? "border-sky-500/40 bg-sky-500/10 text-sky-400"
+                : "border-lime-500/40 bg-lime-500/10 text-lime-400"
+            }`}
+          >
+            {existingRowId ? "수정" : "신규"}
+          </span>
+        )}
       </div>
 
-      {/* 회원 미선택 안내 */}
+      {/* 회원/키 미설정 안내 */}
       {!canEdit && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
-          회원을 먼저 선택하세요. (회원 탭에서 선택하면 이 회원에 관찰 기록이 저장됩니다.)
+          {!supabase
+            ? "데모 모드 — Supabase 키가 없어 저장은 비활성화됩니다. 입력은 가능하지만 저장되지 않아요."
+            : "회원을 먼저 선택하세요. (회원 탭에서 선택하면 이 회원에 관찰 기록이 저장됩니다.)"}
         </div>
+      )}
+
+      {loading && (
+        <div className="text-xs text-zinc-500">기존 관찰 기록을 불러오는 중…</div>
       )}
 
       {/* ① 움직임 관찰 */}
@@ -284,14 +425,17 @@ export default function ObservationTab({ member }) {
         </div>
       </section>
 
-      {/* 저장 (연동은 다음 커밋) */}
+      {/* 저장 */}
       <button
-        disabled={!canEdit}
+        onClick={save}
+        disabled={!canEdit || saving || loading}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 py-3.5 text-sm font-bold text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95 disabled:opacity-50"
       >
         <Save className="h-5 w-5" strokeWidth={2.5} />
-        관찰 기록 저장
+        {saving ? "저장 중…" : existingRowId ? "관찰 기록 수정" : "관찰 기록 저장"}
       </button>
+
+      <Toast message={toast} />
     </div>
   );
 }
