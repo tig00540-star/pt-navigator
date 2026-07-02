@@ -2,10 +2,11 @@
 
 /* =========================================================================
    TAB 4  —  실시간 AI 음성 일지 생성기
-   (녹음·파형·복사·저장은 실제 작동 / AI 요약은 데모 연출)
+   녹음(MediaRecorder) → STT + AI 요약(/api/voice-log) → 카톡용 복사 → DB 저장.
+   AI 키 미설정·오류·미지원 브라우저 시 데모 리포트로 폴백(앱이 죽지 않음).
    ========================================================================= */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   CheckCircle2,
@@ -21,6 +22,9 @@ import { supabase } from "@/lib/supabaseClient";
 import { fmt } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 
+const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
+
+/* AI 실패/미설정/미지원 시 보여줄 데모 리포트. */
 function buildVoiceReport(member) {
   return {
     machines: [
@@ -36,45 +40,171 @@ function buildVoiceReport(member) {
   };
 }
 
+/* 브라우저별 지원 녹음 포맷 선택 (크롬 webm / iOS 사파리 mp4·aac). */
+function pickMimeType() {
+  if (typeof MediaRecorder === "undefined") return "";
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/mp4;codecs=mp4a.40.2",
+    "audio/aac",
+    "audio/ogg;codecs=opus",
+  ];
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return "";
+}
+
+/* mimeType → 파일 확장자 (OpenAI는 실제 포맷과 확장자 일치가 핵심). */
+function extForMime(type) {
+  if (!type) return "webm";
+  if (type.includes("webm")) return "webm";
+  if (type.includes("mp4")) return "mp4";
+  if (type.includes("aac") || type.includes("m4a")) return "m4a";
+  if (type.includes("mpeg")) return "mp3";
+  if (type.includes("ogg")) return "ogg";
+  if (type.includes("wav")) return "wav";
+  return "webm";
+}
+
 export default function VoiceLogTab({ member }) {
   const [phase, setPhase] = useState("idle"); // idle | recording | processing | done
   const [sec, setSec] = useState(0);
   const [report, setReport] = useState(null);
+  const [rawText, setRawText] = useState(""); // STT 원본 (DB 저장용)
   const [saved, setSaved] = useState(false);
   const [toast, setToast] = useState("");
+  const [notice, setNotice] = useState(""); // 폴백/권한 안내
 
+  const recorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const chunksRef = useRef([]);
+  const maxTimerRef = useRef(null);
+
+  // 녹음 경과 타이머
   useEffect(() => {
     if (phase !== "recording") return;
     const t = setInterval(() => setSec((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [phase]);
 
-  const start = () => {
+  // 언마운트 시 마이크 해제
+  useEffect(() => {
+    return () => {
+      clearTimeout(maxTimerRef.current);
+      streamRef.current?.getTracks().forEach((tr) => tr.stop());
+    };
+  }, []);
+
+  const releaseMic = () => {
+    streamRef.current?.getTracks().forEach((tr) => tr.stop());
+    streamRef.current = null;
+  };
+
+  const runDemo = () => {
+    setRawText("");
+    setReport(buildVoiceReport(member));
+    setPhase("done");
+  };
+
+  const start = async () => {
     setReport(null);
     setSaved(false);
     setSec(0);
+    setRawText("");
+    setNotice("");
+
+    // 마이크 미지원 브라우저 → 데모
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setNotice("이 브라우저는 마이크 녹음을 지원하지 않아 데모 리포트로 진행합니다.");
+      runDemo();
+      return;
+    }
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setNotice("마이크 권한이 필요합니다. 브라우저에서 권한을 허용한 뒤 다시 시도하세요.");
+      return;
+    }
+
+    streamRef.current = stream;
+    chunksRef.current = [];
+    const mime = pickMimeType();
+    const rec = mime
+      ? new MediaRecorder(stream, { mimeType: mime })
+      : new MediaRecorder(stream);
+    recorderRef.current = rec;
+
+    rec.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    rec.onstop = handleStop;
+
+    rec.start();
     setPhase("recording");
+
+    // 최대 길이 도달 시 자동 정지
+    maxTimerRef.current = setTimeout(() => {
+      if (recorderRef.current?.state === "recording") {
+        setNotice("최대 녹음 시간(10분)에 도달해 자동 정지했습니다.");
+        stop();
+      }
+    }, MAX_RECORD_SEC * 1000);
   };
 
   const stop = () => {
-    setPhase("processing");
-    setTimeout(() => {
-      setReport(buildVoiceReport(member));
-      setPhase("done");
-    }, 2200);
+    clearTimeout(maxTimerRef.current);
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") {
+      rec.stop(); // → handleStop
+    } else {
+      setPhase("processing");
+    }
   };
 
-  const reset = () => {
-    setPhase("idle");
-    setSec(0);
-    setReport(null);
-    setSaved(false);
+  const handleStop = async () => {
+    setPhase("processing");
+    const type = recorderRef.current?.mimeType || pickMimeType() || "audio/webm";
+    releaseMic();
+
+    const blob = new Blob(chunksRef.current, { type });
+    if (blob.size === 0) {
+      setNotice("녹음된 오디오가 없습니다. 데모 리포트로 대체합니다.");
+      runDemo();
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("audio", blob, `recording.${extForMime(type)}`);
+
+    try {
+      const res = await fetch("/api/voice-log", { method: "POST", body: fd });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setNotice((data.error || "AI 처리에 실패했습니다.") + " 데모 리포트로 대체합니다.");
+        runDemo();
+        return;
+      }
+      const data = await res.json();
+      setRawText(data.raw_text || "");
+      setReport(data.report);
+      setPhase("done");
+    } catch {
+      setNotice("네트워크 오류로 AI 처리를 하지 못했습니다. 데모 리포트로 대체합니다.");
+      runDemo();
+    }
   };
 
   const buildText = (r) =>
     `[핏 피트니스 AI가 요약한 오늘 ${member.name} 회원님의 운동 일지입니다]\n\n` +
     `1. 오늘 진행한 머신 & 중량/세트\n` +
-    r.machines.map((m) => `- ${m.name}: ${m.detail}`).join("\n") +
+    r.machines
+      .map((m) => `- ${m.name}${m.detail ? `: ${m.detail}` : ""}`)
+      .join("\n") +
     `\n\n2. 트레이너 핵심 피드백\n${r.feedback}\n\n` +
     `3. 홈트레이닝 및 주의사항\n` +
     r.homework.map((h) => `- ${h}`).join("\n") +
@@ -106,11 +236,13 @@ export default function VoiceLogTab({ member }) {
       }
       document.body.removeChild(ta);
     }
-    // 2) Supabase 저장 (실제 동작)
+    // 2) Supabase 저장 (실제 동작) — STT 원본 + AI 요약 둘 다 저장
     if (supabase && member?.id) {
-      const { error } = await supabase
-        .from("daily_workout_log")
-        .insert({ user_id: member.id, ai_summary: text });
+      const { error } = await supabase.from("daily_workout_log").insert({
+        user_id: member.id,
+        raw_voice_text: rawText || null,
+        ai_summary: text,
+      });
       if (!error) setSaved(true);
     } else {
       setSaved(true); // 데모(키 미설정) 시에도 저장된 것으로 표시
@@ -190,6 +322,12 @@ export default function VoiceLogTab({ member }) {
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> 녹음 중
           </div>
         )}
+
+        {notice && (
+          <div className="mx-auto mt-4 max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
+            {notice}
+          </div>
+        )}
       </section>
 
       {/* 처리중 스켈레톤 */}
@@ -226,14 +364,18 @@ export default function VoiceLogTab({ member }) {
             <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-lime-400">
               <Dumbbell className="h-3.5 w-3.5" /> 1. 오늘 진행한 머신 & 중량/세트
             </div>
-            <ul className="space-y-1.5">
-              {report.machines.map((m) => (
-                <li key={m.name} className="flex justify-between text-sm text-zinc-300">
-                  <span>{m.name}</span>
-                  <span className="font-mono text-zinc-400">{m.detail}</span>
-                </li>
-              ))}
-            </ul>
+            {report.machines.length > 0 ? (
+              <ul className="space-y-1.5">
+                {report.machines.map((m, i) => (
+                  <li key={i} className="flex justify-between text-sm text-zinc-300">
+                    <span>{m.name}</span>
+                    <span className="font-mono text-zinc-400">{m.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-zinc-500">언급된 머신 정보가 없습니다.</p>
+            )}
           </div>
 
           {/* 2. 피드백 */}
@@ -274,8 +416,8 @@ export default function VoiceLogTab({ member }) {
           )}
 
           <p className="mt-3 text-[10px] leading-relaxed text-zinc-600">
-            ※ 현재 AI 요약은 데모 연출입니다(녹음·복사·저장은 실제 작동). 실제 음성인식·AI
-            연동은 정식 버전에서 연결됩니다.
+            ※ 실제 마이크 녹음 → 음성인식(STT) → AI 요약으로 생성됩니다. 키 미설정·오류·미지원
+            브라우저 시 데모 리포트로 자동 폴백합니다.
           </p>
         </section>
       )}
