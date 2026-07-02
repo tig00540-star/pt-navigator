@@ -9,7 +9,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  AlertTriangle,
   Brain,
   CheckCircle2,
   Flame,
@@ -484,19 +483,6 @@ export default function SecondOTTab({ member }) {
           </button>
         </div>
 
-        {gaps.length > 0 && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-300">
-            <div className="mb-1 flex items-center gap-1.5 font-semibold">
-              <AlertTriangle className="h-3.5 w-3.5" /> 데이터 부족 — 트레이너가 채우세요
-            </div>
-            <ul className="list-disc space-y-0.5 pl-4">
-              {gaps.map((gp, i) => (
-                <li key={i}>{gp}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* ★ 클로징 — 화면 주인공 (4단계 enter→paint→land→hold) */}
         <section>
           <Eyebrow icon={Flame}>실시간 자극 결과별 클로징 · 오늘의 주무기</Eyebrow>
@@ -626,6 +612,22 @@ export default function SecondOTTab({ member }) {
             ))}
           </div>
         </details>
+
+        {/* 성장 팁 — 하단에 접힘(격려 톤). 주인공은 클로징. */}
+        {gaps.length > 0 && (
+          <details className="rounded-xl border border-lime-500/20 bg-lime-500/5 p-4">
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-lime-400">
+              이렇게 하면 더 좋아져요 (선택 · {gaps.length})
+            </summary>
+            <ul className="mt-3 space-y-1.5">
+              {gaps.map((gp, i) => (
+                <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-zinc-400">
+                  <span className="mt-0.5 text-lime-400">＋</span> {gp}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
     );
   };
