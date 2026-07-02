@@ -44,6 +44,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { fmt } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
+import ObservationTab from "@/components/tabs/ObservationTab";
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
@@ -367,6 +368,7 @@ const TABS = [
   { id: 2, label: "2차 OT" },
   { id: 3, label: "재등록 CRM" },
   { id: 4, label: "음성일지" },
+  { id: 5, label: "관찰 기록" },
 ];
 
 /* =========================================================================
@@ -2257,6 +2259,7 @@ export default function OTNavigatorDashboard() {
         {tab === 2 && <SecondOTTab />}
         {tab === 3 && <CRMTab />}
         {tab === 4 && <VoiceLogTab member={member} />}
+        {tab === 5 && <ObservationTab member={member} />}
       </main>
 
       {/* ================= MINIMAL QUICK-LOG BAR (Tab 1) ================= */}
