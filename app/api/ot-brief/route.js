@@ -120,6 +120,8 @@ ${JSON.stringify(
 - 모든 출력 텍스트는 자연스러운 한국어. 입력으로 받은 영문 코드값(timid, well, pain,
   appearance, memberQuote 등)을 출력에 그대로 노출 금지. 반드시 한글로 풀어 쓴다
   (timid→겁많음, active→적극적, well→자극 잘 느낌, pain→통증개선 등). 필드명은 화면에 쓰지 말 것.
+- data_gaps를 포함한 모든 출력에서 memberQuote·memberAware 등 '필드명 자체'를 쓰지 말 것.
+  '회원 한마디', '회원이 스스로 인지한 항목'처럼 한글로 풀어 쓴다.
 
 [비유 개인화 규칙]
 - paint(비유)는 이 회원의 직업·취미·일상(job, goal.detail)에서 끌어와라
@@ -139,6 +141,38 @@ ${JSON.stringify(
   },
   "objections": [ { "type": "망설임|거부|의심|재확인", "customer_says": "이 유형이 흔히 하는 말", "reframe_direction": "공감으로 빗장 푸는 방향(반박 아님)", "example": "..." } ]
 }`;
+}
+
+// 최종 안전망: 모델이 출력 텍스트에 흘린 필드명(코드값)을 한글로 치환.
+// 키/구조는 건드리지 않고 '문자열 값'만 재귀적으로 훑는다.
+const FIELD_TERMS = [
+  ["memberQuote", "회원 한마디"],
+  ["memberAware", "회원이 스스로 인지한 항목"],
+  ["plan2nd", "2차에 풀 것"],
+  ["goal.detail", "목적 상세"],
+  ["goal_identified", "목적 파악 여부"],
+  ["goal_type", "목적 유형"],
+  ["closing_result", "클로징 결과"],
+  ["closing_approach", "클로징 방향"],
+  ["attitudeTags", "태도 태그"],
+  ["stimulus", "자극 인지도"],
+];
+
+function sanitizeText(s) {
+  let out = s;
+  for (const [k, v] of FIELD_TERMS) out = out.split(k).join(v);
+  return out;
+}
+
+function sanitizeFieldNames(node) {
+  if (typeof node === "string") return sanitizeText(node);
+  if (Array.isArray(node)) return node.map(sanitizeFieldNames);
+  if (node && typeof node === "object") {
+    const o = {};
+    for (const key of Object.keys(node)) o[key] = sanitizeFieldNames(node[key]); // 키는 보존
+    return o;
+  }
+  return node;
 }
 
 /** 모델 응답 텍스트에서 JSON 객체만 추출해 파싱 (코드펜스 방어) + data_gaps 기본값. */
@@ -194,7 +228,7 @@ export async function POST(request) {
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
-    const brief = parseBrief(textOut);
+    const brief = sanitizeFieldNames(parseBrief(textOut));
     return Response.json(brief);
   } catch (e) {
     return Response.json(

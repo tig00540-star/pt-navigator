@@ -12,38 +12,15 @@ import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import {
+  STIMULUS_OPTS,
+  ATTITUDE_TAGS,
+  GOAL_TYPE_OPTS,
+  CLOSING_RESULT_OPTS,
+  CLOSING_APPROACH_OPTS,
+} from "@/lib/labels";
 
-/* 라벨(한글) ↔ 저장값(영문 키) 분리 — 통계·AI가 값으로 다루기 쉽게. */
-const STIMULUS_OPTS = [
-  { value: "well", label: "잘 느낌" },
-  { value: "normal", label: "보통" },
-  { value: "poor", label: "잘 못 느낌" },
-];
-const ATTITUDE_TAGS = [
-  { value: "timid", label: "겁많음" },
-  { value: "active", label: "적극적" },
-  { value: "passive", label: "시키는것만" },
-  { value: "enjoys", label: "재미있어함" },
-];
-const GOAL_TYPE_OPTS = [
-  { value: "appearance", label: "외형변화" },
-  { value: "pain", label: "통증개선" },
-  { value: "health", label: "건강·체력" },
-  { value: "machine_only", label: "기구사용법만" },
-  { value: "other", label: "기타" },
-];
-const CLOSING_RESULT_OPTS = [
-  { value: "none", label: "미시도" },
-  { value: "success", label: "성공" },
-  { value: "fail", label: "실패" },
-  { value: "hold", label: "보류" },
-];
-const CLOSING_APPROACH_OPTS = [
-  { value: "pain", label: "통증개선" },
-  { value: "appearance", label: "외형변화" },
-  { value: "value", label: "가치체감" },
-  { value: "other", label: "기타" },
-];
+/* 드롭다운 라벨 맵은 lib/labels.js로 공용 추출됨(SecondOTTab과 공유). */
 
 const emptyMovement = () => ({ observation: "", memberAware: false, plan2nd: "" });
 

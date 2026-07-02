@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
 const RAW_FEEDBACK =
@@ -497,7 +498,7 @@ export default function SecondOTTab({ member }) {
             <div className="space-y-3 rounded-2xl border border-lime-500/40 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/10">
               {cl.approach_tag && (
                 <span className="inline-block rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                  방향: {cl.approach_tag}
+                  방향: {labelOf(CLOSING_APPROACH_OPTS, cl.approach_tag)}
                 </span>
               )}
               {[
