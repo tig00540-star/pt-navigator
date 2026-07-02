@@ -46,6 +46,7 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ObservationTab from "@/components/tabs/ObservationTab";
 import SecondOTTab from "@/components/tabs/SecondOTTab";
+import FirstOTAssist from "@/components/tabs/FirstOTAssist";
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
@@ -1354,6 +1355,9 @@ export default function OTNavigatorDashboard() {
 
         {tab === 1 && (
           <>
+            <div className="mb-6">
+              <FirstOTAssist member={member} />
+            </div>
             {/* ================= HERO ================= */}
         <section className="mb-6">
           <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
