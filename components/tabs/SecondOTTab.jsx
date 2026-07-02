@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  AlertTriangle,
   Brain,
   CheckCircle2,
   Flame,
@@ -19,6 +20,7 @@ import {
   MessageSquareQuote,
   Repeat,
   ShieldCheck,
+  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -144,9 +146,55 @@ export default function SecondOTTab({ member }) {
   const [row1, setRow1] = useState(null); // round-1 전체 행 (closing_result 판정용)
   const [obs, setObs] = useState(null); // round-1 report (관찰)
   const [existingRow2Id, setExistingRow2Id] = useState(null); // round-2 행 id (커밋4~6에서 사용)
-  const [row2Report, setRow2Report] = useState(null); // round-2 report (브리핑 캐시, 커밋4)
+  const [row2Report, setRow2Report] = useState(null); // round-2 report (브리핑 캐시)
+  const [brief, setBrief] = useState(null); // ③ 브리핑 JSON (캐시 또는 생성)
+  const [briefMeta, setBriefMeta] = useState(null); // { generatedAt, model }
+  const [generating, setGenerating] = useState(false);
+  const [aiError, setAiError] = useState("");
 
   const canAI = Boolean(supabase && member?.id);
+
+  // ③ 생성 + round-2 report에 캐시 저장. report만 갱신 → 같은 행의 closing_* 컬럼 보존.
+  const generateBrief = async (obsReport, row2Id) => {
+    setGenerating(true);
+    setAiError("");
+    try {
+      const res = await fetch("/api/ot-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase: "second", member, report: obsReport }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setAiError(d.error || "AI 생성에 실패했습니다.");
+        return;
+      }
+      const data = await res.json();
+      const meta = { generatedAt: new Date().toISOString(), model: "claude-sonnet-5" };
+      const report2 = { brief: data, briefMeta: meta };
+      if (row2Id) {
+        const { data: up } = await supabase
+          .from("ot_log")
+          .update({ report: report2 })
+          .eq("id", row2Id)
+          .select();
+        if (!up || up.length === 0) setAiError("브리핑 저장 실패 — 권한/정책 확인 (0행).");
+      } else {
+        const { data: ins } = await supabase
+          .from("ot_log")
+          .insert({ user_id: member.id, ot_round: 2, report: report2 })
+          .select("id")
+          .single();
+        if (ins?.id) setExistingRow2Id(ins.id);
+      }
+      setBrief(data);
+      setBriefMeta(meta);
+    } catch (e) {
+      setAiError("네트워크 오류: " + (e?.message || "unknown"));
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   // 회원 변경 시 round-1(관찰)·round-2(캐시/클로징) 행 조회.
   useEffect(() => {
@@ -158,10 +206,16 @@ export default function SecondOTTab({ member }) {
           setObs(null);
           setExistingRow2Id(null);
           setRow2Report(null);
+          setBrief(null);
+          setBriefMeta(null);
+          setAiError("");
         }
         return;
       }
       setLoading(true);
+      setBrief(null); // 회원 전환 시 이전 브리핑 즉시 클리어
+      setBriefMeta(null);
+      setAiError("");
       const [res1, res2] = await Promise.all([
         supabase
           .from("ot_log")
@@ -186,6 +240,18 @@ export default function SecondOTTab({ member }) {
       setObs(r1?.report || null);
       setExistingRow2Id(r2?.id || null);
       setRow2Report(r2?.report || null);
+
+      // ③ 캐시 우선: round-2 report.brief 있으면 렌더(재호출 X), 없으면 관찰 있고 미성공 시 1회 생성.
+      const cached = r2?.report?.brief || null;
+      if (cached) {
+        setBrief(cached);
+        setBriefMeta(r2.report.briefMeta || null);
+      } else if (r1?.report && r1?.closing_result !== "success") {
+        await generateBrief(r1.report, r2?.id || null);
+      } else {
+        setBrief(null);
+        setBriefMeta(null);
+      }
     })();
     return () => {
       cancelled = true;
@@ -361,6 +427,166 @@ export default function SecondOTTab({ member }) {
     </div>
   );
 
+  // example(예시 문장)은 흐리게 + "예시" 라벨 — 낭독기 방지(⭐⭐ 철학). §8-훅.
+  const renderExample = (ex) =>
+    ex ? (
+      <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
+        <span className="mr-1 rounded bg-zinc-800/70 px-1 py-0.5 text-[9px] font-semibold text-zinc-500">
+          예시
+        </span>
+        {ex}
+      </p>
+    ) : null;
+
+  /* ---- 실 AI 브리핑 렌더 ---- */
+  const renderBrief = (b, meta) => {
+    const gaps = Array.isArray(b.data_gaps) ? b.data_gaps : [];
+    const bf = b.briefing || {};
+    const cl = b.closing?.[act] || null;
+    const briefRows = [
+      { k: "1차 확인", v: bf.proven_in_1st, c: "text-lime-400" },
+      { k: "혼자 하면 위험", v: bf.risk_if_alone, c: "text-orange-400" },
+      { k: "2차에 증명할 것", v: bf.to_prove_in_2nd, c: "text-sky-400" },
+      { k: "클로징 논리", v: bf.closing_logic, c: "text-lime-400" },
+    ];
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-bold text-lime-400">
+            실 AI
+          </span>
+          {meta?.generatedAt && (
+            <span className="text-[10px] text-zinc-500">
+              생성: {new Date(meta.generatedAt).toLocaleString("ko-KR")}
+            </span>
+          )}
+        </div>
+
+        {gaps.length > 0 && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-300">
+            <div className="mb-1 flex items-center gap-1.5 font-semibold">
+              <AlertTriangle className="h-3.5 w-3.5" /> 데이터 부족 — 트레이너가 채우세요
+            </div>
+            <ul className="list-disc space-y-0.5 pl-4">
+              {gaps.map((gp, i) => (
+                <li key={i}>{gp}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* 등록 당위성 브리핑 */}
+        <section>
+          <Eyebrow icon={Microscope}>등록 당위성 브리핑</Eyebrow>
+          <div className="space-y-2.5 rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
+            {briefRows.map((r) => (
+              <div key={r.k} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5">
+                <div className={`text-[11px] font-semibold uppercase tracking-wider ${r.c}`}>
+                  {r.k}
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-200">{r.v || "—"}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 2차 대화 흐름 (arc) */}
+        <section>
+          <Eyebrow icon={Handshake}>2차 대화 흐름 · arc</Eyebrow>
+          <div className="space-y-2.5">
+            {(b.arc || []).map((beat, i) => (
+              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-semibold text-lime-400">
+                    {beat.when}
+                  </span>
+                  {beat.tone && (
+                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-400">
+                      🗣 {beat.tone}
+                    </span>
+                  )}
+                </div>
+                {beat.intent && (
+                  <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+                    <span className="text-zinc-400">왜: </span>
+                    {beat.intent}
+                  </p>
+                )}
+                {beat.direction && (
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-200">{beat.direction}</p>
+                )}
+                {renderExample(beat.example)}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 실시간 자극 결과별 클로징 (act 클라 스위칭) */}
+        <section>
+          <Eyebrow icon={Flame}>실시간 자극 결과별 클로징</Eyebrow>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-zinc-500">오늘 자극 결과:</span>
+            {SECOND_ACT.map((o) => (
+              <button
+                key={o.id}
+                onClick={() => setAct(o.id)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${actCls(
+                  o.tone,
+                  act === o.id
+                )}`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          {cl ? (
+            <div className="rounded-xl border border-lime-500/20 bg-lime-500/5 p-4">
+              {cl.approach_tag && (
+                <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                  방향: {cl.approach_tag}
+                </span>
+              )}
+              <p className="mt-2 text-sm leading-relaxed text-zinc-200">{cl.logic || "—"}</p>
+              {renderExample(cl.example)}
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-500">이 분기의 클로징 데이터가 없습니다.</p>
+          )}
+        </section>
+
+        {/* 거절 대처 */}
+        <section>
+          <Eyebrow icon={ShieldCheck}>거절 대처</Eyebrow>
+          <div className="space-y-2.5">
+            {(b.objections || []).map((o, i) => (
+              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5">
+                <div className="text-[11px] font-semibold text-orange-400">{o.trigger}</div>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-200">{o.reframe_direction}</p>
+                {renderExample(o.example)}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  };
+
+  // 생성 중 스켈레톤
+  const renderGenerating = () => (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+      <div className="mb-3 flex items-center gap-2 text-xs text-zinc-500">
+        <Sparkles className="h-3.5 w-3.5 text-lime-400" /> 1차 관찰을 근거로 2차 브리핑을 생성하는 중… (최초 1회, 이후 캐시)
+      </div>
+      <div className="space-y-2.5">
+        <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
+        <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
+        <div className="h-3 w-5/6 animate-pulse rounded bg-zinc-800/70" />
+        <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
+        <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
+      </div>
+    </div>
+  );
+
   // ---- 게이트 ----
   if (!canAI) {
     return renderDemo(
@@ -397,6 +623,10 @@ export default function SecondOTTab({ member }) {
     );
   }
 
-  // 관찰 있음 · 미성공 → (커밋4에서 AI 연동). 지금은 데모 폴백 유지.
-  return renderDemo("실 AI 연동 준비 중 — 아래는 예시(하드코딩)입니다.");
+  // 관찰 있음 · 미성공 → ③ 실 AI (캐시 우선).
+  if (generating) return renderGenerating();
+  if (brief) return renderBrief(brief, briefMeta);
+  if (aiError)
+    return renderDemo(`데모 폴백 (AI 실패: ${aiError}) — 아래는 예시(하드코딩)입니다.`);
+  return renderGenerating();
 }
