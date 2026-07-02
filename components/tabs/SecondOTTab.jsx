@@ -475,25 +475,87 @@ export default function SecondOTTab({ member }) {
           </div>
         )}
 
-        {/* 등록 당위성 브리핑 */}
+        {/* ★ 클로징 — 화면 주인공 (4단계 enter→paint→land→hold) */}
         <section>
-          <Eyebrow icon={Microscope}>등록 당위성 브리핑</Eyebrow>
-          <div className="space-y-2.5 rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
+          <Eyebrow icon={Flame}>실시간 자극 결과별 클로징 · 오늘의 주무기</Eyebrow>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-zinc-500">오늘 자극 결과:</span>
+            {SECOND_ACT.map((o) => (
+              <button
+                key={o.id}
+                onClick={() => setAct(o.id)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${actCls(
+                  o.tone,
+                  act === o.id
+                )}`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          {cl ? (
+            <div className="space-y-3 rounded-2xl border border-lime-500/40 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/10">
+              {cl.approach_tag && (
+                <span className="inline-block rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                  방향: {cl.approach_tag}
+                </span>
+              )}
+              {[
+                { key: "enter", label: "① 진입 · So what?", v: cl.enter },
+                { key: "paint", label: "② 그림 · 비유", v: cl.paint, accent: true },
+                { key: "land", label: "③ 착지 · 왜+지금", v: cl.land },
+              ].map((s) => (
+                <div
+                  key={s.key}
+                  className={`rounded-xl border p-4 ${
+                    s.accent
+                      ? "border-orange-500/40 bg-orange-500/10"
+                      : "border-zinc-800 bg-zinc-900/60"
+                  }`}
+                >
+                  <div
+                    className={`text-xs font-semibold uppercase tracking-wider ${
+                      s.accent ? "text-orange-400" : "text-lime-400"
+                    }`}
+                  >
+                    {s.label}
+                  </div>
+                  <p className="mt-1.5 text-base leading-relaxed text-zinc-100">{s.v || "—"}</p>
+                </div>
+              ))}
+              {/* hold — 침묵 강조 */}
+              <div className="rounded-xl border border-dashed border-zinc-600 bg-zinc-950 p-4 text-center">
+                <div className="text-sm font-bold text-zinc-100">🤐 여기서 멈추고 답 기다리기</div>
+                {cl.hold && (
+                  <p className="mt-1 text-[11px] italic leading-relaxed text-zinc-500">{cl.hold}</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-500">이 분기의 클로징 데이터가 없습니다.</p>
+          )}
+        </section>
+
+        {/* 근거들 — 접어둠 (클로징이 주인공) */}
+        <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            등록 당위성 브리핑
+          </summary>
+          <div className="mt-3 space-y-2.5">
             {briefRows.map((r) => (
               <div key={r.k} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5">
-                <div className={`text-[11px] font-semibold uppercase tracking-wider ${r.c}`}>
-                  {r.k}
-                </div>
+                <div className={`text-[11px] font-semibold uppercase tracking-wider ${r.c}`}>{r.k}</div>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-200">{r.v || "—"}</p>
               </div>
             ))}
           </div>
-        </section>
+        </details>
 
-        {/* 2차 대화 흐름 (arc) */}
-        <section>
-          <Eyebrow icon={Handshake}>2차 대화 흐름 · arc</Eyebrow>
-          <div className="space-y-2.5">
+        <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            2차 대화 흐름 · arc
+          </summary>
+          <div className="mt-3 space-y-2.5">
             {(b.arc || []).map((beat, i) => (
               <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
                 <div className="flex flex-wrap items-center gap-2">
@@ -519,54 +581,29 @@ export default function SecondOTTab({ member }) {
               </div>
             ))}
           </div>
-        </section>
+        </details>
 
-        {/* 실시간 자극 결과별 클로징 (act 클라 스위칭) */}
-        <section>
-          <Eyebrow icon={Flame}>실시간 자극 결과별 클로징</Eyebrow>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-zinc-500">오늘 자극 결과:</span>
-            {SECOND_ACT.map((o) => (
-              <button
-                key={o.id}
-                onClick={() => setAct(o.id)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${actCls(
-                  o.tone,
-                  act === o.id
-                )}`}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          {cl ? (
-            <div className="rounded-xl border border-lime-500/20 bg-lime-500/5 p-4">
-              {cl.approach_tag && (
-                <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                  방향: {cl.approach_tag}
-                </span>
-              )}
-              <p className="mt-2 text-sm leading-relaxed text-zinc-200">{cl.logic || "—"}</p>
-              {renderExample(cl.example)}
-            </div>
-          ) : (
-            <p className="text-xs text-zinc-500">이 분기의 클로징 데이터가 없습니다.</p>
-          )}
-        </section>
-
-        {/* 거절 대처 */}
-        <section>
-          <Eyebrow icon={ShieldCheck}>거절 대처</Eyebrow>
-          <div className="space-y-2.5">
+        <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            거절 대처 · 황현진 4유형
+          </summary>
+          <div className="mt-3 space-y-2.5">
             {(b.objections || []).map((o, i) => (
               <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5">
-                <div className="text-[11px] font-semibold text-orange-400">{o.trigger}</div>
-                <p className="mt-1 text-sm leading-relaxed text-zinc-200">{o.reframe_direction}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-md bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-400">
+                    {o.type}
+                  </span>
+                  {o.customer_says && (
+                    <span className="text-[11px] italic text-zinc-400">“{o.customer_says}”</span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">{o.reframe_direction}</p>
                 {renderExample(o.example)}
               </div>
             ))}
           </div>
-        </section>
+        </details>
       </div>
     );
   };
