@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { Footprints, Plus, Save, Smile, Target, X } from "lucide-react";
+import { Footprints, Handshake, Plus, Save, Smile, Target, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
@@ -32,6 +32,18 @@ const GOAL_TYPE_OPTS = [
   { value: "machine_only", label: "기구사용법만" },
   { value: "other", label: "기타" },
 ];
+const CLOSING_RESULT_OPTS = [
+  { value: "none", label: "미시도" },
+  { value: "success", label: "성공" },
+  { value: "fail", label: "실패" },
+  { value: "hold", label: "보류" },
+];
+const CLOSING_APPROACH_OPTS = [
+  { value: "pain", label: "통증개선" },
+  { value: "appearance", label: "외형변화" },
+  { value: "value", label: "가치체감" },
+  { value: "other", label: "기타" },
+];
 
 const emptyMovement = () => ({ observation: "", memberAware: false, plan2nd: "" });
 
@@ -40,6 +52,9 @@ function emptyForm() {
     movements: [emptyMovement()],
     reaction: { stimulus: "normal", attitudeTags: [], memo: "" },
     goal: { identified: false, type: "appearance", detail: "" },
+    memberQuote: "", // report.memberQuote (2차 '1차 소환' 비트 재료)
+    closingResult: "none", // ㉠ closing_result (top-level 컬럼)
+    closingApproach: "other", // ㉠ closing_approach (top-level 컬럼)
   };
 }
 
@@ -68,6 +83,9 @@ function rowToForm(row) {
       type: r.goal?.type || "appearance",
       detail: r.goal?.detail || "",
     },
+    memberQuote: typeof r.memberQuote === "string" ? r.memberQuote : "",
+    closingResult: row?.closing_result || "none",
+    closingApproach: row?.closing_approach || "other",
   };
 }
 
@@ -158,6 +176,7 @@ export default function ObservationTab({ member }) {
     });
   const setGoal = (key, val) =>
     setForm((f) => ({ ...f, goal: { ...f.goal, [key]: val } }));
+  const setTop = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const save = async () => {
     if (!canEdit || saving) return;
@@ -167,13 +186,17 @@ export default function ObservationTab({ member }) {
         movements: form.movements,
         reaction: form.reaction,
         goal: form.goal,
+        memberQuote: form.memberQuote,
       };
       // goal_type / goal_identified 는 report.goal 값을 미러링(조회 편의).
+      // closing_result / closing_approach 는 top-level 컬럼(㉠ 1차 클로징 결과).
       const payload = {
         user_id: member.id,
         ot_round: 1,
         goal_type: form.goal.type,
         goal_identified: form.goal.identified,
+        closing_result: form.closingResult,
+        closing_approach: form.closingApproach,
         report,
       };
       if (existingRowId) {
@@ -372,6 +395,19 @@ export default function ObservationTab({ member }) {
               className={inputCls}
             />
           </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+              회원 한마디 <span className="text-zinc-600">(2차 &lsquo;1차 소환&rsquo; 비트에 쓰임)</span>
+            </label>
+            <input
+              type="text"
+              value={form.memberQuote}
+              onChange={(e) => setTop("memberQuote", e.target.value)}
+              placeholder='예) "왜 아픈지 처음 알았어요"'
+              className={inputCls}
+            />
+          </div>
         </div>
       </section>
 
@@ -423,6 +459,49 @@ export default function ObservationTab({ member }) {
             />
           </div>
         </div>
+      </section>
+
+      {/* ㉠ 1차 클로징 결과 */}
+      <section>
+        <Eyebrow icon={Handshake}>㉠ 1차 클로징 결과</Eyebrow>
+        <div className="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+              클로징 결과
+            </label>
+            <select
+              value={form.closingResult}
+              onChange={(e) => setTop("closingResult", e.target.value)}
+              className={inputCls}
+            >
+              {CLOSING_RESULT_OPTS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+              클로징 방향
+            </label>
+            <select
+              value={form.closingApproach}
+              onChange={(e) => setTop("closingApproach", e.target.value)}
+              className={inputCls}
+            >
+              {CLOSING_APPROACH_OPTS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
+          1차에서 클로징을 시도했다면 결과·방향을 기록하세요. &lsquo;성공&rsquo;이면 2차 OT 탭이 등록 완료로 표시되어 AI 브리핑을 건너뜁니다.
+        </p>
       </section>
 
       {/* 저장 */}
