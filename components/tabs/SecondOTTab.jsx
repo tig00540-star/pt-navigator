@@ -733,7 +733,7 @@ export default function SecondOTTab({ member }) {
   const renderGenerating = () => (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
       <div className="mb-3 flex items-center gap-2 text-xs text-zinc-500">
-        <Sparkles className="h-3.5 w-3.5 text-lime-400" /> 1차 관찰을 근거로 2차 브리핑을 생성하는 중… (최초 1회, 이후 캐시)
+        <Sparkles className="h-3.5 w-3.5 text-lime-400" /> 1차 관찰을 근거로 2차 브리핑을 생성하는 중… 최대 1분 걸릴 수 있어요 (최초 1회, 이후 캐시)
       </div>
       <div className="space-y-2.5">
         <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-800" />

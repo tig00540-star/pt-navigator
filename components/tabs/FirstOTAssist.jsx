@@ -83,6 +83,11 @@ export default function FirstOTAssist({ member }) {
         <Sparkles className="h-4 w-4" strokeWidth={2.5} />
         {loading ? "생성 중…" : "AI 지원 생성"}
       </button>
+      {loading && (
+        <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+          생성 중… 최대 1분 걸릴 수 있어요.
+        </p>
+      )}
 
       {notice && (
         <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">

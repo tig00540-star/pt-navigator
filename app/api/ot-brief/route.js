@@ -9,6 +9,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 export const runtime = "nodejs";
+export const maxDuration = 60; // ③ Sonnet 생성이 최대 ~1분 → Vercel 함수 타임아웃 상향
 
 const MODEL_FIRST = "claude-haiku-4-5-20251001";
 const MODEL_SECOND = "claude-sonnet-5";
