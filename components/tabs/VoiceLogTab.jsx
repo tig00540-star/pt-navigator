@@ -21,6 +21,8 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { fmt } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
 
@@ -75,8 +77,8 @@ export default function VoiceLogTab({ member }) {
   const [report, setReport] = useState(null);
   const [rawText, setRawText] = useState(""); // STT 원본 (DB 저장용)
   const [saved, setSaved] = useState(false);
-  const [toast, setToast] = useState("");
   const [notice, setNotice] = useState(""); // 폴백/권한 안내
+  const { toast, showToast } = useToast();
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -209,11 +211,6 @@ export default function VoiceLogTab({ member }) {
     `3. 홈트레이닝 및 주의사항\n` +
     r.homework.map((h) => `- ${h}`).join("\n") +
     `\n\n— 담당 트레이너 드림`;
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(""), 3500);
-  };
 
   const copyAndSave = async () => {
     const text = buildText(report);
@@ -423,14 +420,7 @@ export default function VoiceLogTab({ member }) {
       )}
 
       {/* 토스트 */}
-      {toast && (
-        <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-          <div className="flex items-center gap-2 rounded-xl border border-lime-500/30 bg-zinc-900 px-4 py-3 text-sm font-medium text-lime-300 shadow-xl">
-            <CheckCircle2 className="h-4 w-4 text-lime-400" />
-            {toast}
-          </div>
-        </div>
-      )}
+      <Toast message={toast} />
     </div>
   );
 }
