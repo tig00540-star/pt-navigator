@@ -26,7 +26,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
+import { CLOSING_APPROACH_OPTS, CLOSING_RESULT_OPTS, labelOf } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
@@ -142,6 +144,9 @@ function buildSecondSales(act) {
   ];
 }
 
+const inputCls =
+  "w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-lime-500/50";
+
 export default function SecondOTTab({ member }) {
   const [act, setAct] = useState("yes");
   const [loading, setLoading] = useState(false);
@@ -153,6 +158,10 @@ export default function SecondOTTab({ member }) {
   const [briefMeta, setBriefMeta] = useState(null); // { generatedAt, model }
   const [generating, setGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [closingResult, setClosingResult] = useState("none"); // ㉠ 2차 클로징 결과
+  const [closingApproach, setClosingApproach] = useState(""); // "" → AI approach_tag로 프리필
+  const [savingClose, setSavingClose] = useState(false);
+  const { toast, showToast } = useToast();
 
   const canAI = Boolean(supabase && member?.id);
 
@@ -202,6 +211,41 @@ export default function SecondOTTab({ member }) {
     }
   };
 
+  // ㉠ 2차 클로징 결과 저장 — round-2 행의 closing_* 컬럼만 갱신(브리핑 report는 보존).
+  const saveClosing = async (approachValue) => {
+    if (!canAI || savingClose) return;
+    setSavingClose(true);
+    try {
+      const payload = { closing_result: closingResult, closing_approach: approachValue };
+      if (existingRow2Id) {
+        const { data, error } = await supabase
+          .from("ot_log")
+          .update(payload) // report 미포함 → 브리핑 캐시 보존
+          .eq("id", existingRow2Id)
+          .select();
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          showToast("저장 안 됨 — 권한/정책을 확인하세요 (0행)");
+          return;
+        }
+      } else {
+        const { data, error } = await supabase
+          .from("ot_log")
+          .insert({ user_id: member.id, ot_round: 2, ...payload })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (data?.id) setExistingRow2Id(data.id);
+      }
+      setClosingApproach(approachValue);
+      showToast("2차 클로징 결과가 저장되었습니다");
+    } catch (e) {
+      showToast("저장 실패: " + (e?.message || "unknown"));
+    } finally {
+      setSavingClose(false);
+    }
+  };
+
   // 회원 변경 시 round-1(관찰)·round-2(캐시/클로징) 행 조회.
   useEffect(() => {
     let cancelled = false;
@@ -215,6 +259,8 @@ export default function SecondOTTab({ member }) {
           setBrief(null);
           setBriefMeta(null);
           setAiError("");
+          setClosingResult("none");
+          setClosingApproach("");
         }
         return;
       }
@@ -246,6 +292,8 @@ export default function SecondOTTab({ member }) {
       setObs(r1?.report || null);
       setExistingRow2Id(r2?.id || null);
       setRow2Report(r2?.report || null);
+      setClosingResult(r2?.closing_result || "none"); // 저장된 2차 클로징 결과 프리필
+      setClosingApproach(r2?.closing_approach || "");
 
       // ③ 캐시 우선: round-2 report.brief 있으면 렌더(재호출 X), 없으면 관찰 있고 미성공 시 1회 생성.
       const cached = r2?.report?.brief || null;
@@ -451,6 +499,8 @@ export default function SecondOTTab({ member }) {
     const cl = b.closing?.[act] || null;
     // 저장된 관찰 해시 vs 현재 관찰 해시 → 다르면 스테일(관찰 수정됨).
     const stale = Boolean(meta?.obsHash && obs && meta.obsHash !== otObsHash(obs));
+    // 클로징 방향 프리필: 저장값 > 현재 분기 AI approach_tag > pain
+    const effApproach = closingApproach || cl?.approach_tag || "pain";
     const briefRows = [
       { k: "1차 확인", v: bf.proven_in_1st, c: "text-lime-400" },
       { k: "혼자 하면 위험", v: bf.risk_if_alone, c: "text-orange-400" },
@@ -544,6 +594,52 @@ export default function SecondOTTab({ member }) {
           )}
         </section>
 
+        {/* ㉠ 2차 클로징 결과 기록 (round-2 closing_* 컬럼 — 브리핑 캐시와 공존) */}
+        <section>
+          <Eyebrow icon={Handshake}>㉠ 2차 클로징 결과 기록</Eyebrow>
+          <div className="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-zinc-500">결과</label>
+              <select
+                value={closingResult}
+                onChange={(e) => setClosingResult(e.target.value)}
+                className={inputCls}
+              >
+                {CLOSING_RESULT_OPTS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+                방향 <span className="text-zinc-600">(AI 제안 프리필)</span>
+              </label>
+              <select
+                value={effApproach}
+                onChange={(e) => setClosingApproach(e.target.value)}
+                className={inputCls}
+              >
+                {CLOSING_APPROACH_OPTS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => saveClosing(effApproach)}
+                disabled={savingClose}
+                className="w-full rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+              >
+                {savingClose ? "저장 중…" : "결과 저장"}
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* 근거들 — 접어둠 (클로징이 주인공) */}
         <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
           <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400">
@@ -628,6 +724,7 @@ export default function SecondOTTab({ member }) {
             </ul>
           </details>
         )}
+        <Toast message={toast} />
       </div>
     );
   };
