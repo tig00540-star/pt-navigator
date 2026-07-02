@@ -18,6 +18,7 @@ import {
   Handshake,
   Microscope,
   MessageSquareQuote,
+  RefreshCw,
   Repeat,
   ShieldCheck,
   Sparkles,
@@ -27,6 +28,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
+import { otObsHash } from "@/lib/otHash";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
 const RAW_FEEDBACK =
@@ -171,7 +173,11 @@ export default function SecondOTTab({ member }) {
         return;
       }
       const data = await res.json();
-      const meta = { generatedAt: new Date().toISOString(), model: "claude-sonnet-5" };
+      const meta = {
+        generatedAt: new Date().toISOString(),
+        model: "claude-sonnet-5",
+        obsHash: otObsHash(obsReport), // 생성 시점 관찰 스냅샷 → 스테일 감지
+      };
       const report2 = { brief: data, briefMeta: meta };
       if (row2Id) {
         const { data: up } = await supabase
@@ -444,6 +450,8 @@ export default function SecondOTTab({ member }) {
     const gaps = Array.isArray(b.data_gaps) ? b.data_gaps : [];
     const bf = b.briefing || {};
     const cl = b.closing?.[act] || null;
+    // 저장된 관찰 해시 vs 현재 관찰 해시 → 다르면 스테일(관찰 수정됨).
+    const stale = Boolean(meta?.obsHash && obs && meta.obsHash !== otObsHash(obs));
     const briefRows = [
       { k: "1차 확인", v: bf.proven_in_1st, c: "text-lime-400" },
       { k: "혼자 하면 위험", v: bf.risk_if_alone, c: "text-orange-400" },
@@ -459,8 +467,21 @@ export default function SecondOTTab({ member }) {
           {meta?.generatedAt && (
             <span className="text-[10px] text-zinc-500">
               생성: {new Date(meta.generatedAt).toLocaleString("ko-KR")}
+              {meta?.obsHash && !stale && " · 현재 관찰 기준"}
             </span>
           )}
+          {stale && (
+            <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+              관찰이 바뀌었습니다 — 재생성 권장
+            </span>
+          )}
+          <button
+            onClick={() => generateBrief(obs, existingRow2Id)}
+            disabled={generating}
+            className="ml-auto flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-lime-500/50 disabled:opacity-50"
+          >
+            <RefreshCw className="h-3 w-3" /> 재생성
+          </button>
         </div>
 
         {gaps.length > 0 && (
