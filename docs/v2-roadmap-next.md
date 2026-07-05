@@ -6,6 +6,10 @@
 >
 > ⚠️ 갱신(S4): ① 1차 OT 강화는 v2-S4에서 완료. 단 '인바디 구조화 입력·캐시'는 착수 시 폐기하고
 > 세션 생성으로 개정됨(docs/v2-sprint4-ot-first.md §3·§8). 이 문서는 S3 시점 스냅샷이며 ② 이후 갱신 예정.
+>
+> ⚠️ 갱신(S5): ② OT/PT 뷰 분리(member_status)는 v2-S5에서 완료 — viewFor 뷰 스위치·등록 origin·
+> 성공≠PT 게이트(수동 확정)·1·2차 클로징 결과·보류 재접근 writer/홈 reader까지(docs/v2-sprint5-member-status.md,
+> v2-sprint5-postscript.md). 남은 ③ PT 관리 뷰·④ 클로징 통계는 백로그. 다음은 ③.
 
 ## 우선순위 원칙 — "완성도 먼저"
 
