@@ -60,6 +60,7 @@ user_table  (기존 행 UPDATE)
   + origin              text   NOT NULL DEFAULT 'ot_funnel'
                                -- 'ot_funnel' | 'handover' | 'external'
   + status_changed_at   timestamptz NULL      -- 선택(전이 시점 기록)
+  + status_note         text   NULL           -- 이탈/보류 사유·인계 메모 (toInactive reason 착지)
 
 ot_log  (round=2 행, closing_* 계열 확장)
   + closing_reapproach_at  date  NULL   -- 보류 재접근 예정일 ("오늘 재접근" 파생 필터용)
@@ -74,13 +75,16 @@ ot_log  (round=1 행)
   `data.length===0`이면 실패 처리(ObservationTab 하드닝과 동일). 이 개방은 ⑦에서 잠글 부채로 기록.
 - **demo 모드:** `DEMO_MEMBER`에 `status`/`origin` 기본값 부여, 모든 신규 DB 콜은 `if (!supabase)` 가드 유지.
 
-**실행한 SQL (v2-S5 step1, Supabase 에디터에서 실행 — 재실행 안전):**
+**실행한 SQL (v2-S5 step1·2, Supabase 에디터에서 실행 — 재실행 안전):**
 ```sql
 -- 1) user_table 라이프사이클 컬럼
 alter table user_table
   add column if not exists status            text not null default 'ot_active',
   add column if not exists origin            text not null default 'ot_funnel',
   add column if not exists status_changed_at timestamptz;
+
+-- 1b) (step2) 이탈/보류 사유 착지 컬럼 (toInactive reason)
+alter table user_table add column if not exists status_note text;
 
 -- 2) ot_log 보류 재접근 예정일 (round=2 closing_* 계열)
 alter table ot_log
