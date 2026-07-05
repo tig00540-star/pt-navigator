@@ -26,7 +26,8 @@
 | ├ v2-S1 | 음성일지 실 AI (마이크→STT→요약, `app/api/voice-log`) | ✅ 완료 |
 | ├ v2-S2 | 1차 OT 관찰 기록 (`ot_log` 데이터 뼈대, `ObservationTab`) | ✅ 완료 |
 | ├ v2-S3 | 관찰 기반 실 AI (2차 등록 당위성 브리핑·클로징 4단계, `app/api/ot-brief` + `SecondOTTab`·`FirstOTAssist`) | ✅ 완료 |
-| └ v2-S4+ | 클로징 통계 대시보드 · 2차 타이밍 추천 · 보안(Auth/RLS/trainer_id) | 🔜 다음 |
+| ├ v2-S4 | 1차 OT 강화 (탭1 legacy 은퇴 → 실 AI, FirstOTTab · app/api/ot-brief phase:first) | ✅ 완료 |
+| └ v2-S5+ | OT/PT 뷰 분리(member_status) · PT 관리 실데이터(payment·session_log) · 클로징 통계 · 보안(Auth/RLS) | 🔜 다음 |
 
 ---
 
@@ -128,8 +129,8 @@ ai_summary   text          -- AI 요약 리포트 본문
 | 회원 등록 · 목록 조회 | ✅ Supabase | |
 | 회원 성향 요약 (Hero) | | ⚠️ 하드코딩 (김철수만 상세) |
 | 1차 OT 관찰·성향 기록 (관찰 기록 탭) | ✅ 실입력 → `ot_log` 저장/업서트 (회원당 1행) | |
-| 1차 OT 대본 · 루틴 · 타임라인 (탭1 기존) | | ⚠️ 하드코딩 |
-| 1차 OT AI 지원 (① 블록 `FirstOTAssist`) | ✅ 실 AI (`app/api/ot-brief` Haiku, 사전메모 비저장·세션 재생성) | (키 미설정 시 미표시) |
+| 1차 OT 대본·루틴·타임라인 (탭1) | ✅ 실 AI (app/api/ot-brief Haiku, phase:first, 세션 재생성·무캐시, 탭1 legacy 은퇴) | (키 미설정 시 미표시) |
+| 1차 OT AI 지원 (① 블록 `FirstOTAssist`) | ✅ 실 AI (`app/api/ot-brief` Haiku, phase:first, 세션 재생성·무캐시) | (키 미설정 시 미표시) |
 | 2차 OT AI (등록 당위성 브리핑·대화 arc·클로징 4단계·거절 대처) | ✅ 실 AI (`app/api/ot-brief` Sonnet, `ot_round=2` `report.brief` 캐시+재생성·스테일 감지) | (키 미설정·실패 시 하드코딩 데모 폴백) |
 | 2차 클로징 결과 기록 (성공/실패/보류 · 방향) | ✅ 실입력 → `ot_log` `ot_round=2` `closing_*` (브리핑 캐시와 같은 행 공존) | |
 | 재등록 CRM 대본 · 타이밍 | | ⚠️ 하드코딩 |
@@ -141,7 +142,7 @@ ai_summary   text          -- AI 요약 리포트 본문
 | 관리자 트레이너 QC | | ⚠️ 하드코딩 |
 | 관리자 마케팅 카피봇 | ✅ 회원 DB 집계 기반 | (카피 문장은 템플릿) |
 
-**요약:** 배관(등록·조회·저장·복사)은 진짜. **음성 AI(STT+요약)는 v2-S1**, **1차 OT 관찰 기록은 v2-S2**(하드코딩→실입력 `ot_log`), **2차 OT AI(등록 당위성 브리핑·클로징 4단계)와 1차 ① 지원은 v2-S3에서 실연동 완료**(관찰 데이터 위에 얹은 실 AI, `app/api/ot-brief`). 남은 데모: 1차 OT 탭 기존 대본·루틴(탭1 legacy), 재등록 CRM 대본, 관리자 KPI/QC — v2 후속에서 교체 예정. (키 미설정 시 각 AI 기능은 하드코딩 데모로 폴백하며 "데모" 라벨로 구분.)
+**요약:** 배관(등록·조회·저장·복사)은 진짜. **음성 AI(STT+요약)는 v2-S1**, **1차 OT 관찰 기록은 v2-S2**(하드코딩→실입력 `ot_log`), **2차 OT AI(등록 당위성 브리핑·클로징 4단계)와 1차 ① 지원은 v2-S3에서 실연동 완료**(관찰 데이터 위에 얹은 실 AI, `app/api/ot-brief`), **1차 OT 탭1 legacy는 v2-S4에서 은퇴·실 AI 교체**. 남은 데모: 재등록 CRM 대본, 관리자 KPI/QC — v2 후속에서 교체 예정. (키 미설정 시 각 AI 기능은 하드코딩 데모로 폴백하며 "데모" 라벨로 구분.)
 
 ---
 

@@ -3,6 +3,9 @@
 > 스프린트 3(관찰 기반 실 AI: `app/api/ot-brief` · `SecondOTTab` · `FirstOTAssist`) 완료 시점에
 > 트레이너와 정리한 향후 방향. 상위 설계는 `docs/MASTERPLAN.md`, 직전 스프린트는
 > `docs/v2-sprint3-ot-brief.md`. 이 문서는 "무엇을 / 왜 / 무엇이 선행돼야 하나"의 순서 지도다.
+>
+> ⚠️ 갱신(S4): ① 1차 OT 강화는 v2-S4에서 완료. 단 '인바디 구조화 입력·캐시'는 착수 시 폐기하고
+> 세션 생성으로 개정됨(docs/v2-sprint4-ot-first.md §3·§8). 이 문서는 S3 시점 스냅샷이며 ② 이후 갱신 예정.
 
 ## 우선순위 원칙 — "완성도 먼저"
 
