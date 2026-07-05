@@ -72,6 +72,8 @@ const inputCls =
 export default function ObservationTab({ member }) {
   const [form, setForm] = useState(emptyForm);
   const [existingRowId, setExistingRowId] = useState(null);
+  // ① 캐시 공존 — 저장 시 report.first_assist를 안 덮게 보존(각 writer 자기 필드만).
+  const [existingFirstAssist, setExistingFirstAssist] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast, showToast } = useToast();
@@ -86,6 +88,7 @@ export default function ObservationTab({ member }) {
         if (!cancelled) {
           setForm(emptyForm());
           setExistingRowId(null);
+          setExistingFirstAssist(null);
         }
         return;
       }
@@ -109,9 +112,11 @@ export default function ObservationTab({ member }) {
       if (row) {
         setForm(rowToForm(row));
         setExistingRowId(row.id);
+        setExistingFirstAssist(row.report?.first_assist ?? null); // ① 캐시 보존용
       } else {
         setForm(emptyForm());
         setExistingRowId(null);
+        setExistingFirstAssist(null);
       }
     })();
     return () => {
@@ -164,6 +169,8 @@ export default function ObservationTab({ member }) {
         reaction: form.reaction,
         goal: form.goal,
         memberQuote: form.memberQuote,
+        // ① 캐시 공존 — 기존 first_assist가 있으면 보존(관찰 저장이 캐시를 덮지 않게).
+        ...(existingFirstAssist ? { first_assist: existingFirstAssist } : {}),
       };
       // goal_type / goal_identified 는 report.goal 값을 미러링(조회 편의).
       // closing_result / closing_approach 는 top-level 컬럼(㉠ 1차 클로징 결과).

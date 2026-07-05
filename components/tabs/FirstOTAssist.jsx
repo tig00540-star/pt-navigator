@@ -4,11 +4,12 @@
    탭1 · ① AI 1차 OT 지원 블록 (추가형 — 탭1 legacy 스캐폴드는 이 커밋에서 미삭제).
    기본정보 → /api/ot-brief {phase:"first"} (S4 확정본) → 6단계 arc·movement_cues
    ·closing_compass·soft_closing. 화면: 핵심 3줄(🧭🎯📍 · 항상 보임) + 펼치기 4개.
-   ⚠️ 데모 폴백 없음 / 캐시·DB 쓰기 없음(세션 생성) — 매 방문 재생성, 재생성=재호출.
+   ⚠️ 데모 폴백 없음. 캐시 = ot_log round-1 `report.first_assist`(관찰 데이터와 공존 · 병합 저장).
+   round-1 행이 없으면(관찰 저장 전) 캐시 스킵 = 세션 전용. inputHash로 스테일 감지(회원 데이터 변경 시).
    example·cueing·dialogue는 '발판(예시)'이라 흐림 처리(낭독 대본 방지).
    ========================================================================= */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sparkles,
   MessageSquareQuote,
@@ -20,12 +21,57 @@ import {
   Target,
 } from "lucide-react";
 import Eyebrow from "@/components/ui/Eyebrow";
+import { supabase } from "@/lib/supabaseClient";
 import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
+import { firstInputHash } from "@/lib/otHash";
 
 export default function FirstOTAssist({ member }) {
-  const [data, setData] = useState(null); // ① brief JSON (세션 전용, 미저장)
+  const [data, setData] = useState(null); // ① brief JSON (캐시 또는 세션)
+  const [meta, setMeta] = useState(null); // { generatedAt, model, inputHash }
   const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState(""); // 실패/키미설정 안내 (데모 폴백 없음)
+  const [notice, setNotice] = useState(""); // 실패/키미설정/세션전용 안내
+  const [row1Id, setRow1Id] = useState(null); // round-1 행 id (없으면 캐시 스킵)
+  const [row1Report, setRow1Report] = useState(null); // round-1 report(병합 대상 — 관찰 보존)
+
+  // 회원 변경 시 round-1 캐시(report.first_assist) 로드. 데모/미설정 시 세션 전용.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setNotice("");
+      if (!supabase || !member?.id) {
+        if (!cancelled) {
+          setRow1Id(null);
+          setRow1Report(null);
+          setData(null);
+          setMeta(null);
+        }
+        return;
+      }
+      const { data: rows } = await supabase
+        .from("ot_log")
+        .select("id, report")
+        .eq("user_id", member.id)
+        .eq("ot_round", 1)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      const row = rows?.[0] || null;
+      setRow1Id(row?.id || null);
+      setRow1Report(row?.report || null);
+      const fa = row?.report?.first_assist || null;
+      if (fa?.data) {
+        setData(fa.data); // 캐시 렌더 (재호출 X)
+        setMeta(fa.meta || null);
+      } else {
+        setData(null);
+        setMeta(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member?.id]);
 
   const generate = async () => {
     setLoading(true);
@@ -45,7 +91,31 @@ export default function FirstOTAssist({ member }) {
         setData(null);
         return;
       }
-      setData(await res.json());
+      const result = await res.json();
+      const newMeta = {
+        generatedAt: new Date().toISOString(),
+        model: "claude-haiku-4-5-20251001",
+        inputHash: firstInputHash(member),
+      };
+      setData(result);
+      setMeta(newMeta);
+
+      // 캐시 저장 = round-1 행이 있을 때만(Option B). report 병합으로 관찰 데이터 보존.
+      if (supabase && member?.id && row1Id) {
+        const merged = { ...(row1Report || {}), first_assist: { data: result, meta: newMeta } };
+        const { data: up } = await supabase
+          .from("ot_log")
+          .update({ report: merged }) // .select() 하드닝 — 0행이면 실패
+          .eq("id", row1Id)
+          .select();
+        if (!up || up.length === 0) {
+          setNotice("① 캐시 저장 실패 — 권한/정책 확인 (0행). 표시는 세션에만 유지됩니다.");
+        } else {
+          setRow1Report(merged);
+        }
+      } else if (supabase && member?.id && !row1Id) {
+        setNotice("관찰 기록 저장 전이라 이 ①은 세션에만 유지됩니다(관찰 저장 후 다시 생성하면 캐시).");
+      }
     } catch (e) {
       setNotice("네트워크 오류: " + (e?.message || "unknown"));
       setData(null);
@@ -53,6 +123,10 @@ export default function FirstOTAssist({ member }) {
       setLoading(false);
     }
   };
+
+  // 캐시 스테일: 저장된 inputHash ≠ 현재 회원 입력 해시 → 재생성 권장.
+  const persisted = Boolean(row1Report?.first_assist);
+  const stale = Boolean(meta?.inputHash && meta.inputHash !== firstInputHash(member));
 
   // example / cueing / dialogue = '발판(예시)' → 흐림 + "예시" 라벨 (낭독기 방지).
   const Example = ({ text }) =>
@@ -95,6 +169,23 @@ export default function FirstOTAssist({ member }) {
           {loading ? "생성 중…" : data ? "다시 생성" : "AI 지원 생성"}
         </button>
       </div>
+
+      {/* 캐시/스테일 상태 */}
+      {data && !loading && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] leading-relaxed text-zinc-500">
+          {meta?.generatedAt && (
+            <span>
+              생성 {new Date(meta.generatedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}
+              {persisted ? " · 캐시됨(재방문 즉시)" : " · 세션 전용"}
+            </span>
+          )}
+          {stale && (
+            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-300">
+              ⚠️ 회원 정보 변경됨 — 다시 생성 권장
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 로딩 — 핵심3줄 스켈레톤 (탭 얼어붙는 느낌 방지) */}
       {loading && (
