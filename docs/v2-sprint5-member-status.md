@@ -75,30 +75,29 @@ ot_log  (round=1 행)
   `data.length===0`이면 실패 처리(ObservationTab 하드닝과 동일). 이 개방은 ⑦에서 잠글 부채로 기록.
 - **demo 모드:** `DEMO_MEMBER`에 `status`/`origin` 기본값 부여, 모든 신규 DB 콜은 `if (!supabase)` 가드 유지.
 
-**실행한 SQL (v2-S5 step1·2, Supabase 에디터에서 실행 — 재실행 안전):**
+**실행한 SQL — ✅ 실행 완료** (v2-S5 step1·2 합본 · 멱등/재실행 안전 · Supabase 에디터에서 실행):
 ```sql
--- 1) user_table 라이프사이클 컬럼
+-- user_table 라이프사이클 컬럼 (status / origin / status_changed_at / status_note)
 alter table user_table
   add column if not exists status            text not null default 'ot_active',
   add column if not exists origin            text not null default 'ot_funnel',
-  add column if not exists status_changed_at timestamptz;
+  add column if not exists status_changed_at timestamptz,
+  add column if not exists status_note       text;
 
--- 1b) (step2) 이탈/보류 사유 착지 컬럼 (toInactive reason)
-alter table user_table add column if not exists status_note text;
-
--- 2) ot_log 보류 재접근 예정일 (round=2 closing_* 계열)
+-- ot_log 보류 재접근 예정일 (round=2 closing_* 계열)
 alter table ot_log
   add column if not exists closing_reapproach_at date;
 
--- 3) user_table UPDATE 정책 (재실행 안전하게 drop→create). anon 개방 = ⑦에서 잠글 부채(§9).
+-- user_table UPDATE 정책 (drop→create 라 재실행 안전). anon 개방 = ⑦에서 잠글 부채(§9).
 drop policy if exists "user_table anon update (v2-② 개방, ⑦에서 잠글 부채)" on user_table;
 create policy "user_table anon update (v2-② 개방, ⑦에서 잠글 부채)"
   on user_table for update to anon, authenticated
   using (true) with check (true);
 ```
-> ⚠️ **정책 end-to-end 미검증** — SQL 에디터 UPDATE는 RLS 우회라 정책 검증이 아니다. anon 키 경로
-> UPDATE 검증은 **Step 5(`toPtActive`)** 에서 `.select()` → `data.length>0`로 처음 한다. 지금은 "걸어뒀지만 미검증".
-> 참고: step1 시점 코드에 `user_table` UPDATE 경로 없음(INSERT/SELECT만) → 여태 조용히 실패한 편집 없음.
+> ✅ **컬럼 반영 확인(step3·4):** 등록 폼 INSERT가 origin/status를 실제로 저장 — raw 행 조회로
+> external→`status=pt_active`(기본값 아님=payload 명시)·handover→`pt_active`·ot_funnel→`ot_active` 확인.
+> ⚠️ **UPDATE 정책은 걸어뒀으나 anon 경로 end-to-end는 아직 미검증** — SQL 에디터 UPDATE는 RLS 우회라
+> 검증이 아니다. anon 키 UPDATE 검증은 **Step 5(`toPtActive`)** 에서 `.select()` → `data.length>0`로 처음 한다.
 
 ## 4. 상태 규칙 모듈 — `lib/memberStatus.js` (순수)
 React·supabase 의존 없음. **전이 함수는 "쓸 필드 패치"를 반환**하고, 실제 update+가드는 호출부가 한다
