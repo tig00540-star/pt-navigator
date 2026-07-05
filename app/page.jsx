@@ -29,7 +29,8 @@ import ObservationTab from "@/components/tabs/ObservationTab";
 import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
-import { viewFor, initialStatus } from "@/lib/memberStatus";
+import PtConfirmBanner from "@/components/views/PtConfirmBanner";
+import { viewFor, initialStatus, toPtActive } from "@/lib/memberStatus";
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
@@ -901,6 +902,30 @@ export default function OTNavigatorDashboard() {
   // ② 라이프사이클 뷰 — 매핑은 memberStatus 모듈에만(여기선 status 직접 비교 X).
   const view = viewFor(member);
 
+  // 로컬 member status 갱신(낙관적/롤백용).
+  const setMemberStatus = (id, status) =>
+    setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, status } : m)));
+
+  // 수동 'PT 등록 확정' — toPtActive 패치 + UPDATE 하드닝(.select() 0행이면 실패). 성공 시만 pt_active 유지.
+  const confirmPtActive = async () => {
+    const prev = member.status;
+    const patch = toPtActive(member);
+    setMemberStatus(member.id, "pt_active"); // 낙관적 → 즉시 PTView
+    if (!supabase) return; // 데모: DB 안 치고 로컬만
+    const { data, error } = await supabase
+      .from("user_table")
+      .update(patch)
+      .eq("id", member.id)
+      .select();
+    if (error || !data || data.length === 0) {
+      setMemberStatus(member.id, prev); // 롤백
+      setDbNote(
+        "PT 등록 확정 실패 — user_table UPDATE 정책/권한 확인 (0행 갱신)" +
+          (error ? ": " + error.message : "")
+      );
+    }
+  };
+
 
 
   return (
@@ -988,6 +1013,10 @@ export default function OTNavigatorDashboard() {
       )}
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}
+        {view === "ot" && (
+          <PtConfirmBanner member={member} onConfirm={confirmPtActive} />
+        )}
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
         <MemberViewShell member={member}>
           {tab === 0 && (
