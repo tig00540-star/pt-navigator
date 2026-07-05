@@ -9,13 +9,9 @@ import {
   CheckCircle2,
   ChevronRight,
   CreditCard,
-  Dumbbell,
-  Gauge,
   Handshake,
   Heart,
   Lightbulb,
-  Pause,
-  Play,
   Search,
   ShieldCheck,
   Sparkles,
@@ -26,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { fmt, won } from "@/lib/format";
+import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ObservationTab from "@/components/tabs/ObservationTab";
@@ -71,49 +67,6 @@ function mapMemberRow(r) {
       : ["AI 성향 요약은 회원 데이터를 바탕으로 곧 생성됩니다."],
   };
 }
-
-const PHASES = [
-  {
-    id: "assess",
-    n: "01",
-    title: "체형 평가 & 인바디 리뷰",
-    range: "0 – 10분",
-    duration: 10,
-    color: "sky",
-    icon: User,
-    goals: ["정적 정렬·좌우 비대칭 체크", "인바디 수치 → 목표 역산", "우측 무릎 부하 가설 공유"],
-  },
-  {
-    id: "mobility",
-    n: "02",
-    title: "가동성 테스트 (무릎·고관절)",
-    range: "10 – 20분",
-    duration: 10,
-    color: "lime",
-    icon: Gauge,
-    goals: ["무릎 굴곡 통증 각도 측정", "고관절 내·외전 ROM 확인", "안전 운동 각도 확정"],
-  },
-  {
-    id: "main",
-    n: "03",
-    title: "메인 운동 (통증 우회 하체)",
-    range: "20 – 45분",
-    duration: 25,
-    color: "orange",
-    icon: Dumbbell,
-    goals: ["센터 기구 매칭 루틴 실행", "통증 0 유지하며 자극 확인", "'되네?' 순간 만들기"],
-  },
-  {
-    id: "closing",
-    n: "04",
-    title: "세일즈 클로징 (데이터 브리핑)",
-    range: "45 – 60분",
-    duration: 15,
-    color: "emerald",
-    icon: Handshake,
-    goals: ["오늘 측정값 요약 브리핑", "12주 예상 수치 제시", "등록 제안 → 데이터로 결정 유도"],
-  },
-];
 
 /* ---- 탭 메타 ---- */
 const TABS = [
@@ -915,25 +868,6 @@ export default function OTNavigatorDashboard() {
   const member =
     members.find((m) => m.id === selectedId) || members[0] || DEMO_MEMBER;
 
-  const [activeId, setActiveId] = useState("assess");
-  const [elapsed, setElapsed] = useState(0);
-  const [running, setRunning] = useState(false);
-  const active = PHASES.find((p) => p.id === activeId);
-  const cap = active.duration * 60;
-  const progress = Math.min(elapsed / cap, 1);
-  const overtime = elapsed > cap;
-
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [running]);
-
-  const selectPhase = (id) => {
-    setActiveId(id);
-    setElapsed(0);
-    setRunning(true);
-  };
 
 
   return (
@@ -987,31 +921,6 @@ export default function OTNavigatorDashboard() {
                 <ShieldCheck className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">관리자</span>
               </a>
-
-              {tab === 1 && (
-                <>
-                  <div className="hidden text-right sm:block">
-                    <div className="text-[10px] uppercase tracking-wider text-zinc-500">
-                      {active.n} · {active.title.split(" ")[0]}
-                    </div>
-                    <div
-                      className={`font-mono text-sm font-semibold ${
-                        overtime ? "text-red-400" : C[active.color].text
-                      }`}
-                    >
-                      {fmt(elapsed)}{" "}
-                      <span className="text-zinc-600">/ {active.duration}:00</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setRunning((r) => !r)}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
-                    aria-label={running ? "타이머 일시정지" : "타이머 시작"}
-                  >
-                    {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  </button>
-                </>
-              )}
             </div>
           </div>
 
@@ -1057,17 +966,7 @@ export default function OTNavigatorDashboard() {
         )}
 
         {tab === 1 && (
-          <FirstOTTab
-            member={member}
-            C={C}
-            phases={PHASES}
-            activeId={activeId}
-            elapsed={elapsed}
-            running={running}
-            progress={progress}
-            overtime={overtime}
-            selectPhase={selectPhase}
-          />
+          <FirstOTTab member={member} />
         )}
 
         {tab === 2 && <SecondOTTab member={member} />}
