@@ -30,6 +30,7 @@ import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
+import ReapproachToday from "@/components/views/ReapproachToday";
 import { viewFor, initialStatus, toPtActive } from "@/lib/memberStatus";
 
 /* =========================================================================
@@ -764,6 +765,9 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
 
   return (
     <div>
+      {/* Step7 reader — 오늘 재접근(보류 도래분). 선택 시 해당 회원으로(onSelect → 1차 OT). */}
+      <ReapproachToday members={members} onSelect={onSelect} />
+
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
