@@ -28,6 +28,8 @@ import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ObservationTab from "@/components/tabs/ObservationTab";
 import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
+import MemberViewShell from "@/components/views/MemberViewShell";
+import { viewFor, initialStatus } from "@/lib/memberStatus";
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
@@ -586,6 +588,7 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
     mbti: "",
     pain: "",
     goal: "",
+    origin: "ot_funnel", // ② 진입 문 — status는 여기서 파생(손으로 status 안 고름 · §7)
   });
   const [picked, setPicked] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -615,6 +618,9 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
       pain: form.pain || null,
       goal: form.goal || null,
       machines: picked,
+      origin: form.origin,
+      status: initialStatus(form.origin), // ot_funnel→ot_active, 그 외→pt_active(PT 직행 §1.5)
+      status_changed_at: new Date().toISOString(),
     });
     setSaving(false);
     if (error) {
@@ -673,6 +679,23 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
               />
             </div>
           ))}
+        </div>
+
+        {/* ② 진입 문(origin) — status는 여기서 파생. status 드롭다운은 만들지 않음(§7). */}
+        <div className="mt-3">
+          <label className="mb-1 block text-[11px] font-medium text-zinc-500">등록 유형</label>
+          <select
+            value={form.origin}
+            onChange={set("origin")}
+            className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-lime-500/50"
+          >
+            <option value="ot_funnel">신규 (OT 진행)</option>
+            <option value="handover">인계받은 PT</option>
+            <option value="external">외부 PT 등록</option>
+          </select>
+          <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">
+            인계·외부 PT는 OT 없이 바로 PT 뷰로 시작합니다(§1.5). 상태는 자동 결정.
+          </p>
         </div>
 
         {/* 보유머신 */}
@@ -875,6 +898,9 @@ export default function OTNavigatorDashboard() {
   const member =
     members.find((m) => m.id === selectedId) || members[0] || DEMO_MEMBER;
 
+  // ② 라이프사이클 뷰 — 매핑은 memberStatus 모듈에만(여기선 status 직접 비교 X).
+  const view = viewFor(member);
+
 
 
   return (
@@ -931,23 +957,25 @@ export default function OTNavigatorDashboard() {
             </div>
           </div>
 
-          {/* 탭 네비게이션 */}
-          <nav className="-mb-px flex gap-1 overflow-x-auto whitespace-nowrap">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
-                  tab === t.id ? "text-lime-400" : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                {t.label}
-                {tab === t.id && (
-                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-lime-400" />
-                )}
-              </button>
-            ))}
-          </nav>
+          {/* 탭 네비게이션 — OT 뷰에서만(관련 없는 탭 숨김 · §7) */}
+          {view === "ot" && (
+            <nav className="-mb-px flex gap-1 overflow-x-auto whitespace-nowrap">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
+                    tab === t.id ? "text-lime-400" : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  {t.label}
+                  {tab === t.id && (
+                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-lime-400" />
+                  )}
+                </button>
+              ))}
+            </nav>
+          )}
         </div>
       </header>
 
@@ -960,26 +988,29 @@ export default function OTNavigatorDashboard() {
       )}
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-        {tab === 0 && (
-          <MemberListTab
-            members={members}
-            selectedId={selectedId}
-            onSelect={(id) => {
-              setSelectedId(id);
-              setTab(1);
-            }}
-            onAdd={() => setShowForm(true)}
-          />
-        )}
+        {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
+        <MemberViewShell member={member}>
+          {tab === 0 && (
+            <MemberListTab
+              members={members}
+              selectedId={selectedId}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setTab(1);
+              }}
+              onAdd={() => setShowForm(true)}
+            />
+          )}
 
-        {tab === 1 && (
-          <FirstOTTab member={member} />
-        )}
+          {tab === 1 && (
+            <FirstOTTab member={member} />
+          )}
 
-        {tab === 2 && <SecondOTTab member={member} />}
-        {tab === 3 && <CRMTab />}
-        {tab === 4 && <VoiceLogTab member={member} />}
-        {tab === 5 && <ObservationTab member={member} />}
+          {tab === 2 && <SecondOTTab member={member} />}
+          {tab === 3 && <CRMTab />}
+          {tab === 4 && <VoiceLogTab member={member} />}
+          {tab === 5 && <ObservationTab member={member} />}
+        </MemberViewShell>
       </main>
 
 
