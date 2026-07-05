@@ -111,12 +111,23 @@ toInactive(member, reason) → { status:'inactive', status_changed_at }
 
 ## 5. 뷰 층
 - **MemberViewShell** — `viewFor(member)`로 스위치:
-  `ot` → OTView(1·2차 OT 탭) · `pt` → PTView(재등록·세션, 실데이터는 ③) · `inactive` → 간단 뷰.
+  `ot` → OTView(1·2차 OT 탭, 세일즈/클로징 중심) · `pt` → PTView · `inactive` → 간단 뷰.
+- **PTView의 목적 = 만족도 관리(재등록은 그 결과).** OT가 "등록시키는 수단"이라 세일즈 중심인 것과
+  달리, PT는 "관리로 만족도를 올려 재등록으로 잇는 수단"이라 뷰 본체가 **운동일지·현 상태·앞으로의
+  목적·방향**이다. 재등록(만기·잔여세션·타이밍, ③)은 이 관리 뷰 **위에 얹히는** 축이지 출발점이 아니다.
+- **⚠️ PTView는 origin 독립이어야 한다.** 인계·외부 PT 회원(§1.5)은 `ot_log`가 아예 없다. 따라서
+  PT 뷰가 `ot_log`에 **필수 의존하면 안 된다** — 없어도 뷰가 성립해야 한다. 구성(하이브리드):
+  - **본체:** `daily_workout_log`(음성 AI 일지, S1) 회원 타임라인 — origin 무관, PT 시작 후 누구나 쌓임.
+  - **살아있는 상태:** "현재 방향/목표" 필드 — origin 무관, PT면 다 가짐. OT 있었으면 그 목표에서 출발,
+    없으면 첫 세션에 트레이너가 잡음. (③에서 구현, `user_table` 컬럼 1개로 시작 가능.)
+  - **참고(옵션):** `ot_log`(OT 스냅샷)가 **있으면** 과거 관찰·목표 참고 표시, **없어도 무해**.
+- **②의 범위:** PTView는 **shell만 연다**(위 의도의 자리). 내용물(일지 타임라인·현재 방향·재등록)은 ③.
+  Step 3에서 PT 분기가 빈 껍데기여도 이 의도가 박혀 있어야 ③에서 방향이 안 틀어진다.
 - 각 뷰는 별도 컴포넌트로 분리(`components/views/` 또는 기존 `components/tabs/` 축 연장).
-  **기존 탭을 OTView로 감싸는 것부터** = 회귀 최소. 제로 리팩터링 아님, `components/tabs/` 추출 축 연장.
-- **lazy 가능한 구조로 짜되** `next/dynamic` 실제 적용은 optional(지연 ≫ 번들). 구조만 통짜가 아니면 됨.
-- **홈 "오늘 할 일"** — `reapproachToday()` + (③)만기임박. 앱 열면 회원 사냥 없이 오늘 연락 대상이 뜸.
-- **규칙:** 새 기능은 `page.jsx`에 슬래브로 쌓지 말고 각자 (lazy) 컴포넌트로 진입. ③·⑤도 이 규칙으로.
+  **기존 탭을 OTView로 감싸는 것부터** = 회귀 최소.
+- **lazy 가능한 구조로** 짜되 `next/dynamic` 실제 적용은 optional(지연 ≫ 번들).
+- **홈 "오늘 할 일"** — `reapproachToday()` + (③)만기임박.
+- **규칙:** 새 기능은 `page.jsx`에 슬래브로 쌓지 말고 각자 (lazy) 컴포넌트로 진입. ③·⑤도 이 규칙.
 
 ## 6. 전이 규칙
 ```
@@ -152,4 +163,6 @@ inactive  --(재활성)--> ot_active | pt_active          [백로그 · 수동]
 - **보안:** user_table anon UPDATE 개방분 + 기존 anon 전면 개방 → ⑦(로그인/RLS)에서 일괄 잠금.
 - **미룬 상태/기능:** `ot_held` 상태화 · `ot_won` · `pt_expiring`(③) · inactive 재활성 · 인계 풀 플로우(⑦).
 - **다음(③) 선행:** `payment`·`session_log`가 붙으면 `pt_expiring` 파생 + `ot→pt` 자동 트리거로 승격.
+- **③ PT 뷰 본체:** `daily_workout_log` 회원 타임라인 + "현재 방향" 필드(`user_table` 컬럼 1개) —
+  origin 독립. OT 스냅샷(`ot_log`)은 옵션 참고. (§5 하이브리드.)
 - `origin` 값 사용처가 늘면 그때 리포트/통계에서 분기(데이터는 등록부터 3값으로 쌓아둠).
