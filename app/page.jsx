@@ -42,6 +42,8 @@ const DEMO_MEMBER = {
   pain: "우측 무릎 통증",
   goal: "바디프로필",
   session: "1차 OT",
+  status: "ot_active", // ② member_status — 라이프사이클 상태
+  origin: "ot_funnel", // ② 진입 문 (ot_funnel | handover | external)
   summary: [
     "논리와 근거로 움직이는 실용주의자 — '왜'가 해결되면 즉시 실행에 옮기는 결과지향형.",
     "장시간 좌식 근무로 고관절 굴곡근 단축 추정 → 우측 무릎에 누적 부하가 걸릴 구조.",
@@ -62,6 +64,10 @@ function mapMemberRow(r) {
     goal: r.goal ?? "미설정",
     machines: r.machines ?? [],
     session: "1차 OT",
+    // ② member_status — 컬럼 미반영(마이그레이션 전)·demo 행에서도 기본값으로 안전.
+    status: r.status ?? "ot_active",
+    origin: r.origin ?? "ot_funnel",
+    status_changed_at: r.status_changed_at ?? null,
     summary: r.name === DEMO_MEMBER.name
       ? DEMO_MEMBER.summary
       : ["AI 성향 요약은 회원 데이터를 바탕으로 곧 생성됩니다."],
