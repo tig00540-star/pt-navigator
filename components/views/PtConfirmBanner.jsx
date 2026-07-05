@@ -41,8 +41,9 @@ export default function PtConfirmBanner({ member, onConfirm }) {
     };
   }, [member?.id]);
 
+  // ⚠️ 값은 CLOSING_RESULT_OPTS 영문('success') — 저장 경로와 동일(한글 아님).
   const success =
-    rounds.round1?.closing_result === "성공" || rounds.round2?.closing_result === "성공";
+    rounds.round1?.closing_result === "success" || rounds.round2?.closing_result === "success";
   // 게이트: ot_active + 성공(both round). pt_active면 안 뜸(§1 성공≠PT).
   if (member?.status !== "ot_active" || !success) return null;
 
