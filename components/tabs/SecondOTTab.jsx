@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
+import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
 import { CLOSING_APPROACH_OPTS, CLOSING_RESULT_OPTS, labelOf } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
@@ -160,6 +161,7 @@ export default function SecondOTTab({ member }) {
   const [aiError, setAiError] = useState("");
   const [closingResult, setClosingResult] = useState("none"); // ㉠ 2차 클로징 결과
   const [closingApproach, setClosingApproach] = useState(""); // "" → AI approach_tag로 프리필
+  const [closingReapproachAt, setClosingReapproachAt] = useState(""); // 보류 재접근 예정일
   const [savingClose, setSavingClose] = useState(false);
   const { toast, showToast } = useToast();
 
@@ -216,7 +218,14 @@ export default function SecondOTTab({ member }) {
     if (!canAI || savingClose) return;
     setSavingClose(true);
     try {
-      const payload = { closing_result: closingResult, closing_approach: approachValue };
+      const payload = {
+        closing_result: closingResult,
+        closing_approach: approachValue,
+        // 보류일 때만 재접근 예정일 top-level 추가(그 외 미포함). report(브리핑 캐시)·closing_* 안 덮음.
+        ...(closingResult === "hold"
+          ? { closing_reapproach_at: closingReapproachAt || null }
+          : {}),
+      };
       if (existingRow2Id) {
         const { data, error } = await supabase
           .from("ot_log")
@@ -261,6 +270,7 @@ export default function SecondOTTab({ member }) {
           setAiError("");
           setClosingResult("none");
           setClosingApproach("");
+          setClosingReapproachAt("");
         }
         return;
       }
@@ -294,6 +304,7 @@ export default function SecondOTTab({ member }) {
       setRow2Report(r2?.report || null);
       setClosingResult(r2?.closing_result || "none"); // 저장된 2차 클로징 결과 프리필
       setClosingApproach(r2?.closing_approach || "");
+      setClosingReapproachAt(r2?.closing_reapproach_at || "");
 
       // ③ 캐시 우선: round-2 report.brief 있으면 렌더(재호출 X), 없으면 관찰 있고 미성공 시 1회 생성.
       const cached = r2?.report?.brief || null;
@@ -637,6 +648,16 @@ export default function SecondOTTab({ member }) {
                 {savingClose ? "저장 중…" : "결과 저장"}
               </button>
             </div>
+
+            {/* 보류('hold')일 때만 재접근 예정일 (B안: 프리셋 + 수동) — full width */}
+            {closingResult === "hold" && (
+              <div className="sm:col-span-3">
+                <ReapproachDateField
+                  value={closingReapproachAt}
+                  onChange={setClosingReapproachAt}
+                />
+              </div>
+            )}
           </div>
         </section>
 

@@ -11,6 +11,7 @@ import { Footprints, Handshake, Plus, Save, Smile, Target, X } from "lucide-reac
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
+import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
 import {
   STIMULUS_OPTS,
@@ -32,6 +33,7 @@ function emptyForm() {
     memberQuote: "", // report.memberQuote (2차 '1차 소환' 비트 재료)
     closingResult: "none", // ㉠ closing_result (top-level 컬럼)
     closingApproach: "other", // ㉠ closing_approach (top-level 컬럼)
+    closingReapproachAt: "", // 보류 재접근 예정일 (closing_reapproach_at, date)
   };
 }
 
@@ -63,6 +65,7 @@ function rowToForm(row) {
     memberQuote: typeof r.memberQuote === "string" ? r.memberQuote : "",
     closingResult: row?.closing_result || "none",
     closingApproach: row?.closing_approach || "other",
+    closingReapproachAt: row?.closing_reapproach_at || "",
   };
 }
 
@@ -181,6 +184,10 @@ export default function ObservationTab({ member }) {
         goal_identified: form.goal.identified,
         closing_result: form.closingResult,
         closing_approach: form.closingApproach,
+        // 보류일 때만 재접근 예정일 top-level 추가(그 외엔 미포함=미변경). report·closing_* 안 덮음.
+        ...(form.closingResult === "hold"
+          ? { closing_reapproach_at: form.closingReapproachAt || null }
+          : {}),
         report,
       };
       if (existingRowId) {
@@ -482,6 +489,16 @@ export default function ObservationTab({ member }) {
               ))}
             </select>
           </div>
+
+          {/* 보류('hold')일 때만 재접근 예정일 (B안: 프리셋 + 수동) */}
+          {form.closingResult === "hold" && (
+            <div className="sm:col-span-2">
+              <ReapproachDateField
+                value={form.closingReapproachAt}
+                onChange={(v) => setTop("closingReapproachAt", v)}
+              />
+            </div>
+          )}
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
           1차에서 클로징을 시도했다면 결과·방향을 기록하세요. &lsquo;성공&rsquo;이면 2차 OT 탭이 등록 완료로 표시되어 AI 브리핑을 건너뜁니다.
