@@ -170,3 +170,8 @@ inactive  --(재활성)--> ot_active | pt_active          [백로그 · 수동]
 - **③ PT 뷰 본체:** `daily_workout_log` 회원 타임라인 + "현재 방향" 필드(`user_table` 컬럼 1개) —
   origin 독립. OT 스냅샷(`ot_log`)은 옵션 참고. (§5 하이브리드.)
 - `origin` 값 사용처가 늘면 그때 리포트/통계에서 분기(데이터는 등록부터 3값으로 쌓아둠).
+- **[미래] 스케줄표(PT/OT 수업 일정 관리):** 로드맵상 ③(session_log) 뒤 · ⑦(trainer_id·다중 트레이너
+  소유권) 언저리. "회원 × 시간 × 수업종류(PT/OT)"라 member_status(수업종류)+session_log(수업=행)와
+  구조가 맞물림. **미리 값싸게:** ③에서 session_log 설계 시 예정 일시 필드(scheduled_at 등) 자리만
+  비워두면 스케줄표가 거의 공짜(값은 나중·자리는 미리 = S2 ot_log 컬럼 선반영과 같은 논리). 슬롯제
+  (정시 칸) vs 자유시간은 착수 시 결정 — 겹침/정원 규칙 난이도가 갈림.
