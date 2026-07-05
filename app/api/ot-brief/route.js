@@ -103,6 +103,14 @@ example(예시 문장 — 발판, 낭독기 아님) / tone(말투).
 data_gaps는 결핍이 아니라 '더하면 좋아지는 것'이다("○○를 관찰해오시면 △△까지 짚어드릴 수 있어요"
 형태의 긍정 코칭). 기본정보가 충실하면 빈 배열 또는 1개 이하로(억지로 채우지 말 것).
 
+[분량 — 간결히 (생성 속도·현장 가독성)] 각 자유텍스트는 아래 상한을 지켜 짧게 쓴다. 내용·의미 규칙
+(공감>압박, 숫자·URL 금지 등)은 그대로 두고 '길이만' 압축한다(필드를 비우거나 빼지는 말 것).
+ - hypothesis: 2문장 이내.
+ - arc 각 비트: intent·direction 각 1문장, example 1문장(낭독 대본 아님·발판이라 짧게), tone 짧게.
+ - movement_cues: cueing·dialogue 각 1문장(예시·흐림), exercise·why_instant·connects_to_closing·principle 각 1~2문장.
+ - closing_compass: why_higher_odds·watch_for 각 2문장 이내.
+ - soft_closing: logic·example 각 1~2문장.
+ - data_gaps: 있으면 항목당 1문장, 없으면 빈 배열.
 [출력 언어·형식] 모든 텍스트는 자연스러운 한국어. 영문 코드값(pain, appearance 등)·필드명을 출력에
 노출 금지. 반드시 아래 JSON 스키마만 출력. 설명·마크다운·코드펜스 금지.
 {
@@ -229,16 +237,109 @@ function sanitizeFieldNames(node) {
   return node;
 }
 
-/** 모델 응답 텍스트에서 JSON 객체만 추출해 파싱 (코드펜스 방어) + data_gaps 기본값. */
-function parseBrief(text) {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) {
-    throw new Error("AI 응답에서 JSON을 찾지 못했습니다.");
+// ── JSON 추출 하드닝 (haiku가 ```json 여러 블록 + ---·**[...]** 구분자로 쪼개 뱉는 경우 대비) ──
+
+/** 코드펜스·마크다운 구분자 라인 제거. */
+function stripFencesAndMarkers(text) {
+  return text
+    .replace(/```+\s*json/gi, "")
+    .replace(/```+/g, "")
+    .replace(/^\s*-{3,}\s*$/gm, "")
+    .replace(/^\s*\*\*\[[^\]\n]*\]\*\*\s*$/gm, "");
+}
+
+/** start 이후 '첫 완전한 최상위 객체'의 [본문, 끝인덱스]. 없으면 null.
+    문자열 리터럴 속 중괄호·이스케이프는 무시. 균형이 안 맞으면(잘림 등) null. */
+function balancedFrom(text, start) {
+  const open = text.indexOf("{", start);
+  if (open === -1) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = open; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === "{") depth++;
+    else if (ch === "}" && --depth === 0) return [text.slice(open, i + 1), i + 1];
   }
-  const obj = JSON.parse(text.slice(start, end + 1));
-  if (!Array.isArray(obj.data_gaps)) obj.data_gaps = [];
-  return obj;
+  return null;
+}
+
+function firstBalancedObject(text) {
+  const r = balancedFrom(text, 0);
+  return r ? r[0] : null;
+}
+
+/** 등장 순서대로 '모든 최상위 완전 객체'를 파싱해 반환(파싱 안 되는 조각은 스킵). */
+function allBalancedObjects(text) {
+  const out = [];
+  let pos = 0, r;
+  while ((r = balancedFrom(text, pos)) !== null) {
+    try { out.push(JSON.parse(r[0])); } catch { /* 조각 스킵 */ }
+    pos = r[1];
+  }
+  return out;
+}
+
+/** 최상위 객체들을 얕게(1-depth) union. 키가 하나라도 겹치면(오염 위험) null.
+    ⚠️ 딥머지 아님 — 최상위 키만 합친다(중첩 재귀병합 금지). */
+function guardedUnion(objs) {
+  const union = {};
+  for (const o of objs) {
+    if (!o || typeof o !== "object" || Array.isArray(o)) continue;
+    for (const k of Object.keys(o)) {
+      if (k in union) return null; // 키 충돌 → 병합 거부(disjoint일 때만 채택)
+      union[k] = o[k];
+    }
+  }
+  return union;
+}
+
+/** 모델 응답 텍스트 → JSON 객체 + data_gaps 기본값. requiredKeys를 주면 그 키가 모두 있어야 '완전'.
+    1순위: 펜스·구분자 제거 후 단일 파싱(대개 한 객체를 감싼 것뿐).
+    2순위: 실패/불완전 시 '첫 완전한 최상위 객체' 균형 추출.
+    3순위: 그래도 불완전하면(haiku가 스키마를 여러 완전객체로 쪼갠 경우) guarded-union —
+           비겹침(disjoint)일 때만 최상위 키 union. 겹치면 거부. union 결과도 완전성 재확인.
+    완전한 객체를 못 얻으면 실패(부분객체 채택 안 함). */
+function parseBrief(text, requiredKeys = []) {
+  const cleaned = stripFencesAndMarkers(text);
+  const complete = (o) =>
+    o && typeof o === "object" && !Array.isArray(o) &&
+    (requiredKeys.length === 0 || requiredKeys.every((k) => k in o));
+  const finalize = (o) => {
+    if (!Array.isArray(o.data_gaps)) o.data_gaps = [];
+    return o;
+  };
+
+  // 1순위 — 펜스 제거 후 단일 파싱
+  let single = null;
+  try {
+    const s = cleaned.indexOf("{"), e = cleaned.lastIndexOf("}");
+    if (s !== -1 && e > s) single = JSON.parse(cleaned.slice(s, e + 1));
+  } catch { single = null; }
+  if (complete(single)) return finalize(single);
+
+  // 2순위 — 첫 완전한 최상위 객체
+  const chunk = firstBalancedObject(cleaned);
+  let first = null;
+  if (chunk !== null) { try { first = JSON.parse(chunk); } catch { first = null; } }
+  if (complete(first)) return finalize(first);
+
+  // 3순위 — guarded-union (비겹침일 때만)
+  const objs = allBalancedObjects(cleaned);
+  if (objs.length > 1) {
+    const union = guardedUnion(objs);
+    if (complete(union)) return finalize(union);
+  }
+
+  if (single || first || objs.length) {
+    throw new Error("스키마 불완전(다중블록 병합 실패 또는 필수 키 누락).");
+  }
+  throw new Error("AI 응답에서 완전한 JSON 객체를 찾지 못했습니다.");
 }
 
 export async function POST(request) {
@@ -283,7 +384,12 @@ export async function POST(request) {
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
-    const brief = sanitizeFieldNames(parseBrief(textOut));
+    // first는 필수 키를 넘겨 스키마 완전성까지 파서가 보장(부분객체·다중블록 방어).
+    // second는 별도 스키마라 키 미지정(1순위 단일 파싱 — 기존 동작 유지, 회귀 없음).
+    const REQUIRED_FIRST = ["hypothesis", "arc", "movement_cues", "closing_compass", "soft_closing"];
+    const brief = sanitizeFieldNames(
+      parseBrief(textOut, phase === "first" ? REQUIRED_FIRST : [])
+    );
     return Response.json(brief);
   } catch (e) {
     return Response.json(
