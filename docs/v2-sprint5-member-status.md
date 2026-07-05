@@ -142,6 +142,10 @@ ot_active --(트레이너 명시 종결)--> inactive
 pt_active --(만기임박)--> pt_expiring                  [③ 파생 · ②에선 미구현]
 inactive  --(재활성)--> ot_active | pt_active          [백로그 · 수동]
 ```
+> **1차 클로징 결과 저장 위치(사실 기록):** `closing_result`/`closing_approach`는 `FirstOTTab`이 아니라
+> **`ObservationTab`(관찰 기록 탭)이 `ot_round=1` 행에 저장**한다(top-level 컬럼). 그래서 성공/보류 판정은
+> **round-1·round-2 both를 읽어야 한다** — 1차 즉등록(round-1 성공)·1차 보류가 존재하기 때문.
+> 참고: `SecondOTTab`은 이미 **round-1 성공 시 2차 브리핑을 스킵**하는 게이트를 가짐(1차 성공=2차 불요, 기존재).
 
 ## 7. 편의성 원칙 (현장 daily — 매일 쓰는 트레이너, 폰, 수업 중/사이)
 - 회원 선택 즉시 **"지금 할 일" 노출**, 탭 6개 사냥 0.
@@ -161,6 +165,9 @@ inactive  --(재활성)--> ot_active | pt_active          [백로그 · 수동]
 5. 수동 'PT 등록 확정' 액션(`toPtActive`, 클로징과 별개).
 6. ① 캐시 `report.first_assist`(round-2 brief 패턴 대칭 + 스테일 훅).
 7. 홈 "오늘 재접근" 파생 리스트(`reapproachToday`).
+   - ⚠️ **선행 필수:** `closing_reapproach_at`는 **현재 writer가 없다**(컬럼 + reader `reapproachToday`만 존재,
+     저장 경로 0). Step 7 전에 **보류 클로징 저장 시 재접근 예정일을 기록하는 writer**를 붙여야 파생이 돈다.
+     저장 위치 — **1차 보류 = `ObservationTab`**, **2차 보류 = `SecondOTTab`**의 보류 클로징 경로.
 
 ## 9. 넘어가는 부채·백로그
 - **보안:** user_table anon UPDATE 개방분 + 기존 anon 전면 개방 → ⑦(로그인/RLS)에서 일괄 잠금.
