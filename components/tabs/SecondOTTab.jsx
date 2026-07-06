@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
+  Wrench,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -513,6 +514,50 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             })}
           </div>
         </section>
+
+        {/* 자극 결과별 운동 대처(stimulus_response) — 클로징과 분리(세일즈 아님·운동 도구). 옛 캐시엔 없어 방어 렌더. */}
+        {b.stimulus_response && (
+          <section>
+            <Eyebrow icon={Wrench}>자극 결과별 운동 대처 · 수업 전 준비</Eyebrow>
+            <p className="mb-3 text-[11px] leading-relaxed text-zinc-500">
+              세일즈가 아니라 &lsquo;몸을 어떻게 조정하나&rsquo;. 수업 전에 3갈래를 미리 훑어두세요.
+            </p>
+            <div className="space-y-3">
+              {["yes", "partial", "no"].map((id) => {
+                const s = b.stimulus_response?.[id] || null;
+                return (
+                  <details key={id} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+                    <summary className="cursor-pointer">
+                      <span className="rounded-md bg-zinc-800/70 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
+                        {ACT_LABEL[id]}
+                      </span>
+                    </summary>
+                    <div className="mt-3">
+                      {s ? (
+                        <div className="space-y-2.5 rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+                          <div>
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">원인</div>
+                            <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{s.cause || "—"}</p>
+                          </div>
+                          <div className="rounded-lg border border-lime-500/25 bg-lime-500/5 p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-lime-400">조정 방향</div>
+                            <p className="mt-0.5 text-base leading-relaxed text-zinc-100">{s.adjustment || "—"}</p>
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">노리는 것</div>
+                            <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{s.direction || "—"}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-500">이 분기 대처 데이터가 없습니다.</p>
+                      )}
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* 근거들 — 접어둠 (클로징이 주인공) */}
         <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
