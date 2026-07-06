@@ -4,12 +4,20 @@
    inactive 뷰 — 종결된 회원. 간단 플레이스홀더. 재활성은 수동(백로그).
    ========================================================================= */
 
-import { UserX } from "lucide-react";
+import { ChevronLeft, UserX } from "lucide-react";
 import Eyebrow from "@/components/ui/Eyebrow";
 
-export default function InactiveView({ member }) {
+export default function InactiveView({ member, onGoList }) {
   return (
     <section className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-6">
+      {onGoList && (
+        <button
+          onClick={onGoList}
+          className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 transition hover:text-emerald-400"
+        >
+          <ChevronLeft className="h-4 w-4" /> 회원 목록
+        </button>
+      )}
       <Eyebrow icon={UserX}>종결된 회원 (inactive)</Eyebrow>
       <h1 className="text-xl font-bold text-zinc-100">{member.name}</h1>
       {member.status_note && (

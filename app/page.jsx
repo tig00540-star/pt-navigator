@@ -589,6 +589,8 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
     pain: "",
     goal: "",
     origin: "ot_funnel", // ② 진입 문 — status는 여기서 파생(손으로 status 안 고름 · §7)
+    carrySessions: "", // 인계·외부(handover/external)만 — 이월 잔여 세션
+    carryPrice: "", // 이월 회당단가(급여 원천이라 인계도 보존 · 매출 제외는 buildContract)
   });
   const [picked, setPicked] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -607,26 +609,56 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
       setErr("Supabase가 아직 설정되지 않았어요. .env.local의 키를 확인하세요.");
       return;
     }
-    setSaving(true);
-    setErr("");
-    const { error } = await supabase.from("user_table").insert({
-      name: form.name.trim(),
-      age: form.age ? Number(form.age) : null,
-      job: form.job || null,
-      residence: form.residence || null,
-      mbti: form.mbti || null,
-      pain: form.pain || null,
-      goal: form.goal || null,
-      machines: picked,
-      origin: form.origin,
-      status: initialStatus(form.origin), // ot_funnel→ot_active, 그 외→pt_active(PT 직행 §1.5)
-      status_changed_at: new Date().toISOString(),
-    });
-    setSaving(false);
-    if (error) {
-      setErr(error.message);
+    // 인계·외부는 이월 잔여가 필요 — user INSERT 전에 검증(잘못된 등록 방지).
+    const isCarry = form.origin !== "ot_funnel";
+    if (isCarry && !(Number(form.carrySessions) > 0 && Number(form.carryPrice) > 0)) {
+      setErr("인계·외부 등록은 남은 세션수·회당단가가 필요합니다");
       return;
     }
+    setSaving(true);
+    setErr("");
+    const { data: u, error } = await supabase
+      .from("user_table")
+      .insert({
+        name: form.name.trim(),
+        age: form.age ? Number(form.age) : null,
+        job: form.job || null,
+        residence: form.residence || null,
+        mbti: form.mbti || null,
+        pain: form.pain || null,
+        goal: form.goal || null,
+        machines: picked,
+        origin: form.origin,
+        status: initialStatus(form.origin), // ot_funnel→ot_active, 그 외→pt_active(PT 직행 §1.5)
+        status_changed_at: new Date().toISOString(),
+      })
+      .select(); // 새 회원 id를 받아 이월계약에 연결
+    if (error || !u || u.length === 0) {
+      setSaving(false);
+      setErr(error ? error.message : "등록 실패(0행)");
+      return;
+    }
+    // 이월계약 INSERT (handover/external만) — 실패해도 회원은 등록됨(PT 뷰 '계약 등록'으로 회복).
+    if (isCarry) {
+      const payload = buildContract({
+        userId: u[0].id,
+        origin: form.origin, // handover/external → counts_as_revenue=false(매출 제외)
+        sessions_total: Number(form.carrySessions),
+        price_per_session: Number(form.carryPrice),
+        amount_total: null, // 이월은 매출 아님
+        service_sessions: 0,
+      });
+      const { data: c, error: cErr } = await supabase
+        .from("session_log")
+        .insert(payload)
+        .select();
+      if (cErr || !c || c.length === 0) {
+        setSaving(false);
+        setErr("회원은 등록됐지만 이월계약 저장 실패 — PT 뷰의 '계약 등록'으로 마저 등록하세요");
+        return;
+      }
+    }
+    setSaving(false);
     onSaved();
   };
 
@@ -697,6 +729,35 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
             인계·외부 PT는 OT 없이 바로 PT 뷰로 시작합니다(§1.5). 상태는 자동 결정.
           </p>
         </div>
+
+        {/* 이월 계약 — handover/external만. ot_funnel은 계약을 ① PT 확정 때 생성. */}
+        {form.origin !== "ot_funnel" && (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium text-zinc-500">남은 세션수 *</span>
+              <input
+                type="number"
+                value={form.carrySessions}
+                onChange={set("carrySessions")}
+                placeholder="20"
+                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium text-zinc-500">회당단가(원) *</span>
+              <input
+                type="number"
+                value={form.carryPrice}
+                onChange={set("carryPrice")}
+                placeholder="50000"
+                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+              />
+            </label>
+            <p className="col-span-2 text-[10px] text-zinc-500">
+              인계·외부 PT는 이월 계약으로 잔여가 잡힙니다(매출 제외).
+            </p>
+          </div>
+        )}
 
         {/* 보유머신 */}
         <div className="mt-3">

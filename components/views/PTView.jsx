@@ -10,11 +10,12 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, Dumbbell, NotebookPen, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
+import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
+import ContractAmountFields from "@/components/views/ContractAmountFields";
 
 export default function PTView({ member, onGoList }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
@@ -24,7 +25,26 @@ export default function PTView({ member, onGoList }) {
   const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
   const [saving, setSaving] = useState(false);
+  // 계약 등록 회복 모달(①/② 실패 회복 · ③ 재등록 씨앗) — 금액 4칸은 ContractAmountFields 재사용.
+  const [showContract, setShowContract] = useState(false);
+  const [cSessions, setCSessions] = useState("");
+  const [cPrice, setCPrice] = useState("");
+  const [cAmountEdited, setCAmountEdited] = useState("");
+  const [cSvc, setCSvc] = useState("");
+  const [cErr, setCErr] = useState("");
+  const [cSaving, setCSaving] = useState(false);
   const { toast, showToast } = useToast();
+
+  // 회원 변경 시 계약 모달 상태 리셋 → 이전 회원값 오등록 방지. (early return 없어 위치 자유)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowContract(false);
+    setCSessions("");
+    setCPrice("");
+    setCAmountEdited("");
+    setCSvc("");
+    setCErr("");
+  }, [member?.id]);
 
   // 회원 변경 시 계약·수업로그 로드. setState는 async IIFE 안에서만(set-state-in-effect 회피).
   useEffect(() => {
@@ -57,6 +77,7 @@ export default function PTView({ member, onGoList }) {
   const active = activeContract(contracts, logs);
   const rem = remainingSessions(active, logs);
   const due = reregisterDue(active, logs);
+  const cAuto = (Number(cSessions) || 0) * (Number(cPrice) || 0); // 총액 자동(수정 없으면)
 
   // 음성 STT 결과 → textarea 채움(이후 손편집). 기존 body 덮어씀(녹음은 의도적 행위).
   const handleVoiceResult = (raw, summaryText) => {
@@ -149,6 +170,42 @@ export default function PTView({ member, onGoList }) {
     setSaving(false);
   };
 
+  // 계약 등록 — buildContract INSERT + .select() 하드닝. 성공 시 contracts 낙관적 추가(잔여 즉시 반영).
+  const saveContract = async () => {
+    if (cSaving) return;
+    if (!(Number(cSessions) > 0 && Number(cPrice) > 0)) {
+      setCErr("세션수·회당단가를 입력하세요");
+      return;
+    }
+    setCErr("");
+    setCSaving(true);
+    const payload = buildContract({
+      userId: member.id,
+      origin: member.origin,
+      sessions_total: Number(cSessions),
+      price_per_session: Number(cPrice),
+      amount_total: cAmountEdited === "" ? cAuto : Number(cAmountEdited) || cAuto,
+      service_sessions: cSvc === "" ? 0 : Number(cSvc) || 0,
+    });
+    if (!supabase) {
+      setContracts((p) => [...p, { ...payload, id: `demo-${Date.now()}` }]);
+      setShowContract(false);
+      setCSaving(false);
+      showToast("계약 등록됨(데모)");
+      return;
+    }
+    const { data, error } = await supabase.from("session_log").insert(payload).select();
+    if (error || !data || data.length === 0) {
+      setCErr("저장 실패 — 다시 시도하세요");
+      setCSaving(false);
+      return;
+    }
+    setContracts((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 반영
+    setShowContract(false);
+    setCSaving(false);
+    showToast("계약 등록됨 · 잔여 반영");
+  };
+
   return (
     <div className="space-y-6">
       {onGoList && (
@@ -198,10 +255,18 @@ export default function PTView({ member, onGoList }) {
               )}
             </div>
           ) : (
-            <p className="flex items-center gap-2 text-sm text-zinc-400">
-              <Dumbbell className="h-4 w-4 shrink-0 text-zinc-600" />
-              활성 계약 없음 — 등록/재등록이 필요합니다.
-            </p>
+            <div>
+              <p className="flex items-center gap-2 text-sm text-zinc-400">
+                <Dumbbell className="h-4 w-4 shrink-0 text-zinc-600" />
+                활성 계약 없음 — 등록/재등록이 필요합니다.
+              </p>
+              <button
+                onClick={() => setShowContract(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1.5 text-xs font-bold text-zinc-950 transition active:scale-95"
+              >
+                <Dumbbell className="h-3.5 w-3.5" /> 계약 등록
+              </button>
+            </div>
           )}
         </div>
 
@@ -241,6 +306,59 @@ export default function PTView({ member, onGoList }) {
           </button>
         </div>
       </section>
+
+      {/* 계약 등록 모달 — PtConfirmBanner 확인모달과 동일 톤. buildContract·ContractAmountFields 재사용. */}
+      {showContract && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => !cSaving && setShowContract(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 shrink-0 text-emerald-400" />
+              <h3 className="text-base font-bold text-zinc-100">계약 등록</h3>
+            </div>
+            <p className="mb-4 text-xs text-zinc-500">
+              세션수·회당단가를 입력하면 총액이 자동 계산됩니다(할인이면 총액 수정).
+            </p>
+
+            <div className="mb-3">
+              <ContractAmountFields
+                sessions={cSessions} price={cPrice} amountEdited={cAmountEdited} svc={cSvc}
+                autoAmount={cAuto} disabled={cSaving}
+                onChange={(k, v) => {
+                  if (k === "sessions") setCSessions(v);
+                  else if (k === "price") setCPrice(v);
+                  else if (k === "amountEdited") setCAmountEdited(v);
+                  else if (k === "svc") setCSvc(v);
+                }}
+              />
+            </div>
+
+            {cErr && <p className="mb-3 text-xs font-medium text-red-400">{cErr}</p>}
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowContract(false)}
+                disabled={cSaving}
+                className="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 active:scale-95 disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={saveContract}
+                disabled={cSaving}
+                className="rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+              >
+                {cSaving ? "등록 중…" : "등록"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Toast message={toast} />
     </div>
