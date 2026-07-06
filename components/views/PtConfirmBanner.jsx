@@ -9,9 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-
-const inputCls =
-  "w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50";
+import ContractAmountFields from "@/components/views/ContractAmountFields";
 
 export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
   const [rounds, setRounds] = useState({ round1: null, round2: null });
@@ -139,30 +137,17 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
             </p>
 
             {/* 계약 금액 — 세션수·회당단가 입력 시 총액 자동(할인이면 총액 수정). */}
-            <div className="mb-3 grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-zinc-500">세션수 *</span>
-                <input type="number" value={sessions} onChange={(e) => setSessions(e.target.value)} disabled={busy} placeholder="24" className={inputCls} />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-zinc-500">회당단가(원) *</span>
-                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} disabled={busy} placeholder="60000" className={inputCls} />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-zinc-500">총액(원) · 자동</span>
-                <input
-                  type="number"
-                  value={amountEdited !== "" ? amountEdited : autoAmount ? String(autoAmount) : ""}
-                  onChange={(e) => setAmountEdited(e.target.value)}
-                  disabled={busy}
-                  placeholder="자동 계산"
-                  className={inputCls}
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-zinc-500">서비스 세션</span>
-                <input type="number" value={svc} onChange={(e) => setSvc(e.target.value)} disabled={busy} placeholder="0" className={inputCls} />
-              </label>
+            <div className="mb-3">
+              <ContractAmountFields
+                sessions={sessions} price={price} amountEdited={amountEdited} svc={svc}
+                autoAmount={autoAmount} disabled={busy}
+                onChange={(k, v) => {
+                  if (k === "sessions") setSessions(v);
+                  else if (k === "price") setPrice(v);
+                  else if (k === "amountEdited") setAmountEdited(v);
+                  else if (k === "svc") setSvc(v);
+                }}
+              />
             </div>
 
             {err && <p className="mb-3 text-xs font-medium text-red-400">{err}</p>}
