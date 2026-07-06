@@ -8,15 +8,16 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, Compass, Dumbbell, History, NotebookPen, UserX } from "lucide-react";
+import { ChevronLeft, Compass, Dumbbell, History, NotebookPen, RefreshCw, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
+import { activeContract, remainingSessions, reregisterDue, buildContract, latestContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
-import { SOURCE_OPTS, labelOf } from "@/lib/labels";
+import ReapproachDateField from "@/components/ui/ReapproachDateField";
+import { SOURCE_OPTS, REG_RESULT_OPTS, REG_REASON_OPTS, labelOf } from "@/lib/labels";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
 function fmtDT(iso) {
@@ -51,6 +52,11 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
   const [direction, setDirection] = useState(member.pt_direction ?? "");
   const [editingDir, setEditingDir] = useState(false);
   const [dirSaving, setDirSaving] = useState(false);
+  // 재등록 결과 기록(④ 작업4-1) — 최신 계약 행 session_log.reg_* UPDATE. 성공≠자동갱신(기록만).
+  const [regResult, setRegResult] = useState("none");
+  const [regReason, setRegReason] = useState("");
+  const [regReapproachAt, setRegReapproachAt] = useState("");
+  const [regSaving, setRegSaving] = useState(false);
   const { toast, showToast } = useToast();
 
   // 회원 변경 시 계약 모달 상태 리셋 → 이전 회원값 오등록 방지. (early return 없어 위치 자유)
@@ -64,6 +70,9 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     setCErr("");
     setDirection(member.pt_direction ?? ""); // 방향 재시드(회원별 값)
     setEditingDir(false);
+    setRegResult("none"); // 재등록 결과는 계약 로드 시 시드(#2 effect) — 여기선 회원전환 기본값
+    setRegReason("");
+    setRegReapproachAt("");
     // pt_direction은 id 변경 시에만 재시드(저장 후 낙관적 patch와 재시드 충돌 방지) — 의도된 dep 제외.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member?.id]);
@@ -99,6 +108,19 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
   const active = activeContract(contracts, logs);
   const rem = remainingSessions(active, logs);
   const due = reregisterDue(active, logs);
+  const latest = latestContract(contracts); // 재등록 결과 기록 대상(잔여 무관 최신 계약)
+
+  // 재등록 결과 폼 시드 — 대상 행(latest)이 바뀔 때만 그 행의 reg_* 반영.
+  // 회원 전환·새 계약 추가로 latest가 바뀌면 재시드 / saveReg 낙관적 patch(같은 id)는 재시드 안 함(편집 중 안 튐).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRegResult(latest?.reg_result ?? "none");
+    setRegReason(latest?.reg_reason ?? "");
+    setRegReapproachAt(latest?.reg_reapproach_at ?? "");
+    // latest 객체는 매 렌더 새로 파생 → id만 의존.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latest?.id]);
+
   const cAuto = (Number(cSessions) || 0) * (Number(cPrice) || 0); // 총액 자동(수정 없으면)
   // 타임라인 — session_at ?? created_at 역순. 저장 시 append돼도 정렬이 최신을 위로.
   const timeline = [...logs].sort(
@@ -260,6 +282,38 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     showToast("현재 방향 저장됨");
   };
 
+  // 재등록 결과 기록 — 최신 계약 행에 reg_*만 UPDATE(+.select() 하드닝). report·타 컬럼 미포함(reg_brief 공존 보존).
+  const saveReg = async () => {
+    if (regSaving || !latest) return;
+    setRegSaving(true);
+    const payload = {
+      reg_result: regResult,
+      // 이유는 보류·실패에만, 재접근일은 보류에만(성공/미시도는 그 필드 안 건드림).
+      ...(regResult === "hold" || regResult === "fail" ? { reg_reason: regReason || null } : {}),
+      ...(regResult === "hold" ? { reg_reapproach_at: regReapproachAt || null } : {}),
+    };
+    if (!supabase) {
+      setContracts((p) => p.map((c) => (c.id === latest.id ? { ...c, ...payload } : c)));
+      showToast("재등록 결과 저장됨(데모)");
+      setRegSaving(false);
+      return;
+    }
+    // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패(UPDATE 정책 없으면). .select() length>0로 확정.
+    const { data, error } = await supabase
+      .from("session_log")
+      .update(payload)
+      .eq("id", latest.id)
+      .select();
+    if (error || !data || data.length === 0) {
+      showToast("저장 실패 — 다시 시도하세요");
+      setRegSaving(false);
+      return;
+    }
+    setContracts((p) => p.map((c) => (c.id === data[0].id ? data[0] : c)));
+    showToast("재등록 결과 저장됨");
+    setRegSaving(false);
+  };
+
   return (
     <div className="space-y-6">
       {onGoList && (
@@ -407,6 +461,66 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
           </button>
         </div>
       </section>
+
+      {/* 재등록 결과 기록 (④ 작업4-1) — 최신 계약 행 reg_* UPDATE. 계약 있을 때만 노출. */}
+      {latest && (
+        <details className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+            <Eyebrow icon={RefreshCw}>재등록 결과 기록</Eyebrow>
+            {due && (
+              <span className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                재등록 타이밍
+              </span>
+            )}
+          </summary>
+          <div className="mt-4 space-y-3">
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium text-zinc-500">결과</span>
+              <select
+                value={regResult}
+                onChange={(e) => setRegResult(e.target.value)}
+                disabled={regSaving}
+                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+              >
+                {REG_RESULT_OPTS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </label>
+            {(regResult === "hold" || regResult === "fail") && (
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-zinc-500">이유</span>
+                <select
+                  value={regReason}
+                  onChange={(e) => setRegReason(e.target.value)}
+                  disabled={regSaving}
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+                >
+                  <option value="">선택 안 함</option>
+                  {REG_REASON_OPTS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {regResult === "hold" && (
+              <ReapproachDateField value={regReapproachAt} onChange={setRegReapproachAt} />
+            )}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[10px] leading-relaxed text-zinc-500">
+                성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 다음 단계 &lsquo;재등록 확정&rsquo;에서.
+              </p>
+              <button
+                onClick={saveReg}
+                disabled={regSaving}
+                className="shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1.5 text-xs font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+              >
+                {regSaving ? "저장 중…" : "저장"}
+              </button>
+            </div>
+          </div>
+        </details>
+      )}
 
       {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
