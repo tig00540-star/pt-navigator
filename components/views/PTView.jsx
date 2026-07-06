@@ -8,7 +8,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, Compass, Dumbbell, History, NotebookPen, RefreshCw, UserX } from "lucide-react";
+import { ChevronLeft, Compass, Dumbbell, History, NotebookPen, RefreshCw, Sparkles, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue, buildContract, latestContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
+import RegBriefView from "@/components/views/RegBriefView";
 import { SOURCE_OPTS, REG_RESULT_OPTS, REG_REASON_OPTS, labelOf } from "@/lib/labels";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
@@ -57,6 +58,11 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
   const [regReason, setRegReason] = useState("");
   const [regReapproachAt, setRegReapproachAt] = useState("");
   const [regSaving, setRegSaving] = useState(false);
+  // 재등록 AI 브리핑(④ 작업4-2c) — latest.report.reg_brief 캐시, 재방문 재호출 0.
+  const [regBrief, setRegBrief] = useState(null);
+  const [regBriefMeta, setRegBriefMeta] = useState(null);
+  const [regGenerating, setRegGenerating] = useState(false);
+  const [regAiError, setRegAiError] = useState("");
   const { toast, showToast } = useToast();
 
   // 회원 변경 시 계약 모달 상태 리셋 → 이전 회원값 오등록 방지. (early return 없어 위치 자유)
@@ -122,6 +128,9 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     setRegResult(latest?.reg_result ?? "none");
     setRegReason(latest?.reg_reason ?? "");
     setRegReapproachAt(latest?.reg_reapproach_at ?? "");
+    setRegBrief(latest?.report?.reg_brief ?? null); // 캐시 시드(재방문 재호출 0)
+    setRegBriefMeta(latest?.report?.regBriefMeta ?? null);
+    setRegAiError("");
     // latest 객체는 매 렌더 새로 파생 → id만 의존.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latest?.id]);
@@ -317,6 +326,45 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     setContracts((p) => p.map((c) => (c.id === data[0].id ? data[0] : c)));
     showToast("재등록 결과 저장됨");
     setRegSaving(false);
+  };
+
+  // 재등록 AI 브리핑 생성 — /api/ot-brief phase:"reregister" 호출 + latest.report 캐시(SecondOTTab generateBrief 미러).
+  const generateReReg = async () => {
+    if (regGenerating) return;
+    setRegGenerating(true);
+    setRegAiError("");
+    try {
+      const ptContext = {
+        contract_count: contracts.length,
+        remaining: { paid: rem.paid, service: rem.service },
+        recent_logs: timeline.filter((l) => !l.voided && l.ai_summary).slice(0, 5).map((l) => l.ai_summary),
+      };
+      const res = await fetch("/api/ot-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase: "reregister", member, ptContext }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setRegAiError(d.error || "AI 생성에 실패했습니다.");
+        return;
+      }
+      const data = await res.json();
+      const meta = { generatedAt: new Date().toISOString(), model: "claude-sonnet-5" };
+      setRegBrief(data);
+      setRegBriefMeta(meta);
+      // 캐시 — latest.report에 공존 저장(session_log UPDATE · .select() 하드닝). supabase·latest 있을 때만.
+      if (supabase && latest?.id) {
+        const nextReport = { ...(latest.report || {}), reg_brief: data, regBriefMeta: meta };
+        const { data: up } = await supabase.from("session_log").update({ report: nextReport }).eq("id", latest.id).select();
+        if (!up || up.length === 0) setRegAiError("브리핑 저장 실패 — 권한/정책 확인(0행). 이번 세션엔 표시됩니다.");
+        else setContracts((p) => p.map((c) => (c.id === up[0].id ? up[0] : c)));
+      }
+    } catch (e) {
+      setRegAiError("네트워크 오류: " + (e?.message || "unknown"));
+    } finally {
+      setRegGenerating(false);
+    }
   };
 
   return (
@@ -533,6 +581,32 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
               >
                 {regSaving ? "저장 중…" : "저장"}
               </button>
+            </div>
+
+            {/* AI 지원 — 재등록 브리핑(생성·캐시). reg_reason 기록분을 강조. */}
+            <div className="mt-1 border-t border-zinc-800 pt-4">
+              {!regBrief ? (
+                <button
+                  onClick={generateReReg}
+                  disabled={regGenerating}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20 active:scale-95 disabled:opacity-50"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> {regGenerating ? "생성 중…" : "AI 지원 — 재등록 브리핑"}
+                </button>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-zinc-500">{regBriefMeta?.generatedAt ? `생성: ${new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR")}` : "재등록 브리핑"}</span>
+                  <button
+                    onClick={generateReReg}
+                    disabled={regGenerating}
+                    className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-[11px] font-medium text-zinc-400 transition hover:border-emerald-500/50 hover:text-emerald-300 disabled:opacity-50"
+                  >
+                    <RefreshCw className="h-3 w-3" /> {regGenerating ? "생성 중…" : "재생성"}
+                  </button>
+                </div>
+              )}
+              {regAiError && <p className="mt-2 text-[11px] text-amber-400">{regAiError}</p>}
+              <RegBriefView brief={regBrief} highlightReason={regReason} />
             </div>
           </div>
         </details>
