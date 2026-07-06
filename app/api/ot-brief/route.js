@@ -170,6 +170,15 @@ ${JSON.stringify(
    골격으로(진입→그림→착지→침묵). 각 분기에 approach_tag 제안.
    "마지막 OT"급으로 확실하되, 압박이 아니라 '깊이 이해받았다'는 공감으로.
 4) objections(거절 대처): 황현진 4유형(망설임·거부·의심·재확인)으로. 반박이 아니라 '공감으로 빗장 풀기'.
+5) stimulus_response(자극반응별 운동 대처 · 수업 전 준비물): 오늘 자극 결과 3분기(yes/partial/no)별로
+   트레이너가 '수업 전에 미리 숙지'할 운동 대처를 설계하라. 이건 세일즈(closing)가 아니라 '몸을 어떻게
+   조정하나'다. 각 분기:
+   · cause: 그 반응이 나온 원인(1차 관찰 근거로. 없는 원인 창작 금지).
+   · adjustment: 수업 중 적용할 조정 '방향'. ⚠️ 숫자 처방 절대 금지(각도·템포·세트·횟수·중량 X) —
+     움직임 방향까지만("발끝 안쪽·상체 전방 힙힌지" O / "15도·3세트" X).
+   · direction: 그 조정으로 노리는 목표(예: 앞허벅지 차단→둔근 단독 점화).
+   yes 분기는 '대처'가 아니라 '잘 온 세팅을 어떻게 각인·유지하나'로. partial/no는 '무엇을 바꿔 자극을
+   끌어올리나'로. ⚠️ no라고 '그러니 등록하라'는 세일즈로 새지 말 것 — 여긴 운동 대처만, 세일즈는 closing 소관.
 
 [클로징 4단계 골격 — 각 분기 필수]
   enter(진입):  "등록" 단어로 시작 금지. 오늘 회원 몸에서 일어난 사실을 짚고 "그래서 회원에게
@@ -220,7 +229,12 @@ ${JSON.stringify(
     "partial": { "approach_tag": "...", "enter": "...", "paint": "...", "land": "...", "hold": "..." },
     "no":      { "approach_tag": "...", "enter": "...", "paint": "...", "land": "...", "hold": "..." }
   },
-  "objections": [ { "type": "망설임|거부|의심|재확인", "customer_says": "이 유형이 흔히 하는 말", "reframe_direction": "공감으로 빗장 푸는 방향(반박 아님)", "example": "..." } ]
+  "objections": [ { "type": "망설임|거부|의심|재확인", "customer_says": "이 유형이 흔히 하는 말", "reframe_direction": "공감으로 빗장 푸는 방향(반박 아님)", "example": "..." } ],
+  "stimulus_response": {
+    "yes":     { "cause": "...", "adjustment": "숫자 없이 방향만", "direction": "..." },
+    "partial": { "cause": "...", "adjustment": "...", "direction": "..." },
+    "no":      { "cause": "...", "adjustment": "...", "direction": "..." }
+  }
 }`;
 }
 
@@ -240,6 +254,7 @@ const FIELD_TERMS = [
   // B2 재료 필드명 — 값 텍스트 누출 방어(trainer_note·sales_intensity).
   ["trainer_note", "트레이너 종합 소견"],
   ["sales_intensity", "세일즈 강도"],
+  ["stimulus_response", "자극반응 대처"],
   // ① phase:first 필드명 — 값 텍스트 누출 결정적 제거(프롬프트 인용금지 지침과 병행 방어).
   ["connects_to_closing", "세일즈로 이어지는 지점"],
   ["closing_compass", "세일즈 방향"],
