@@ -19,6 +19,7 @@ import {
   GOAL_TYPE_OPTS,
   CLOSING_RESULT_OPTS,
   CLOSING_APPROACH_OPTS,
+  SALES_INTENSITY_OPTS,
 } from "@/lib/labels";
 
 /* 드롭다운 라벨 맵은 lib/labels.js로 공용 추출됨(SecondOTTab과 공유). */
@@ -32,6 +33,7 @@ function emptyForm() {
     goal: { identified: false, type: "appearance", detail: "" },
     memberQuote: "", // report.memberQuote (2차 '1차 소환' 비트 재료)
     trainerNote: "", // report.trainer_note (트레이너 종합 소견 — 2차 AI 재료, B2-a)
+    salesIntensity: "standard", // report.sales_intensity (트레이너 지시 강도 — B2-a2)
     closingResult: "none", // ㉠ closing_result (top-level 컬럼)
     closingApproach: "other", // ㉠ closing_approach (top-level 컬럼)
     closingReapproachAt: "", // 보류 재접근 예정일 (closing_reapproach_at, date)
@@ -65,6 +67,7 @@ function rowToForm(row) {
     },
     memberQuote: typeof r.memberQuote === "string" ? r.memberQuote : "",
     trainerNote: typeof r.trainer_note === "string" ? r.trainer_note : "",
+    salesIntensity: r.sales_intensity || "standard",
     closingResult: row?.closing_result || "none",
     closingApproach: row?.closing_approach || "other",
     closingReapproachAt: row?.closing_reapproach_at || "",
@@ -175,6 +178,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
         goal: form.goal,
         memberQuote: form.memberQuote,
         trainer_note: form.trainerNote, // 트레이너 종합 소견(B2-a) — first_assist와 함께 report 공존
+        sales_intensity: form.salesIntensity, // 트레이너 지시 강도(B2-a2)
         // ① 캐시 공존 — 기존 first_assist가 있으면 보존(관찰 저장이 캐시를 덮지 않게).
         ...(existingFirstAssist ? { first_assist: existingFirstAssist } : {}),
       };
@@ -471,6 +475,24 @@ export default function ObservationTab({ member, onClosingSaved }) {
           <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
             2차 AI 지원의 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게. (②의 메모=회원 반응 국소 / 여기=관찰 전체 종합)
           </p>
+
+          <div className="mt-4">
+            <label className="mb-1 block text-[11px] font-medium text-zinc-500">세일즈 강도</label>
+            <select
+              value={form.salesIntensity}
+              onChange={(e) => setTop("salesIntensity", e.target.value)}
+              className={inputCls}
+            >
+              {SALES_INTENSITY_OPTS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[10px] leading-relaxed text-zinc-600">
+              강도 = &lsquo;근거·긴급성을 얼마나 또렷이 짚나&rsquo;지 압박의 세기가 아닙니다. &lsquo;강하게&rsquo;는 사실 기반 손실(예: 자세 무너짐→통증 악화 위험)을 더 분명히 — 없는 위기 창작·공포몰이는 금지. 신뢰가 덜 쌓였으면 &lsquo;부드럽게&rsquo;로 오늘은 라포·다음 접점.
+            </p>
+          </div>
         </div>
       </section>
 
