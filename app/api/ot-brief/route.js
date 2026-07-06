@@ -143,12 +143,25 @@ ${JSON.stringify(
       reaction: r.reaction ?? {},
       goal: r.goal ?? {},
       memberQuote: r.memberQuote ?? "",
+      trainer_note: r.trainer_note ?? "",
+      sales_intensity: r.sales_intensity ?? "standard",
     },
     null,
     2
   )}
 
 이 '1차 관찰'을 유일한 근거로 2차를 설계하라.
+[재료 확장] 트레이너 종합 소견(자유서술)이 있으면 정형 관찰과 함께 근거로 삼아라. 정형 항목에
+안 담긴 트레이너의 판단·가설이니 briefing·closing 논리에 반영하되, 없는 사실을 지어내진 마라.
+[세일즈 강도] sales_intensity는 트레이너가 이 회원에 지시한 '근거·긴급성을 얼마나 또렷이 짚을지'다.
+압박·설득의 세기가 아니다(PREAMBLE 윤리 상속).
+ · standard: 기본. 사실 기반으로 담백하게.
+ · strong: 사실 기반 손실·긴급성을 '더 또렷하고 구체적으로' 짚어라(예: 자세 무너짐→통증 악화 경로를
+   회원 일상 언어로 선명히). ⚠️ 단 '없는 위기 창작·공포몰이·허위 긴급성'은 여전히 절대 금지 —
+   또렷함은 근거의 선명도지 위협의 크기가 아니다. 강해지는 건 '증거'지 '압박'이 아니다.
+ · soft: 신뢰가 덜 쌓인 회원. 오늘 클로징을 미루고 라포·다음 접점으로 방향을 잡아라(1차 watch_for
+   미루기 로직과 일관). closing 4단계는 여전히 생성하되 land를 '가정 종결' 대신 '다음 약속의 씨앗'
+   톤으로 부드럽게.
 1) briefing(등록 당위성 논리): proven_in_1st(1차 확인) → risk_if_alone(혼자 하면 위험한 지점, 사실 기반)
    → to_prove_in_2nd(2차에 몸으로 증명할 것) → closing_logic("혼자선 못 잡는다"의 논리, 낭독 대본 아님).
 2) arc(2차 대화 흐름): movements[].plan2nd를 arc의 중심축으로. memberAware=true 항목은 '회원이 스스로 인지한 것'이라
@@ -224,6 +237,9 @@ const FIELD_TERMS = [
   ["closing_approach", "클로징 방향"],
   ["attitudeTags", "태도 태그"],
   ["stimulus", "자극 인지도"],
+  // B2 재료 필드명 — 값 텍스트 누출 방어(trainer_note·sales_intensity).
+  ["trainer_note", "트레이너 종합 소견"],
+  ["sales_intensity", "세일즈 강도"],
   // ① phase:first 필드명 — 값 텍스트 누출 결정적 제거(프롬프트 인용금지 지침과 병행 방어).
   ["connects_to_closing", "세일즈로 이어지는 지점"],
   ["closing_compass", "세일즈 방향"],
