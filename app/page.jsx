@@ -47,6 +47,7 @@ const DEMO_MEMBER = {
   session: "1차 OT",
   status: "ot_active", // ② member_status — 라이프사이클 상태
   origin: "ot_funnel", // ② 진입 문 (ot_funnel | handover | external)
+  pt_direction: "고관절 가동성 회복 + 무릎 부하 분산 (데모)", // PT 살아있는 방향축(③)
   summary: [
     "논리와 근거로 움직이는 실용주의자 — '왜'가 해결되면 즉시 실행에 옮기는 결과지향형.",
     "장시간 좌식 근무로 고관절 굴곡근 단축 추정 → 우측 무릎에 누적 부하가 걸릴 구조.",
@@ -70,6 +71,7 @@ function mapMemberRow(r) {
     // ② member_status — 컬럼 미반영(마이그레이션 전)·demo 행에서도 기본값으로 안전.
     status: r.status ?? "ot_active",
     origin: r.origin ?? "ot_funnel",
+    pt_direction: r.pt_direction ?? "", // PT 현재 방향/목표(③ 인라인 편집)
     status_changed_at: r.status_changed_at ?? null,
     status_note: r.status_note ?? null,
     summary: r.name === DEMO_MEMBER.name
@@ -1014,6 +1016,10 @@ export default function OTNavigatorDashboard() {
   const setMemberStatus = (id, status) =>
     setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, status } : m)));
 
+  // 로컬 member 임의 필드 갱신(낙관적) — PTView 방향 편집 등 저장 성공 후 반영.
+  const onMemberPatch = (id, patch) =>
+    setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+
   // 수동 'PT 등록 확정' — 계약(session_log) INSERT + status 전이(둘 다 .select() 하드닝). boolean 반환(모달이 소비).
   const confirmPtActive = async (contractInput) => {
     if (!supabase) {
@@ -1153,7 +1159,7 @@ export default function OTNavigatorDashboard() {
           />
         )}
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
-        <MemberViewShell member={member} onGoList={() => setTab(0)} showList={tab === 0}>
+        <MemberViewShell member={member} onGoList={() => setTab(0)} showList={tab === 0} onMemberPatch={onMemberPatch}>
           {tab === 0 && (
             <MemberListTab
               members={members}
