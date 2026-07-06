@@ -10,10 +10,18 @@ import { useEffect, useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
+const inputCls =
+  "w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50";
+
 export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
   const [rounds, setRounds] = useState({ round1: null, round2: null });
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false); // 중앙 확인 모달 open (확정 앞단 게이트)
+  const [sessions, setSessions] = useState(""); // 계약 세션수(필수)
+  const [price, setPrice] = useState(""); // 회당단가(필수·원)
+  const [amountEdited, setAmountEdited] = useState(""); // 총액 수동수정("" = 세션×단가 자동)
+  const [svc, setSvc] = useState(""); // 서비스 세션(선택·기본 0)
+  const [err, setErr] = useState("");
   const mounted = useRef(true);
   useEffect(() => () => { mounted.current = false; }, []);
 
@@ -43,19 +51,51 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
     // closingVersion: 클로징 저장(1·2차) 직후 부모가 증가 → 재조회(같은 회원이라 member.id 안 바뀌는 stale 방지).
   }, [member?.id, closingVersion]);
 
+  // 회원 전환 시 금액 입력 초기화 → 이전 회원값 오확정 방지. (closingVersion은 물리지 않음 — 저장 중 리셋 방지)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSessions("");
+    setPrice("");
+    setAmountEdited("");
+    setSvc("");
+    setErr("");
+  }, [member?.id]);
+
   // ⚠️ 값은 CLOSING_RESULT_OPTS 영문('success') — 저장 경로와 동일(한글 아님).
   const success =
     rounds.round1?.closing_result === "success" || rounds.round2?.closing_result === "success";
   // 게이트: ot_active + 성공(both round). pt_active면 안 뜸(§1 성공≠PT).
   if (member?.status !== "ot_active" || !success) return null;
 
-  // 모달 [확정]에서만 실행 — 기존 toPtActive·.select() 하드닝·상태 전이는 부모(onConfirm) 그대로.
+  // 총액 = 수동수정 있으면 그 값, 없으면 세션수×회당단가 자동.
+  const autoAmount = (Number(sessions) || 0) * (Number(price) || 0);
+
+  // 모달 [확정] — 금액 검증 후 부모(onConfirm)가 계약 INSERT + 상태 전이(둘 다 하드닝, boolean 반환).
   const doConfirm = async () => {
+    if (!(Number(sessions) > 0 && Number(price) > 0)) {
+      setErr("세션수·회당단가를 입력하세요");
+      return; // 모달 유지·입력 보존
+    }
+    setErr("");
+    const contractInput = {
+      sessions_total: Number(sessions),
+      price_per_session: Number(price),
+      amount_total: amountEdited === "" ? autoAmount : Number(amountEdited) || autoAmount,
+      service_sessions: svc === "" ? 0 : Number(svc) || 0,
+    };
     setBusy(true);
-    await onConfirm();
+    const ok = await onConfirm(contractInput);
+    if (!ok) {
+      if (mounted.current) {
+        setBusy(false);
+        setErr("저장 실패 — 다시 시도하세요");
+      }
+      return; // 모달 유지·입력 보존
+    }
+    // ok면 부모가 pt_active로 flip → 언마운트(현행). 도달 시엔 busy 정리만.
     if (mounted.current) {
       setBusy(false);
-      setConfirming(false); // 성공 시엔 언마운트라 도달 안 함(실패 롤백 때만 닫기)
+      setConfirming(false);
     }
   };
 
@@ -94,9 +134,39 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
             <p className="mb-1 text-sm text-zinc-200">
               <b className="text-emerald-300">{member?.name || "회원"}</b>님을 PT 등록으로 확정할까요?
             </p>
-            <p className="mb-5 text-xs text-zinc-500">
+            <p className="mb-4 text-xs text-zinc-500">
               확정하면 PT 회원으로 전환됩니다. 결제가 끝난 뒤 진행하세요.
             </p>
+
+            {/* 계약 금액 — 세션수·회당단가 입력 시 총액 자동(할인이면 총액 수정). */}
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-zinc-500">세션수 *</span>
+                <input type="number" value={sessions} onChange={(e) => setSessions(e.target.value)} disabled={busy} placeholder="24" className={inputCls} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-zinc-500">회당단가(원) *</span>
+                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} disabled={busy} placeholder="60000" className={inputCls} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-zinc-500">총액(원) · 자동</span>
+                <input
+                  type="number"
+                  value={amountEdited !== "" ? amountEdited : autoAmount ? String(autoAmount) : ""}
+                  onChange={(e) => setAmountEdited(e.target.value)}
+                  disabled={busy}
+                  placeholder="자동 계산"
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-zinc-500">서비스 세션</span>
+                <input type="number" value={svc} onChange={(e) => setSvc(e.target.value)} disabled={busy} placeholder="0" className={inputCls} />
+              </label>
+            </div>
+
+            {err && <p className="mb-3 text-xs font-medium text-red-400">{err}</p>}
+
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirming(false)}

@@ -30,7 +30,7 @@ import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import ReapproachToday from "@/components/views/ReapproachToday";
-import { viewFor, initialStatus, toPtActive } from "@/lib/memberStatus";
+import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
@@ -911,24 +911,47 @@ export default function OTNavigatorDashboard() {
   const setMemberStatus = (id, status) =>
     setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, status } : m)));
 
-  // 수동 'PT 등록 확정' — toPtActive 패치 + UPDATE 하드닝(.select() 0행이면 실패). 성공 시만 pt_active 유지.
-  const confirmPtActive = async () => {
-    const prev = member.status;
-    const patch = toPtActive(member);
-    setMemberStatus(member.id, "pt_active"); // 낙관적 → 즉시 PTView
-    if (!supabase) return; // 데모: DB 안 치고 로컬만
+  // 수동 'PT 등록 확정' — 계약(session_log) INSERT + status 전이(둘 다 .select() 하드닝). boolean 반환(모달이 소비).
+  const confirmPtActive = async (contractInput) => {
+    if (!supabase) {
+      setMemberStatus(member.id, "pt_active"); // 데모: 로컬만
+      return true;
+    }
+    // 1) 멱등 가드 — 이미 계약 있으면(재시도) INSERT 스킵.
+    const { data: existing } = await supabase
+      .from("session_log")
+      .select("id")
+      .eq("user_id", member.id)
+      .limit(1);
+    const hasContract = (existing?.length ?? 0) > 0;
+    // 2) 계약 INSERT (없을 때만) — .select() 하드닝.
+    if (!hasContract) {
+      const payload = buildContract({ userId: member.id, origin: member.origin, ...contractInput });
+      const { data: ins, error: insErr } = await supabase
+        .from("session_log")
+        .insert(payload)
+        .select();
+      if (insErr || !ins || ins.length === 0) {
+        setDbNote(
+          "계약 생성 실패 — session_log INSERT (정책/0행)" + (insErr ? ": " + insErr.message : "")
+        );
+        return false; // status 안 건드림(clean)
+      }
+    }
+    // 3) status 전이 — .select() 하드닝. 실패해도 계약은 남을 수 있음 → 재시도 시 (1)이 스킵(멱등).
     const { data, error } = await supabase
       .from("user_table")
-      .update(patch)
+      .update(toPtActive(member))
       .eq("id", member.id)
       .select();
     if (error || !data || data.length === 0) {
-      setMemberStatus(member.id, prev); // 롤백
       setDbNote(
-        "PT 등록 확정 실패 — user_table UPDATE 정책/권한 확인 (0행 갱신)" +
-          (error ? ": " + error.message : "")
+        "PT 등록 확정 실패 — user_table UPDATE (정책/0행)" + (error ? ": " + error.message : "")
       );
+      return false;
     }
+    setMemberStatus(member.id, "pt_active"); // 확정 성공 후에만 뷰 전환(깜빡임 방지)
+    return true;
   };
 
 
