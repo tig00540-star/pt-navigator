@@ -8,7 +8,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, Dumbbell, History, NotebookPen, UserX } from "lucide-react";
+import { ChevronLeft, Compass, Dumbbell, History, NotebookPen, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -31,7 +31,7 @@ const SOURCE_TONE = {
   noshow: "border-red-500/40 bg-red-500/10 text-red-300",
 };
 
-export default function PTView({ member, onGoList }) {
+export default function PTView({ member, onGoList, onMemberPatch }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
   const [logs, setLogs] = useState([]); // daily_workout_log (수업로그)
   const [loading, setLoading] = useState(false);
@@ -47,6 +47,10 @@ export default function PTView({ member, onGoList }) {
   const [cSvc, setCSvc] = useState("");
   const [cErr, setCErr] = useState("");
   const [cSaving, setCSaving] = useState(false);
+  // 현재 방향/목표(③ 작업3-2) — goal(OT 스냅샷)과 별개, PT 관리 중 갱신되는 살아있는 축.
+  const [direction, setDirection] = useState(member.pt_direction ?? "");
+  const [editingDir, setEditingDir] = useState(false);
+  const [dirSaving, setDirSaving] = useState(false);
   const { toast, showToast } = useToast();
 
   // 회원 변경 시 계약 모달 상태 리셋 → 이전 회원값 오등록 방지. (early return 없어 위치 자유)
@@ -58,6 +62,10 @@ export default function PTView({ member, onGoList }) {
     setCAmountEdited("");
     setCSvc("");
     setCErr("");
+    setDirection(member.pt_direction ?? ""); // 방향 재시드(회원별 값)
+    setEditingDir(false);
+    // pt_direction은 id 변경 시에만 재시드(저장 후 낙관적 patch와 재시드 충돌 방지) — 의도된 dep 제외.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member?.id]);
 
   // 회원 변경 시 계약·수업로그 로드. setState는 async IIFE 안에서만(set-state-in-effect 회피).
@@ -224,6 +232,34 @@ export default function PTView({ member, onGoList }) {
     showToast("계약 등록됨 · 잔여 반영");
   };
 
+  // 현재 방향/목표 저장 — user_table UPDATE + .select() 하드닝(교훈1). 성공 시 page.jsx 회원배열도 반영.
+  const saveDirection = async () => {
+    if (dirSaving) return;
+    setDirSaving(true);
+    const next = direction.trim();
+    if (!supabase) {
+      onMemberPatch?.(member.id, { pt_direction: next });
+      setEditingDir(false);
+      setDirSaving(false);
+      showToast("방향 저장됨(데모)");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("user_table")
+      .update({ pt_direction: next || null })
+      .eq("id", member.id)
+      .select();
+    if (error || !data || data.length === 0) {
+      showToast("방향 저장 실패 — 다시 시도하세요");
+      setDirSaving(false);
+      return;
+    }
+    onMemberPatch?.(member.id, { pt_direction: next });
+    setEditingDir(false);
+    setDirSaving(false);
+    showToast("현재 방향 저장됨");
+  };
+
   return (
     <div className="space-y-6">
       {onGoList && (
@@ -251,6 +287,53 @@ export default function PTView({ member, onGoList }) {
           <span className="rounded-md bg-zinc-800/70 px-2 py-1">MBTI {member.mbti}</span>
           <span className="rounded-md bg-zinc-800/70 px-2 py-1">불편 {member.pain}</span>
         </div>
+      </section>
+
+      {/* 현재 방향/목표 — PT 살아있는 상태축(③ 작업3-2). goal(OT 스냅샷)과 별개. */}
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <div className="flex items-center justify-between">
+          <Eyebrow icon={Compass}>현재 방향 · 목표</Eyebrow>
+          {!editingDir && (
+            <button
+              onClick={() => setEditingDir(true)}
+              className="text-xs font-medium text-zinc-400 transition hover:text-emerald-400"
+            >
+              {direction ? "수정" : "설정"}
+            </button>
+          )}
+        </div>
+        {editingDir ? (
+          <div className="mt-3">
+            <textarea
+              value={direction}
+              onChange={(e) => setDirection(e.target.value)}
+              disabled={dirSaving}
+              rows={3}
+              placeholder="이 회원 PT의 현재 방향·목표 (관리하며 갱신)"
+              className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+            />
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                onClick={() => { setDirection(member.pt_direction ?? ""); setEditingDir(false); }}
+                disabled={dirSaving}
+                className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 transition active:scale-95 disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={saveDirection}
+                disabled={dirSaving}
+                className="rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1.5 text-xs font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+              >
+                {dirSaving ? "저장 중…" : "저장"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-zinc-300">
+            {direction || <span className="text-zinc-600">아직 방향이 설정되지 않았습니다.</span>}
+          </p>
+        )}
       </section>
 
       {/* 수업 확인서 겸 운동일지 — 손입력 저장 = 차감 (③ step3-1a) */}
