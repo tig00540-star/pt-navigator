@@ -45,3 +45,4 @@ next-env.d.ts
 
 # Claude Code 로컬 dev 설정 (launch.json·settings.local.json — 개인/로컬, 리포에 올리지 않음)
 .claude/
+/scripts/test-second-prompt.mjs
