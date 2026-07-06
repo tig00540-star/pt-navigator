@@ -755,11 +755,24 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
 
 function MemberListTab({ members, selectedId, onSelect, onAdd }) {
   const [q, setQ] = useState("");
+  const [segment, setSegment] = useState("all"); // all | ot | pt | inactive
+
+  // 세그먼트 인원수 + 세그먼트 base(all=보관 제외). 검색은 그 위 AND.
+  const counts = { ot: 0, pt: 0, inactive: 0 };
+  for (const m of members) {
+    const v = viewFor(m);
+    if (v in counts) counts[v] += 1;
+  }
+  const totalActive = counts.ot + counts.pt; // 전체 = inactive 제외
+  const bySegment = members.filter((m) => {
+    const v = viewFor(m);
+    return segment === "all" ? v !== "inactive" : v === segment;
+  });
   const list = q.trim()
-    ? members.filter((m) =>
+    ? bySegment.filter((m) =>
         `${m.name} ${m.job}`.toLowerCase().includes(q.trim().toLowerCase())
       )
-    : members;
+    : bySegment;
 
   return (
     <div>
@@ -784,7 +797,26 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
         </button>
       </div>
 
-      <div className="mb-3 text-xs text-zinc-500">전체 {members.length}명</div>
+      <div className="mb-3 flex gap-1.5">
+        {[
+          { key: "all", label: "전체", n: totalActive },
+          { key: "ot", label: "OT", n: counts.ot },
+          { key: "pt", label: "PT", n: counts.pt },
+          { key: "inactive", label: "보관", n: counts.inactive },
+        ].map((s) => (
+          <button
+            key={s.key}
+            onClick={() => setSegment(s.key)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              segment === s.key
+                ? "bg-lime-500/15 text-lime-400 ring-1 ring-lime-500/40"
+                : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            {s.label} {s.n}
+          </button>
+        ))}
+      </div>
 
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
@@ -792,7 +824,9 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
           <p className="mt-3 text-sm text-zinc-400">
             {members.length === 0
               ? "아직 등록된 회원이 없어요."
-              : "검색 결과가 없어요."}
+              : q.trim()
+              ? "검색 결과가 없어요."
+              : "이 그룹에 회원이 없어요."}
           </p>
           {members.length === 0 && (
             <button
@@ -824,6 +858,14 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-zinc-100">{m.name}</span>
                     <span className="font-mono text-xs text-zinc-500">{m.age}세</span>
+                    {(() => {
+                      const v = viewFor(m);
+                      if (v === "pt")
+                        return <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">PT</span>;
+                      if (v === "inactive")
+                        return <span className="rounded bg-zinc-700/50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400">보관</span>;
+                      return <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400">OT</span>;
+                    })()}
                     {on && (
                       <span className="rounded bg-lime-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-lime-400">
                         선택됨
