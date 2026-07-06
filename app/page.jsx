@@ -24,7 +24,6 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
-import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ObservationTab from "@/components/tabs/ObservationTab";
 import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
@@ -85,7 +84,6 @@ const TABS = [
   { id: 1, label: "1차 OT" },
   { id: 2, label: "2차 OT" },
   { id: 3, label: "재등록 CRM" },
-  { id: 4, label: "음성일지" },
   { id: 5, label: "관찰 기록" },
 ];
 
@@ -1053,7 +1051,6 @@ export default function OTNavigatorDashboard() {
             />
           )}
           {tab === 3 && <CRMTab />}
-          {tab === 4 && <VoiceLogTab member={member} />}
           {tab === 5 && (
             <ObservationTab
               member={member}

@@ -14,12 +14,15 @@ import { activeContract, remainingSessions, reregisterDue } from "@/lib/memberSt
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 
 export default function PTView({ member }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
   const [logs, setLogs] = useState([]); // daily_workout_log (수업로그)
   const [loading, setLoading] = useState(false);
   const [body, setBody] = useState(""); // 손입력 수업 내용/피드백
+  const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
+  const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
   const [saving, setSaving] = useState(false);
   const { toast, showToast } = useToast();
 
@@ -55,24 +58,72 @@ export default function PTView({ member }) {
   const rem = remainingSessions(active, logs);
   const due = reregisterDue(active, logs);
 
-  // 공통 저장 경로 — 손입력(manual)·노쇼(noshow) 한 곳. 성공 = 차감(행 꽂힘).
+  // 음성 STT 결과 → textarea 채움(이후 손편집). 기존 body 덮어씀(녹음은 의도적 행위).
+  const handleVoiceResult = (raw, summaryText) => {
+    setBody(summaryText || "");
+    setRawText(raw || "");
+    setUsedVoice(true);
+  };
+
+  // 클립보드 복사 (VoiceLogTab 기존 패턴 재사용).
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch {
+        ok = false;
+      }
+      document.body.removeChild(ta);
+      return ok;
+    }
+  };
+
+  // 공통 저장 경로 — 손입력(manual)·음성(voice)·노쇼(noshow) 한 곳. 성공 = 차감(행 꽂힘).
   const saveLog = async (source) => {
     if (saving) return;
     setSaving(true);
+    // 비노쇼면 저장 전 body 카톡 복사(성공 시 sent_at 증거 프록시).
+    let copied = false;
+    let sentAt = null;
+    if (source !== "noshow") {
+      copied = await copyToClipboard(body);
+      if (copied) sentAt = new Date().toISOString();
+    }
     const payload = {
       user_id: member.id,
       ai_summary: source === "noshow" ? null : body.trim() || null,
-      raw_voice_text: null, // 음성은 1b
+      raw_voice_text: source === "voice" ? rawText || null : null,
       contract_id: active?.id ?? null, // 계약 없음/전소진이면 null(안전)
       session_at: new Date().toISOString(), // 기본 now (수정 UI는 후속)
       source,
-      sent_at: null, // 카톡 복사는 1b
+      sent_at: sentAt,
     };
-    // 데모 가드 — DB 없이 낙관적 반영만.
+    const clearForm = () => {
+      setBody("");
+      setRawText("");
+      setUsedVoice(false);
+    };
+    // 데모 가드 — DB 없이 낙관적 반영(복사는 위에서 이미 시도).
     if (!supabase) {
       setLogs((p) => [...p, { ...payload, id: `demo-${Date.now()}` }]);
-      showToast("저장됨(데모) · 차감 반영");
-      setBody("");
+      if (source !== "noshow") clearForm();
+      showToast(
+        source === "noshow"
+          ? "노쇼 저장됨(데모) · 차감 반영"
+          : copied
+          ? "저장됨(데모) · 차감 · 카톡 복사됨"
+          : "저장됨(데모) · 차감됨 (복사 실패 — 길게 눌러 복사)"
+      );
       setSaving(false);
       return;
     }
@@ -87,8 +138,14 @@ export default function PTView({ member }) {
       return;
     }
     setLogs((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 −1
-    if (source === "manual") setBody("");
-    showToast(source === "noshow" ? "노쇼 저장됨 · 차감 반영" : "저장됨 · 차감 반영");
+    if (source !== "noshow") clearForm();
+    showToast(
+      source === "noshow"
+        ? "노쇼 저장됨 · 차감 반영"
+        : copied
+        ? "저장됨 · 차감 · 카톡 복사됨"
+        : "저장됨 · 차감됨 (복사 실패 — 길게 눌러 복사)"
+    );
     setSaving(false);
   };
 
@@ -140,7 +197,16 @@ export default function PTView({ member }) {
           )}
         </div>
 
-        {/* TODO(1b): 음성 STT → body 자동채움(서브). 최종 저장은 이 폼 하나로 공통. */}
+        {/* 음성으로 채우기 (선택 · 서브) — 손입력이 주(主), 음성은 STT로 아래 칸을 채워주는 보조. 저장·차감은 아래 한 곳. */}
+        <details className="mb-3 rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+          <summary className="cursor-pointer text-xs font-medium text-zinc-400">
+            🎙 음성으로 채우기 (선택)
+          </summary>
+          <div className="mt-3">
+            <VoiceLogTab member={member} onResult={handleVoiceResult} />
+          </div>
+        </details>
+
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -151,7 +217,7 @@ export default function PTView({ member }) {
         />
         <div className="mt-3 flex flex-wrap gap-2">
           <button
-            onClick={() => saveLog("manual")}
+            onClick={() => saveLog(usedVoice ? "voice" : "manual")}
             disabled={saving || loading || !body.trim()}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
           >

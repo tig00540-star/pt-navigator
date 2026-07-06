@@ -1,28 +1,23 @@
 "use client";
 
 /* =========================================================================
-   TAB 4  —  실시간 AI 음성 일지 생성기
-   녹음(MediaRecorder) → STT + AI 요약(/api/voice-log) → 카톡용 복사 → DB 저장.
-   AI 키 미설정·오류·미지원 브라우저 시 데모 리포트로 폴백(앱이 죽지 않음).
+   음성일지 서브 입력 (PT 전용) — PTView 공통 저장의 '채우기' 소스.
+   녹음(MediaRecorder) → STT + AI 요약(/api/voice-log) → onResult(raw, summary)로 PTView textarea에 채움.
+   저장·차감·복사는 PTView saveLog 한 곳(insert 불변식). 키 미설정·오류·미지원 시 데모 리포트 폴백.
    ========================================================================= */
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Check,
-  CheckCircle2,
-  Copy,
   Dumbbell,
   MessageSquareQuote,
   Mic,
+  NotebookPen,
   Sparkles,
   Square,
   Target,
 } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
 import { fmt } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
-import Toast from "@/components/ui/Toast";
-import { useToast } from "@/hooks/useToast";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
 
@@ -71,14 +66,12 @@ function extForMime(type) {
   return "webm";
 }
 
-export default function VoiceLogTab({ member }) {
+export default function VoiceLogTab({ member, onResult }) {
   const [phase, setPhase] = useState("idle"); // idle | recording | processing | done
   const [sec, setSec] = useState(0);
   const [report, setReport] = useState(null);
-  const [rawText, setRawText] = useState(""); // STT 원본 (DB 저장용)
-  const [saved, setSaved] = useState(false);
+  const [rawText, setRawText] = useState(""); // STT 원본 (onResult로 PTView에 전달)
   const [notice, setNotice] = useState(""); // 폴백/권한 안내
-  const { toast, showToast } = useToast();
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -113,7 +106,6 @@ export default function VoiceLogTab({ member }) {
 
   const start = async () => {
     setReport(null);
-    setSaved(false);
     setSec(0);
     setRawText("");
     setNotice("");
@@ -211,45 +203,6 @@ export default function VoiceLogTab({ member }) {
     `3. 홈트레이닝 및 주의사항\n` +
     r.homework.map((h) => `- ${h}`).join("\n") +
     `\n\n— 담당 트레이너 드림`;
-
-  const copyAndSave = async () => {
-    const text = buildText(report);
-    // 1) 클립보드 복사 (실제 동작)
-    let copied = false;
-    try {
-      await navigator.clipboard.writeText(text);
-      copied = true;
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        copied = document.execCommand("copy");
-      } catch {
-        copied = false;
-      }
-      document.body.removeChild(ta);
-    }
-    // 2) Supabase 저장 (실제 동작) — STT 원본 + AI 요약 둘 다 저장
-    if (supabase && member?.id) {
-      const { error } = await supabase.from("daily_workout_log").insert({
-        user_id: member.id,
-        raw_voice_text: rawText || null,
-        ai_summary: text,
-      });
-      if (!error) setSaved(true);
-    } else {
-      setSaved(true); // 데모(키 미설정) 시에도 저장된 것으로 표시
-    }
-    showToast(
-      copied
-        ? "복사 완료! 회원님 카톡 창에 붙여넣기(Ctrl+V) 하세요"
-        : "복사 실패 — 리포트를 길게 눌러 직접 복사하세요"
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -397,20 +350,14 @@ export default function VoiceLogTab({ member }) {
             </ul>
           </div>
 
-          {/* 복사 버튼 */}
+          {/* 일지 채우기 — PTView textarea로 전달(저장·차감·복사는 PTView saveLog 한 곳) */}
           <button
-            onClick={copyAndSave}
+            onClick={() => onResult?.(rawText, buildText(report))}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 py-3.5 text-sm font-bold text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95"
           >
-            {saved ? <Check className="h-5 w-5" strokeWidth={2.5} /> : <Copy className="h-5 w-5" strokeWidth={2.5} />}
-            카톡 전송용 리포트 복사하기
+            <NotebookPen className="h-5 w-5" strokeWidth={2.5} />
+            이 내용으로 일지 채우기
           </button>
-
-          {saved && (
-            <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-zinc-500">
-              <CheckCircle2 className="h-3.5 w-3.5 text-lime-400" /> 일지가 저장되고 복사되었습니다
-            </div>
-          )}
 
           <p className="mt-3 text-[10px] leading-relaxed text-zinc-600">
             ※ 실제 마이크 녹음 → 음성인식(STT) → AI 요약으로 생성됩니다. 키 미설정·오류·미지원
@@ -418,9 +365,6 @@ export default function VoiceLogTab({ member }) {
           </p>
         </section>
       )}
-
-      {/* 토스트 */}
-      <Toast message={toast} />
     </div>
   );
 }
