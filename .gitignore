@@ -46,3 +46,10 @@ next-env.d.ts
 # Claude Code 로컬 dev 설정 (launch.json·settings.local.json — 개인/로컬, 리포에 올리지 않음)
 .claude/
 /scripts/test-second-prompt.mjs
+
+# 검토용 임시 diff/코드 덤프 (git 추적 안 함)
+caf.txt
+diff-*.txt
+inactive.txt
+memberlist.txt
+save.txt
