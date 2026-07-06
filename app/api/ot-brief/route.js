@@ -238,6 +238,71 @@ ${JSON.stringify(
 }`;
 }
 
+// ④ phase="reregister" user 프롬프트 — 재등록 브리핑(OT 클로징의 PT 대칭).
+// ⚠️ origin 독립: ot_log에 의존하지 않는다(인계·외부 PT는 관찰이 없음). PT 관리 데이터만 근거.
+function reregisterPrompt(member, ctx) {
+  const m = member || {};
+  const c = ctx || {};
+  const recent = Array.isArray(c.recent_logs) ? c.recent_logs.filter(Boolean) : [];
+  return `[상황] PT 재등록 대화 준비. 아래는 이 회원의 'PT 관리 데이터'다(1차 관찰이 아님 — 인계·외부 회원은 관찰 자체가 없다).
+[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, mbti=${g(m.mbti)}, pain=${g(m.pain)}, goal=${g(m.goal)}
+[현재 PT 방향/목표] ${g(m.pt_direction)}
+[관리 이력] 계약 회차=${g(c.contract_count)}, 잔여 유료=${g(c.remaining?.paid)}, 서비스=${g(c.remaining?.service)}
+[최근 수업 기록]
+${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
+
+이 'PT 관리 데이터'를 유일한 근거로 재등록 대화를 설계하라. 없는 성과·에피소드를 지어내지 마라.
+재등록은 '관리로 쌓은 만족을 이어가는 것'이지 '새로 파는 것'이 아니다 — 압박·공포가 아니라 그동안의 근거와 앞으로의 방향으로.
+
+1) briefing(재등록 당위성 논리):
+   · proven_in_pt: 그동안 PT로 확인·개선된 것(관리 이력·최근 기록 근거. 없으면 지어내지 말 것).
+   · risk_if_stop: 지금 멈추면 잃는 것(사실 기반 손실 — "쌓은 감각이 흩어진다" 류. 없는 위기 창작 금지).
+   · next_roadmap: 앞으로의 방향(현재 PT 방향/목표에서 출발해 재등록해야 갈 수 있는 다음 지점).
+   · closing_logic: 재등록 당위성 논리(낭독 대본 아님 — 근거의 연결).
+2) arc(재등록 대화 흐름): 도입→중반→후반→마무리. 관리 이력을 소환해 '함께 만든 변화'를 근거로.
+3) objections(이유별 대처): 아래 재등록 보류/거절 이유 카테고리별로, 반박이 아니라 '걱정 해소 방향'을 미리 준비하라
+   (회원이 어떤 이유를 대든 트레이너가 방향을 갖고 있도록). 각 이유:
+   · money(금전 부담) · time(시간 부족) · schedule(스케줄 안 맞음)
+   · sessions_left(수업 남아 나중에) · low_effect(효과 체감 부족) · personal(개인 사정)
+   각 항목: customer_says(그 이유의 회원이 흔히 하는 말) / reframe_direction(공감으로 걱정 푸는 방향, 반박 아님) / example(예시 한 문장).
+   ⚠️ "지금 안 하시면 손해예요" 류 압박·공포 대본 금지. 사실 기반 + 회원 이익 방향으로만.
+   특히 low_effect(효과 체감 부족)는 방어가 아니라 '왜 아직인지 + 앞으로 어떻게'의 정직한 방향으로.
+4) closing(재등록 클로징 4단계): 진입→그림→착지→침묵.
+
+[클로징 4단계 골격]
+  enter(진입): "재등록" 단어로 시작 금지. 그동안 회원 몸/생활 변화를 짚고 "그래서 무슨 의미인지(So what?)"로 연다.
+  paint(그림): 추상 설명 금지. 회원 세계(직업·일상·목표)의 '일상 비유 하나'로 그린다.
+  land(착지): 재등록 제안을 '왜 필요한가 + 왜 지금인가'로. '재등록하세요'(판매 동사) 금지 → 가정 종결("다음 달도 이렇게 이어가시죠"). 긴급성은 '사실 기반 손실'만.
+  hold(침묵): "여기서 말 멈추고 회원 답을 기다리세요" 문구를 담는다.
+
+[화법 원리 — 모든 문장에 적용]
+  - 그림 그리기: 추상어 대신 비유·오감. "설득"이 아니라 "설명".
+  - So what?: 사실 나열 금지, "그래서 회원에게 무슨 의미인지"까지 연결.
+  - 담백하게: 화려한 설득어 금지, 쉬운 말로.
+  - 위협 소구 금지 → 사실 기반 손실 프레이밍으로 대체(공포는 재등록 관계를 무너뜨린다).
+
+[data_gaps = 성장 프레임]
+- 관리 기록이 얇아도 있는 것만으로 briefing·arc·closing을 반드시 생성한다("데이터 부족" 반환 금지).
+- data_gaps는 '결핍'이 아니라 '더하면 좋아지는 것'. 긍정 코칭 문구로. 이미 충실하면 빈 배열 또는 1개 이하.
+
+[출력 언어 규칙]
+- 모든 출력은 자연스러운 한국어. 입력 영문 코드값을 출력 텍스트에 노출 금지 — 한글로 풀어 쓴다.
+  단 objections[].reason 필드값은 위 영문 카테고리 키(money 등) 그대로 둔다(화면 매칭용).
+- 필드명 자체를 출력 문장에 쓰지 말 것.
+
+[비유 개인화 규칙]
+- paint 비유는 이 회원의 직업·일상·목표에서 끌어와라. 운동/기계 클리셰에 기대지 말 것. 소재 없을 때만 일반 비유.
+
+아래 JSON 스키마만 출력(설명·코드펜스 금지):
+{
+  "data_gaps": ["..."],
+  "briefing": { "proven_in_pt": "...", "risk_if_stop": "...", "next_roadmap": "...", "closing_logic": "..." },
+  "arc": [ { "when": "도입|중반|후반|마무리", "intent": "...", "direction": "...", "example": "...", "tone": "..." } ],
+  "objections": [ { "reason": "money|time|schedule|sessions_left|low_effect|personal", "customer_says": "...", "reframe_direction": "공감으로 걱정 푸는 방향(반박 아님)", "example": "..." } ],
+  "closing": { "enter": "진입(재등록 단어 금지, So what?)", "paint": "일상 비유 하나", "land": "착지(왜+지금, 가정 종결)", "hold": "여기서 멈추고 회원 답을 기다리세요" }
+}`;
+}
+
 // 최종 안전망: 모델이 출력 텍스트에 흘린 필드명(코드값)을 한글로 치환.
 // 키/구조는 건드리지 않고 '문자열 값'만 재귀적으로 훑는다.
 const FIELD_TERMS = [
@@ -406,13 +471,16 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
   }
 
-  const { phase, member, report } = body || {};
-  if (phase !== "first" && phase !== "second") {
-    return Response.json({ error: "phase는 'first' 또는 'second'여야 합니다." }, { status: 400 });
+  const { phase, member, report, ptContext } = body || {};
+  if (phase !== "first" && phase !== "second" && phase !== "reregister") {
+    return Response.json({ error: "phase는 'first'·'second'·'reregister' 중 하나여야 합니다." }, { status: 400 });
   }
 
   const model = phase === "first" ? MODEL_FIRST : MODEL_SECOND;
-  const prompt = phase === "first" ? firstPrompt(member) : secondPrompt(member, report);
+  const prompt =
+    phase === "first" ? firstPrompt(member)
+    : phase === "second" ? secondPrompt(member, report)
+    : reregisterPrompt(member, ptContext);
   // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120 유지.
   const maxTokens = phase === "first" ? 8192 : 5120;
 
@@ -425,7 +493,7 @@ export async function POST(request) {
       messages: [{ role: "user", content: prompt }],
     };
     // sonnet-5는 기본이 adaptive thinking이라 JSON 생성엔 불필요 → 끔(haiku는 기본 off).
-    if (phase === "second") req.thinking = { type: "disabled" };
+    if (phase !== "first") req.thinking = { type: "disabled" }; // second·reregister = Sonnet
 
     const msg = await anthropic.messages.create(req);
     const textOut = msg.content
