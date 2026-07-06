@@ -109,6 +109,11 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
   const rem = remainingSessions(active, logs);
   const due = reregisterDue(active, logs);
   const latest = latestContract(contracts); // 재등록 결과 기록 대상(잔여 무관 최신 계약)
+  const isReReg = !!active; // 활성 계약 있는 상태의 계약 추가 = 재등록(FIFO 대기). 라벨·토스트 분기용.
+  // 활성(FIFO 최고참) 외 잔여>0 계약 = 대기분. 미리 재등록 시 "안 늘었네?" 오해 방지용 표시.
+  const pendingTotal = contracts
+    .filter((c) => c.id !== active?.id && remainingSessions(c, logs).total > 0)
+    .reduce((s, c) => s + remainingSessions(c, logs).total, 0);
 
   // 재등록 결과 폼 시드 — 대상 행(latest)이 바뀔 때만 그 행의 reg_* 반영.
   // 회원 전환·새 계약 추가로 latest가 바뀌면 재시드 / saveReg 낙관적 patch(같은 id)는 재시드 안 함(편집 중 안 튐).
@@ -239,7 +244,7 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
       setContracts((p) => [...p, { ...payload, id: `demo-${Date.now()}` }]);
       setShowContract(false);
       setCSaving(false);
-      showToast("계약 등록됨(데모)");
+      showToast(isReReg ? "재등록됨(데모) · 기존 잔여 소진 후 적용" : "계약 등록됨(데모)");
       return;
     }
     const { data, error } = await supabase.from("session_log").insert(payload).select();
@@ -251,7 +256,7 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     setContracts((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 반영
     setShowContract(false);
     setCSaving(false);
-    showToast("계약 등록됨 · 잔여 반영");
+    showToast(isReReg ? "재등록됨 · 기존 잔여 소진 후 적용" : "계약 등록됨 · 잔여 반영");
   };
 
   // 현재 방향/목표 저장 — user_table UPDATE + .select() 하드닝(교훈1). 성공 시 page.jsx 회원배열도 반영.
@@ -408,6 +413,17 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
                   재등록 타이밍
                 </span>
               )}
+              {pendingTotal > 0 && (
+                <span className="rounded-md border border-zinc-600/40 bg-zinc-700/30 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                  다음 계약 {pendingTotal}회 대기
+                </span>
+              )}
+              <button
+                onClick={() => setShowContract(true)}
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20 active:scale-95"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> 재등록
+              </button>
             </div>
           ) : (
             <div>
@@ -508,7 +524,7 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
             )}
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] leading-relaxed text-zinc-500">
-                성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 다음 단계 &lsquo;재등록 확정&rsquo;에서.
+                성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 잔여 카드의 &lsquo;재등록&rsquo;으로.
               </p>
               <button
                 onClick={saveReg}
@@ -590,10 +606,11 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
           >
             <div className="mb-3 flex items-center gap-2">
               <Dumbbell className="h-5 w-5 shrink-0 text-emerald-400" />
-              <h3 className="text-base font-bold text-zinc-100">계약 등록</h3>
+              <h3 className="text-base font-bold text-zinc-100">{isReReg ? "재등록" : "계약 등록"}</h3>
             </div>
             <p className="mb-4 text-xs text-zinc-500">
               세션수·회당단가를 입력하면 총액이 자동 계산됩니다(할인이면 총액 수정).
+              {isReReg && " 기존 잔여를 먼저 소진한 뒤 이 계약이 적용됩니다(FIFO)."}
             </p>
 
             <div className="mb-3">
@@ -624,7 +641,7 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
                 disabled={cSaving}
                 className="rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
               >
-                {cSaving ? "등록 중…" : "등록"}
+                {cSaving ? (isReReg ? "재등록 중…" : "등록 중…") : (isReReg ? "재등록" : "등록")}
               </button>
             </div>
           </div>
