@@ -109,12 +109,12 @@ export default function FirstOTAssist({ member }) {
           .eq("id", row1Id)
           .select();
         if (!up || up.length === 0) {
-          setNotice("① 캐시 저장 실패 — 권한/정책 확인 (0행). 표시는 세션에만 유지됩니다.");
+          setNotice("저장에 실패했어요 — 지금은 이 화면에서만 보이고, 다음에 오면 사라질 수 있어요. (권한/정책 확인)");
         } else {
           setRow1Report(merged);
         }
       } else if (supabase && member?.id && !row1Id) {
-        setNotice("관찰 기록 저장 전이라 이 ①은 세션에만 유지됩니다(관찰 저장 후 다시 생성하면 캐시).");
+        setNotice("지금은 이 화면에서만 보여요 — 관찰 기록을 저장하고 다시 생성하면 계속 남습니다.");
       }
     } catch (e) {
       setNotice("네트워크 오류: " + (e?.message || "unknown"));
@@ -176,7 +176,7 @@ export default function FirstOTAssist({ member }) {
           {meta?.generatedAt && (
             <span>
               생성 {new Date(meta.generatedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}
-              {persisted ? " · 캐시됨(재방문 즉시)" : " · 세션 전용"}
+              {persisted ? " · 저장돼 있어요(다시 와도 그대로)" : " · 이 화면에서만"}
             </span>
           )}
           {stale && (
@@ -446,7 +446,7 @@ export default function FirstOTAssist({ member }) {
           )}
 
           <p className="text-[10px] leading-relaxed text-zinc-600">
-            ※ ①은 기본정보 기반 &lsquo;가설&rsquo;이라 저장하지 않습니다(탭 이동 시 사라지고 매번 새로 생성).
+            ※ ①은 회원 기본정보로 만든 &lsquo;가설&rsquo;이에요. 관찰 기록을 저장한 회원은 만든 ①이 남고, 저장 전이면 이 화면에서만 보여요.
           </p>
         </div>
       )}
