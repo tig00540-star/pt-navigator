@@ -9,7 +9,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Brain,
   CheckCircle2,
   Flame,
   Footprints,
@@ -22,7 +21,6 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
-  TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -113,43 +111,13 @@ const ROUTINE_2 = [
   },
 ];
 
-const SECOND_ACT = [
-  { id: "yes", label: "엉덩이 자극 왔다", tone: "lime" },
-  { id: "partial", label: "조금 왔다", tone: "orange" },
-  { id: "no", label: "아직 안 옴", tone: "red" },
-];
-
-/* 오늘 둔근 활성 결과 → 2차 세일즈 흐름 조립 (데모 폴백용) */
-function buildSecondSales(act) {
-  const proof = {
-    yes: "지금 엉덩이에 딱 오죠? 같은 Gym80인데 세팅만 바꾼 거예요. 몸이 바로 반응했어요.",
-    partial:
-      "아까보단 엉덩이에 오시죠? 아직 100%는 아니지만 방향은 확실히 잡혔어요. 반복하면 완전히 옵니다.",
-    no: "아직 잘 안 오시는군요. 신경 활성이 더뎌서 그래요 — 오히려 PT가 필요하다는 확실한 신호예요.",
-  }[act];
-
-  const close = {
-    yes: "오늘 이 감각, 혼자선 다시 찾기 어려워요. 이 세팅을 몸에 새기는 게 앞으로의 과제예요. 계속 옆에서 잡아드릴게요.",
-    partial:
-      "오늘 방향을 잡았으니, 이걸 몸에 정착시키는 데 몇 세션이 필요해요. 짧게라도 이어서 확실히 마무리하죠.",
-    no: "혼자 하면 계속 앞허벅지만 쓰게 돼요. 이 패턴 교정은 옆에서 봐줘야 잡힙니다. 그래서 다음 세션이 중요해요.",
-  }[act];
-
-  return [
-    { n: "01", stage: "1차 소환", icon: MessageSquareQuote, tone: "담담하게, 기록을 짚듯", when: "2차 워밍업 중", line: "철수님, 지난 1차 때 '무릎은 괜찮은데 엉덩이 자극이 안 온다'고 하셨죠. 오늘은 그 원인부터 잡고 갑니다." },
-    { n: "02", stage: "원인 공유", icon: Microscope, tone: "논리적으로, 브리핑하듯", when: "사전 활성 직전", line: "앞허벅지가 먼저 일하는 패턴이었어요. 그래서 오늘은 상체 각도랑 골반을 고정해서 엉덩이만 일하게 세팅합니다." },
-    { n: "03", stage: "실시간 증명", icon: Flame, tone: "확신 있게, 살짝 텐션", when: "Gym80 전경사 세트 직후", line: proof, adaptive: true },
-    { n: "04", stage: "차이 각인", icon: Brain, tone: "차분하게 못 박듯", when: "세트 사이 휴식", line: "이 차이는 운이 아니에요. 지난주 데이터로 원인을 찾아 세팅 하나를 바꾼 결과예요. 감으로 운동하면 안 나오는 반응이에요." },
-    { n: "05", stage: "결과 예고", icon: TrendingUp, tone: "신뢰감 있게, 그림 그려주듯", when: "마무리 운동 중", line: "매 세션 이렇게 안 되는 부위를 진단하고 고쳐나가면, 바디프로필까지 군살 없이 갑니다." },
-    { n: "06", stage: "클로징", icon: Handshake, tone: "담백하게, 압박 없이", when: "운동 종료 후 브리핑", line: close, adaptive: true },
-  ];
-}
+// 자극 결과 id↔화면 라벨(읽기전용 3분기 클로징 스택 라벨용). 저장/필터 값은 b.closing 키(yes/partial/no) — 화면 라벨만(교훈4).
+const ACT_LABEL = { yes: "자극 잘 옴", partial: "약하게 옴", no: "아직 없음" };
 
 const inputCls =
   "w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-lime-500/50";
 
 export default function SecondOTTab({ member, onClosingSaved }) {
-  const [act, setAct] = useState("yes");
   const [loading, setLoading] = useState(false);
   const [row1, setRow1] = useState(null); // round-1 전체 행 (closing_result 판정용)
   const [obs, setObs] = useState(null); // round-1 report (관찰)
@@ -307,13 +275,12 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       setClosingApproach(r2?.closing_approach || "");
       setClosingReapproachAt(r2?.closing_reapproach_at || "");
 
-      // ③ 캐시 우선: round-2 report.brief 있으면 렌더(재호출 X), 없으면 관찰 있고 미성공 시 1회 생성.
+      // ③ 캐시 우선: round-2 report.brief 있으면 재방문 즉시 렌더(재호출 X). 없으면 자동 호출 대신
+      // 버튼 트리거(결정#2) — renderPreGenerate의 "AI 지원 준비 생성하기" 클릭 시 generateBrief.
       const cached = r2?.report?.brief || null;
       if (cached) {
         setBrief(cached);
         setBriefMeta(r2.report.briefMeta || null);
-      } else if (r1?.report && r1?.closing_result !== "success") {
-        await generateBrief(r1.report, r2?.id || null);
       } else {
         setBrief(null);
         setBriefMeta(null);
@@ -324,17 +291,6 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member?.id]);
-
-  const actCls = (tone, on) => {
-    if (!on) return "border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700";
-    return {
-      lime: "border-lime-500/40 bg-lime-500/10 text-lime-400",
-      orange: "border-orange-500/40 bg-orange-500/10 text-orange-400",
-      red: "border-red-500/40 bg-red-500/10 text-red-400",
-    }[tone];
-  };
-
-  const flow = buildSecondSales(act);
 
   /* ---- 데모/폴백 본문 (기존 하드코딩) ---- */
   const renderDemo = (note) => (
@@ -438,58 +394,6 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           </div>
         </div>
       </section>
-
-      {/* 2차 세일즈 흐름 */}
-      <section>
-        <Eyebrow icon={Handshake}>2차 세일즈 흐름 · 1차 연결 → 실시간 증명 → 클로징</Eyebrow>
-
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-zinc-500">오늘 둔근 자극 결과:</span>
-          {SECOND_ACT.map((o) => (
-            <button
-              key={o.id}
-              onClick={() => setAct(o.id)}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${actCls(o.tone, act === o.id)}`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-2.5">
-          {flow.map((step) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={step.n}
-                className={`flex gap-3 rounded-xl border p-4 ${
-                  step.adaptive ? "border-lime-500/30 bg-lime-500/5" : "border-zinc-800 bg-zinc-900/40"
-                }`}
-              >
-                <div className="flex shrink-0 flex-col items-center">
-                  <span className="font-mono text-xs font-bold text-lime-400">{step.n}</span>
-                  <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950">
-                    <Icon className="h-4 w-4 text-lime-400" />
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-zinc-100">{step.stage}</span>
-                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-400">🗣 {step.tone}</span>
-                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-500">⏱ {step.when}</span>
-                    {step.adaptive && (
-                      <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-semibold text-lime-400">
-                        상황 연동
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-200">“{step.line}”</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 
@@ -508,11 +412,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   const renderBrief = (b, meta) => {
     const gaps = Array.isArray(b.data_gaps) ? b.data_gaps : [];
     const bf = b.briefing || {};
-    const cl = b.closing?.[act] || null;
     // 저장된 관찰 해시 vs 현재 관찰 해시 → 다르면 스테일(관찰 수정됨).
     const stale = Boolean(meta?.obsHash && obs && meta.obsHash !== otObsHash(obs));
-    // 클로징 방향 프리필: 저장값 > 현재 분기 AI approach_tag > pain
-    const effApproach = closingApproach || cl?.approach_tag || "pain";
+    // 클로징 방향 프리필: 저장값 > yes분기 AI approach_tag > pain (토글 제거 후 결정적 분기).
+    const effApproach = closingApproach || b.closing?.yes?.approach_tag || "pain";
     const briefRows = [
       { k: "1차 확인", v: bf.proven_in_1st, c: "text-lime-400" },
       { k: "혼자 하면 위험", v: bf.risk_if_alone, c: "text-orange-400" },
@@ -521,6 +424,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     ];
     return (
       <div className="space-y-8">
+        {/* ── AI 지원 준비 · 수업 전 ── */}
+        <div className="rounded-lg border border-lime-500/25 bg-lime-500/5 px-3 py-1.5 text-xs font-bold text-lime-300">
+          AI 지원 준비 · 수업 전
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-bold text-lime-400">
             실 AI
@@ -545,120 +452,61 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           </button>
         </div>
 
-        {/* ★ 클로징 — 화면 주인공 (4단계 enter→paint→land→hold) */}
+        {/* 클로징 — 3분기 읽기전용 스택(yes/partial/no · 토글 없음). 신규 AI 생성 없음(캐시 재사용). */}
         <section>
-          <Eyebrow icon={Flame}>실시간 자극 결과별 클로징 · 오늘의 주무기</Eyebrow>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-zinc-500">오늘 자극 결과:</span>
-            {SECOND_ACT.map((o) => (
-              <button
-                key={o.id}
-                onClick={() => setAct(o.id)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${actCls(
-                  o.tone,
-                  act === o.id
-                )}`}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          {cl ? (
-            <div className="space-y-3 rounded-2xl border border-lime-500/40 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/10">
-              {cl.approach_tag && (
-                <span className="inline-block rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                  방향: {labelOf(CLOSING_APPROACH_OPTS, cl.approach_tag)}
-                </span>
-              )}
-              {[
-                { key: "enter", label: "① 진입 · So what?", v: cl.enter },
-                { key: "paint", label: "② 그림 · 비유", v: cl.paint, accent: true },
-                { key: "land", label: "③ 착지 · 왜+지금", v: cl.land },
-              ].map((s) => (
-                <div
-                  key={s.key}
-                  className={`rounded-xl border p-4 ${
-                    s.accent
-                      ? "border-orange-500/40 bg-orange-500/10"
-                      : "border-zinc-800 bg-zinc-900/60"
-                  }`}
-                >
-                  <div
-                    className={`text-xs font-semibold uppercase tracking-wider ${
-                      s.accent ? "text-orange-400" : "text-lime-400"
-                    }`}
-                  >
-                    {s.label}
+          <Eyebrow icon={Flame}>오늘의 클로징 · 수업 전 준비</Eyebrow>
+          <div className="space-y-4">
+            {["yes", "partial", "no"].map((id) => {
+              const c = b.closing?.[id] || null;
+              return (
+                <div key={id}>
+                  <div className="mb-2 inline-block rounded-md bg-zinc-800/70 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
+                    {ACT_LABEL[id]}
                   </div>
-                  <p className="mt-1.5 text-base leading-relaxed text-zinc-100">{s.v || "—"}</p>
+                  {c ? (
+                    <div className="space-y-3 rounded-2xl border border-lime-500/40 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/10">
+                      {c.approach_tag && (
+                        <span className="inline-block rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                          방향: {labelOf(CLOSING_APPROACH_OPTS, c.approach_tag)}
+                        </span>
+                      )}
+                      {[
+                        { key: "enter", label: "① 진입 · So what?", v: c.enter },
+                        { key: "paint", label: "② 그림 · 비유", v: c.paint, accent: true },
+                        { key: "land", label: "③ 착지 · 왜+지금", v: c.land },
+                      ].map((s) => (
+                        <div
+                          key={s.key}
+                          className={`rounded-xl border p-4 ${
+                            s.accent
+                              ? "border-orange-500/40 bg-orange-500/10"
+                              : "border-zinc-800 bg-zinc-900/60"
+                          }`}
+                        >
+                          <div
+                            className={`text-xs font-semibold uppercase tracking-wider ${
+                              s.accent ? "text-orange-400" : "text-lime-400"
+                            }`}
+                          >
+                            {s.label}
+                          </div>
+                          <p className="mt-1.5 text-base leading-relaxed text-zinc-100">{s.v || "—"}</p>
+                        </div>
+                      ))}
+                      {/* hold — 침묵 강조 */}
+                      <div className="rounded-xl border border-dashed border-zinc-600 bg-zinc-950 p-4 text-center">
+                        <div className="text-sm font-bold text-zinc-100">🤐 여기서 멈추고 답 기다리기</div>
+                        {c.hold && (
+                          <p className="mt-1 text-[11px] italic leading-relaxed text-zinc-500">{c.hold}</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-500">이 분기의 클로징 데이터가 없습니다.</p>
+                  )}
                 </div>
-              ))}
-              {/* hold — 침묵 강조 */}
-              <div className="rounded-xl border border-dashed border-zinc-600 bg-zinc-950 p-4 text-center">
-                <div className="text-sm font-bold text-zinc-100">🤐 여기서 멈추고 답 기다리기</div>
-                {cl.hold && (
-                  <p className="mt-1 text-[11px] italic leading-relaxed text-zinc-500">{cl.hold}</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-zinc-500">이 분기의 클로징 데이터가 없습니다.</p>
-          )}
-        </section>
-
-        {/* ㉠ 2차 클로징 결과 기록 (round-2 closing_* 컬럼 — 브리핑 캐시와 공존) */}
-        <section>
-          <Eyebrow icon={Handshake}>㉠ 2차 클로징 결과 기록</Eyebrow>
-          <div className="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:grid-cols-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-zinc-500">결과</label>
-              <select
-                value={closingResult}
-                onChange={(e) => setClosingResult(e.target.value)}
-                className={inputCls}
-              >
-                {CLOSING_RESULT_OPTS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-zinc-500">
-                방향 <span className="text-zinc-600">(AI 제안 프리필)</span>
-              </label>
-              <select
-                value={effApproach}
-                onChange={(e) => setClosingApproach(e.target.value)}
-                className={inputCls}
-              >
-                {CLOSING_APPROACH_OPTS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={() => saveClosing(effApproach)}
-                disabled={savingClose}
-                className="w-full rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
-              >
-                {savingClose ? "저장 중…" : "결과 저장"}
-              </button>
-            </div>
-
-            {/* 보류('hold')일 때만 재접근 예정일 (B안: 프리셋 + 수동) — full width */}
-            {closingResult === "hold" && (
-              <div className="sm:col-span-3">
-                <ReapproachDateField
-                  value={closingReapproachAt}
-                  onChange={setClosingReapproachAt}
-                />
-              </div>
-            )}
+              );
+            })}
           </div>
         </section>
 
@@ -746,6 +594,66 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             </ul>
           </details>
         )}
+        {/* ── 클로징 결과 기록 · 수업 후 ── */}
+        <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 px-3 py-1.5 text-xs font-bold text-zinc-300">
+          클로징 결과 기록 · 수업 후
+        </div>
+        {/* ㉠ 2차 클로징 결과 기록 (round-2 closing_* 컬럼 — 브리핑 캐시와 공존) */}
+        <section>
+          <Eyebrow icon={Handshake}>㉠ 2차 클로징 결과 기록</Eyebrow>
+          <div className="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-zinc-500">결과</label>
+              <select
+                value={closingResult}
+                onChange={(e) => setClosingResult(e.target.value)}
+                className={inputCls}
+              >
+                {CLOSING_RESULT_OPTS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+                방향 <span className="text-zinc-600">(AI 제안 프리필)</span>
+              </label>
+              <select
+                value={effApproach}
+                onChange={(e) => setClosingApproach(e.target.value)}
+                className={inputCls}
+              >
+                {CLOSING_APPROACH_OPTS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => saveClosing(effApproach)}
+                disabled={savingClose}
+                className="w-full rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+              >
+                {savingClose ? "저장 중…" : "결과 저장"}
+              </button>
+            </div>
+
+            {/* 보류('hold')일 때만 재접근 예정일 (B안: 프리셋 + 수동) — full width */}
+            {closingResult === "hold" && (
+              <div className="sm:col-span-3">
+                <ReapproachDateField
+                  value={closingReapproachAt}
+                  onChange={setClosingReapproachAt}
+                />
+              </div>
+            )}
+          </div>
+        </section>
+
         <Toast message={toast} />
       </div>
     );
@@ -764,6 +672,24 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
         <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
       </div>
+    </div>
+  );
+
+  // 캐시 없음(첫 생성 전) — 자동 호출 대신 버튼 트리거(결정#2). 클릭 → generateBrief → 스켈레톤/실패 폴백 유지.
+  const renderPreGenerate = () => (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 text-center">
+      <Sparkles className="mx-auto h-8 w-8 text-lime-400" />
+      <p className="mt-3 text-sm text-zinc-300">
+        <span className="font-semibold text-zinc-100">{member.name}</span> 회원의 1차 관찰을 근거로 2차 AI 지원(등록 당위성·클로징·거절 대처)을 준비합니다.
+      </p>
+      <p className="mt-1 text-xs text-zinc-500">수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.</p>
+      <button
+        onClick={() => generateBrief(obs, existingRow2Id)}
+        disabled={generating}
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+      >
+        <Sparkles className="h-4 w-4" strokeWidth={2.5} /> AI 지원 준비 생성하기
+      </button>
     </div>
   );
 
@@ -803,10 +729,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     );
   }
 
-  // 관찰 있음 · 미성공 → ③ 실 AI (캐시 우선).
+  // 관찰 있음 · 미성공 → ③ 실 AI (캐시 우선, 캐시 없으면 버튼 트리거).
   if (generating) return renderGenerating();
   if (brief) return renderBrief(brief, briefMeta);
   if (aiError)
     return renderDemo(`데모 폴백 (AI 실패: ${aiError}) — 아래는 예시(하드코딩)입니다.`);
-  return renderGenerating();
+  return renderPreGenerate();
 }
