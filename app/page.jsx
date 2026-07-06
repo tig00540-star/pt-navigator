@@ -1092,7 +1092,7 @@ export default function OTNavigatorDashboard() {
           />
         )}
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
-        <MemberViewShell member={member}>
+        <MemberViewShell member={member} onGoList={() => setTab(0)} showList={tab === 0}>
           {tab === 0 && (
             <MemberListTab
               members={members}

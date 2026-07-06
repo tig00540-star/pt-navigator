@@ -8,7 +8,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { Dumbbell, NotebookPen, UserX } from "lucide-react";
+import { ChevronLeft, Dumbbell, NotebookPen, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -16,7 +16,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 
-export default function PTView({ member }) {
+export default function PTView({ member, onGoList }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
   const [logs, setLogs] = useState([]); // daily_workout_log (수업로그)
   const [loading, setLoading] = useState(false);
@@ -151,6 +151,14 @@ export default function PTView({ member }) {
 
   return (
     <div className="space-y-6">
+      {onGoList && (
+        <button
+          onClick={onGoList}
+          className="mb-1 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 transition hover:text-emerald-400"
+        >
+          <ChevronLeft className="h-4 w-4" /> 회원 목록
+        </button>
+      )}
       {/* 회원 기본정보 (간단) */}
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
         <span className="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-400">
