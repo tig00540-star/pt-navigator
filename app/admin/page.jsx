@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Activity,
   AlertTriangle,
   ArrowLeft,
   Award,
@@ -23,12 +22,15 @@ import {
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { closingStats, reregisterStats, revenueInMonth } from "@/lib/memberStatus";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
    ========================================================================= */
 
 const won = (n) => "₩" + n.toLocaleString("ko-KR");
+// rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
+const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
 // 오늘 지점 실시간 현황
 const TODAY = {
@@ -220,6 +222,8 @@ export default function AdminDashboard() {
   const [rows, setRows] = useState([]);
   const [dbNote, setDbNote] = useState("");
   const [copyOffset, setCopyOffset] = useState(0);
+  const [otRows, setOtRows] = useState([]);
+  const [contracts, setContracts] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -227,12 +231,20 @@ export default function AdminDashboard() {
         setDbNote("데모 모드 — Supabase 키를 설정하면 실제 회원 데이터로 지표가 갱신됩니다.");
         return;
       }
-      const { data, error } = await supabase.from("user_table").select("*");
-      if (error) {
-        setDbNote("불러오기 실패: " + error.message);
+      // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
+      const [u, o, c] = await Promise.all([
+        supabase.from("user_table").select("*"),
+        supabase.from("ot_log").select("*"),
+        supabase.from("session_log").select("*"),
+      ]);
+      const firstErr = u.error || o.error || c.error;
+      if (firstErr) {
+        setDbNote("불러오기 실패: " + firstErr.message);
         return;
       }
-      setRows(data || []);
+      setRows(u.data || []);
+      setOtRows(o.data || []);
+      setContracts(c.data || []);
     })();
   }, []);
 
@@ -242,6 +254,12 @@ export default function AdminDashboard() {
 
   // 이탈 위험 회원 수 — 회원 수에 연동 (데모 계수)
   const churnRisk = Math.max(3, Math.round((agg.total || 6) * 0.18));
+
+  // ④ 실데이터 파생 — 기준월(UTC 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
+  const ym = new Date().toISOString().slice(0, 7);
+  const closing = useMemo(() => closingStats(otRows), [otRows]);
+  const rereg = useMemo(() => reregisterStats(contracts), [contracts]);
+  const monthRevenue = useMemo(() => revenueInMonth(contracts, ym), [contracts, ym]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-lime-400/30">
@@ -289,35 +307,36 @@ export default function AdminDashboard() {
       )}
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        {/* ===== 오늘의 지점 실시간 현황 ===== */}
+        {/* ===== 실데이터 요약 (④) ===== */}
         <section className="mb-8">
-          <Eyebrow icon={Activity}>오늘의 지점 실시간 현황</Eyebrow>
+          <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
-                <Activity className="h-3.5 w-3.5" /> 오늘 진행 OT
-              </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-zinc-50">
-                {TODAY.otCount}
-                <span className="text-lg font-bold text-zinc-500"> 건</span>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
-                <Percent className="h-3.5 w-3.5" /> 실시간 재등록 결제율
-              </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-cyan-400">
-                {TODAY.resignRate}
-                <span className="text-lg font-bold"> %</span>
-              </div>
-            </div>
             <div className="rounded-2xl border border-lime-500/30 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/20">
               <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
-                <Wallet className="h-3.5 w-3.5" /> 오늘 발생 매출
+                <Wallet className="h-3.5 w-3.5" /> 이달 매출
               </div>
               <div className="mt-2 font-mono text-4xl font-extrabold text-lime-400">
-                {won(TODAY.revenue)}
+                {won(monthRevenue)}
               </div>
+              <div className="mt-1 text-xs text-zinc-500">{ym} · 인계·외부 제외</div>
+            </div>
+            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
+                <Target className="h-3.5 w-3.5" /> 클로징률
+              </div>
+              <div className="mt-2 font-mono text-4xl font-extrabold text-zinc-50">
+                {rateText(closing.rate)}
+              </div>
+              <div className="mt-1 text-xs text-zinc-500">누적 · 시도 {closing.attempted}명 중 {closing.success}</div>
+            </div>
+            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
+                <Percent className="h-3.5 w-3.5" /> 재등록률
+              </div>
+              <div className="mt-2 font-mono text-4xl font-extrabold text-cyan-400">
+                {rateText(rereg.rate)}
+              </div>
+              <div className="mt-1 text-xs text-zinc-500">누적 · 시도 {rereg.attempted}건 중 {rereg.success}</div>
             </div>
           </div>
         </section>
