@@ -8,7 +8,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, Dumbbell, NotebookPen, UserX } from "lucide-react";
+import { ChevronLeft, Dumbbell, History, NotebookPen, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -16,6 +16,20 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
+import { SOURCE_OPTS, labelOf } from "@/lib/labels";
+
+// 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
+function fmtDT(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d) ? "" : d.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+// source 배지 정적 클래스 맵(Tailwind purge 안전 — 동적 조립 금지).
+const SOURCE_TONE = {
+  manual: "border-zinc-600/40 bg-zinc-700/30 text-zinc-300",
+  voice:  "border-sky-500/40 bg-sky-500/10 text-sky-300",
+  noshow: "border-red-500/40 bg-red-500/10 text-red-300",
+};
 
 export default function PTView({ member, onGoList }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
@@ -78,6 +92,10 @@ export default function PTView({ member, onGoList }) {
   const rem = remainingSessions(active, logs);
   const due = reregisterDue(active, logs);
   const cAuto = (Number(cSessions) || 0) * (Number(cPrice) || 0); // 총액 자동(수정 없으면)
+  // 타임라인 — session_at ?? created_at 역순. 저장 시 append돼도 정렬이 최신을 위로.
+  const timeline = [...logs].sort(
+    (a, b) => new Date(b.session_at ?? b.created_at ?? 0) - new Date(a.session_at ?? a.created_at ?? 0)
+  );
 
   // 음성 STT 결과 → textarea 채움(이후 손편집). 기존 body 덮어씀(녹음은 의도적 행위).
   const handleVoiceResult = (raw, summaryText) => {
@@ -305,6 +323,53 @@ export default function PTView({ member, onGoList }) {
             <UserX className="h-4 w-4" /> 노쇼 차감
           </button>
         </div>
+      </section>
+
+      {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <Eyebrow icon={History}>지난 수업</Eyebrow>
+        {loading ? (
+          <p className="text-sm text-zinc-500">불러오는 중…</p>
+        ) : timeline.length === 0 ? (
+          <p className="text-sm text-zinc-500">아직 기록된 수업이 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {timeline.map((log) => (
+              <li
+                key={log.id}
+                className={`rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 ${log.voided ? "opacity-50" : ""}`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-xs text-zinc-400">{fmtDT(log.session_at ?? log.created_at)}</span>
+                  {log.source && (
+                    <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-zinc-700 bg-zinc-800 text-zinc-400"}`}>
+                      {labelOf(SOURCE_OPTS, log.source)}
+                    </span>
+                  )}
+                  {log.sent_at && (
+                    <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300">
+                      카톡 전송
+                    </span>
+                  )}
+                  {log.voided && (
+                    <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
+                      취소됨
+                    </span>
+                  )}
+                </div>
+                {log.source === "noshow" ? (
+                  <p className="mt-1.5 text-sm text-zinc-500">노쇼 (본문 없음)</p>
+                ) : log.ai_summary ? (
+                  <p className={`mt-1.5 text-sm text-zinc-300 line-clamp-3 ${log.voided ? "line-through" : ""}`}>
+                    {log.ai_summary}
+                  </p>
+                ) : (
+                  <p className="mt-1.5 text-sm text-zinc-600">본문 없음</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* 계약 등록 모달 — PtConfirmBanner 확인모달과 동일 톤. buildContract·ContractAmountFields 재사용. */}
