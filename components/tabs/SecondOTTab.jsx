@@ -452,17 +452,20 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           </button>
         </div>
 
-        {/* 클로징 — 3분기 읽기전용 스택(yes/partial/no · 토글 없음). 신규 AI 생성 없음(캐시 재사용). */}
+        {/* 클로징 — 3분기 읽기전용 아코디언(yes/partial/no · 기본 접힘, 동시 펼침 허용). 신규 AI 생성 없음(캐시 재사용). */}
         <section>
           <Eyebrow icon={Flame}>오늘의 클로징 · 수업 전 준비</Eyebrow>
           <div className="space-y-4">
             {["yes", "partial", "no"].map((id) => {
               const c = b.closing?.[id] || null;
               return (
-                <div key={id}>
-                  <div className="mb-2 inline-block rounded-md bg-zinc-800/70 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
-                    {ACT_LABEL[id]}
-                  </div>
+                <details key={id} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+                  <summary className="cursor-pointer">
+                    <span className="rounded-md bg-zinc-800/70 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
+                      {ACT_LABEL[id]}
+                    </span>
+                  </summary>
+                  <div className="mt-3">
                   {c ? (
                     <div className="space-y-3 rounded-2xl border border-lime-500/40 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/10">
                       {c.approach_tag && (
@@ -504,7 +507,8 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                   ) : (
                     <p className="text-xs text-zinc-500">이 분기의 클로징 데이터가 없습니다.</p>
                   )}
-                </div>
+                  </div>
+                </details>
               );
             })}
           </div>
