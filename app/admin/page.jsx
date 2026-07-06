@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowLeft,
   Award,
   Camera,
@@ -22,7 +21,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingStats, reregisterStats, revenueInMonth } from "@/lib/memberStatus";
+import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount } from "@/lib/memberStatus";
+import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -31,22 +31,6 @@ import { closingStats, reregisterStats, revenueInMonth } from "@/lib/memberStatu
 const won = (n) => "₩" + n.toLocaleString("ko-KR");
 // rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
 const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
-
-// 오늘 지점 실시간 현황
-const TODAY = {
-  otCount: 14, // 오늘 진행된 총 OT
-  resignRate: 58, // 재등록 결제율(%)
-  revenue: 2340000, // 오늘 매출
-};
-
-// KPI (게이지)
-const KPI = {
-  monthlyTargetRate: 72, // 이번 달 목표 매출 달성률(%)
-  monthlyCurrent: 43200000,
-  monthlyTarget: 60000000,
-  otConversion: 61, // 오늘 OT → 결제 전환율(%)
-  weeklyRevenueBars: [58, 64, 71, 66, 78, 82, 72], // 주간 추이(달성률 %)
-};
 
 // 트레이너 QC 모니터링
 const TRAINERS = [
@@ -169,38 +153,6 @@ function Eyebrow({ icon: Icon, children }) {
   );
 }
 
-function GaugeCard({ label, value, suffix, sub, tone, children }) {
-  const toneMap = {
-    lime: { text: "text-lime-400", bar: "from-lime-400 to-emerald-400", glow: "shadow-lime-500/30" },
-    cyan: { text: "text-cyan-400", bar: "from-cyan-400 to-sky-400", glow: "shadow-cyan-500/30" },
-    fuchsia: { text: "text-fuchsia-400", bar: "from-fuchsia-400 to-pink-400", glow: "shadow-fuchsia-500/30" },
-  }[tone];
-
-  return (
-    <div className={`rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5 shadow-lg ${toneMap.glow}`}>
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-        {label}
-      </div>
-      <div className="mt-2 flex items-baseline gap-1">
-        <span className={`font-mono text-5xl font-extrabold tracking-tight ${toneMap.text}`}>
-          {value}
-        </span>
-        {suffix && <span className={`text-xl font-bold ${toneMap.text}`}>{suffix}</span>}
-      </div>
-      {sub && <div className="mt-1 text-xs text-zinc-500">{sub}</div>}
-      {children}
-      {typeof value === "number" || suffix === "%" ? (
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
-          <div
-            className={`h-full rounded-full bg-gradient-to-r ${toneMap.bar}`}
-            style={{ width: `${Math.min(Number(value), 100)}%` }}
-          />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function Bar({ pct, tone = "lime" }) {
   const c = {
     lime: "from-lime-400 to-emerald-400",
@@ -224,6 +176,7 @@ export default function AdminDashboard() {
   const [copyOffset, setCopyOffset] = useState(0);
   const [otRows, setOtRows] = useState([]);
   const [contracts, setContracts] = useState([]);
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -232,12 +185,13 @@ export default function AdminDashboard() {
         return;
       }
       // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
-      const [u, o, c] = await Promise.all([
+      const [u, o, c, l] = await Promise.all([
         supabase.from("user_table").select("*"),
         supabase.from("ot_log").select("*"),
         supabase.from("session_log").select("*"),
+        supabase.from("daily_workout_log").select("*"),
       ]);
-      const firstErr = u.error || o.error || c.error;
+      const firstErr = u.error || o.error || c.error || l.error;
       if (firstErr) {
         setDbNote("불러오기 실패: " + firstErr.message);
         return;
@@ -245,6 +199,7 @@ export default function AdminDashboard() {
       setRows(u.data || []);
       setOtRows(o.data || []);
       setContracts(c.data || []);
+      setLogs(l.data || []);
     })();
   }, []);
 
@@ -252,14 +207,14 @@ export default function AdminDashboard() {
   const copies = useMemo(() => buildCopies(agg), [agg]);
   const shown = [0, 1, 2].map((i) => copies[(copyOffset + i) % copies.length]);
 
-  // 이탈 위험 회원 수 — 회원 수에 연동 (데모 계수)
-  const churnRisk = Math.max(3, Math.round((agg.total || 6) * 0.18));
-
   // ④ 실데이터 파생 — 기준월(UTC 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
   const ym = new Date().toISOString().slice(0, 7);
   const closing = useMemo(() => closingStats(otRows), [otRows]);
   const rereg = useMemo(() => reregisterStats(contracts), [contracts]);
   const monthRevenue = useMemo(() => revenueInMonth(contracts, ym), [contracts, ym]);
+  const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
+  const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
+  const totalSessions = useMemo(() => sessionsCount(logs), [logs]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-lime-400/30">
@@ -341,54 +296,66 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        {/* ===== KPI Metric Grid ===== */}
+        {/* ===== KPI · 방향/사유 분포 (④) ===== */}
         <section className="mb-8">
-          <Eyebrow icon={TrendingUp}>핵심 경영 지표 (KPI)</Eyebrow>
+          <Eyebrow icon={TrendingUp}>강점 · 재등록 분석</Eyebrow>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-            <GaugeCard
-              label="이번 달 목표 매출 달성률"
-              value={KPI.monthlyTargetRate}
-              suffix="%"
-              tone="lime"
-              sub={`${won(KPI.monthlyCurrent)} / ${won(KPI.monthlyTarget)}`}
-            >
-              <div className="mt-4 flex items-end gap-1">
-                {KPI.weeklyRevenueBars.map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t bg-gradient-to-t from-lime-500/40 to-lime-400"
-                    style={{ height: `${h * 0.5}px` }}
-                    title={`${h}%`}
-                  />
-                ))}
+            {/* 방향별 강점 */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">클로징 방향별 강점</div>
+              <div className="mt-1 text-xs text-zinc-500">성공 클로징의 접근 방향 분포</div>
+              <div className="mt-4 space-y-3">
+                {approachDist.length === 0 ? (
+                  <div className="text-xs text-zinc-600">아직 성공 클로징 데이터가 없습니다.</div>
+                ) : (
+                  approachDist.map((d) => {
+                    const max = approachDist[0].count || 1;
+                    return (
+                      <div key={d.approach}>
+                        <div className="mb-1 flex justify-between text-[11px] text-zinc-400">
+                          <span>{labelOf(CLOSING_APPROACH_OPTS, d.approach)}</span>
+                          <span className="font-mono text-zinc-300">{d.count}</span>
+                        </div>
+                        <Bar pct={(d.count / max) * 100} tone="lime" />
+                      </div>
+                    );
+                  })
+                )}
               </div>
-            </GaugeCard>
+            </div>
 
-            <GaugeCard
-              label="오늘 OT → 결제 전환율"
-              value={KPI.otConversion}
-              suffix="%"
-              tone="cyan"
-              sub={`OT ${TODAY.otCount}건 중 결제 전환 기준`}
-            />
-
-            <div className="rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/5 p-5 shadow-lg shadow-fuchsia-500/20">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-                이번 주 이탈 위험 회원
+            {/* 재등록 사유 분포 */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">재등록 실패·보류 사유</div>
+              <div className="mt-1 text-xs text-zinc-500">거절을 데이터로 — 약점 진단</div>
+              <div className="mt-4 space-y-3">
+                {reasonDist.length === 0 ? (
+                  <div className="text-xs text-zinc-600">아직 재등록 사유 데이터가 없습니다.</div>
+                ) : (
+                  reasonDist.map((d) => {
+                    const max = reasonDist[0].count || 1;
+                    return (
+                      <div key={d.reason}>
+                        <div className="mb-1 flex justify-between text-[11px] text-zinc-400">
+                          <span>{labelOf(REG_REASON_OPTS, d.reason)}</span>
+                          <span className="font-mono text-zinc-300">{d.count}</span>
+                        </div>
+                        <Bar pct={(d.count / max) * 100} tone="amber" />
+                      </div>
+                    );
+                  })
+                )}
               </div>
+            </div>
+
+            {/* 총 수업수 */}
+            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">총 수업수</div>
               <div className="mt-2 flex items-baseline gap-1">
-                <span className="font-mono text-5xl font-extrabold tracking-tight text-fuchsia-400">
-                  {churnRisk}
-                </span>
-                <span className="text-xl font-bold text-fuchsia-400">명</span>
+                <span className="font-mono text-5xl font-extrabold tracking-tight text-zinc-50">{totalSessions}</span>
+                <span className="text-xl font-bold text-zinc-500">회</span>
               </div>
-              <div className="mt-1 text-xs text-zinc-500">만기 임박 · 최근 미방문 기준</div>
-              <div className="mt-4 flex items-center gap-2 rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/10 px-3 py-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-fuchsia-400" />
-                <span className="text-[11px] leading-relaxed text-zinc-300">
-                  재등록 CRM 탭에서 저부담 연장 제안 발송 권장
-                </span>
-              </div>
+              <div className="mt-1 text-xs text-zinc-500">노쇼 취소분(voided) 제외 · 누적</div>
             </div>
           </div>
         </section>
