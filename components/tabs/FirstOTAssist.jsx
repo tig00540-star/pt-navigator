@@ -127,6 +127,8 @@ export default function FirstOTAssist({ member }) {
   // 캐시 스테일: 저장된 inputHash ≠ 현재 회원 입력 해시 → 재생성 권장.
   const persisted = Boolean(row1Report?.first_assist);
   const stale = Boolean(meta?.inputHash && meta.inputHash !== firstInputHash(member));
+  // E: 입력(회원정보 해시)이 직전 생성과 동일 → 반복 호출 억제(버튼 흐리게 + 힌트). 하드락 아님(클릭은 됨) — 입력 바뀌면 stale로 자동 해제.
+  const sameInput = Boolean(data && meta?.inputHash) && !stale;
 
   // example / cueing / dialogue = '발판(예시)' → 흐림 + "예시" 라벨 (낭독기 방지).
   const Example = ({ text }) =>
@@ -163,7 +165,12 @@ export default function FirstOTAssist({ member }) {
         <button
           onClick={generate}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+          title={sameInput ? "회원 정보가 바뀌면 다시 생성하세요 (지금은 같은 입력)" : undefined}
+          className={
+            sameInput && !loading
+              ? "flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-400 transition active:scale-95"
+              : "flex items-center gap-2 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+          }
         >
           <Sparkles className="h-4 w-4" strokeWidth={2.5} />
           {loading ? "생성 중…" : data ? "다시 생성" : "AI 지원 생성"}
@@ -183,6 +190,9 @@ export default function FirstOTAssist({ member }) {
             <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-300">
               ⚠️ 회원 정보 변경됨 — 다시 생성 권장
             </span>
+          )}
+          {sameInput && (
+            <span className="text-zinc-500">· 입력이 그대로예요 — 회원 정보가 바뀌면 다시 생성돼요</span>
           )}
         </div>
       )}
