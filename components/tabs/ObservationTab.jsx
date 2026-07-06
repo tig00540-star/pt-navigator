@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { Footprints, Handshake, Plus, Save, Smile, Target, X } from "lucide-react";
+import { FileText, Footprints, Handshake, Plus, Save, Smile, Target, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
@@ -31,6 +31,7 @@ function emptyForm() {
     reaction: { stimulus: "normal", attitudeTags: [], memo: "" },
     goal: { identified: false, type: "appearance", detail: "" },
     memberQuote: "", // report.memberQuote (2차 '1차 소환' 비트 재료)
+    trainerNote: "", // report.trainer_note (트레이너 종합 소견 — 2차 AI 재료, B2-a)
     closingResult: "none", // ㉠ closing_result (top-level 컬럼)
     closingApproach: "other", // ㉠ closing_approach (top-level 컬럼)
     closingReapproachAt: "", // 보류 재접근 예정일 (closing_reapproach_at, date)
@@ -63,6 +64,7 @@ function rowToForm(row) {
       detail: r.goal?.detail || "",
     },
     memberQuote: typeof r.memberQuote === "string" ? r.memberQuote : "",
+    trainerNote: typeof r.trainer_note === "string" ? r.trainer_note : "",
     closingResult: row?.closing_result || "none",
     closingApproach: row?.closing_approach || "other",
     closingReapproachAt: row?.closing_reapproach_at || "",
@@ -172,6 +174,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
         reaction: form.reaction,
         goal: form.goal,
         memberQuote: form.memberQuote,
+        trainer_note: form.trainerNote, // 트레이너 종합 소견(B2-a) — first_assist와 함께 report 공존
         // ① 캐시 공존 — 기존 first_assist가 있으면 보존(관찰 저장이 캐시를 덮지 않게).
         ...(existingFirstAssist ? { first_assist: existingFirstAssist } : {}),
       };
@@ -451,6 +454,23 @@ export default function ObservationTab({ member, onClosingSaved }) {
               className={inputCls}
             />
           </div>
+        </div>
+      </section>
+
+      {/* ④ 트레이너 종합 소견 (report.trainer_note — 2차 AI 재료. B2-b에서 프롬프트 연동) */}
+      <section>
+        <Eyebrow icon={FileText}>④ 트레이너 종합 소견</Eyebrow>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <textarea
+            value={form.trainerNote}
+            onChange={(e) => setTop("trainerNote", e.target.value)}
+            rows={4}
+            placeholder="이 회원 전체에 대한 종합 소견·가설·2차에서 파고들 방향"
+            className={inputCls}
+          />
+          <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
+            2차 AI 지원의 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게. (②의 메모=회원 반응 국소 / 여기=관찰 전체 종합)
+          </p>
         </div>
       </section>
 
