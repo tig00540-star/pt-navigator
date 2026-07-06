@@ -66,6 +66,27 @@ function extForMime(type) {
   return "webm";
 }
 
+// 오늘 날짜 라벨 (예: 2026.07.26) — 손편지 헤더용.
+function todayLabel() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`;
+}
+
+// 마무리 배웅 멘트 풀 — 날짜 시드로 하루 안에선 고정(재생성해도 안 바뀜, 랜덤 금지).
+const CLOSING_MESSAGES = [
+  "오늘도 운동하느라 고생하셨습니다! 행복한 하루 되세요 😊",
+  "오늘 수업 정말 잘 따라오셨어요. 푹 쉬시고 내일 또 힘내요!",
+  "꾸준함이 몸을 바꿉니다. 오늘도 한 걸음 나아가셨어요!",
+  "수고 많으셨어요! 근육은 쉴 때 자랍니다. 잘 회복하세요",
+  "오늘도 최선을 다하신 모습 멋졌어요. 좋은 하루 보내세요!",
+  "한 세트 한 세트 쌓인 게 결국 결과가 됩니다. 고생하셨어요!",
+];
+function closingMessage() {
+  const key = todayLabel().replace(/\D/g, ""); // "20260726"
+  return CLOSING_MESSAGES[Number(key) % CLOSING_MESSAGES.length];
+}
+
 export default function VoiceLogTab({ member, onResult }) {
   const [phase, setPhase] = useState("idle"); // idle | recording | processing | done
   const [sec, setSec] = useState(0);
@@ -194,7 +215,7 @@ export default function VoiceLogTab({ member, onResult }) {
   };
 
   const buildText = (r) =>
-    `[핏 피트니스 AI가 요약한 오늘 ${member.name} 회원님의 운동 일지입니다]\n\n` +
+    `[${todayLabel()}, ${member.name} 회원님 운동일지 입니다!]\n\n` +
     `1. 오늘 진행한 머신 & 중량/세트\n` +
     r.machines
       .map((m) => `- ${m.name}${m.detail ? `: ${m.detail}` : ""}`)
@@ -202,7 +223,7 @@ export default function VoiceLogTab({ member, onResult }) {
     `\n\n2. 트레이너 핵심 피드백\n${r.feedback}\n\n` +
     `3. 홈트레이닝 및 주의사항\n` +
     r.homework.map((h) => `- ${h}`).join("\n") +
-    `\n\n— 담당 트레이너 드림`;
+    `\n\n${closingMessage()}`;
 
   return (
     <div className="space-y-6">
