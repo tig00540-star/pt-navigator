@@ -148,7 +148,7 @@ function buildSecondSales(act) {
 const inputCls =
   "w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-lime-500/50";
 
-export default function SecondOTTab({ member }) {
+export default function SecondOTTab({ member, onClosingSaved }) {
   const [act, setAct] = useState("yes");
   const [loading, setLoading] = useState(false);
   const [row1, setRow1] = useState(null); // round-1 전체 행 (closing_result 판정용)
@@ -248,6 +248,7 @@ export default function SecondOTTab({ member }) {
       }
       setClosingApproach(approachValue);
       showToast("2차 클로징 결과가 저장되었습니다");
+      onClosingSaved?.(); // 하드닝 통과(update 0행 return·insert throw 이후)한 성공 시점에만 → 부모가 배너 재조회
     } catch (e) {
       showToast("저장 실패: " + (e?.message || "unknown"));
     } finally {

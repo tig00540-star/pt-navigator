@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function PtConfirmBanner({ member, onConfirm }) {
+export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
   const [rounds, setRounds] = useState({ round1: null, round2: null });
   const [busy, setBusy] = useState(false);
   const mounted = useRef(true);
@@ -39,7 +39,8 @@ export default function PtConfirmBanner({ member, onConfirm }) {
     return () => {
       cancelled = true;
     };
-  }, [member?.id]);
+    // closingVersion: 클로징 저장(1·2차) 직후 부모가 증가 → 재조회(같은 회원이라 member.id 안 바뀌는 stale 방지).
+  }, [member?.id, closingVersion]);
 
   // ⚠️ 값은 CLOSING_RESULT_OPTS 영문('success') — 저장 경로와 동일(한글 아님).
   const success =

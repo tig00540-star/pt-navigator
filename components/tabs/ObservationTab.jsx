@@ -72,7 +72,7 @@ function rowToForm(row) {
 const inputCls =
   "w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50";
 
-export default function ObservationTab({ member }) {
+export default function ObservationTab({ member, onClosingSaved }) {
   const [form, setForm] = useState(emptyForm);
   const [existingRowId, setExistingRowId] = useState(null);
   // ① 캐시 공존 — 저장 시 report.first_assist를 안 덮게 보존(각 writer 자기 필드만).
@@ -213,6 +213,8 @@ export default function ObservationTab({ member }) {
         if (data?.id) setExistingRowId(data.id);
         showToast("관찰 기록이 저장되었습니다");
       }
+      // 여기 도달 = 성공만(update 0행은 위에서 return, 에러는 throw) → 부모가 배너 재조회(1차 즉등록 성공 포함).
+      onClosingSaved?.();
     } catch (e) {
       showToast("저장 실패: " + (e?.message || "unknown"));
     } finally {

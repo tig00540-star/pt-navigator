@@ -868,6 +868,9 @@ export default function OTNavigatorDashboard() {
   const [machineOptions, setMachineOptions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [dbNote, setDbNote] = useState("");
+  // 클로징 저장(1·2차) 성공 시 증가 → PtConfirmBanner가 ot_log 재조회(같은 회원 stale 방지).
+  // ⚠️ ③에서 클로징 저장 지점(재등록·이탈 UI 등)이 늘면 그 성공 지점에도 onClosingSaved를 물려야 함.
+  const [closingVersion, setClosingVersion] = useState(0);
 
   const loadMembers = async () => {
     if (!supabase) {
@@ -1019,7 +1022,11 @@ export default function OTNavigatorDashboard() {
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}
         {view === "ot" && (
-          <PtConfirmBanner member={member} onConfirm={confirmPtActive} />
+          <PtConfirmBanner
+            member={member}
+            onConfirm={confirmPtActive}
+            closingVersion={closingVersion}
+          />
         )}
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
         <MemberViewShell member={member}>
@@ -1039,10 +1046,20 @@ export default function OTNavigatorDashboard() {
             <FirstOTTab member={member} />
           )}
 
-          {tab === 2 && <SecondOTTab member={member} />}
+          {tab === 2 && (
+            <SecondOTTab
+              member={member}
+              onClosingSaved={() => setClosingVersion((v) => v + 1)}
+            />
+          )}
           {tab === 3 && <CRMTab />}
           {tab === 4 && <VoiceLogTab member={member} />}
-          {tab === 5 && <ObservationTab member={member} />}
+          {tab === 5 && (
+            <ObservationTab
+              member={member}
+              onClosingSaved={() => setClosingVersion((v) => v + 1)}
+            />
+          )}
         </MemberViewShell>
       </main>
 
