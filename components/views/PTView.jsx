@@ -443,9 +443,18 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
                 {log.source === "noshow" ? (
                   <p className="mt-1.5 text-sm text-zinc-500">노쇼 (본문 없음)</p>
                 ) : log.ai_summary ? (
-                  <p className={`mt-1.5 text-sm text-zinc-300 line-clamp-3 ${log.voided ? "line-through" : ""}`}>
-                    {log.ai_summary}
-                  </p>
+                  <details className="group mt-1.5">
+                    {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
+                    <summary className={`cursor-pointer list-none group-open:hidden ${log.voided ? "line-through" : ""}`}>
+                      <span className="text-sm text-zinc-300 line-clamp-3">
+                        {log.ai_summary}
+                      </span>
+                      <span className="mt-1 block text-[10px] font-medium text-zinc-500">더 보기</span>
+                    </summary>
+                    <p className={`hidden whitespace-pre-wrap text-sm text-zinc-300 group-open:block ${log.voided ? "line-through" : ""}`}>
+                      {log.ai_summary}
+                    </p>
+                  </details>
                 ) : (
                   <p className="mt-1.5 text-sm text-zinc-600">본문 없음</p>
                 )}
