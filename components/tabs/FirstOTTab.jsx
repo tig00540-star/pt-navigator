@@ -12,7 +12,6 @@ import { Activity, Brain, Briefcase, MapPin, Send } from "lucide-react";
 import FirstOTAssist from "@/components/tabs/FirstOTAssist";
 
 // 유지(§0.1 파킹): [단계적] package_suggestion가 소비 예정. 현재 렌더 미소비.
-// eslint-disable-next-line no-unused-vars
 const PACKAGES = [
   {
     id: "starter",
