@@ -26,6 +26,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
   // 선택 회원의 ot_log 1·2차 closing_result 조회(성공 판정용). demo/미설정 시 스킵.
   useEffect(() => {
     if (!supabase || !member?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRounds({ round1: null, round2: null });
       return;
     }
