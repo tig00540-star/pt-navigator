@@ -303,6 +303,45 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
 }`;
 }
 
+// ⑤ phase="acute" user 프롬프트 — 회원 급변 대처(수업 전 준비). ⑤ 치트키/급한불.
+// ⚠️ 의료 경계 최우선: 진단·치료·처방 아님. 부상·급성 통증은 병원·의료진 먼저. 숫자 처방 금지·방향만.
+// ⚠️ DB 무관: 저장/캐시 없음(세션 전용). ot_log 비의존.
+function acutePrompt(member, ctx) {
+  const m = member || {};
+  const c = ctx || {};
+  const recent = Array.isArray(c.recent_logs) ? c.recent_logs.filter(Boolean) : [];
+  return `[상황] PT 회원에게 급변(부상·통증 급발생·컨디션 급변 등)이 생겨, 오늘 수업을 어떻게 조정할지 '수업 전'에 준비하는 자리다. 아래는 트레이너가 방금 입력한 '급변 상황'이다.
+[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, pain=${g(m.pain)}, goal=${g(m.goal)}
+[현재 PT 방향/목표] ${g(m.pt_direction)}
+[급변 상황(트레이너 입력)] ${g(c.situation)}
+[최근 수업 기록]
+${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
+
+이 '급변 상황'을 근거로, 트레이너가 오늘 수업을 안전하게 조정하도록 '방향'을 제시하라. 없는 증상·원인을 지어내지 마라.
+
+[★의료 경계 — 이 출력의 최우선 안전선]
+- 이건 진단·치료·처방이 아니다. 트레이너는 의료인이 아니다.
+- 부상·급성 통증·의학적 징후(디스크·삠·붓기·저림·급성 통증 등)로 보이면, 최우선 출력은 '병원·의료진 먼저 확인'이다. safety에 그 판단 신호와 넘지 말 선을 담아라.
+- 네가 줄 수 있는 건 (a) 오늘 '피할' 움직임·부하 방향과 (b) 의학적 확인 이후를 전제로 한 '복귀 결'까지다. '지금 이걸 대신 시켜라'는 대체 처방이 아니다.
+- 상황이 단순 컨디션 저하 등 비의학적이면 safety는 짧게(무리 없는 선 안내).
+
+[출력 규칙 — 스파링 파트너]
+- 숫자 처방 절대 금지(횟수·중량·각도·세트·템포·시간 X). 움직임 '방향'과 '원리'까지만.
+- 방법도 간략히 — 트레이너가 스스로 응용·공부할 여지를 남겨라(정답 대본·레시피 금지 = 하향평준화 방지).
+- 이건 '몸 대처'지 세일즈가 아니다. "그러니 등록/재등록 하라"는 세일즈 몰이 절대 금지.
+- 근거가 얇으면 지어내지 말고 data_gaps에 '무엇을 더 확인하면 좋은지' 남겨라.
+
+[출력 언어·형식] 자연스러운 한국어. 영문 코드값·필드명을 값 텍스트에 노출 금지. 아래 JSON 스키마만 출력(설명·마크다운·코드펜스 금지).
+{
+  "data_gaps": ["..."],
+  "safety": "의료 경계 안내 — 병원·의료진 우선이 필요한 신호 + 트레이너가 넘지 말 선(진단·치료 아님). 비의학적이면 짧게.",
+  "avoid": [ { "movement": "오늘 피할 움직임·부하 방향", "why": "왜 위험/악화되는지 원리 한 줄" } ],
+  "alternatives": [ { "direction": "의학적 확인 이후를 전제로 접근 가능한 결(방향까지만, 없으면 빈 배열)", "why": "그 방향의 원리 한 줄" } ],
+  "principle": "이 상황을 관통하는 원리 한 줄 (트레이너가 같은 원리로 자기 판단을 응용하도록)",
+  "note": "수업 전 한 줄 준비 프레이밍 (압박·세일즈 아님)"
+}`;
+}
+
 // 최종 안전망: 모델이 출력 텍스트에 흘린 필드명(코드값)을 한글로 치환.
 // 키/구조는 건드리지 않고 '문자열 값'만 재귀적으로 훑는다.
 const FIELD_TERMS = [
@@ -331,6 +370,11 @@ const FIELD_TERMS = [
   ["watch_for", "주의 신호"],
   ["data_gaps", "더 확인할 점"],
   ["hypothesis", "가설"],
+  // ⑤ acute 필드명 — 값 텍스트 누출 방어.
+  ["safety", "안전 안내"],
+  ["avoid", "피할 움직임"],
+  ["alternatives", "대체 접근"],
+  ["principle", "원리"],
 ];
 
 function sanitizeText(s) {
@@ -471,16 +515,17 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
   }
 
-  const { phase, member, report, ptContext } = body || {};
-  if (phase !== "first" && phase !== "second" && phase !== "reregister") {
-    return Response.json({ error: "phase는 'first'·'second'·'reregister' 중 하나여야 합니다." }, { status: 400 });
+  const { phase, member, report, ptContext, acuteContext } = body || {};
+  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute") {
+    return Response.json({ error: "phase는 'first'·'second'·'reregister'·'acute' 중 하나여야 합니다." }, { status: 400 });
   }
 
   const model = phase === "first" ? MODEL_FIRST : MODEL_SECOND;
   const prompt =
     phase === "first" ? firstPrompt(member)
     : phase === "second" ? secondPrompt(member, report)
-    : reregisterPrompt(member, ptContext);
+    : phase === "reregister" ? reregisterPrompt(member, ptContext)
+    : acutePrompt(member, acuteContext);
   // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120 유지.
   const maxTokens = phase === "first" ? 8192 : 5120;
 
