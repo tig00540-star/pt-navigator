@@ -8,7 +8,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, Compass, Dumbbell, History, NotebookPen, RefreshCw, Sparkles, UserX } from "lucide-react";
+import { ChevronLeft, Compass, Dumbbell, Flame, History, NotebookPen, RefreshCw, Sparkles, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue, buildContract, latestContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -18,6 +18,7 @@ import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import RegBriefView from "@/components/views/RegBriefView";
+import AcuteBriefView from "@/components/views/AcuteBriefView";
 import { SOURCE_OPTS, REG_RESULT_OPTS, REG_REASON_OPTS, labelOf } from "@/lib/labels";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
@@ -63,6 +64,12 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
   const [regBriefMeta, setRegBriefMeta] = useState(null);
   const [regGenerating, setRegGenerating] = useState(false);
   const [regAiError, setRegAiError] = useState("");
+  // 급한불(⑤) — 회원 급변 대처. 세션 전용(DB 무관·캐시 없음).
+  const [acuteSituation, setAcuteSituation] = useState("");
+  const [acuteBrief, setAcuteBrief] = useState(null);
+  const [acuteMeta, setAcuteMeta] = useState(null);
+  const [acuteGenerating, setAcuteGenerating] = useState(false);
+  const [acuteError, setAcuteError] = useState("");
   const { toast, showToast } = useToast();
 
   // 회원 변경 시 계약 모달 상태 리셋 → 이전 회원값 오등록 방지. (early return 없어 위치 자유)
@@ -79,6 +86,10 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     setRegResult("none"); // 재등록 결과는 계약 로드 시 시드(#2 effect) — 여기선 회원전환 기본값
     setRegReason("");
     setRegReapproachAt("");
+    setAcuteSituation(""); // 급한불 세션 전용 — 회원 전환 시 입력·결과 리셋
+    setAcuteBrief(null);
+    setAcuteMeta(null);
+    setAcuteError("");
     // pt_direction은 id 변경 시에만 재시드(저장 후 낙관적 patch와 재시드 충돌 방지) — 의도된 dep 제외.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member?.id]);
@@ -367,6 +378,38 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     }
   };
 
+  // 급한불(⑤) 생성 — /api/ot-brief phase:"acute". 세션 전용(캐시·DB write 없음).
+  const generateAcute = async () => {
+    if (acuteGenerating) return;
+    const situation = acuteSituation.trim();
+    if (!situation) return;
+    setAcuteGenerating(true);
+    setAcuteError("");
+    try {
+      const acuteContext = {
+        situation,
+        recent_logs: timeline.filter((l) => !l.voided && l.ai_summary).slice(0, 3).map((l) => l.ai_summary),
+      };
+      const res = await fetch("/api/ot-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase: "acute", member, acuteContext }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setAcuteError(d.error || "AI 생성에 실패했습니다.");
+        return;
+      }
+      const data = await res.json();
+      setAcuteBrief(data);
+      setAcuteMeta({ generatedAt: new Date().toISOString() });
+    } catch (e) {
+      setAcuteError("네트워크 오류: " + (e?.message || "unknown"));
+    } finally {
+      setAcuteGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {onGoList && (
@@ -525,6 +568,44 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
           </button>
         </div>
       </section>
+
+      {/* 급한불(⑤) — 회원 급변 대처(수업 전 준비). 세션 전용·DB 무관. 상시 의료 배너. */}
+      <details className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <summary className="flex cursor-pointer list-none items-center gap-2">
+          <Eyebrow icon={Flame}>급한불 — 회원 급변 대처</Eyebrow>
+        </summary>
+        <div className="mt-4 space-y-3">
+          {/* 상시 의료 배너 — AI 출력과 무관하게 항상 노출(이중 방어). */}
+          <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
+            <p className="text-[11px] leading-relaxed text-red-200">
+              ⚠️ 진단·치료·처방 도구가 아닙니다. 부상·급성 통증은 <b>병원·의료진 판단이 우선</b>입니다.
+              아래는 트레이너 판단을 돕는 &lsquo;방향&rsquo;일 뿐 의학적 지시가 아닙니다.
+            </p>
+          </div>
+          <textarea
+            value={acuteSituation}
+            onChange={(e) => setAcuteSituation(e.target.value)}
+            disabled={acuteGenerating}
+            rows={2}
+            placeholder="회원 급변 상황 한 줄 (예: 어제 데드리프트 후 허리 삐끗, 숙이면 찌릿)"
+            className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+          />
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] text-zinc-500">
+              {acuteMeta?.generatedAt ? `분석: ${new Date(acuteMeta.generatedAt).toLocaleString("ko-KR")}` : "세션 전용 · 저장 안 됨"}
+            </span>
+            <button
+              onClick={generateAcute}
+              disabled={acuteGenerating || !acuteSituation.trim()}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 transition hover:bg-red-500/20 active:scale-95 disabled:opacity-50"
+            >
+              <Flame className="h-3.5 w-3.5" /> {acuteGenerating ? "분석 중…" : acuteBrief ? "다시 분석" : "급변 대처 분석"}
+            </button>
+          </div>
+          {acuteError && <p className="text-[11px] text-amber-400">{acuteError}</p>}
+          <AcuteBriefView brief={acuteBrief} />
+        </div>
+      </details>
 
       {/* 재등록 결과 기록 (④ 작업4-1) — 최신 계약 행 reg_* UPDATE. 계약 있을 때만 노출. */}
       {latest && (
