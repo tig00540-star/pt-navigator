@@ -73,8 +73,8 @@ function mapMemberRow(r) {
 const TABS = [
   { id: 0, label: "회원" },
   { id: 1, label: "1차 OT" },
+  { id: 5, label: "1차 피드백" },
   { id: 2, label: "2차 OT" },
-  { id: 5, label: "관찰 기록" },
 ];
 
 /* =========================================================================
