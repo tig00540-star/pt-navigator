@@ -10,6 +10,14 @@
 import { useState } from "react";
 import { Activity, Brain, Briefcase, MapPin, Send } from "lucide-react";
 import FirstOTAssist from "@/components/tabs/FirstOTAssist";
+import { STATUS_OPTS, labelOf } from "@/lib/labels";
+
+// 상태 배지 색(정적 클래스맵 · Tailwind purge 안전 — 동적 조립 금지). 값=user_table.status.
+const STATUS_TONE = {
+  ot_active: "border-lime-500/30 bg-lime-500/10 text-lime-400",
+  pt_active: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+  inactive:  "border-zinc-600/40 bg-zinc-700/30 text-zinc-400",
+};
 
 // 유지(§0.1 파킹): [단계적] package_suggestion가 소비 예정. 현재 렌더 미소비.
 const PACKAGES = [
@@ -80,11 +88,8 @@ export default function FirstOTTab({ member }) {
 
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-lime-500/30 bg-lime-500/10 px-3 py-1">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime-400" />
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-lime-400">
-                    {member.session} · LIVE
-                  </span>
+                <div className={`mb-2 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${STATUS_TONE[member.status] ?? "border-zinc-700 bg-zinc-800 text-zinc-400"}`}>
+                  {labelOf(STATUS_OPTS, member.status)}
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl">
                   {member.name}

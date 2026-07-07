@@ -46,7 +46,6 @@ const DEMO_MEMBER = {
   mbti: "ISTJ",
   pain: "우측 무릎 통증",
   goal: "바디프로필",
-  session: "1차 OT",
   status: "ot_active", // ② member_status — 라이프사이클 상태
   origin: "ot_funnel", // ② 진입 문 (ot_funnel | handover | external)
   pt_direction: "고관절 가동성 회복 + 무릎 부하 분산 (데모)", // PT 살아있는 방향축(③)
@@ -69,7 +68,6 @@ function mapMemberRow(r) {
     pain: r.pain ?? "-",
     goal: r.goal ?? "미설정",
     machines: r.machines ?? [],
-    session: "1차 OT",
     // ② member_status — 컬럼 미반영(마이그레이션 전)·demo 행에서도 기본값으로 안전.
     status: r.status ?? "ot_active",
     origin: r.origin ?? "ot_funnel",
