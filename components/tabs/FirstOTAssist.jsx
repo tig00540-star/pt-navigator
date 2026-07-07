@@ -25,6 +25,17 @@ import { supabase } from "@/lib/supabaseClient";
 import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
 import { firstInputHash } from "@/lib/otHash";
 
+// example / cueing / dialogue = '발판(예시)' → 흐림 + "예시" 라벨 (낭독기 방지).
+const Example = ({ text }) =>
+  text ? (
+    <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
+      <span className="mr-1 rounded bg-zinc-800/70 px-1 py-0.5 text-[9px] font-semibold text-zinc-500">
+        예시
+      </span>
+      {text}
+    </p>
+  ) : null;
+
 export default function FirstOTAssist({ member }) {
   const [data, setData] = useState(null); // ① brief JSON (캐시 또는 세션)
   const [meta, setMeta] = useState(null); // { generatedAt, model, inputHash }
@@ -70,7 +81,6 @@ export default function FirstOTAssist({ member }) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member?.id]);
 
   const generate = async () => {
@@ -129,17 +139,6 @@ export default function FirstOTAssist({ member }) {
   const stale = Boolean(meta?.inputHash && meta.inputHash !== firstInputHash(member));
   // E: 입력(회원정보 해시)이 직전 생성과 동일 → 반복 호출 억제(버튼 흐리게 + 힌트). 하드락 아님(클릭은 됨) — 입력 바뀌면 stale로 자동 해제.
   const sameInput = Boolean(data && meta?.inputHash) && !stale;
-
-  // example / cueing / dialogue = '발판(예시)' → 흐림 + "예시" 라벨 (낭독기 방지).
-  const Example = ({ text }) =>
-    text ? (
-      <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
-        <span className="mr-1 rounded bg-zinc-800/70 px-1 py-0.5 text-[9px] font-semibold text-zinc-500">
-          예시
-        </span>
-        {text}
-      </p>
-    ) : null;
 
   // 핵심 3줄용 한 줄 요약(풀텍스트 금지 — 펼치기로).
   const oneLine = (s, n = 60) => {
