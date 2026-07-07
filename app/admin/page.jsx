@@ -207,8 +207,9 @@ export default function AdminDashboard() {
   const copies = useMemo(() => buildCopies(agg), [agg]);
   const shown = [0, 1, 2].map((i) => copies[(copyOffset + i) % copies.length]);
 
-  // ④ 실데이터 파생 — 기준월(UTC 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
-  const ym = new Date().toISOString().slice(0, 7);
+  // ④ 실데이터 파생 — 기준월(KST 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
+  // KST(UTC+9) 이달 — memberStatus.kstYm과 경계 통일. Date.now()는 react 룰상 impure라 new Date().getTime() 사용.
+  const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
   const closing = useMemo(() => closingStats(otRows), [otRows]);
   const rereg = useMemo(() => reregisterStats(contracts), [contracts]);
   const monthRevenue = useMemo(() => revenueInMonth(contracts, ym), [contracts, ym]);
