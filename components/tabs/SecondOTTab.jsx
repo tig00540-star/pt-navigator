@@ -28,7 +28,7 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
-import { CLOSING_APPROACH_OPTS, CLOSING_RESULT_OPTS, labelOf } from "@/lib/labels";
+import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS, labelOf } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
@@ -131,6 +131,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   const [closingResult, setClosingResult] = useState("none"); // ㉠ 2차 클로징 결과
   const [closingApproach, setClosingApproach] = useState(""); // "" → AI approach_tag로 프리필
   const [closingReapproachAt, setClosingReapproachAt] = useState(""); // 보류 재접근 예정일
+  const [closingReason, setClosingReason] = useState(""); // 실패/보류 사유 카테고리
+  const [detailApproach, setDetailApproach] = useState(""); // 케이스 ① 접근
+  const [detailReaction, setDetailReaction] = useState(""); // 케이스 ② 반응
+  const [detailOutcome, setDetailOutcome] = useState(""); // 케이스 ③ 결과
   const [savingClose, setSavingClose] = useState(false);
   const { toast, showToast } = useToast();
 
@@ -187,12 +191,28 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     if (!canAI || savingClose) return;
     setSavingClose(true);
     try {
+      const isClosed = ["success", "fail", "hold"].includes(closingResult);
+      const hasDetail = detailApproach || detailReaction || detailOutcome;
       const payload = {
         closing_result: closingResult,
         closing_approach: approachValue,
         // 보류일 때만 재접근 예정일 top-level 추가(그 외 미포함). report(브리핑 캐시)·closing_* 안 덮음.
         ...(closingResult === "hold"
           ? { closing_reapproach_at: closingReapproachAt || null }
+          : {}),
+        ...((closingResult === "fail" || closingResult === "hold")
+          ? { closing_reason: closingReason || null }
+          : {}),
+        ...(isClosed
+          ? {
+              closing_detail: hasDetail
+                ? {
+                    approach: detailApproach || null,
+                    reaction: detailReaction || null,
+                    outcome: detailOutcome || null,
+                  }
+                : null,
+            }
           : {}),
       };
       if (existingRow2Id) {
@@ -241,6 +261,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           setClosingResult("none");
           setClosingApproach("");
           setClosingReapproachAt("");
+          setClosingReason("");
+          setDetailApproach("");
+          setDetailReaction("");
+          setDetailOutcome("");
         }
         return;
       }
@@ -275,6 +299,11 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       setClosingResult(r2?.closing_result || "none"); // 저장된 2차 클로징 결과 프리필
       setClosingApproach(r2?.closing_approach || "");
       setClosingReapproachAt(r2?.closing_reapproach_at || "");
+      setClosingReason(r2?.closing_reason || "");
+      const cd = r2?.closing_detail || {};
+      setDetailApproach(cd.approach || "");
+      setDetailReaction(cd.reaction || "");
+      setDetailOutcome(cd.outcome || "");
 
       // ③ 캐시 우선: round-2 report.brief 있으면 재방문 즉시 렌더(재호출 X). 없으면 자동 호출 대신
       // 버튼 트리거(결정#2) — renderPreGenerate의 "AI 지원 준비 생성하기" 클릭 시 generateBrief.
@@ -690,6 +719,50 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                 {savingClose ? "저장 중…" : "결과 저장"}
               </button>
             </div>
+
+            {/* 실패/보류일 때만 사유 카테고리 (약점 진단 · 집계) — full width */}
+            {(closingResult === "fail" || closingResult === "hold") && (
+              <div className="sm:col-span-3">
+                <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+                  사유 <span className="text-zinc-600">(약점 진단 · 집계)</span>
+                </label>
+                <select
+                  value={closingReason}
+                  onChange={(e) => setClosingReason(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">선택 안 함</option>
+                  {CLOSING_REASON_OPTS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 성공/실패/보류일 때 클로징 케이스 3박자 (선택 · AI 리딩 재료) — full width */}
+            {["success", "fail", "hold"].includes(closingResult) && (
+              <div className="sm:col-span-3 space-y-2">
+                <p className="text-[11px] text-zinc-600">클로징 케이스 (선택 · 나중 AI 리딩 재료)</p>
+                {[
+                  { v: detailApproach, set: setDetailApproach, label: "① 어떻게 접근했나", ph: "어떤 방향·멘트로 제안했나" },
+                  { v: detailReaction, set: setDetailReaction, label: "② 회원 반응·멘트", ph: "회원이 뭐라 했나(가능하면 그대로) — 마음 연/거절한 말" },
+                  { v: detailOutcome, set: setDetailOutcome, label: "③ 그래서 어떻게 됐나", ph: "결과·내 대응 — 예: 등록(12주) / 물러섬·재접근일 안 잡음" },
+                ].map((f) => (
+                  <div key={f.label}>
+                    <label className="mb-1 block text-[11px] font-medium text-zinc-500">{f.label}</label>
+                    <textarea
+                      value={f.v}
+                      onChange={(e) => f.set(e.target.value)}
+                      rows={2}
+                      placeholder={f.ph}
+                      className={inputCls + " resize-none"}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* 보류('hold')일 때만 재접근 예정일 (B안: 프리셋 + 수동) — full width */}
             {closingResult === "hold" && (
