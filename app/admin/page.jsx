@@ -21,8 +21,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount } from "@/lib/memberStatus";
-import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS } from "@/lib/labels";
+import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
+import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -227,6 +227,7 @@ export default function AdminDashboard() {
   const monthRevenue = useMemo(() => revenueInMonth(contracts, ym), [contracts, ym]);
   const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
+  const closingReasonDist = useMemo(() => closingReasonStats(otRows), [otRows]);
   const totalSessions = useMemo(() => sessionsCount(logs), [logs]);
 
   if (role === null) {
@@ -333,8 +334,8 @@ export default function AdminDashboard() {
 
         {/* ===== KPI · 방향/사유 분포 (④) ===== */}
         <section className="mb-8">
-          <Eyebrow icon={TrendingUp}>강점 · 재등록 분석</Eyebrow>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <Eyebrow icon={TrendingUp}>클로징 · 재등록 분석</Eyebrow>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {/* 방향별 강점 */}
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">클로징 방향별 강점</div>
@@ -352,6 +353,30 @@ export default function AdminDashboard() {
                           <span className="font-mono text-zinc-300">{d.count}</span>
                         </div>
                         <Bar pct={(d.count / max) * 100} tone="lime" />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* 클로징 실패·보류 사유 분포 */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">클로징 실패·보류 사유</div>
+              <div className="mt-1 text-xs text-zinc-500">OT 클로징 약점 진단 — 내가 주로 놓치는 이유</div>
+              <div className="mt-4 space-y-3">
+                {closingReasonDist.length === 0 ? (
+                  <div className="text-xs text-zinc-600">아직 클로징 실패·보류 사유 데이터가 없습니다.</div>
+                ) : (
+                  closingReasonDist.map((d) => {
+                    const max = closingReasonDist[0].count || 1;
+                    return (
+                      <div key={d.reason}>
+                        <div className="mb-1 flex justify-between text-[11px] text-zinc-400">
+                          <span>{labelOf(CLOSING_REASON_OPTS, d.reason)}</span>
+                          <span className="font-mono text-zinc-300">{d.count}</span>
+                        </div>
+                        <Bar pct={(d.count / max) * 100} tone="amber" />
                       </div>
                     );
                   })
