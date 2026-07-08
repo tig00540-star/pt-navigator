@@ -177,13 +177,25 @@ export default function AdminDashboard() {
   const [otRows, setOtRows] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
 
   useEffect(() => {
     (async () => {
       if (!supabase) {
         setDbNote("데모 모드 — Supabase 키를 설정하면 실제 회원 데이터로 지표가 갱신됩니다.");
+        setRole("owner"); // 데모 모드 = 게이트 스킵(AuthGate 정책과 동일)
         return;
       }
+      const { data: au } = await supabase.auth.getUser();
+      const uid = au?.user?.id;
+      let myRole = "denied";
+      if (uid) {
+        const { data: t } = await supabase
+          .from("trainer").select("role").eq("id", uid).maybeSingle();
+        if (t?.role === "owner") myRole = "owner";
+      }
+      setRole(myRole);
+      if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
       // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
       const [u, o, c, l] = await Promise.all([
         supabase.from("user_table").select("*"),
@@ -216,6 +228,28 @@ export default function AdminDashboard() {
   const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
   const totalSessions = useMemo(() => sessionsCount(logs), [logs]);
+
+  if (role === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-zinc-500 text-sm bg-zinc-950">
+        불러오는 중…
+      </div>
+    );
+  }
+  if (role === "denied") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-zinc-950">
+        <ShieldCheck className="h-10 w-10 text-zinc-600" />
+        <div>
+          <div className="text-lg font-semibold text-zinc-100">접근 권한이 없습니다</div>
+          <div className="mt-1 text-sm text-zinc-500">경영 대시보드는 원장(owner) 전용입니다.</div>
+        </div>
+        <Link href="/" className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-200 hover:border-lime-500/50 hover:text-lime-400">
+          트레이너 화면으로
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-lime-400/30">
