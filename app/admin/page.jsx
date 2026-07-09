@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
+import AddTrainerForm from "@/components/AddTrainerForm";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -298,6 +299,11 @@ export default function AdminDashboard() {
       )}
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        {/* ===== 트레이너 초대 온보딩 (A) ===== */}
+        <section className="mb-8">
+          <AddTrainerForm />
+        </section>
+
         {/* ===== 실데이터 요약 (④) ===== */}
         <section className="mb-8">
           <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
