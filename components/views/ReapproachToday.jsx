@@ -30,23 +30,26 @@ function daysOverdue(dateISO, todayISO) {
 export default function ReapproachToday({ members, onSelect }) {
   const [rows, setRows] = useState([]);
   const today = todayISOLocal();
+  const memberKey = (members || []).map((m) => m.id).join(",");
 
   useEffect(() => {
-    if (!supabase) return; // 데모: 초기 [] 유지 → 카드 미표시(라이브 전용 위젯, 폴백 결 유지)
+    if (!supabase || !memberKey) return; // 데모/무회원: 초기 [] 유지 → 카드 미표시(라이브 전용 위젯, 폴백 결 유지)
     let cancelled = false;
     (async () => {
       // both round의 hold 행만 당겨오고, 날짜(도래·null) 판정은 reapproachToday에 위임.
+      const ids = memberKey.split(",");
       const { data } = await supabase
         .from("ot_log")
         .select("user_id, ot_round, closing_result, closing_reapproach_at")
-        .eq("closing_result", "hold");
+        .eq("closing_result", "hold")
+        .in("user_id", ids); // ★ 내 회원만
       if (cancelled) return;
       setRows(reapproachToday(data || [], today));
     })();
     return () => {
       cancelled = true;
     };
-  }, [today]);
+  }, [today, memberKey]);
 
   if (!rows.length) return null;
 
