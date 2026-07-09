@@ -12,12 +12,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { activeContract } from "@/lib/memberStatus";
+import { viewFor, activeContract } from "@/lib/memberStatus";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
+import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+
+// purge-safe 트레이너 색 팔레트 (정적 클래스 · 동적 조립 금지 · C 토큰 패턴). 6색 순환.
+const TRAINER_PALETTE = [
+  { dot: "bg-violet-400",  chip: "bg-violet-500/15 text-violet-300",   bar: "bg-violet-400" },
+  { dot: "bg-amber-400",   chip: "bg-amber-500/15 text-amber-300",     bar: "bg-amber-400" },
+  { dot: "bg-rose-400",    chip: "bg-rose-500/15 text-rose-300",       bar: "bg-rose-400" },
+  { dot: "bg-sky-400",     chip: "bg-sky-500/15 text-sky-300",         bar: "bg-sky-400" },
+  { dot: "bg-teal-400",    chip: "bg-teal-500/15 text-teal-300",       bar: "bg-teal-400" },
+  { dot: "bg-fuchsia-400", chip: "bg-fuchsia-500/15 text-fuchsia-300", bar: "bg-fuchsia-400" },
+];
 
 function mondayOf(d) {
   const x = new Date(d);
@@ -103,6 +114,10 @@ export default function ScheduleBoard({ members = [] }) {
 
   const memberName = (id) => members.find((m) => m.id === id)?.name ?? "회원";
   const trainerName = (id) => trainers.find((t) => t.id === id)?.name ?? "";
+  // 트레이너 색 — trainers 배열 순서 인덱스 %6(세션 내 안정 · uuid 해시 아님). 못 찾으면 [0].
+  const trainerTone = (id) => { const i = trainers.findIndex((t) => t.id === id); return i >= 0 ? TRAINER_PALETTE[i % 6] : TRAINER_PALETTE[0]; };
+  // 회원 상태(ot|pt|inactive) — 카드 배지/색점용.
+  const memberView = (id) => viewFor(members.find((m) => m.id === id) || {});
   const isOwnerView = trainers.length > 1; // 여러 트레이너가 보이면 owner 뷰
   const viewAppts = trainerFilter === "all" ? appts : appts.filter((a) => a.trainer_id === trainerFilter);
 
@@ -201,7 +216,9 @@ export default function ScheduleBoard({ members = [] }) {
 
   const chipCls = (a) =>
     `block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold ${
-      a.status === "done" ? "bg-zinc-700/40 text-zinc-400 line-through" : "bg-lime-500/15 text-lime-300"
+      a.status === "done"
+        ? "bg-zinc-700/40 text-zinc-400 line-through"
+        : isOwnerView ? trainerTone(a.trainer_id).chip : "bg-lime-500/15 text-lime-300"
     }`;
 
   const actionMember = action ? (members.find((m) => m.id === action.user_id) || null) : null;
@@ -219,6 +236,18 @@ export default function ScheduleBoard({ members = [] }) {
           </select>
         )}
       </div>
+
+      {/* 트레이너 범례 (owner 전용 · 목업 ① 배지행 미러) */}
+      {isOwnerView && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {trainers.map((t) => (
+            <span key={t.id} className="inline-flex items-center gap-1 text-[11px] text-zinc-400">
+              <span className={`inline-block h-2 w-2 rounded-full ${trainerTone(t.id).dot}`} />
+              {t.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       {mode === "week" ? (
         <>
@@ -274,7 +303,9 @@ export default function ScheduleBoard({ members = [] }) {
                           <div className="space-y-1">
                             {list.map((a) => (
                               <button key={a.id} onClick={(e) => { e.stopPropagation(); openAction(a); }} className={chipCls(a)}>
-                                {a.status === "done" ? "✓ " : ""}{memberName(a.user_id)}
+                                {a.status === "done" ? "✓ " : ""}
+                                <span className={`${viewMeta(memberView(a.user_id)).dot} mr-1 inline-block h-1.5 w-1.5 rounded-full`} />
+                                {memberName(a.user_id)}
                                 {isOwnerView && trainerFilter === "all" && (
                                   <span className="block truncate text-[9px] font-normal text-zinc-500">{trainerName(a.trainer_id)}</span>
                                 )}
@@ -310,11 +341,13 @@ export default function ScheduleBoard({ members = [] }) {
                 <li key={a.id}>
                   <button
                     onClick={() => openAction(a)}
-                    className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${
+                    className={`flex w-full items-center gap-3 overflow-hidden rounded-xl border p-3 text-left transition ${
                       a.status === "done" ? "border-zinc-800 bg-zinc-900/30 opacity-60" : "border-zinc-800 bg-zinc-900/40 hover:border-lime-500/40"
                     }`}
                   >
+                    {isOwnerView && <span className={`-my-3 -ml-3 mr-0 w-1 self-stretch ${trainerTone(a.trainer_id).bar}`} />}
                     <span className="font-mono text-sm font-semibold text-zinc-300">{hhmm(a.start_at)}</span>
+                    <MemberBadge view={memberView(a.user_id)} />
                     <span className="flex-1 text-sm font-medium text-zinc-100">{memberName(a.user_id)}</span>
                     {isOwnerView && <span className="text-[11px] text-zinc-500">{trainerName(a.trainer_id)}</span>}
                     {a.status === "done" ? (
