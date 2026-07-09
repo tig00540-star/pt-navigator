@@ -17,6 +17,7 @@ import ObservationTab from "@/components/tabs/ObservationTab";
 import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
+import ScheduleBoard from "@/components/views/ScheduleBoard";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import ReapproachToday from "@/components/views/ReapproachToday";
 import RegisterDueToday from "@/components/views/RegisterDueToday";
@@ -71,10 +72,11 @@ function mapMemberRow(r) {
 
 /* ---- 탭 메타 ---- */
 const TABS = [
-  { id: 0, label: "회원" },
-  { id: 1, label: "1차 OT" },
-  { id: 5, label: "1차 피드백" },
-  { id: 2, label: "2차 OT" },
+  { id: 9, label: "스케줄", always: true },
+  { id: 0, label: "회원", always: true },
+  { id: 1, label: "1차 OT", ot: true },
+  { id: 5, label: "1차 피드백", ot: true },
+  { id: 2, label: "2차 OT", ot: true },
 ];
 
 /* =========================================================================
@@ -517,7 +519,7 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
    ========================================================================= */
 
 export default function OTNavigatorDashboard() {
-  const [tab, setTab] = useState(1);
+  const [tab, setTab] = useState(9);
 
   // --- Supabase 연동 상태 ---
   const [members, setMembers] = useState([]);
@@ -674,25 +676,21 @@ export default function OTNavigatorDashboard() {
             </div>
           </div>
 
-          {/* 탭 네비게이션 — OT 뷰에서만(관련 없는 탭 숨김 · §7) */}
-          {view === "ot" && (
-            <nav className="-mb-px flex gap-1 overflow-x-auto whitespace-nowrap">
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
-                    tab === t.id ? "text-lime-400" : "text-zinc-500 hover:text-zinc-300"
-                  }`}
-                >
-                  {t.label}
-                  {tab === t.id && (
-                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-lime-400" />
-                  )}
-                </button>
-              ))}
-            </nav>
-          )}
+          {/* 탭 네비게이션 — 상시(스케줄·회원) + OT 뷰에서만 OT 탭 노출(§7) */}
+          <nav className="-mb-px flex gap-1 overflow-x-auto whitespace-nowrap">
+            {TABS.filter((t) => t.always || (t.ot && view === "ot")).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
+                  tab === t.id ? "text-lime-400" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {t.label}
+                {tab === t.id && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-lime-400" />}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 
@@ -705,6 +703,10 @@ export default function OTNavigatorDashboard() {
       )}
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        {tab === 9 ? (
+          <ScheduleBoard members={members} />
+        ) : (
+          <>
         {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}
         {view === "ot" && (
           <PtConfirmBanner
@@ -744,6 +746,8 @@ export default function OTNavigatorDashboard() {
             />
           )}
         </MemberViewShell>
+          </>
+        )}
       </main>
 
 
