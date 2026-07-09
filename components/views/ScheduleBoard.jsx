@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { activeContract } from "@/lib/memberStatus";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -55,9 +56,13 @@ export default function ScheduleBoard({ members = [] }) {
   const [pick, setPick] = useState(null);     // 배치 슬롯 {dayIdx, hour}
   const [action, setAction] = useState(null);  // 액션 대상 appointment
   const [note, setNote] = useState("");        // 완료 시 수업내용(선택)
+  const [rawText, setRawText] = useState("");  // 음성 STT 원본(voice일 때만)
+  const [usedVoice, setUsedVoice] = useState(false);
   const [q, setQ] = useState("");
   const [saving, setSaving] = useState(false);
   const [acting, setActing] = useState(false);
+  const [trainers, setTrainers] = useState([]);            // owner=계정 전체 / 트레이너=본인 1행
+  const [trainerFilter, setTrainerFilter] = useState("all");
   const { toast, showToast } = useToast();
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
@@ -80,14 +85,30 @@ export default function ScheduleBoard({ members = [] }) {
     return () => { cancelled = true; };
   }, [weekStart, weekEnd]);
 
+  // 트레이너 목록 — owner면 계정 전체(C5a RLS), 트레이너면 본인 1행. 필터·라벨용.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const { data } = await supabase.from("trainer").select("id, name");
+      if (!cancelled) setTrainers(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // 액션 모달 열 때 수업내용 입력 초기화(이전 회원 내용 오전송 방지 · effect 대신 핸들러에서).
-  const openAction = (a) => { setNote(""); setAction(a); };
+  const openAction = (a) => { setNote(""); setRawText(""); setUsedVoice(false); setAction(a); };
+  // 음성 STT 결과 → 내용칸 채움(이후 손편집). PTView handleVoiceResult 미러.
+  const handleVoiceResult = (raw, summaryText) => { setNote(summaryText || ""); setRawText(raw || ""); setUsedVoice(true); };
 
   const memberName = (id) => members.find((m) => m.id === id)?.name ?? "회원";
+  const trainerName = (id) => trainers.find((t) => t.id === id)?.name ?? "";
+  const isOwnerView = trainers.length > 1; // 여러 트레이너가 보이면 owner 뷰
+  const viewAppts = trainerFilter === "all" ? appts : appts.filter((a) => a.trainer_id === trainerFilter);
 
   const apptAt = (dayIdx, hour) => {
     const day = addDays(weekStart, dayIdx);
-    return appts.filter((a) => {
+    return viewAppts.filter((a) => {
       if (a.status === "canceled") return false;
       const t = new Date(a.start_at);
       return sameDay(t, day) && t.getHours() === hour;
@@ -137,7 +158,7 @@ export default function ScheduleBoard({ members = [] }) {
     }
     const { data: logIns, error: logErr } = await supabase
       .from("daily_workout_log")
-      .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: "manual", ai_summary: body || null, sent_at: sentAt })
+      .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: usedVoice ? "voice" : "manual", ai_summary: body || null, raw_voice_text: usedVoice ? (rawText || null) : null, sent_at: sentAt })
       .select();
     if (logErr || !logIns || logIns.length === 0) { showToast("완료 실패 — 다시 시도하세요"); setActing(false); return; }
     const { data: up, error: upErr } = await supabase
@@ -173,7 +194,7 @@ export default function ScheduleBoard({ members = [] }) {
   const rangeLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()} – ${addDays(weekStart, 6).getMonth() + 1}/${addDays(weekStart, 6).getDate()}`;
 
   const now = new Date();
-  const todayList = appts
+  const todayList = viewAppts
     .filter((a) => a.status !== "canceled" && sameDay(new Date(a.start_at), now))
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   const remainingToday = todayList.filter((a) => a.status === "booked").length;
@@ -183,12 +204,20 @@ export default function ScheduleBoard({ members = [] }) {
       a.status === "done" ? "bg-zinc-700/40 text-zinc-400 line-through" : "bg-lime-500/15 text-lime-300"
     }`;
 
+  const actionMember = action ? (members.find((m) => m.id === action.user_id) || null) : null;
+
   return (
     <div className="space-y-4">
-      {/* 모드 토글 */}
-      <div className="flex gap-1.5">
+      {/* 모드 토글 + (owner) 트레이너 필터 */}
+      <div className="flex items-center gap-1.5">
         <button onClick={() => setMode("week")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "week" ? "bg-lime-500/15 text-lime-400 ring-1 ring-lime-500/40" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"}`}>주간</button>
         <button onClick={() => { setMode("today"); setWeekStart(mondayOf(new Date())); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "today" ? "bg-lime-500/15 text-lime-400 ring-1 ring-lime-500/40" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"}`}>오늘</button>
+        {isOwnerView && (
+          <select value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)} className="ml-auto rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-lime-500/50">
+            <option value="all">전체 트레이너</option>
+            {trainers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        )}
       </div>
 
       {mode === "week" ? (
@@ -246,6 +275,9 @@ export default function ScheduleBoard({ members = [] }) {
                             {list.map((a) => (
                               <button key={a.id} onClick={(e) => { e.stopPropagation(); openAction(a); }} className={chipCls(a)}>
                                 {a.status === "done" ? "✓ " : ""}{memberName(a.user_id)}
+                                {isOwnerView && trainerFilter === "all" && (
+                                  <span className="block truncate text-[9px] font-normal text-zinc-500">{trainerName(a.trainer_id)}</span>
+                                )}
                               </button>
                             ))}
                           </div>
@@ -284,6 +316,7 @@ export default function ScheduleBoard({ members = [] }) {
                   >
                     <span className="font-mono text-sm font-semibold text-zinc-300">{hhmm(a.start_at)}</span>
                     <span className="flex-1 text-sm font-medium text-zinc-100">{memberName(a.user_id)}</span>
+                    {isOwnerView && <span className="text-[11px] text-zinc-500">{trainerName(a.trainer_id)}</span>}
                     {a.status === "done" ? (
                       <span className="inline-flex items-center gap-1 rounded-md bg-zinc-700/40 px-2 py-0.5 text-[10px] font-semibold text-zinc-400"><Check className="h-3 w-3" /> 완료</span>
                     ) : (
@@ -342,6 +375,12 @@ export default function ScheduleBoard({ members = [] }) {
               <p className="text-sm text-zinc-400">완료 처리된 수업입니다. (완료 취소는 후속)</p>
             ) : (
               <div className="space-y-3">
+                <details className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-2">
+                  <summary className="cursor-pointer text-xs font-medium text-zinc-400">🎙 음성으로 채우기 (선택)</summary>
+                  <div className="mt-2">
+                    {actionMember && <VoiceLogTab member={actionMember} onResult={handleVoiceResult} />}
+                  </div>
+                </details>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
