@@ -18,6 +18,7 @@ import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import ScheduleBoard from "@/components/views/ScheduleBoard";
+import MyStats from "@/components/views/MyStats";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import ReapproachToday from "@/components/views/ReapproachToday";
 import RegisterDueToday from "@/components/views/RegisterDueToday";
@@ -74,6 +75,7 @@ function mapMemberRow(r) {
 const TABS = [
   { id: 9, label: "스케줄", always: true },
   { id: 0, label: "회원", always: true },
+  { id: 8, label: "내 실적", always: true },
   { id: 1, label: "1차 OT", ot: true },
   { id: 5, label: "1차 피드백", ot: true },
   { id: 2, label: "2차 OT", ot: true },
@@ -705,6 +707,8 @@ export default function OTNavigatorDashboard() {
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {tab === 9 ? (
           <ScheduleBoard members={members} />
+        ) : tab === 8 ? (
+          <MyStats members={members} />
         ) : (
           <>
         {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}
