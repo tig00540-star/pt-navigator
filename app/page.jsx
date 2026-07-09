@@ -24,6 +24,7 @@ import ReapproachToday from "@/components/views/ReapproachToday";
 import RegisterDueToday from "@/components/views/RegisterDueToday";
 import RegisterReapproachToday from "@/components/views/RegisterReapproachToday";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
+import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
@@ -75,10 +76,10 @@ function mapMemberRow(r) {
 const TABS = [
   { id: 9, label: "스케줄", always: true },
   { id: 0, label: "회원", always: true },
-  { id: 8, label: "내 실적", always: true },
   { id: 1, label: "1차 OT", ot: true },
   { id: 5, label: "1차 피드백", ot: true },
   { id: 2, label: "2차 OT", ot: true },
+  { id: 8, label: "내 실적", always: true },
 ];
 
 /* =========================================================================
@@ -472,21 +473,14 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
                     : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"
                 }`}
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 text-sm font-bold text-lime-400">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-sm font-bold ${viewMeta(viewFor(m)).avatar}`}>
                   {m.name ? m.name.slice(0, 1) : "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-zinc-100">{m.name}</span>
+                    <MemberBadge view={viewFor(m)} />
                     <span className="font-mono text-xs text-zinc-500">{m.age}세</span>
-                    {(() => {
-                      const v = viewFor(m);
-                      if (v === "pt")
-                        return <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">PT</span>;
-                      if (v === "inactive")
-                        return <span className="rounded bg-zinc-700/50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400">보관</span>;
-                      return <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400">OT</span>;
-                    })()}
                     {on && (
                       <span className="rounded bg-lime-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-lime-400">
                         선택됨
