@@ -1,11 +1,11 @@
 "use client";
 
 /* =========================================================================
-   스케줄 보드 (SCHED · C2) — 주간 그리드 + 오늘 뷰 · 배치 · 완료(차감)/취소.
-   완료 = daily_workout_log 한 줄(활성계약 차감) + appointment done/log_id 링크
-          (기존 PTView saveLog와 동일 차감 모델 재사용).
-   차감안함(보강/무료) = 로그를 contract_id 없이 남김(기록만 · 차감 X).
-   시간변경 · 수업일지 점프 · 완료취소 = 후속(C3). 반복 = 후속.
+   스케줄 보드 (SCHED · C3) — 주간 그리드 + 오늘 뷰 · 배치 · 완료(차감·일지·카톡)/취소.
+   완료 = daily_workout_log 한 줄(활성계약 차감) + appointment done/log_id 링크.
+     · 수업내용 입력 시: ai_summary 저장 + 카톡용 clipboard 복사 + sent_at 기록(PTView saveLog 미러).
+     · 차감안함(보강/무료) = contract_id 없이 로그(기록만 · 차감 X).
+   한 예약 = 한 로그(이중차감 방지). 시간변경·완료취소·음성입력 = 후속.
    시간은 트레이너 브라우저 로컬(KST 전제). owner는 전체가 섞여 보임(trainer_id 필터 후속).
    ========================================================================= */
 
@@ -13,6 +13,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract } from "@/lib/memberStatus";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -29,6 +31,19 @@ function hhmm(iso) { const d = new Date(iso); return `${pad(d.getHours())}:${pad
 function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
+// PTView 패턴 재사용 — clipboard 복사(실패 시 execCommand 폴백).
+async function copyToClipboard(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+}
 
 export default function ScheduleBoard({ members = [] }) {
   const [mode, setMode] = useState("week"); // 'week' | 'today'
@@ -39,9 +54,11 @@ export default function ScheduleBoard({ members = [] }) {
   const [loading, setLoading] = useState(false);
   const [pick, setPick] = useState(null);     // 배치 슬롯 {dayIdx, hour}
   const [action, setAction] = useState(null);  // 액션 대상 appointment
+  const [note, setNote] = useState("");        // 완료 시 수업내용(선택)
   const [q, setQ] = useState("");
   const [saving, setSaving] = useState(false);
   const [acting, setActing] = useState(false);
+  const { toast, showToast } = useToast();
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
 
@@ -62,6 +79,9 @@ export default function ScheduleBoard({ members = [] }) {
     })();
     return () => { cancelled = true; };
   }, [weekStart, weekEnd]);
+
+  // 액션 모달 열 때 수업내용 입력 초기화(이전 회원 내용 오전송 방지 · effect 대신 핸들러에서).
+  const openAction = (a) => { setNote(""); setAction(a); };
 
   const memberName = (id) => members.find((m) => m.id === id)?.name ?? "회원";
 
@@ -91,13 +111,21 @@ export default function ScheduleBoard({ members = [] }) {
     setPick(null); setQ(""); setSaving(false);
   };
 
-  // 완료 — daily_workout_log 한 줄(차감이면 활성계약 contract_id) + appointment done/log_id.
+  // 완료 — daily_workout_log 한 줄 + appointment done/log_id. 내용 있으면 카톡 복사·sent_at.
   const complete = async (appt, deduct) => {
     if (acting) return;
     setActing(true);
+    const body = note.trim();
+    let copied = false, sentAt = null;
+    if (body) { copied = await copyToClipboard(body); if (copied) sentAt = new Date().toISOString(); }
+
+    const doneMsg = () => showToast(
+      (deduct ? "완료 · 차감" : "완료(차감 안 함)") + (body ? (copied ? " · 카톡 복사됨" : " · 복사 실패(길게 눌러 복사)") : "")
+    );
+
     if (!supabase) {
       setAppts((p) => p.map((a) => (a.id === appt.id ? { ...a, status: "done" } : a)));
-      setAction(null); setActing(false); return;
+      doneMsg(); setAction(null); setActing(false); return;
     }
     let contractId = null;
     if (deduct) {
@@ -109,17 +137,17 @@ export default function ScheduleBoard({ members = [] }) {
     }
     const { data: logIns, error: logErr } = await supabase
       .from("daily_workout_log")
-      .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: "manual", ai_summary: null, sent_at: null })
+      .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: "manual", ai_summary: body || null, sent_at: sentAt })
       .select();
-    if (logErr || !logIns || logIns.length === 0) { setActing(false); return; }
+    if (logErr || !logIns || logIns.length === 0) { showToast("완료 실패 — 다시 시도하세요"); setActing(false); return; }
     const { data: up, error: upErr } = await supabase
       .from("appointment")
       .update({ status: "done", log_id: logIns[0].id })
       .eq("id", appt.id)
       .select();
-    if (upErr || !up || up.length === 0) { setActing(false); return; }
+    if (upErr || !up || up.length === 0) { showToast("완료 저장 실패 — 다시 시도하세요"); setActing(false); return; }
     setAppts((p) => p.map((a) => (a.id === appt.id ? up[0] : a)));
-    setAction(null); setActing(false);
+    doneMsg(); setAction(null); setActing(false);
   };
 
   // 취소 — status=canceled(보드에서 제거).
@@ -131,7 +159,7 @@ export default function ScheduleBoard({ members = [] }) {
       setAction(null); setActing(false); return;
     }
     const { data, error } = await supabase.from("appointment").update({ status: "canceled" }).eq("id", appt.id).select();
-    if (error || !data || data.length === 0) { setActing(false); return; }
+    if (error || !data || data.length === 0) { showToast("취소 실패 — 다시 시도하세요"); setActing(false); return; }
     setAppts((p) => p.filter((a) => a.id !== appt.id));
     setAction(null); setActing(false);
   };
@@ -216,7 +244,7 @@ export default function ScheduleBoard({ members = [] }) {
                         ) : (
                           <div className="space-y-1">
                             {list.map((a) => (
-                              <button key={a.id} onClick={(e) => { e.stopPropagation(); setAction(a); }} className={chipCls(a)}>
+                              <button key={a.id} onClick={(e) => { e.stopPropagation(); openAction(a); }} className={chipCls(a)}>
                                 {a.status === "done" ? "✓ " : ""}{memberName(a.user_id)}
                               </button>
                             ))}
@@ -249,7 +277,7 @@ export default function ScheduleBoard({ members = [] }) {
               {todayList.map((a) => (
                 <li key={a.id}>
                   <button
-                    onClick={() => setAction(a)}
+                    onClick={() => openAction(a)}
                     className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${
                       a.status === "done" ? "border-zinc-800 bg-zinc-900/30 opacity-60" : "border-zinc-800 bg-zinc-900/40 hover:border-lime-500/40"
                     }`}
@@ -297,7 +325,7 @@ export default function ScheduleBoard({ members = [] }) {
         </div>
       )}
 
-      {/* 액션 모달 (완료/취소) */}
+      {/* 액션 모달 (완료·일지·카톡 / 취소) */}
       {action && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => !acting && setAction(null)}>
           <div className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -313,9 +341,17 @@ export default function ScheduleBoard({ members = [] }) {
             {action.status === "done" ? (
               <p className="text-sm text-zinc-400">완료 처리된 수업입니다. (완료 취소는 후속)</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  disabled={acting}
+                  rows={3}
+                  placeholder="오늘 수업 내용·피드백 (입력하고 완료하면 카톡용으로 복사돼요 · 선택)"
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+                />
                 <button onClick={() => complete(action, true)} disabled={acting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50">
-                  <Check className="h-4 w-4" strokeWidth={2.5} /> {acting ? "처리 중…" : "완료 · 차감"}
+                  <Check className="h-4 w-4" strokeWidth={2.5} /> {acting ? "처리 중…" : `완료 · 차감${note.trim() ? " · 카톡 복사" : ""}`}
                 </button>
                 <button onClick={() => complete(action, false)} disabled={acting} className="w-full rounded-lg border border-zinc-700 bg-zinc-800 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 active:scale-95 disabled:opacity-50">
                   완료 · 차감 안 함 (보강·무료)
@@ -328,6 +364,8 @@ export default function ScheduleBoard({ members = [] }) {
           </div>
         </div>
       )}
+
+      <Toast message={toast} />
     </div>
   );
 }
