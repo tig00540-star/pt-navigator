@@ -255,6 +255,7 @@ export default function PTView({ member, onGoList, onMemberPatch }) {
     const payload = buildContract({
       userId: member.id,
       origin: member.origin,
+      kind: isReReg ? "reregister" : "new",
       sessions_total: Number(cSessions),
       price_per_session: Number(cPrice),
       amount_total: cAmountEdited === "" ? cAuto : Number(cAmountEdited) || cAuto,

@@ -592,7 +592,7 @@ export default function OTNavigatorDashboard() {
     const hasContract = (existing?.length ?? 0) > 0;
     // 2) 계약 INSERT (없을 때만) — .select() 하드닝.
     if (!hasContract) {
-      const payload = buildContract({ userId: member.id, origin: member.origin, ...contractInput });
+      const payload = buildContract({ userId: member.id, origin: member.origin, kind: "new", ...contractInput });
       const { data: ins, error: insErr } = await supabase
         .from("session_log")
         .insert(payload)
