@@ -21,7 +21,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
+import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats, revenueByTrainer, closingStatsByTrainer } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
 
@@ -179,6 +179,7 @@ export default function AdminDashboard() {
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
+  const [trainers, setTrainers] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -198,11 +199,12 @@ export default function AdminDashboard() {
       setRole(myRole);
       if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
       // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
-      const [u, o, c, l] = await Promise.all([
+      const [u, o, c, l, tr] = await Promise.all([
         supabase.from("user_table").select("*"),
         supabase.from("ot_log").select("*"),
         supabase.from("session_log").select("*"),
         supabase.from("daily_workout_log").select("*"),
+        supabase.from("trainer").select("id, name"),
       ]);
       const firstErr = u.error || o.error || c.error || l.error;
       if (firstErr) {
@@ -213,6 +215,7 @@ export default function AdminDashboard() {
       setOtRows(o.data || []);
       setContracts(c.data || []);
       setLogs(l.data || []);
+      setTrainers(tr.data || []);
     })();
   }, []);
 
@@ -230,6 +233,26 @@ export default function AdminDashboard() {
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
   const closingReasonDist = useMemo(() => closingReasonStats(otRows), [otRows]);
   const totalSessions = useMemo(() => sessionsCount(logs), [logs]);
+  const memberTrainer = useMemo(() => {
+    const m = new Map();
+    for (const r of rows) if (r?.id) m.set(r.id, r.trainer_id ?? "unknown");
+    return m;
+  }, [rows]);
+  const revByTrainer = useMemo(() => revenueByTrainer(contracts, ym), [contracts, ym]);
+  const closingByTrainer = useMemo(() => closingStatsByTrainer(otRows, memberTrainer), [otRows, memberTrainer]);
+  const trainerName = (id) => trainers.find((t) => t.id === id)?.name ?? (id === "unknown" ? "미배정" : String(id).slice(0, 8));
+  const trainerPerf = useMemo(() => {
+    const revMap = new Map(revByTrainer.map((r) => [r.trainer_id, r]));
+    const closeMap = new Map(closingByTrainer.map((c) => [c.trainer_id, c]));
+    const ids = trainers.length ? trainers.map((t) => t.id) : [...new Set([...revMap.keys(), ...closeMap.keys()])];
+    return ids.map((id) => ({
+      id,
+      name: trainerName(id),
+      rev: revMap.get(id) || { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 },
+      close: closeMap.get(id) || { attempted: 0, success: 0, rate: null },
+    })).sort((a, b) => b.rev.total - a.rev.total);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainers, revByTrainer, closingByTrainer]);
 
   if (role === null) {
     return (
@@ -335,6 +358,50 @@ export default function AdminDashboard() {
               </div>
               <div className="mt-1 text-xs text-zinc-500">누적 · 시도 {rereg.attempted}건 중 {rereg.success}</div>
             </div>
+          </div>
+        </section>
+
+        {/* ===== 트레이너별 실적 (④) ===== */}
+        <section className="mb-8">
+          <Eyebrow icon={Award}>트레이너별 실적 · {ym}</Eyebrow>
+          <div className="space-y-3">
+            {trainerPerf.length === 0 ? (
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 text-xs text-zinc-600">트레이너 데이터가 없습니다.</div>
+            ) : trainerPerf.map((t) => (
+              <div key={t.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 text-sm font-bold text-zinc-200">{(t.name || "?").slice(0, 1)}</div>
+                    <div>
+                      <div className="text-sm font-semibold text-zinc-100">{t.name}</div>
+                      <div className="text-[11px] text-zinc-500">클로징 {rateText(t.close.rate)} · 시도 {t.close.attempted}명 중 {t.close.success}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500">이달 매출</div>
+                    <div className="font-mono text-2xl font-bold text-lime-400">{won(t.rev.total)}</div>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+                      <span>신규</span>
+                      <span>{t.rev.total > 0 ? Math.round((t.rev.newRev / t.rev.total) * 100) + "%" : "—"}</span>
+                    </div>
+                    <div className="mt-1 font-mono text-lg font-bold text-zinc-100">{won(t.rev.newRev)}</div>
+                    <div className="text-[11px] text-zinc-500">{t.rev.cntNew}건</div>
+                  </div>
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+                      <span>재등록</span>
+                      <span>{t.rev.total > 0 ? Math.round((t.rev.reRev / t.rev.total) * 100) + "%" : "—"}</span>
+                    </div>
+                    <div className="mt-1 font-mono text-lg font-bold text-cyan-400">{won(t.rev.reRev)}</div>
+                    <div className="text-[11px] text-zinc-500">{t.rev.cntRe}건</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
