@@ -1,15 +1,18 @@
 "use client";
 
 /* =========================================================================
-   스케줄 보드 (SCHED · C1 뼈대) — 주간 그리드 · 회원 배치 · 예약 렌더.
-   완료/취소/당일뷰/시간범위 저장 = C2. 반복 = 후속.
-   트레이너 본인 예약만(RLS 자동 스코프 · owner는 전체 — trainer_id 필터는 후속).
-   시간은 트레이너 브라우저 로컬(KST 전제 — 기존 코드와 동일)로 그림.
+   스케줄 보드 (SCHED · C2) — 주간 그리드 + 오늘 뷰 · 배치 · 완료(차감)/취소.
+   완료 = daily_workout_log 한 줄(활성계약 차감) + appointment done/log_id 링크
+          (기존 PTView saveLog와 동일 차감 모델 재사용).
+   차감안함(보강/무료) = 로그를 contract_id 없이 남김(기록만 · 차감 X).
+   시간변경 · 수업일지 점프 · 완료취소 = 후속(C3). 반복 = 후속.
+   시간은 트레이너 브라우저 로컬(KST 전제). owner는 전체가 섞여 보임(trainer_id 필터 후속).
    ========================================================================= */
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { activeContract } from "@/lib/memberStatus";
 
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -21,23 +24,31 @@ function mondayOf(d) {
   return x;
 }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function pad(n) { return String(n).padStart(2, "0"); }
+function hhmm(iso) { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 export default function ScheduleBoard({ members = [] }) {
+  const [mode, setMode] = useState("week"); // 'week' | 'today'
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [startHour, setStartHour] = useState(6);
   const [endHour, setEndHour] = useState(24);
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [pick, setPick] = useState(null); // {dayIdx, hour}
+  const [pick, setPick] = useState(null);     // 배치 슬롯 {dayIdx, hour}
+  const [action, setAction] = useState(null);  // 액션 대상 appointment
   const [q, setQ] = useState("");
   const [saving, setSaving] = useState(false);
+  const [acting, setActing] = useState(false);
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!supabase) { setAppts([]); return; }
+      if (!supabase) { if (!cancelled) setAppts([]); return; }
       setLoading(true);
       const { data } = await supabase
         .from("appointment")
@@ -57,12 +68,13 @@ export default function ScheduleBoard({ members = [] }) {
   const apptAt = (dayIdx, hour) => {
     const day = addDays(weekStart, dayIdx);
     return appts.filter((a) => {
+      if (a.status === "canceled") return false;
       const t = new Date(a.start_at);
-      return t.getFullYear() === day.getFullYear() && t.getMonth() === day.getMonth()
-        && t.getDate() === day.getDate() && t.getHours() === hour;
+      return sameDay(t, day) && t.getHours() === hour;
     });
   };
 
+  // 빈 슬롯에 회원 배치 → appointment insert.
   const book = async (member) => {
     if (saving || !pick) return;
     setSaving(true);
@@ -79,6 +91,51 @@ export default function ScheduleBoard({ members = [] }) {
     setPick(null); setQ(""); setSaving(false);
   };
 
+  // 완료 — daily_workout_log 한 줄(차감이면 활성계약 contract_id) + appointment done/log_id.
+  const complete = async (appt, deduct) => {
+    if (acting) return;
+    setActing(true);
+    if (!supabase) {
+      setAppts((p) => p.map((a) => (a.id === appt.id ? { ...a, status: "done" } : a)));
+      setAction(null); setActing(false); return;
+    }
+    let contractId = null;
+    if (deduct) {
+      const [{ data: cs }, { data: ls }] = await Promise.all([
+        supabase.from("session_log").select("*").eq("user_id", appt.user_id),
+        supabase.from("daily_workout_log").select("*").eq("user_id", appt.user_id),
+      ]);
+      contractId = activeContract(cs || [], ls || [])?.id ?? null; // 활성 없으면 null(차감 안 됨)
+    }
+    const { data: logIns, error: logErr } = await supabase
+      .from("daily_workout_log")
+      .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: "manual", ai_summary: null, sent_at: null })
+      .select();
+    if (logErr || !logIns || logIns.length === 0) { setActing(false); return; }
+    const { data: up, error: upErr } = await supabase
+      .from("appointment")
+      .update({ status: "done", log_id: logIns[0].id })
+      .eq("id", appt.id)
+      .select();
+    if (upErr || !up || up.length === 0) { setActing(false); return; }
+    setAppts((p) => p.map((a) => (a.id === appt.id ? up[0] : a)));
+    setAction(null); setActing(false);
+  };
+
+  // 취소 — status=canceled(보드에서 제거).
+  const cancelAppt = async (appt) => {
+    if (acting) return;
+    setActing(true);
+    if (!supabase) {
+      setAppts((p) => p.filter((a) => a.id !== appt.id));
+      setAction(null); setActing(false); return;
+    }
+    const { data, error } = await supabase.from("appointment").update({ status: "canceled" }).eq("id", appt.id).select();
+    if (error || !data || data.length === 0) { setActing(false); return; }
+    setAppts((p) => p.filter((a) => a.id !== appt.id));
+    setAction(null); setActing(false);
+  };
+
   const hours = [];
   for (let h = startHour; h < endHour; h++) hours.push(h);
   const filtered = q.trim()
@@ -87,72 +144,132 @@ export default function ScheduleBoard({ members = [] }) {
 
   const rangeLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()} – ${addDays(weekStart, 6).getMonth() + 1}/${addDays(weekStart, 6).getDate()}`;
 
+  const now = new Date();
+  const todayList = appts
+    .filter((a) => a.status !== "canceled" && sameDay(new Date(a.start_at), now))
+    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  const remainingToday = todayList.filter((a) => a.status === "booked").length;
+
+  const chipCls = (a) =>
+    `block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold ${
+      a.status === "done" ? "bg-zinc-700/40 text-zinc-400 line-through" : "bg-lime-500/15 text-lime-300"
+    }`;
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <CalendarDays className="h-5 w-5 text-lime-400" />
-        <span className="text-sm font-semibold text-zinc-100">{rangeLabel}</span>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setWeekStart((w) => addDays(w, -7))} className="rounded-lg border border-zinc-700 bg-zinc-900 p-1.5 text-zinc-300 hover:border-lime-500/50"><ChevronLeft className="h-4 w-4" /></button>
-          <button onClick={() => setWeekStart(mondayOf(new Date()))} className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-lime-500/50">오늘</button>
-          <button onClick={() => setWeekStart((w) => addDays(w, 7))} className="rounded-lg border border-zinc-700 bg-zinc-900 p-1.5 text-zinc-300 hover:border-lime-500/50"><ChevronRight className="h-4 w-4" /></button>
-        </div>
-        <div className="ml-auto flex items-center gap-1 text-xs text-zinc-500">
-          <select value={startHour} onChange={(e) => setStartHour(Number(e.target.value))} className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-zinc-200">
-            {Array.from({ length: 13 }, (_, i) => i).map((h) => <option key={h} value={h}>{h}시</option>)}
-          </select>
-          <span>–</span>
-          <select value={endHour} onChange={(e) => setEndHour(Number(e.target.value))} className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-zinc-200">
-            {Array.from({ length: 12 }, (_, i) => i + 13).map((h) => <option key={h} value={h}>{h}시</option>)}
-          </select>
-        </div>
+      {/* 모드 토글 */}
+      <div className="flex gap-1.5">
+        <button onClick={() => setMode("week")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "week" ? "bg-lime-500/15 text-lime-400 ring-1 ring-lime-500/40" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"}`}>주간</button>
+        <button onClick={() => { setMode("today"); setWeekStart(mondayOf(new Date())); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "today" ? "bg-lime-500/15 text-lime-400 ring-1 ring-lime-500/40" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"}`}>오늘</button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-zinc-800">
-        <div className="min-w-[720px]">
-          <div className="flex border-b border-zinc-800 bg-zinc-900/60">
-            <div className="w-12 shrink-0" />
-            {DAY_LABELS.map((d, i) => {
-              const day = addDays(weekStart, i);
-              return (
-                <div key={i} className="flex-1 border-l border-zinc-800 px-2 py-2 text-center">
-                  <div className="text-xs font-semibold text-zinc-200">{d}</div>
-                  <div className="font-mono text-[10px] text-zinc-500">{day.getMonth() + 1}/{day.getDate()}</div>
-                </div>
-              );
-            })}
+      {mode === "week" ? (
+        <>
+          {/* 주 네비 + 시간범위 */}
+          <div className="flex flex-wrap items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-lime-400" />
+            <span className="text-sm font-semibold text-zinc-100">{rangeLabel}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setWeekStart((w) => addDays(w, -7))} className="rounded-lg border border-zinc-700 bg-zinc-900 p-1.5 text-zinc-300 hover:border-lime-500/50"><ChevronLeft className="h-4 w-4" /></button>
+              <button onClick={() => setWeekStart(mondayOf(new Date()))} className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-lime-500/50">오늘</button>
+              <button onClick={() => setWeekStart((w) => addDays(w, 7))} className="rounded-lg border border-zinc-700 bg-zinc-900 p-1.5 text-zinc-300 hover:border-lime-500/50"><ChevronRight className="h-4 w-4" /></button>
+            </div>
+            <div className="ml-auto flex items-center gap-1 text-xs text-zinc-500">
+              <select value={startHour} onChange={(e) => setStartHour(Number(e.target.value))} className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-zinc-200">
+                {Array.from({ length: 13 }, (_, i) => i).map((h) => <option key={h} value={h}>{h}시</option>)}
+              </select>
+              <span>–</span>
+              <select value={endHour} onChange={(e) => setEndHour(Number(e.target.value))} className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-zinc-200">
+                {Array.from({ length: 12 }, (_, i) => i + 13).map((h) => <option key={h} value={h}>{h}시</option>)}
+              </select>
+            </div>
           </div>
-          {hours.map((h) => (
-            <div key={h} className="flex border-b border-zinc-900">
-              <div className="w-12 shrink-0 px-1 py-2 text-right font-mono text-[10px] text-zinc-600">{h}시</div>
-              {DAY_LABELS.map((_, i) => {
-                const list = apptAt(i, h);
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setPick({ dayIdx: i, hour: h })}
-                    className="group min-h-[44px] flex-1 border-l border-zinc-900 p-1 text-left align-top transition hover:bg-zinc-900/60"
-                  >
-                    {list.length === 0 ? (
-                      <Plus className="h-3 w-3 text-zinc-800 group-hover:text-zinc-600" />
-                    ) : (
-                      <div className="space-y-1">
-                        {list.map((a) => (
-                          <span key={a.id} className="block truncate rounded bg-lime-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-lime-300">
-                            {memberName(a.user_id)}
-                          </span>
-                        ))}
+
+          {/* 그리드 */}
+          <div className="overflow-x-auto rounded-2xl border border-zinc-800">
+            <div className="min-w-[720px]">
+              <div className="flex border-b border-zinc-800 bg-zinc-900/60">
+                <div className="w-12 shrink-0" />
+                {DAY_LABELS.map((d, i) => {
+                  const day = addDays(weekStart, i);
+                  return (
+                    <div key={i} className="flex-1 border-l border-zinc-800 px-2 py-2 text-center">
+                      <div className="text-xs font-semibold text-zinc-200">{d}</div>
+                      <div className="font-mono text-[10px] text-zinc-500">{day.getMonth() + 1}/{day.getDate()}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              {hours.map((h) => (
+                <div key={h} className="flex border-b border-zinc-900">
+                  <div className="w-12 shrink-0 px-1 py-2 text-right font-mono text-[10px] text-zinc-600">{h}시</div>
+                  {DAY_LABELS.map((_, i) => {
+                    const list = apptAt(i, h);
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => setPick({ dayIdx: i, hour: h })}
+                        className="group min-h-[44px] flex-1 cursor-pointer border-l border-zinc-900 p-1 transition hover:bg-zinc-900/60"
+                      >
+                        {list.length === 0 ? (
+                          <Plus className="h-3 w-3 text-zinc-800 group-hover:text-zinc-600" />
+                        ) : (
+                          <div className="space-y-1">
+                            {list.map((a) => (
+                              <button key={a.id} onClick={(e) => { e.stopPropagation(); setAction(a); }} className={chipCls(a)}>
+                                {a.status === "done" ? "✓ " : ""}{memberName(a.user_id)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+          {loading && <p className="text-center text-xs text-zinc-500">불러오는 중…</p>}
+        </>
+      ) : (
+        /* 오늘 뷰 */
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-zinc-100">
+              오늘 {now.getMonth() + 1}/{now.getDate()} ({DAY_LABELS[(now.getDay() + 6) % 7]})
+            </span>
+            <span className="rounded-md border border-lime-500/30 bg-lime-500/10 px-2 py-0.5 text-[11px] font-semibold text-lime-300">
+              남은 수업 {remainingToday}타임
+            </span>
+          </div>
+          {todayList.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-sm text-zinc-500">오늘 예약이 없습니다.</div>
+          ) : (
+            <ul className="space-y-2">
+              {todayList.map((a) => (
+                <li key={a.id}>
+                  <button
+                    onClick={() => setAction(a)}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${
+                      a.status === "done" ? "border-zinc-800 bg-zinc-900/30 opacity-60" : "border-zinc-800 bg-zinc-900/40 hover:border-lime-500/40"
+                    }`}
+                  >
+                    <span className="font-mono text-sm font-semibold text-zinc-300">{hhmm(a.start_at)}</span>
+                    <span className="flex-1 text-sm font-medium text-zinc-100">{memberName(a.user_id)}</span>
+                    {a.status === "done" ? (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-zinc-700/40 px-2 py-0.5 text-[10px] font-semibold text-zinc-400"><Check className="h-3 w-3" /> 완료</span>
+                    ) : (
+                      <span className="rounded-md bg-lime-500/15 px-2 py-0.5 text-[10px] font-semibold text-lime-300">예약</span>
                     )}
                   </button>
-                );
-              })}
-            </div>
-          ))}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </div>
-      {loading && <p className="text-center text-xs text-zinc-500">불러오는 중…</p>}
+      )}
 
+      {/* 회원 픽커 모달 (배치) */}
       {pick && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => !saving && setPick(null)}>
           <div className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -176,6 +293,38 @@ export default function ScheduleBoard({ members = [] }) {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 액션 모달 (완료/취소) */}
+      {action && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => !acting && setAction(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-1 flex items-center justify-between">
+              <h3 className="text-base font-bold text-zinc-100">{memberName(action.user_id)}</h3>
+              <button onClick={() => setAction(null)} className="text-zinc-500 hover:text-zinc-200"><X className="h-4 w-4" /></button>
+            </div>
+            <p className="mb-4 text-xs text-zinc-500">
+              {new Date(action.start_at).getMonth() + 1}/{new Date(action.start_at).getDate()} {hhmm(action.start_at)}
+              {action.status === "done" && " · 완료됨"}
+            </p>
+
+            {action.status === "done" ? (
+              <p className="text-sm text-zinc-400">완료 처리된 수업입니다. (완료 취소는 후속)</p>
+            ) : (
+              <div className="space-y-2">
+                <button onClick={() => complete(action, true)} disabled={acting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50">
+                  <Check className="h-4 w-4" strokeWidth={2.5} /> {acting ? "처리 중…" : "완료 · 차감"}
+                </button>
+                <button onClick={() => complete(action, false)} disabled={acting} className="w-full rounded-lg border border-zinc-700 bg-zinc-800 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 active:scale-95 disabled:opacity-50">
+                  완료 · 차감 안 함 (보강·무료)
+                </button>
+                <button onClick={() => cancelAppt(action)} disabled={acting} className="w-full rounded-lg border border-zinc-700 bg-zinc-900 py-2.5 text-sm font-medium text-zinc-400 transition hover:border-red-500/50 hover:text-red-300 active:scale-95 disabled:opacity-50">
+                  예약 취소
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
