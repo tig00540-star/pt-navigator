@@ -14,9 +14,9 @@ import { STATUS_OPTS, labelOf } from "@/lib/labels";
 
 // 상태 배지 색(정적 클래스맵 · Tailwind purge 안전 — 동적 조립 금지). 값=user_table.status.
 const STATUS_TONE = {
-  ot_active: "border-lime-500/30 bg-lime-500/10 text-lime-400",
-  pt_active: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-  inactive:  "border-zinc-600/40 bg-zinc-700/30 text-zinc-400",
+  ot_active: "border-primary/30 bg-primary-soft text-primary-strong",
+  pt_active: "border-primary/30 bg-primary-soft text-primary-strong",
+  inactive:  "border-line bg-elevate text-sub",
 };
 
 // 유지(§0.1 파킹): [단계적] package_suggestion가 소비 예정. 현재 렌더 미소비.
@@ -55,11 +55,11 @@ const PACKAGES = [
 
 function Chip({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2">
-      <Icon className="h-4 w-4 shrink-0 text-zinc-500" />
+    <div className="flex items-center gap-2 rounded-lg border border-line bg-card px-3 py-2">
+      <Icon className="h-4 w-4 shrink-0 text-muted" />
       <div className="leading-tight">
-        <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
-        <div className="text-sm font-medium text-zinc-100">{value}</div>
+        <div className="text-[10px] uppercase tracking-wider text-muted">{label}</div>
+        <div className="text-sm font-medium text-ink">{value}</div>
       </div>
     </div>
   );
@@ -83,23 +83,23 @@ export default function FirstOTTab({ member }) {
       </div>
       {/* 회원 기본정보 카드 (user_table 실데이터 · ① AI 입력 소스) */}
         <section className="mb-6">
-          <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-lime-500/10 blur-3xl" />
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-card shadow-sm p-5 sm:p-6">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-soft blur-3xl" />
 
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className={`mb-2 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${STATUS_TONE[member.status] ?? "border-zinc-700 bg-zinc-800 text-zinc-400"}`}>
+                <div className={`mb-2 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${STATUS_TONE[member.status] ?? "border-line bg-elevate text-sub"}`}>
                   {labelOf(STATUS_OPTS, member.status)}
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl">
+                <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                   {member.name}
-                  <span className="ml-2 font-mono text-lg font-normal text-zinc-500">
+                  <span className="ml-2 font-mono text-lg font-normal text-muted">
                     {member.age}세
                   </span>
                 </h1>
-                <p className="mt-1 text-sm text-zinc-400">
+                <p className="mt-1 text-sm text-sub">
                   {member.job} · 목표{" "}
-                  <span className="font-semibold text-lime-400">{member.goal}</span>
+                  <span className="font-semibold text-primary-strong">{member.goal}</span>
                 </p>
               </div>
 
@@ -119,21 +119,21 @@ export default function FirstOTTab({ member }) {
             {notes.map((n) => (
               <span
                 key={n.id}
-                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300"
+                className="rounded-full border border-line bg-card px-3 py-1 text-xs text-sub"
               >
                 {n.text}
               </span>
             ))}
           </div>
         )}
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line/80 bg-card/85 backdrop-blur-xl">
           <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:px-6">
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addNote()}
               placeholder="현장 메모 빠르게 남기기…"
-              className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-lime-500/50"
+              className="flex-1 rounded-xl border border-line bg-elevate px-4 py-2.5 text-sm text-ink placeholder-muted outline-none transition focus:border-primary"
             />
             <button
               onClick={addNote}

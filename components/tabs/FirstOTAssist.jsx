@@ -28,8 +28,8 @@ import { firstInputHash } from "@/lib/otHash";
 // example / cueing / dialogue = '발판(예시)' → 흐림 + "예시" 라벨 (낭독기 방지).
 const Example = ({ text }) =>
   text ? (
-    <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
-      <span className="mr-1 rounded bg-zinc-800/70 px-1 py-0.5 text-[9px] font-semibold text-zinc-500">
+    <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+      <span className="mr-1 rounded bg-elevate px-1 py-0.5 text-[9px] font-semibold text-muted">
         예시
       </span>
       {text}
@@ -158,7 +158,7 @@ export default function FirstOTAssist({ member }) {
   const gaps = Array.isArray(data?.data_gaps) ? data.data_gaps : [];
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+    <section className="rounded-2xl border border-line bg-card shadow-sm p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Eyebrow icon={Sparkles}>① AI 1차 OT 지원 (가설)</Eyebrow>
         <button
@@ -167,7 +167,7 @@ export default function FirstOTAssist({ member }) {
           title={sameInput ? "회원 정보가 바뀌면 다시 생성하세요 (지금은 같은 입력)" : undefined}
           className={
             sameInput && !loading
-              ? "flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-400 transition active:scale-95"
+              ? "flex items-center gap-2 rounded-lg border border-line bg-elevate px-4 py-2 text-sm font-semibold text-sub transition active:scale-95"
               : "flex items-center gap-2 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
           }
         >
@@ -178,7 +178,7 @@ export default function FirstOTAssist({ member }) {
 
       {/* 캐시/스테일 상태 */}
       {data && !loading && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] leading-relaxed text-zinc-500">
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] leading-relaxed text-muted">
           {meta?.generatedAt && (
             <span>
               생성 {new Date(meta.generatedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}
@@ -186,12 +186,12 @@ export default function FirstOTAssist({ member }) {
             </span>
           )}
           {stale && (
-            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-300">
+            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-700">
               ⚠️ 회원 정보 변경됨 — 다시 생성 권장
             </span>
           )}
           {sameInput && (
-            <span className="text-zinc-500">· 입력이 그대로예요 — 회원 정보가 바뀌면 다시 생성돼요</span>
+            <span className="text-muted">· 입력이 그대로예요 — 회원 정보가 바뀌면 다시 생성돼요</span>
           )}
         </div>
       )}
@@ -199,17 +199,17 @@ export default function FirstOTAssist({ member }) {
       {/* 로딩 — 핵심3줄 스켈레톤 (탭 얼어붙는 느낌 방지) */}
       {loading && (
         <div className="mt-4 space-y-3">
-          <p className="text-[11px] leading-relaxed text-zinc-500">
+          <p className="text-[11px] leading-relaxed text-muted">
             생성 중… 최대 1분 걸릴 수 있어요. (관찰이 아니라 &lsquo;가설&rsquo;을 만드는 중)
           </p>
           <div className="space-y-2">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="animate-pulse rounded-xl border border-zinc-800 bg-zinc-900/60 p-4"
+                className="animate-pulse rounded-xl border border-line bg-card shadow-sm p-4"
               >
-                <div className="h-3 w-24 rounded bg-zinc-800" />
-                <div className="mt-2 h-3 w-3/4 rounded bg-zinc-800/70" />
+                <div className="h-3 w-24 rounded bg-elevate" />
+                <div className="mt-2 h-3 w-3/4 rounded bg-elevate" />
               </div>
             ))}
           </div>
@@ -218,7 +218,7 @@ export default function FirstOTAssist({ member }) {
 
       {/* 실패/키미설정 — 데모 폴백 없이 미표시 안내만 */}
       {notice && !loading && (
-        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
+        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
           {notice}
         </div>
       )}
@@ -228,22 +228,22 @@ export default function FirstOTAssist({ member }) {
           {/* ================= 핵심 3줄 (항상 보임 · 3초 스캔) ================= */}
           <div className="space-y-2.5">
             {/* 🧭 세일즈 나침반 */}
-            <div className="rounded-xl border border-lime-500/25 bg-lime-500/5 p-4">
+            <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-base">🧭</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
                   세일즈 나침반
                 </span>
                 {cc.approach_tag && (
-                  <span className="rounded-md bg-lime-500/15 px-2 py-0.5 text-[11px] font-bold text-lime-300">
+                  <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[11px] font-bold text-primary-strong">
                     {labelOf(CLOSING_APPROACH_OPTS, cc.approach_tag)}
                   </span>
                 )}
               </div>
               {cc.why_higher_odds && (
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
+                <p className="mt-1.5 text-sm leading-relaxed text-ink">
                   {oneLine(cc.why_higher_odds, 62)}
-                  <span className="ml-1 text-[11px] text-zinc-500">
+                  <span className="ml-1 text-[11px] text-muted">
                     (풀텍스트는 &lsquo;세일즈 상세&rsquo;)
                   </span>
                 </p>
@@ -254,35 +254,35 @@ export default function FirstOTAssist({ member }) {
             <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
               <div className="flex items-center gap-2">
                 <span className="text-base">🎯</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-sky-400">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-sky-700">
                   오늘의 승부처
                 </span>
               </div>
               {data.hypothesis && (
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">{data.hypothesis}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink">{data.hypothesis}</p>
               )}
               {awareBeat?.direction && (
-                <p className="mt-1.5 text-[12px] leading-relaxed text-sky-200/90">
-                  <span className="font-semibold text-sky-300">자각 포인트 · </span>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-sky-700/90">
+                  <span className="font-semibold text-sky-700">자각 포인트 · </span>
                   {oneLine(awareBeat.direction, 84)}
                 </p>
               )}
             </div>
 
             {/* 📍 클로징 타이밍 */}
-            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4">
+            <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
               <div className="flex items-center gap-2">
                 <span className="text-base">📍</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
                   클로징 타이밍
                 </span>
               </div>
               {salesBeat ? (
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
+                <p className="mt-1.5 text-sm leading-relaxed text-ink">
                   {oneLine(salesBeat.intent || salesBeat.direction, 84)}
                 </p>
               ) : (
-                <p className="mt-1.5 text-[12px] text-zinc-500">
+                <p className="mt-1.5 text-[12px] text-muted">
                   &lsquo;세일즈&rsquo; 비트가 아직 없어요.
                 </p>
               )}
@@ -292,31 +292,31 @@ export default function FirstOTAssist({ member }) {
           {/* ================= 펼치기 4개 (접힘 기본) ================= */}
           {/* 전체 arc */}
           {arc.length > 0 && (
-            <details className="rounded-xl border border-zinc-800 bg-zinc-900/40">
-              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-zinc-300">
-                <MessageSquareQuote className="h-3.5 w-3.5 text-lime-400" /> 1차 대화 흐름 · 6단계 arc ({arc.length})
+            <details className="rounded-xl border border-line bg-card">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+                <MessageSquareQuote className="h-3.5 w-3.5 text-primary-strong" /> 1차 대화 흐름 · 6단계 arc ({arc.length})
               </summary>
               <div className="space-y-2 px-3.5 pb-3.5">
                 {arc.map((b, i) => (
-                  <div key={i} className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+                  <div key={i} className="rounded-lg border border-line bg-elevate p-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-semibold text-lime-400">
+                      <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
                         {b.when}
                       </span>
                       {b.tone && (
-                        <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-400">
+                        <span className="rounded-md bg-elevate px-2 py-0.5 text-[10px] text-sub">
                           🗣 {b.tone}
                         </span>
                       )}
                     </div>
                     {b.intent && (
-                      <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-500">
-                        <span className="text-zinc-400">왜: </span>
+                      <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+                        <span className="text-sub">왜: </span>
                         {b.intent}
                       </p>
                     )}
                     {b.direction && (
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-200">{b.direction}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-ink">{b.direction}</p>
                     )}
                     <Example text={b.example} />
                   </div>
@@ -327,38 +327,38 @@ export default function FirstOTAssist({ member }) {
 
           {/* 세일즈 상세 — closing_compass 풀 + soft_closing */}
           {(cc.why_higher_odds || cc.watch_for || sc.logic || sc.example) && (
-            <details className="rounded-xl border border-zinc-800 bg-zinc-900/40">
-              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-zinc-300">
-                <Handshake className="h-3.5 w-3.5 text-lime-400" /> 세일즈 상세 · 나침반 풀
+            <details className="rounded-xl border border-line bg-card">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+                <Handshake className="h-3.5 w-3.5 text-primary-strong" /> 세일즈 상세 · 나침반 풀
               </summary>
               <div className="space-y-3 px-3.5 pb-3.5">
                 {cc.why_higher_odds && (
                   <div>
-                    <div className="text-[11px] font-semibold text-lime-400">
+                    <div className="text-[11px] font-semibold text-primary-strong">
                       왜 이 방향인가 (압박 아니라 공감 근거)
                     </div>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-200">{cc.why_higher_odds}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-ink">{cc.why_higher_odds}</p>
                   </div>
                 )}
                 {cc.watch_for && (
                   <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700">
                       <ShieldCheck className="h-3.5 w-3.5" /> 안 통할 신호 = 안전핀 (밀지 말고 2차로)
                     </div>
-                    <p className="mt-1 text-[13px] leading-relaxed text-zinc-300">{cc.watch_for}</p>
-                    <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
+                    <p className="mt-1 text-[13px] leading-relaxed text-sub">{cc.watch_for}</p>
+                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
                       ※ 미루기는 &lsquo;포기&rsquo;가 아니라 1차↔2차를 잇는 다리 — 관찰기록을 남기면 2차 AI가 더 강한 클로징을 준비합니다.
                     </p>
                   </div>
                 )}
                 {(sc.logic || sc.example) && (
                   <div>
-                    <div className="text-[11px] font-semibold text-lime-400">
+                    <div className="text-[11px] font-semibold text-primary-strong">
                       부담 없는 1차 마무리
                       {sc.approach_tag ? ` · ${labelOf(CLOSING_APPROACH_OPTS, sc.approach_tag)}` : ""}
                     </div>
                     {sc.logic && (
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-200">{sc.logic}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-ink">{sc.logic}</p>
                     )}
                     <Example text={sc.example} />
                   </div>
@@ -369,23 +369,23 @@ export default function FirstOTAssist({ member }) {
 
           {/* 치트키 — movement_cues 6필드 */}
           {(mc.exercise || mc.principle || mc.why_instant) && (
-            <details className="rounded-xl border border-zinc-800 bg-zinc-900/40">
-              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-zinc-300">
-                <Dumbbell className="h-3.5 w-3.5 text-lime-400" /> 치트키 운동 (즉효 체감 1개)
+            <details className="rounded-xl border border-line bg-card">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+                <Dumbbell className="h-3.5 w-3.5 text-primary-strong" /> 치트키 운동 (즉효 체감 1개)
               </summary>
               <div className="space-y-2.5 px-3.5 pb-3.5">
                 {mc.exercise && (
-                  <p className="text-sm font-semibold leading-relaxed text-zinc-100">{mc.exercise}</p>
+                  <p className="text-sm font-semibold leading-relaxed text-ink">{mc.exercise}</p>
                 )}
                 {mc.why_instant && (
-                  <p className="flex gap-1.5 text-[13px] leading-relaxed text-zinc-300">
-                    <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                  <p className="flex gap-1.5 text-[13px] leading-relaxed text-sub">
+                    <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
                     {mc.why_instant}
                   </p>
                 )}
                 {mc.cueing && (
                   <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
                       현장 큐잉
                     </div>
                     <Example text={mc.cueing} />
@@ -393,24 +393,24 @@ export default function FirstOTAssist({ member }) {
                 )}
                 {mc.dialogue && (
                   <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
                       함께 건넬 말
                     </div>
                     <Example text={mc.dialogue} />
                   </div>
                 )}
                 {mc.connects_to_closing && (
-                  <p className="text-[13px] leading-relaxed text-zinc-300">
-                    <span className="font-semibold text-zinc-400">클로징 연결 · </span>
+                  <p className="text-[13px] leading-relaxed text-sub">
+                    <span className="font-semibold text-sub">클로징 연결 · </span>
                     {mc.connects_to_closing}
                   </p>
                 )}
                 {mc.principle && (
-                  <div className="rounded-lg border border-lime-500/20 bg-lime-500/5 p-3">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-lime-400">
+                  <div className="rounded-lg border border-primary/30 bg-primary-soft p-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary-strong">
                       <Lightbulb className="h-3.5 w-3.5" /> 원리 (같은 원리로 본인 필살기에 응용)
                     </div>
-                    <p className="mt-1 text-[13px] leading-relaxed text-zinc-200">{mc.principle}</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-ink">{mc.principle}</p>
                   </div>
                 )}
               </div>
@@ -419,19 +419,19 @@ export default function FirstOTAssist({ member }) {
 
           {/* 관찰해올 것 — observe_targets (관찰기록 탭 수동 이관) */}
           {observe.length > 0 && (
-            <details className="rounded-xl border border-zinc-800 bg-zinc-900/40">
-              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-zinc-300">
-                <Target className="h-3.5 w-3.5 text-lime-400" /> 1차에서 관찰해올 것 ({observe.length})
+            <details className="rounded-xl border border-line bg-card">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+                <Target className="h-3.5 w-3.5 text-primary-strong" /> 1차에서 관찰해올 것 ({observe.length})
               </summary>
               <div className="px-3.5 pb-3.5">
                 <ul className="space-y-1.5">
                   {observe.map((t, i) => (
-                    <li key={i} className="flex gap-2 text-sm leading-relaxed text-zinc-200">
-                      <span className="text-lime-400">·</span> {t}
+                    <li key={i} className="flex gap-2 text-sm leading-relaxed text-ink">
+                      <span className="text-primary-strong">·</span> {t}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-[10px] leading-relaxed text-zinc-500">
+                <p className="mt-2 text-[10px] leading-relaxed text-muted">
                   → &lsquo;관찰 기록&rsquo; 탭에 이 항목들을 관찰해 입력하면 2차 AI 브리핑의 근거가 됩니다.
                 </p>
               </div>
@@ -440,21 +440,21 @@ export default function FirstOTAssist({ member }) {
 
           {/* data_gaps — 있을 때만 · 긍정 코칭(결핍 아님) */}
           {gaps.length > 0 && (
-            <details className="rounded-xl border border-lime-500/20 bg-lime-500/5 p-4">
-              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-lime-400">
+            <details className="rounded-xl border border-primary/30 bg-primary-soft p-4">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-primary-strong">
                 이렇게 하면 더 좋아져요 (선택 · {gaps.length})
               </summary>
               <ul className="mt-3 space-y-1.5">
                 {gaps.map((gp, i) => (
-                  <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-zinc-400">
-                    <span className="mt-0.5 text-lime-400">＋</span> {gp}
+                  <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-sub">
+                    <span className="mt-0.5 text-primary-strong">＋</span> {gp}
                   </li>
                 ))}
               </ul>
             </details>
           )}
 
-          <p className="text-[10px] leading-relaxed text-zinc-600">
+          <p className="text-[10px] leading-relaxed text-muted">
             ※ ①은 회원 기본정보로 만든 &lsquo;가설&rsquo;이에요. 관찰 기록을 저장한 회원은 만든 ①이 남고, 저장 전이면 이 화면에서만 보여요.
           </p>
         </div>
@@ -462,7 +462,7 @@ export default function FirstOTAssist({ member }) {
 
       {/* 최초 안내 (생성 전) */}
       {!data && !loading && !notice && (
-        <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">
+        <p className="mt-3 text-[11px] leading-relaxed text-muted">
           회원 기본정보로 1차 OT 6단계 흐름 · 세일즈 나침반 · 치트키를 생성합니다. (관찰 아님 · 가설)
         </p>
       )}

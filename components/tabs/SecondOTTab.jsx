@@ -116,7 +116,7 @@ const ROUTINE_2 = [
 const ACT_LABEL = { yes: "자극 잘 옴", partial: "약하게 옴", no: "아직 없음" };
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-lime-500/50";
+  "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary";
 
 export default function SecondOTTab({ member, onClosingSaved }) {
   const [loading, setLoading] = useState(false);
@@ -326,7 +326,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   const renderDemo = (note) => (
     <div className="space-y-8">
       {note && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
           {note}
         </div>
       )}
@@ -335,36 +335,36 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       <section>
         <Eyebrow icon={Microscope}>회원 피드백 AI 분석</Eyebrow>
 
-        <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-6">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="rounded-2xl border border-line bg-card shadow-sm p-5 sm:p-6">
+          <div className="rounded-xl border border-line bg-card shadow-sm p-4">
+            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
               <MessageSquareQuote className="h-3.5 w-3.5" /> 1차 OT 직후 · 회원의 말
             </div>
-            <p className="text-sm italic leading-relaxed text-zinc-200">“{RAW_FEEDBACK}”</p>
+            <p className="text-sm italic leading-relaxed text-ink">“{RAW_FEEDBACK}”</p>
           </div>
 
           <div className="mt-4 flex items-center gap-2">
-            <span className="rounded-md bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-400">
+            <span className="rounded-md bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-600">
               AI 진단
             </span>
-            <span className="text-sm font-semibold text-zinc-100">{FEEDBACK_ANALYSIS.headline}</span>
+            <span className="text-sm font-semibold text-ink">{FEEDBACK_ANALYSIS.headline}</span>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {FEEDBACK_ANALYSIS.cause.map((c, i) => (
-              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5">
+              <div key={i} className="rounded-xl border border-line bg-card shadow-sm p-3.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-orange-400">0{i + 1}</span>
-                  <span className="text-sm font-semibold text-zinc-100">{c.t}</span>
+                  <span className="font-mono text-xs font-bold text-orange-600">0{i + 1}</span>
+                  <span className="text-sm font-semibold text-ink">{c.t}</span>
                 </div>
-                <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">{c.d}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-sub">{c.d}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-4 flex gap-2 rounded-xl border border-lime-500/20 bg-lime-500/5 p-3.5">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-lime-400" />
-            <p className="text-sm leading-relaxed text-zinc-200">{FEEDBACK_ANALYSIS.win}</p>
+          <div className="mt-4 flex gap-2 rounded-xl border border-primary/30 bg-primary-soft p-3.5">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary-strong" />
+            <p className="text-sm leading-relaxed text-ink">{FEEDBACK_ANALYSIS.win}</p>
           </div>
         </div>
       </section>
@@ -374,8 +374,8 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         <Eyebrow icon={Target}>둔근 100% · 조정 팁 & 2차 루틴</Eyebrow>
 
         <div className="grid gap-4 lg:grid-cols-5">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 lg:col-span-2">
-            <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="rounded-2xl border border-line bg-card shadow-sm p-4 lg:col-span-2">
+            <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
               Gym80 아웃싸이 · 대퇴사두 차단 세팅
             </div>
             <div className="space-y-2.5">
@@ -384,11 +384,11 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                 return (
                   <div key={tip.t} className="flex gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10">
-                      <Icon className="h-4 w-4 text-orange-400" />
+                      <Icon className="h-4 w-4 text-orange-600" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-zinc-100">{tip.t}</div>
-                      <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">{tip.d}</p>
+                      <div className="text-sm font-semibold text-ink">{tip.t}</div>
+                      <p className="mt-0.5 text-xs leading-relaxed text-sub">{tip.d}</p>
                     </div>
                   </div>
                 );
@@ -398,22 +398,22 @@ export default function SecondOTTab({ member, onClosingSaved }) {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:col-span-3">
             {ROUTINE_2.map((r) => (
-              <div key={r.id} className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              <div key={r.id} className="flex flex-col rounded-xl border border-line bg-card shadow-sm p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <h4 className="text-sm font-semibold text-zinc-100">{r.name}</h4>
-                  <span className="shrink-0 rounded-md border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 font-mono text-[10px] font-semibold text-zinc-300">
+                  <h4 className="text-sm font-semibold text-ink">{r.name}</h4>
+                  <span className="shrink-0 rounded-md border border-line bg-elevate px-2 py-0.5 font-mono text-[10px] font-semibold text-sub">
                     {r.machine}
                   </span>
                 </div>
-                <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400">
-                  <span className="text-orange-400">◆</span> {r.tip}
+                <p className="mt-2 flex-1 text-xs leading-relaxed text-sub">
+                  <span className="text-orange-600">◆</span> {r.tip}
                 </p>
-                <div className="mt-3 flex items-center gap-2 border-t border-zinc-800 pt-2">
-                  <span className="font-mono text-xs font-semibold text-lime-400">{r.sets}</span>
-                  <span className="text-zinc-700">·</span>
+                <div className="mt-3 flex items-center gap-2 border-t border-line pt-2">
+                  <span className="font-mono text-xs font-semibold text-primary-strong">{r.sets}</span>
+                  <span className="text-muted">·</span>
                   <div className="flex flex-wrap gap-1">
                     {r.muscles.map((m) => (
-                      <span key={m} className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                      <span key={m} className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
                         #{m}
                       </span>
                     ))}
@@ -430,8 +430,8 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   // example(예시 문장)은 흐리게 + "예시" 라벨 — 낭독기 방지(⭐⭐ 철학). §8-훅.
   const renderExample = (ex) =>
     ex ? (
-      <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
-        <span className="mr-1 rounded bg-zinc-800/70 px-1 py-0.5 text-[9px] font-semibold text-zinc-500">
+      <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+        <span className="mr-1 rounded bg-elevate px-1 py-0.5 text-[9px] font-semibold text-muted">
           예시
         </span>
         {ex}
@@ -447,36 +447,36 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     // 클로징 방향 프리필: 저장값 > yes분기 AI approach_tag > pain (토글 제거 후 결정적 분기).
     const effApproach = closingApproach || b.closing?.yes?.approach_tag || "pain";
     const briefRows = [
-      { k: "1차 확인", v: bf.proven_in_1st, c: "text-lime-400" },
-      { k: "혼자 하면 위험", v: bf.risk_if_alone, c: "text-orange-400" },
-      { k: "2차에 증명할 것", v: bf.to_prove_in_2nd, c: "text-sky-400" },
-      { k: "클로징 논리", v: bf.closing_logic, c: "text-lime-400" },
+      { k: "1차 확인", v: bf.proven_in_1st, c: "text-primary-strong" },
+      { k: "혼자 하면 위험", v: bf.risk_if_alone, c: "text-orange-600" },
+      { k: "2차에 증명할 것", v: bf.to_prove_in_2nd, c: "text-sky-700" },
+      { k: "클로징 논리", v: bf.closing_logic, c: "text-primary-strong" },
     ];
     return (
       <div className="space-y-8">
         {/* ── AI 지원 준비 · 수업 전 ── */}
-        <div className="rounded-lg border border-lime-500/25 bg-lime-500/5 px-3 py-1.5 text-xs font-bold text-lime-300">
+        <div className="rounded-lg border border-primary/30 bg-primary-soft px-3 py-1.5 text-xs font-bold text-primary-strong">
           AI 지원 준비 · 수업 전
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-bold text-lime-400">
+          <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary-strong">
             실 AI
           </span>
           {meta?.generatedAt && (
-            <span className="text-[10px] text-zinc-500">
+            <span className="text-[10px] text-muted">
               생성: {new Date(meta.generatedAt).toLocaleString("ko-KR")}
               {meta?.obsHash && !stale && " · 현재 관찰 기준"}
             </span>
           )}
           {stale && (
-            <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+            <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
               관찰이 바뀌었습니다 — 재생성 권장
             </span>
           )}
           <button
             onClick={() => generateBrief(obs, existingRow2Id)}
             disabled={generating}
-            className="ml-auto flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-lime-500/50 disabled:opacity-50"
+            className="ml-auto flex items-center gap-1 rounded-lg border border-line bg-elevate px-2.5 py-1 text-[11px] font-medium text-ink transition hover:border-primary disabled:opacity-50"
           >
             <RefreshCw className="h-3 w-3" /> 재생성
           </button>
@@ -489,17 +489,17 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             {["yes", "partial", "no"].map((id) => {
               const c = b.closing?.[id] || null;
               return (
-                <details key={id} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+                <details key={id} className="rounded-xl border border-line bg-card shadow-sm p-3">
                   <summary className="cursor-pointer">
-                    <span className="rounded-md bg-zinc-800/70 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
+                    <span className="rounded-md bg-elevate px-2.5 py-0.5 text-[11px] font-semibold text-sub">
                       {ACT_LABEL[id]}
                     </span>
                   </summary>
                   <div className="mt-3">
                   {c ? (
-                    <div className="space-y-3 rounded-2xl border border-lime-500/40 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/10">
+                    <div className="space-y-3 rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
                       {c.approach_tag && (
-                        <span className="inline-block rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                        <span className="inline-block rounded-md bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">
                           방향: {labelOf(CLOSING_APPROACH_OPTS, c.approach_tag)}
                         </span>
                       )}
@@ -513,29 +513,29 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                           className={`rounded-xl border p-4 ${
                             s.accent
                               ? "border-orange-500/40 bg-orange-500/10"
-                              : "border-zinc-800 bg-zinc-900/60"
+                              : "border-line bg-card"
                           }`}
                         >
                           <div
                             className={`text-xs font-semibold uppercase tracking-wider ${
-                              s.accent ? "text-orange-400" : "text-lime-400"
+                              s.accent ? "text-orange-600" : "text-primary-strong"
                             }`}
                           >
                             {s.label}
                           </div>
-                          <p className="mt-1.5 text-base leading-relaxed text-zinc-100">{s.v || "—"}</p>
+                          <p className="mt-1.5 text-base leading-relaxed text-ink">{s.v || "—"}</p>
                         </div>
                       ))}
                       {/* hold — 침묵 강조 */}
-                      <div className="rounded-xl border border-dashed border-zinc-600 bg-zinc-950 p-4 text-center">
-                        <div className="text-sm font-bold text-zinc-100">🤐 여기서 멈추고 답 기다리기</div>
+                      <div className="rounded-xl border border-dashed border-line bg-card p-4 text-center">
+                        <div className="text-sm font-bold text-ink">🤐 여기서 멈추고 답 기다리기</div>
                         {c.hold && (
-                          <p className="mt-1 text-[11px] italic leading-relaxed text-zinc-500">{c.hold}</p>
+                          <p className="mt-1 text-[11px] italic leading-relaxed text-muted">{c.hold}</p>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-zinc-500">이 분기의 클로징 데이터가 없습니다.</p>
+                    <p className="text-xs text-muted">이 분기의 클로징 데이터가 없습니다.</p>
                   )}
                   </div>
                 </details>
@@ -548,37 +548,37 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         {b.stimulus_response && (
           <section>
             <Eyebrow icon={Wrench}>자극 결과별 운동 대처 · 수업 전 준비</Eyebrow>
-            <p className="mb-3 text-[11px] leading-relaxed text-zinc-500">
+            <p className="mb-3 text-[11px] leading-relaxed text-muted">
               세일즈가 아니라 &lsquo;몸을 어떻게 조정하나&rsquo;. 수업 전에 3갈래를 미리 훑어두세요.
             </p>
             <div className="space-y-3">
               {["yes", "partial", "no"].map((id) => {
                 const s = b.stimulus_response?.[id] || null;
                 return (
-                  <details key={id} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+                  <details key={id} className="rounded-xl border border-line bg-card shadow-sm p-3">
                     <summary className="cursor-pointer">
-                      <span className="rounded-md bg-zinc-800/70 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
+                      <span className="rounded-md bg-elevate px-2.5 py-0.5 text-[11px] font-semibold text-sub">
                         {ACT_LABEL[id]}
                       </span>
                     </summary>
                     <div className="mt-3">
                       {s ? (
-                        <div className="space-y-2.5 rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+                        <div className="space-y-2.5 rounded-xl border border-line bg-elevate p-4">
                           <div>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">원인</div>
-                            <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{s.cause || "—"}</p>
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">원인</div>
+                            <p className="mt-0.5 text-sm leading-relaxed text-sub">{s.cause || "—"}</p>
                           </div>
-                          <div className="rounded-lg border border-lime-500/25 bg-lime-500/5 p-3">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-lime-400">조정 방향</div>
-                            <p className="mt-0.5 text-base leading-relaxed text-zinc-100">{s.adjustment || "—"}</p>
+                          <div className="rounded-lg border border-primary/30 bg-primary-soft p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-primary-strong">조정 방향</div>
+                            <p className="mt-0.5 text-base leading-relaxed text-ink">{s.adjustment || "—"}</p>
                           </div>
                           <div>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">노리는 것</div>
-                            <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{s.direction || "—"}</p>
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">노리는 것</div>
+                            <p className="mt-0.5 text-sm leading-relaxed text-sub">{s.direction || "—"}</p>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-zinc-500">이 분기 대처 데이터가 없습니다.</p>
+                        <p className="text-xs text-muted">이 분기 대처 데이터가 없습니다.</p>
                       )}
                     </div>
                   </details>
@@ -589,45 +589,45 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         )}
 
         {/* 근거들 — 접어둠 (클로징이 주인공) */}
-        <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <details className="rounded-xl border border-line bg-card shadow-sm p-4">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-sub">
             등록 당위성 브리핑
           </summary>
           <div className="mt-3 space-y-2.5">
             {briefRows.map((r) => (
-              <div key={r.k} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5">
+              <div key={r.k} className="rounded-xl border border-line bg-card shadow-sm p-3.5">
                 <div className={`text-[11px] font-semibold uppercase tracking-wider ${r.c}`}>{r.k}</div>
-                <p className="mt-1 text-sm leading-relaxed text-zinc-200">{r.v || "—"}</p>
+                <p className="mt-1 text-sm leading-relaxed text-ink">{r.v || "—"}</p>
               </div>
             ))}
           </div>
         </details>
 
-        <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <details className="rounded-xl border border-line bg-card shadow-sm p-4">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-sub">
             2차 대화 흐름 · arc
           </summary>
           <div className="mt-3 space-y-2.5">
             {(b.arc || []).map((beat, i) => (
-              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              <div key={i} className="rounded-xl border border-line bg-card shadow-sm p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-semibold text-lime-400">
+                  <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
                     {beat.when}
                   </span>
                   {beat.tone && (
-                    <span className="rounded-md bg-zinc-800/70 px-2 py-0.5 text-[10px] text-zinc-400">
+                    <span className="rounded-md bg-elevate px-2 py-0.5 text-[10px] text-sub">
                       🗣 {beat.tone}
                     </span>
                   )}
                 </div>
                 {beat.intent && (
-                  <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-                    <span className="text-zinc-400">왜: </span>
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                    <span className="text-sub">왜: </span>
                     {beat.intent}
                   </p>
                 )}
                 {beat.direction && (
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-200">{beat.direction}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-ink">{beat.direction}</p>
                 )}
                 {renderExample(beat.example)}
               </div>
@@ -635,22 +635,22 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           </div>
         </details>
 
-        <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <details className="rounded-xl border border-line bg-card shadow-sm p-4">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-sub">
             거절 대처 · 황현진 4유형
           </summary>
           <div className="mt-3 space-y-2.5">
             {(b.objections || []).map((o, i) => (
-              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5">
+              <div key={i} className="rounded-xl border border-line bg-card shadow-sm p-3.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-md bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-400">
+                  <span className="rounded-md bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-600">
                     {o.type}
                   </span>
                   {o.customer_says && (
-                    <span className="text-[11px] italic text-zinc-400">“{o.customer_says}”</span>
+                    <span className="text-[11px] italic text-sub">“{o.customer_says}”</span>
                   )}
                 </div>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">{o.reframe_direction}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink">{o.reframe_direction}</p>
                 {renderExample(o.example)}
               </div>
             ))}
@@ -659,29 +659,29 @@ export default function SecondOTTab({ member, onClosingSaved }) {
 
         {/* 성장 팁 — 하단에 접힘(격려 톤). 주인공은 클로징. */}
         {gaps.length > 0 && (
-          <details className="rounded-xl border border-lime-500/20 bg-lime-500/5 p-4">
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-lime-400">
+          <details className="rounded-xl border border-primary/30 bg-primary-soft p-4">
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-primary-strong">
               이렇게 하면 더 좋아져요 (선택 · {gaps.length})
             </summary>
             <ul className="mt-3 space-y-1.5">
               {gaps.map((gp, i) => (
-                <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-zinc-400">
-                  <span className="mt-0.5 text-lime-400">＋</span> {gp}
+                <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-sub">
+                  <span className="mt-0.5 text-primary-strong">＋</span> {gp}
                 </li>
               ))}
             </ul>
           </details>
         )}
         {/* ── 클로징 결과 기록 · 수업 후 ── */}
-        <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 px-3 py-1.5 text-xs font-bold text-zinc-300">
+        <div className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-bold text-sub">
           클로징 결과 기록 · 수업 후
         </div>
         {/* ㉠ 2차 클로징 결과 기록 (round-2 closing_* 컬럼 — 브리핑 캐시와 공존) */}
         <section>
           <Eyebrow icon={Handshake}>㉠ 2차 클로징 결과 기록</Eyebrow>
-          <div className="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:grid-cols-3">
+          <div className="grid gap-3 rounded-xl border border-line bg-card shadow-sm p-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-zinc-500">결과</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted">결과</label>
               <select
                 value={closingResult}
                 onChange={(e) => setClosingResult(e.target.value)}
@@ -695,8 +695,8 @@ export default function SecondOTTab({ member, onClosingSaved }) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-zinc-500">
-                방향 <span className="text-zinc-600">(AI 제안 프리필)</span>
+              <label className="mb-1 block text-[11px] font-medium text-muted">
+                방향 <span className="text-muted">(AI 제안 프리필)</span>
               </label>
               <select
                 value={effApproach}
@@ -723,8 +723,8 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             {/* 실패/보류일 때만 사유 카테고리 (약점 진단 · 집계) — full width */}
             {(closingResult === "fail" || closingResult === "hold") && (
               <div className="sm:col-span-3">
-                <label className="mb-1 block text-[11px] font-medium text-zinc-500">
-                  사유 <span className="text-zinc-600">(약점 진단 · 집계)</span>
+                <label className="mb-1 block text-[11px] font-medium text-muted">
+                  사유 <span className="text-muted">(약점 진단 · 집계)</span>
                 </label>
                 <select
                   value={closingReason}
@@ -744,14 +744,14 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             {/* 성공/실패/보류일 때 클로징 케이스 3박자 (선택 · AI 리딩 재료) — full width */}
             {["success", "fail", "hold"].includes(closingResult) && (
               <div className="sm:col-span-3 space-y-2">
-                <p className="text-[11px] text-zinc-600">클로징 케이스 (선택 · 나중 AI 리딩 재료)</p>
+                <p className="text-[11px] text-muted">클로징 케이스 (선택 · 나중 AI 리딩 재료)</p>
                 {[
                   { v: detailApproach, set: setDetailApproach, label: "① 어떻게 접근했나", ph: "어떤 방향·멘트로 제안했나" },
                   { v: detailReaction, set: setDetailReaction, label: "② 회원 반응·멘트", ph: "회원이 뭐라 했나(가능하면 그대로) — 마음 연/거절한 말" },
                   { v: detailOutcome, set: setDetailOutcome, label: "③ 그래서 어떻게 됐나", ph: "결과·내 대응 — 예: 등록(12주) / 물러섬·재접근일 안 잡음" },
                 ].map((f) => (
                   <div key={f.label}>
-                    <label className="mb-1 block text-[11px] font-medium text-zinc-500">{f.label}</label>
+                    <label className="mb-1 block text-[11px] font-medium text-muted">{f.label}</label>
                     <textarea
                       value={f.v}
                       onChange={(e) => f.set(e.target.value)}
@@ -783,28 +783,28 @@ export default function SecondOTTab({ member, onClosingSaved }) {
 
   // 생성 중 스켈레톤
   const renderGenerating = () => (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
-      <div className="mb-3 flex items-center gap-2 text-xs text-zinc-500">
-        <Sparkles className="h-3.5 w-3.5 text-lime-400" /> 1차 관찰을 근거로 2차 브리핑을 생성하는 중… 최대 1분 걸릴 수 있어요 (최초 1회, 이후 캐시)
+    <div className="rounded-2xl border border-line bg-card shadow-sm p-6">
+      <div className="mb-3 flex items-center gap-2 text-xs text-muted">
+        <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 1차 관찰을 근거로 2차 브리핑을 생성하는 중… 최대 1분 걸릴 수 있어요 (최초 1회, 이후 캐시)
       </div>
       <div className="space-y-2.5">
-        <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
-        <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
-        <div className="h-3 w-5/6 animate-pulse rounded bg-zinc-800/70" />
-        <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
-        <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
+        <div className="h-4 w-1/3 animate-pulse rounded bg-elevate" />
+        <div className="h-3 w-full animate-pulse rounded bg-elevate" />
+        <div className="h-3 w-5/6 animate-pulse rounded bg-elevate" />
+        <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-elevate" />
+        <div className="h-3 w-full animate-pulse rounded bg-elevate" />
       </div>
     </div>
   );
 
   // 캐시 없음(첫 생성 전) — 자동 호출 대신 버튼 트리거(결정#2). 클릭 → generateBrief → 스켈레톤/실패 폴백 유지.
   const renderPreGenerate = () => (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 text-center">
-      <Sparkles className="mx-auto h-8 w-8 text-lime-400" />
-      <p className="mt-3 text-sm text-zinc-300">
-        <span className="font-semibold text-zinc-100">{member.name}</span> 회원의 1차 관찰을 근거로 2차 AI 지원(등록 당위성·클로징·거절 대처)을 준비합니다.
+    <div className="rounded-2xl border border-line bg-card shadow-sm p-6 text-center">
+      <Sparkles className="mx-auto h-8 w-8 text-primary-strong" />
+      <p className="mt-3 text-sm text-sub">
+        <span className="font-semibold text-ink">{member.name}</span> 회원의 1차 관찰을 근거로 2차 AI 지원(등록 당위성·클로징·거절 대처)을 준비합니다.
       </p>
-      <p className="mt-1 text-xs text-zinc-500">수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.</p>
+      <p className="mt-1 text-xs text-muted">수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.</p>
       <button
         onClick={() => generateBrief(obs, existingRow2Id)}
         disabled={generating}
@@ -824,16 +824,16 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     );
   }
   if (loading) {
-    return <div className="py-10 text-center text-sm text-zinc-500">불러오는 중…</div>;
+    return <div className="py-10 text-center text-sm text-muted">불러오는 중…</div>;
   }
   if (!obs) {
     return (
-      <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
-        <Microscope className="mx-auto h-8 w-8 text-zinc-700" />
-        <p className="mt-3 text-sm text-zinc-300">
-          <span className="font-semibold text-zinc-100">{member.name}</span> 회원의 1차 관찰 기록이 없습니다.
+      <div className="rounded-2xl border border-dashed border-line p-10 text-center">
+        <Microscope className="mx-auto h-8 w-8 text-muted" />
+        <p className="mt-3 text-sm text-sub">
+          <span className="font-semibold text-ink">{member.name}</span> 회원의 1차 관찰 기록이 없습니다.
         </p>
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-muted">
           &lsquo;관찰 기록&rsquo; 탭에서 1차 관찰을 먼저 입력하면 2차 AI 브리핑을 생성할 수 있어요.
         </p>
       </div>
@@ -841,10 +841,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   }
   if (row1?.closing_result === "success") {
     return (
-      <div className="rounded-2xl border border-lime-500/30 bg-lime-500/5 p-10 text-center">
-        <CheckCircle2 className="mx-auto h-9 w-9 text-lime-400" />
-        <p className="mt-3 text-base font-semibold text-zinc-100">1차 OT에서 등록 완료</p>
-        <p className="mt-1 text-sm text-zinc-400">
+      <div className="rounded-2xl border border-primary/30 bg-primary-soft p-10 text-center">
+        <CheckCircle2 className="mx-auto h-9 w-9 text-primary-strong" />
+        <p className="mt-3 text-base font-semibold text-ink">1차 OT에서 등록 완료</p>
+        <p className="mt-1 text-sm text-sub">
           {member.name} 회원은 1차 클로징에 성공해 2차 AI 브리핑을 건너뜁니다.
         </p>
       </div>

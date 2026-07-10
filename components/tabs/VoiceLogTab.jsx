@@ -274,8 +274,8 @@ export default function VoiceLogTab({ member, onResult }) {
       <Eyebrow icon={Mic}>실시간 AI 음성 일지 생성기</Eyebrow>
 
       {/* 녹음기 */}
-      <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6 text-center">
-        <div className="text-xs text-zinc-500">
+      <section className="rounded-2xl border border-line bg-card shadow-sm p-6 text-center">
+        <div className="text-xs text-muted">
           {member.name} 회원 · 수업 종료 5분 전 구두 요약을 녹음하세요
         </div>
 
@@ -285,7 +285,7 @@ export default function VoiceLogTab({ member, onResult }) {
             <div
               key={i}
               className={`w-1.5 rounded-full ${
-                phase === "recording" ? "bg-lime-400" : "bg-zinc-700"
+                phase === "recording" ? "bg-primary" : "bg-line"
               }`}
               style={{
                 height: "100%",
@@ -301,7 +301,7 @@ export default function VoiceLogTab({ member, onResult }) {
         </div>
 
         {/* 타이머 */}
-        <div className="mt-4 font-mono text-2xl font-bold text-zinc-100">
+        <div className="mt-4 font-mono text-2xl font-bold text-ink">
           {fmt(sec)}
         </div>
 
@@ -326,7 +326,7 @@ export default function VoiceLogTab({ member, onResult }) {
               녹음 중지
             </button>
           ) : (
-            <div className="text-sm font-medium text-lime-400">AI가 정제 중…</div>
+            <div className="text-sm font-medium text-primary">AI가 정제 중…</div>
           )}
         </div>
 
@@ -337,7 +337,7 @@ export default function VoiceLogTab({ member, onResult }) {
         )}
 
         {notice && (
-          <div className="mx-auto mt-4 max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
+          <div className="mx-auto mt-4 max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
             {notice}
           </div>
         )}
@@ -345,51 +345,51 @@ export default function VoiceLogTab({ member, onResult }) {
 
       {/* 처리중 스켈레톤 */}
       {phase === "processing" && (
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
-          <div className="mb-3 flex items-center gap-2 text-xs text-zinc-500">
-            <Sparkles className="h-3.5 w-3.5 text-lime-400" /> 음성 → 텍스트 변환 후 AI가 리포트로 정제하는 중
+        <section className="rounded-2xl border border-line bg-card shadow-sm p-5">
+          <div className="mb-3 flex items-center gap-2 text-xs text-muted">
+            <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 음성 → 텍스트 변환 후 AI가 리포트로 정제하는 중
           </div>
           <div className="space-y-2.5">
-            <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
-            <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
-            <div className="h-3 w-5/6 animate-pulse rounded bg-zinc-800/70" />
-            <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
-            <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
-            <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-800/70" />
+            <div className="h-4 w-1/3 animate-pulse rounded bg-elevate" />
+            <div className="h-3 w-full animate-pulse rounded bg-elevate" />
+            <div className="h-3 w-5/6 animate-pulse rounded bg-elevate" />
+            <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-elevate" />
+            <div className="h-3 w-full animate-pulse rounded bg-elevate" />
+            <div className="h-3 w-2/3 animate-pulse rounded bg-elevate" />
           </div>
         </section>
       )}
 
       {/* 리포트 프리뷰 */}
       {phase === "done" && report && (
-        <section className="rounded-2xl border border-lime-500/20 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
+        <section className="rounded-2xl border border-primary/30 bg-card shadow-sm p-5">
           <div className="mb-4 flex items-center gap-2">
-            <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-bold text-lime-400">
+            <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary-strong">
               AI 요약 완료
             </span>
-            <span className="text-sm font-semibold text-zinc-100">
+            <span className="text-sm font-semibold text-ink">
               {member.name} 회원 · 오늘의 운동 일지
             </span>
           </div>
 
           {/* 1. 머신 */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+          <div className="rounded-xl border border-line bg-card shadow-sm p-4">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
               <Dumbbell className="h-3.5 w-3.5" /> 1. 오늘 진행한 머신 & 중량/세트
             </div>
             {report.machines.length > 0 ? (
               <ul className="space-y-3">
                 {report.machines.map((m, i) => (
-                  <li key={i} className="text-sm text-zinc-300">
+                  <li key={i} className="text-sm text-sub">
                     <div className="flex justify-between gap-2">
-                      <span className="font-medium text-zinc-100">{m.name}</span>
-                      {m.detail && <span className="font-mono text-zinc-400">{m.detail}</span>}
+                      <span className="font-medium text-ink">{m.name}</span>
+                      {m.detail && <span className="font-mono text-sub">{m.detail}</span>}
                     </div>
                     {(m.method || []).length > 0 && (
                       <ul className="mt-1.5 space-y-1">
                         {m.method.map((c, j) => (
-                          <li key={j} className="flex gap-1.5 text-[13px] leading-relaxed text-zinc-300">
-                            <span className="text-lime-400">·</span>
+                          <li key={j} className="flex gap-1.5 text-[13px] leading-relaxed text-sub">
+                            <span className="text-primary-strong">·</span>
                             <span>{c}</span>
                           </li>
                         ))}
@@ -399,27 +399,27 @@ export default function VoiceLogTab({ member, onResult }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-zinc-500">언급된 머신 정보가 없습니다.</p>
+              <p className="text-sm text-muted">언급된 머신 정보가 없습니다.</p>
             )}
           </div>
 
           {/* 2. 피드백 */}
-          <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+          <div className="mt-3 rounded-xl border border-line bg-card shadow-sm p-4">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
               <MessageSquareQuote className="h-3.5 w-3.5" /> 2. 트레이너 핵심 피드백
             </div>
-            <p className="text-sm leading-relaxed text-zinc-200">{report.feedback}</p>
+            <p className="text-sm leading-relaxed text-ink">{report.feedback}</p>
           </div>
 
           {/* 3. 홈트 */}
-          <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-lime-400">
+          <div className="mt-3 rounded-xl border border-line bg-card shadow-sm p-4">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
               <Target className="h-3.5 w-3.5" /> 3. 홈트레이닝 및 주의사항
             </div>
             <ul className="space-y-1.5">
               {report.homework.map((h, i) => (
-                <li key={i} className="flex gap-2 text-sm leading-relaxed text-zinc-300">
-                  <span className="text-lime-400">·</span> {h}
+                <li key={i} className="flex gap-2 text-sm leading-relaxed text-sub">
+                  <span className="text-primary-strong">·</span> {h}
                 </li>
               ))}
             </ul>
@@ -434,7 +434,7 @@ export default function VoiceLogTab({ member, onResult }) {
             이 내용으로 일지 채우기
           </button>
 
-          <p className="mt-3 text-[10px] leading-relaxed text-zinc-600">
+          <p className="mt-3 text-[10px] leading-relaxed text-muted">
             ※ 실제 마이크 녹음 → 음성인식(STT) → AI 요약으로 생성됩니다. 키 미설정·오류·미지원
             브라우저 시 데모 리포트로 자동 폴백합니다.
           </p>
