@@ -55,22 +55,24 @@ export default function PTView({ member, tab, onGoList, onMemberPatch }) {
           <ChevronLeft className="h-4 w-4" /> 회원 목록
         </button>
       )}
-      {tab === 11 ? (
-        <PtReRegTab key={member.id} member={member} contracts={contracts} setContracts={setContracts} logs={logs} />
-      ) : tab === 12 ? (
-        <PtInbodyTab key={member.id} member={member} />
-      ) : (
-        <PtWorkoutTab
-          key={member.id}
-          member={member}
-          onMemberPatch={onMemberPatch}
-          contracts={contracts}
-          setContracts={setContracts}
-          logs={logs}
-          setLogs={setLogs}
-          loading={loading}
-        />
-      )}
+      <div key={tab} className="tab-anim">
+        {tab === 11 ? (
+          <PtReRegTab key={member.id} member={member} contracts={contracts} setContracts={setContracts} logs={logs} />
+        ) : tab === 12 ? (
+          <PtInbodyTab key={member.id} member={member} />
+        ) : (
+          <PtWorkoutTab
+            key={member.id}
+            member={member}
+            onMemberPatch={onMemberPatch}
+            contracts={contracts}
+            setContracts={setContracts}
+            logs={logs}
+            setLogs={setLogs}
+            loading={loading}
+          />
+        )}
+      </div>
     </div>
   );
 }

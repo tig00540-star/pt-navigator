@@ -710,9 +710,9 @@ export default function OTNavigatorDashboard() {
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {tab === 9 ? (
-          <ScheduleBoard members={members} />
+          <div className="tab-anim"><ScheduleBoard members={members} /></div>
         ) : tab === 8 ? (
-          <MyStats members={members} />
+          <div className="tab-anim"><MyStats members={members} /></div>
         ) : (
           <>
         {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}
@@ -726,6 +726,7 @@ export default function OTNavigatorDashboard() {
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
         <MemberViewShell member={member} tab={tab} onGoList={() => setTab(0)} showList={tab === 0} onMemberPatch={onMemberPatch}>
           {tab === 0 && (
+            <div className="tab-anim">
             <MemberListTab
               members={members}
               selectedId={selectedId}
@@ -735,23 +736,28 @@ export default function OTNavigatorDashboard() {
               }}
               onAdd={() => setShowForm(true)}
             />
+            </div>
           )}
 
           {tab === 1 && (
-            <FirstOTTab member={member} />
+            <div className="tab-anim"><FirstOTTab member={member} /></div>
           )}
 
           {tab === 2 && (
+            <div className="tab-anim">
             <SecondOTTab
               member={member}
               onClosingSaved={() => setClosingVersion((v) => v + 1)}
             />
+            </div>
           )}
           {tab === 5 && (
+            <div className="tab-anim">
             <ObservationTab
               member={member}
               onClosingSaved={() => setClosingVersion((v) => v + 1)}
             />
+            </div>
           )}
         </MemberViewShell>
           </>
