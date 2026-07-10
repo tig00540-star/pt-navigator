@@ -53,12 +53,12 @@ export default function RegisterReapproachToday({ members, onSelect }) {
   return (
     <section className="mb-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4">
       <div className="mb-3 flex items-center gap-2">
-        <CalendarClock className="h-4 w-4 text-emerald-400" />
-        <h3 className="text-sm font-semibold text-emerald-200">재등록 재접근</h3>
-        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+        <CalendarClock className="h-4 w-4 text-primary-strong" />
+        <h3 className="text-sm font-semibold text-primary-strong">재등록 재접근</h3>
+        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
           {list.length}
         </span>
-        <span className="text-[11px] text-zinc-500">재등록 보류 후 예정일 도래분</span>
+        <span className="text-[11px] text-muted">재등록 보류 후 예정일 도래분</span>
       </div>
       <div className="grid gap-2">
         {list.map((r) => {
@@ -67,19 +67,19 @@ export default function RegisterReapproachToday({ members, onSelect }) {
             <button
               key={r.user_id}
               onClick={() => onSelect(r.user_id)}
-              className="group flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-zinc-900/50 px-3 py-2.5 text-left transition hover:border-emerald-400/50 active:scale-[0.99]"
+              className="group flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-card px-3 py-2.5 text-left shadow-sm transition hover:border-primary active:scale-[0.99]"
             >
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-zinc-100">{nameOf(r.user_id)}</div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-400">
+                <div className="text-sm font-semibold text-ink">{nameOf(r.user_id)}</div>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
                   <span className="font-mono">{r.reg_reapproach_at}</span>
-                  <span className={over > 0 ? "font-medium text-amber-400" : "font-medium text-emerald-400"}>
+                  <span className={over > 0 ? "font-medium text-amber-600" : "font-medium text-primary-strong"}>
                     {over > 0 ? `${over}일 경과` : "오늘"}
                   </span>
-                  <span className="text-zinc-600">· 재등록 보류</span>
+                  <span className="text-muted">· 재등록 보류</span>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-emerald-500/50 group-hover:text-emerald-400" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-emerald-500/50 group-hover:text-primary-strong" />
             </button>
           );
         })}

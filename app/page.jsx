@@ -236,21 +236,21 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-zinc-800 bg-zinc-950 p-5 sm:rounded-2xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-line bg-card p-5 shadow-xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-lime-400" />
-            <h2 className="text-base font-semibold text-zinc-100">신규 회원 사전 정보 등록</h2>
+            <UserPlus className="h-5 w-5 text-primary-strong" />
+            <h2 className="text-base font-semibold text-ink">신규 회원 사전 정보 등록</h2>
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-elevate hover:text-ink"
             aria-label="닫기"
           >
             <X className="h-4 w-4" />
@@ -260,16 +260,16 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
         <div className="grid grid-cols-2 gap-3">
           {fields.map((f) => (
             <div key={f.k} className={f.k === "name" ? "col-span-2" : ""}>
-              <label className="mb-1 block text-[11px] font-medium text-zinc-500">
+              <label className="mb-1 block text-[11px] font-medium text-muted">
                 {f.label}
-                {f.k === "name" && <span className="text-lime-400"> *</span>}
+                {f.k === "name" && <span className="text-primary-strong"> *</span>}
               </label>
               <input
                 type={f.type || "text"}
                 value={form[f.k]}
                 onChange={set(f.k)}
                 placeholder={f.ph}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+                className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
               />
             </div>
           ))}
@@ -277,17 +277,17 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
 
         {/* ② 진입 문(origin) — status는 여기서 파생. status 드롭다운은 만들지 않음(§7). */}
         <div className="mt-3">
-          <label className="mb-1 block text-[11px] font-medium text-zinc-500">등록 유형</label>
+          <label className="mb-1 block text-[11px] font-medium text-muted">등록 유형</label>
           <select
             value={form.origin}
             onChange={set("origin")}
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-lime-500/50"
+            className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
           >
             <option value="ot_funnel">신규 (OT 진행)</option>
             <option value="handover">인계받은 PT</option>
             <option value="external">외부 PT 등록</option>
           </select>
-          <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">
+          <p className="mt-1 text-[10px] leading-relaxed text-muted">
             인계·외부 PT는 OT 없이 바로 PT 뷰로 시작합니다(§1.5). 상태는 자동 결정.
           </p>
         </div>
@@ -296,26 +296,26 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
         {form.origin !== "ot_funnel" && (
           <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-zinc-500">남은 세션수 *</span>
+              <span className="mb-1 block text-[11px] font-medium text-muted">남은 세션수 *</span>
               <input
                 type="number"
                 value={form.carrySessions}
                 onChange={set("carrySessions")}
                 placeholder="20"
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+                className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-zinc-500">회당단가(원) *</span>
+              <span className="mb-1 block text-[11px] font-medium text-muted">회당단가(원) *</span>
               <input
                 type="number"
                 value={form.carryPrice}
                 onChange={set("carryPrice")}
                 placeholder="50000"
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+                className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
               />
             </label>
-            <p className="col-span-2 text-[10px] text-zinc-500">
+            <p className="col-span-2 text-[10px] text-muted">
               인계·외부 PT는 이월 계약으로 잔여가 잡힙니다(매출 제외).
             </p>
           </div>
@@ -323,7 +323,7 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
 
         {/* 보유머신 */}
         <div className="mt-3">
-          <label className="mb-1.5 block text-[11px] font-medium text-zinc-500">
+          <label className="mb-1.5 block text-[11px] font-medium text-muted">
             보유머신 {machineOptions.length === 0 && "(center_machine 시드 필요)"}
           </label>
           <div className="flex flex-wrap gap-2">
@@ -335,8 +335,8 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
                   onClick={() => toggleMachine(label)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
                     on
-                      ? "border-lime-500/40 bg-lime-500/10 text-lime-400"
-                      : "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700"
+                      ? "border-primary bg-primary-soft text-primary-strong"
+                      : "border-line bg-elevate text-muted hover:border-primary"
                   }`}
                 >
                   {label}
@@ -347,7 +347,7 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
         </div>
 
         {err && (
-          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-600">
             {err}
           </div>
         )}
@@ -355,7 +355,7 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
         <div className="mt-5 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-700"
+            className="flex-1 rounded-xl border border-line bg-elevate py-2.5 text-sm font-medium text-sub transition hover:border-primary"
           >
             취소
           </button>
@@ -406,12 +406,12 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
 
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="회원 검색 (이름·직업)"
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 pl-9 pr-3 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+            className="w-full rounded-xl border border-line bg-card py-2.5 pl-9 pr-3 text-sm text-ink placeholder-muted shadow-sm outline-none focus:border-primary"
           />
         </div>
         <button
@@ -434,8 +434,8 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
             onClick={() => setSegment(s.key)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
               segment === s.key
-                ? "bg-lime-500/15 text-lime-400 ring-1 ring-lime-500/40"
-                : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"
+                ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30"
+                : "bg-elevate text-muted hover:text-ink"
             }`}
           >
             {s.label} {s.n}
@@ -444,9 +444,9 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
       </div>
 
       {list.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
-          <User className="mx-auto h-8 w-8 text-zinc-700" />
-          <p className="mt-3 text-sm text-zinc-400">
+        <div className="rounded-2xl border border-dashed border-line bg-card p-10 text-center shadow-sm">
+          <User className="mx-auto h-8 w-8 text-line" />
+          <p className="mt-3 text-sm text-sub">
             {members.length === 0
               ? "아직 등록된 회원이 없어요."
               : q.trim()
@@ -456,7 +456,7 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
           {members.length === 0 && (
             <button
               onClick={onAdd}
-              className="mt-4 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-200 transition hover:border-lime-500/50"
+              className="mt-4 rounded-lg border border-line bg-elevate px-4 py-2 text-xs font-medium text-sub transition hover:border-primary"
             >
               첫 회원 등록하기
             </button>
@@ -470,40 +470,40 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
               <button
                 key={m.id}
                 onClick={() => onSelect(m.id)}
-                className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
+                className={`group flex items-start gap-3 rounded-2xl border p-4 text-left shadow-sm transition ${
                   on
-                    ? "border-lime-500/40 bg-lime-500/5"
-                    : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"
+                    ? "border-primary bg-primary-soft"
+                    : "border-line bg-card hover:border-primary"
                 }`}
               >
-                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-sm font-bold ${viewMeta(viewFor(m)).avatar}`}>
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line text-sm font-bold ${viewMeta(viewFor(m)).avatar}`}>
                   {m.name ? m.name.slice(0, 1) : "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-zinc-100">{m.name}</span>
+                    <span className="text-sm font-semibold text-ink">{m.name}</span>
                     <MemberBadge view={viewFor(m)} />
-                    <span className="font-mono text-xs text-zinc-500">{m.age}세</span>
+                    <span className="font-mono text-xs text-muted">{m.age}세</span>
                     {on && (
-                      <span className="rounded bg-lime-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-lime-400">
+                      <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">
                         선택됨
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 text-xs text-zinc-400">{m.job}</div>
+                  <div className="mt-0.5 text-xs text-sub">{m.job}</div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    <span className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                    <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
                       {m.mbti}
                     </span>
-                    <span className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                    <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
                       {m.pain}
                     </span>
-                    <span className="rounded bg-zinc-800/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                    <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
                       목표 {m.goal}
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-zinc-600 group-hover:text-lime-400" />
+                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted group-hover:text-primary-strong" />
               </button>
             );
           })}

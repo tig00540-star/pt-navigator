@@ -2,8 +2,8 @@
 export default function Eyebrow({ icon: Icon, children }) {
   return (
     <div className="mb-4 flex items-center gap-2">
-      <Icon className="h-4 w-4 text-zinc-500" />
-      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+      <Icon className="h-4 w-4 text-primary-strong" />
+      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-sub">
         {children}
       </span>
     </div>

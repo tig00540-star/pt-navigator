@@ -45,28 +45,28 @@ export default function RegisterDueToday({ members, onSelect }) {
   return (
     <section className="mb-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4">
       <div className="mb-3 flex items-center gap-2">
-        <RefreshCw className="h-4 w-4 text-emerald-400" />
-        <h3 className="text-sm font-semibold text-emerald-200">재등록 타이밍</h3>
-        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+        <RefreshCw className="h-4 w-4 text-primary-strong" />
+        <h3 className="text-sm font-semibold text-primary-strong">재등록 타이밍</h3>
+        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
           {list.length}
         </span>
-        <span className="text-[11px] text-zinc-500">잔여 임계 도래분</span>
+        <span className="text-[11px] text-muted">잔여 임계 도래분</span>
       </div>
       <div className="grid gap-2">
         {list.map((r) => (
           <button
             key={r.user_id}
             onClick={() => onSelect(r.user_id)}
-            className="group flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-zinc-900/50 px-3 py-2.5 text-left transition hover:border-emerald-400/50 active:scale-[0.99]"
+            className="group flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-card px-3 py-2.5 text-left shadow-sm transition hover:border-primary active:scale-[0.99]"
           >
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-zinc-100">{nameOf(r.user_id)}</div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-400">
-                <span>잔여 유료 <b className="text-emerald-400">{r.paid}</b></span>
-                <span className="text-zinc-600">· 서비스 {r.service}</span>
+              <div className="text-sm font-semibold text-ink">{nameOf(r.user_id)}</div>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
+                <span>잔여 유료 <b className="text-primary-strong">{r.paid}</b></span>
+                <span className="text-muted">· 서비스 {r.service}</span>
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-emerald-500/50 group-hover:text-emerald-400" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-emerald-500/50 group-hover:text-primary-strong" />
           </button>
         ))}
       </div>
