@@ -27,6 +27,28 @@ function emptyVals() {
 // purge-safe delta 색 맵(동적 클래스 조립 금지).
 const DELTA_TONE = { good: "text-emerald-400", bad: "text-rose-400", flat: "text-zinc-500" };
 
+// 미니 스파크라인 — 지표 하나의 값 추이(오래된→최신, 좌→우). 값 2개 미만이면 안 그림.
+// non-scaling-stroke로 가로 늘려도 선 두께 유지. 축·격자·호버 없음(수치는 이력 리스트가 담당).
+function Sparkline({ values }) {
+  const w = 100, h = 28, pad = 3;
+  const pts = values.filter((v) => v != null);
+  if (pts.length < 2) return null;
+  const min = Math.min(...pts), max = Math.max(...pts), span = max - min || 1;
+  const stepX = w / (pts.length - 1);
+  const d = pts
+    .map((v, i) => {
+      const x = i * stepX;
+      const y = h - pad - ((v - min) / span) * (h - pad * 2);
+      return `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="mt-1 text-emerald-400/70">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
 // 변화 방향 → 좋음/나쁨/중립. before·cur 하나라도 null이면 null(표시 안 함).
 function deltaTone(field, cur, before) {
   if (cur == null || before == null) return null;
@@ -194,6 +216,7 @@ export default function PtInbodyTab({ member }) {
                       <Icon className="h-3 w-3" /> {fmtDelta(d)}{f.unit}
                     </div>
                   )}
+                  <Sparkline values={[...rows].reverse().map((r) => r[f.key])} />
                 </div>
               );
             })}
