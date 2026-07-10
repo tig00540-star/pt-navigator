@@ -41,4 +41,4 @@ body {
 
 /* 탭 전환 — 은은한 fade+rise(마운트 시에만 재생). */
 @keyframes tabIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-.tab-anim { animation: tabIn 1s ease-out; }
+.tab-anim { animation: tabIn 0.5s ease-out; }
