@@ -25,7 +25,7 @@ function emptyVals() {
   return o;
 }
 // purge-safe delta 색 맵(동적 클래스 조립 금지).
-const DELTA_TONE = { good: "text-emerald-400", bad: "text-rose-400", flat: "text-zinc-500" };
+const DELTA_TONE = { good: "text-emerald-600", bad: "text-rose-600", flat: "text-muted" };
 
 // 미니 스파크라인 — 지표 하나의 값 추이(오래된→최신, 좌→우). 값 2개 미만이면 안 그림.
 // non-scaling-stroke로 가로 늘려도 선 두께 유지. 축·격자·호버 없음(수치는 이력 리스트가 담당).
@@ -43,7 +43,7 @@ function Sparkline({ values }) {
     })
     .join(" ");
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="mt-1 text-emerald-400/70">
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="mt-1 text-emerald-500/70">
       <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
@@ -146,24 +146,24 @@ export default function PtInbodyTab({ member }) {
     showToast("삭제됨");
   };
 
-  const inputCls = "w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50";
+  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
   // delta 표시값 — ±값(소수 1자리 반올림) + 방향 아이콘.
   const fmtDelta = (d) => (d > 0 ? "+" : "") + (Math.round(d * 10) / 10);
 
   return (
     <div className="space-y-6">
       {/* 입력 카드 */}
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <Eyebrow icon={Scale}>인바디 기록</Eyebrow>
         <div className="mt-3 space-y-3">
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-zinc-500">측정일</span>
+            <span className="mb-1 block text-[11px] font-medium text-muted">측정일</span>
             <input type="date" value={measuredAt} onChange={(e) => setMeasuredAt(e.target.value)} disabled={saving} className={inputCls} />
           </label>
           <div className="grid grid-cols-2 gap-3">
             {INBODY_FIELDS.map((f) => (
               <label key={f.key} className="block">
-                <span className="mb-1 block text-[11px] font-medium text-zinc-500">{f.label} <span className="text-zinc-600">({f.unit})</span></span>
+                <span className="mb-1 block text-[11px] font-medium text-muted">{f.label} <span className="text-muted">({f.unit})</span></span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -177,7 +177,7 @@ export default function PtInbodyTab({ member }) {
             ))}
           </div>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-zinc-500">메모 <span className="text-zinc-600">(선택)</span></span>
+            <span className="mb-1 block text-[11px] font-medium text-muted">메모 <span className="text-muted">(선택)</span></span>
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="측정 조건·특이사항" className={inputCls} />
           </label>
           <button
@@ -192,10 +192,10 @@ export default function PtInbodyTab({ member }) {
 
       {/* 최근 요약 (직전 대비 delta) */}
       {latest && (
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <Eyebrow icon={Scale}>최근 측정</Eyebrow>
-            <span className="font-mono text-[11px] text-zinc-500">{latest.measured_at}</span>
+            <span className="font-mono text-[11px] text-muted">{latest.measured_at}</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {INBODY_FIELDS.map((f) => {
@@ -205,11 +205,11 @@ export default function PtInbodyTab({ member }) {
               const d = tone ? cur - before : 0;
               const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
               return (
-                <div key={f.key} className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-zinc-500">{f.label}</div>
-                  <div className="mt-1 font-mono text-lg font-bold text-zinc-100">
+                <div key={f.key} className="rounded-xl border border-line bg-elevate p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-muted">{f.label}</div>
+                  <div className="mt-1 font-mono text-lg font-bold text-ink">
                     {cur == null ? "–" : cur}
-                    <span className="ml-1 text-xs font-normal text-zinc-500">{f.unit}</span>
+                    <span className="ml-1 text-xs font-normal text-muted">{f.unit}</span>
                   </div>
                   {tone && (
                     <div className={`mt-0.5 flex items-center gap-1 text-[11px] font-semibold ${DELTA_TONE[tone]}`}>
@@ -225,36 +225,36 @@ export default function PtInbodyTab({ member }) {
       )}
 
       {/* 이력 리스트 */}
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <Eyebrow icon={Scale}>지난 측정</Eyebrow>
         {loading ? (
-          <p className="mt-2 text-sm text-zinc-500">불러오는 중…</p>
+          <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">아직 인바디 기록이 없습니다. 위에서 첫 측정을 입력하세요.</p>
+          <p className="mt-2 text-sm text-muted">아직 인바디 기록이 없습니다. 위에서 첫 측정을 입력하세요.</p>
         ) : (
           <ul className="mt-2 space-y-2">
             {rows.map((row) => (
-              <li key={row.id} className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+              <li key={row.id} className="rounded-xl border border-line bg-elevate p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="font-mono text-xs font-semibold text-zinc-300">{row.measured_at}</div>
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-zinc-400">
+                    <div className="font-mono text-xs font-semibold text-sub">{row.measured_at}</div>
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-sub">
                       {INBODY_FIELDS.map((f) => (
                         <span key={f.key}>
-                          {f.label} <b className="text-zinc-200">{row[f.key] == null ? "–" : row[f.key]}</b>
-                          <span className="text-zinc-600">{row[f.key] == null ? "" : f.unit}</span>
+                          {f.label} <b className="text-ink">{row[f.key] == null ? "–" : row[f.key]}</b>
+                          <span className="text-muted">{row[f.key] == null ? "" : f.unit}</span>
                         </span>
                       ))}
                     </div>
-                    {row.note && <div className="mt-1 text-[11px] text-zinc-500">{row.note}</div>}
+                    {row.note && <div className="mt-1 text-[11px] text-muted">{row.note}</div>}
                   </div>
                   {confirmId === row.id ? (
                     <div className="flex shrink-0 items-center gap-1">
-                      <button onClick={() => remove(row.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-300 transition hover:bg-rose-500/20">삭제?</button>
-                      <button onClick={() => setConfirmId(null)} className="rounded-md border border-zinc-700 px-2 py-1 text-[10px] font-medium text-zinc-400 transition hover:text-zinc-200">취소</button>
+                      <button onClick={() => remove(row.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
+                      <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[10px] font-medium text-sub transition hover:text-ink">취소</button>
                     </div>
                   ) : (
-                    <button onClick={() => setConfirmId(row.id)} className="shrink-0 text-zinc-600 transition hover:text-rose-400">
+                    <button onClick={() => setConfirmId(row.id)} className="shrink-0 text-muted transition hover:text-rose-600">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   )}

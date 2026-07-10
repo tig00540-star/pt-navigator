@@ -52,19 +52,19 @@ export default function MyStats({ members = [] }) {
   const pay = payForMonth(rev.total, priceSum, policy);
   const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
 
-  if (loading) return <div className="py-10 text-center text-sm text-zinc-500">불러오는 중…</div>;
+  if (loading) return <div className="py-10 text-center text-sm text-muted">불러오는 중…</div>;
 
   return (
     <div className="space-y-4">
       <Eyebrow icon={Award}>내 실적 · {ym}</Eyebrow>
 
       {/* 예상 급여 (헤드라인) */}
-      <div className="rounded-2xl border border-lime-500/30 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/20">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
+      <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
           <Wallet className="h-3.5 w-3.5" /> 이달 예상 급여
         </div>
-        <div className="mt-2 font-mono text-4xl font-extrabold text-lime-400">{won(pay.total)}</div>
-        <div className="mt-1 text-xs text-zinc-500">
+        <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(pay.total)}</div>
+        <div className="mt-1 text-xs text-muted">
           구간 {pay.band ? pay.band.base_pct + "%" : "—"} · 이달 수업료 {won(pay.base)}
           {pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}
         </div>
@@ -72,24 +72,24 @@ export default function MyStats({ members = [] }) {
 
       {/* 매출 · 클로징 */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
-          <div className="text-[11px] uppercase tracking-wider text-zinc-500">이달 매출(내 등록)</div>
-          <div className="mt-1 font-mono text-2xl font-bold text-zinc-50">{won(rev.total)}</div>
-          <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-zinc-400">
-            <span>신규 <b className="text-zinc-200">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
-            <span>재등록 <b className="text-cyan-400">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
+        <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+          <div className="text-[11px] uppercase tracking-wider text-muted">이달 매출(내 등록)</div>
+          <div className="mt-1 font-mono text-2xl font-bold text-ink">{won(rev.total)}</div>
+          <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-sub">
+            <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
+            <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
           </div>
         </div>
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
+        <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
             <Target className="h-3.5 w-3.5" /> 클로징률
           </div>
-          <div className="mt-1 font-mono text-2xl font-bold text-zinc-50">{rate}</div>
-          <div className="mt-2 text-[11px] text-zinc-500">시도 {closing.attempted}명 중 {closing.success} 성공</div>
+          <div className="mt-1 font-mono text-2xl font-bold text-ink">{rate}</div>
+          <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공</div>
         </div>
       </div>
 
-      <p className="text-[10px] text-zinc-600">※ 예상 급여 = 이달 완료 수업(회당단가) 기준 · 구간%는 이달 총매출로 결정. 실지급과 다를 수 있음.</p>
+      <p className="text-[10px] text-muted">※ 예상 급여 = 이달 완료 수업(회당단가) 기준 · 구간%는 이달 총매출로 결정. 실지급과 다를 수 있음.</p>
     </div>
   );
 }

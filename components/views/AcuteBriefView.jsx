@@ -18,23 +18,23 @@ export default function AcuteBriefView({ brief }) {
     <div className="mt-3 space-y-3">
       {brief.safety && (
         <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-300">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-700">
             <ShieldAlert className="h-3.5 w-3.5" /> 안전 먼저
           </div>
-          <p className="text-sm leading-relaxed text-red-100">{brief.safety}</p>
+          <p className="text-sm leading-relaxed text-red-700">{brief.safety}</p>
         </div>
       )}
 
       {avoid.length > 0 && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-amber-300">
+        <div className="rounded-xl border border-line bg-elevate p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-amber-700">
             <Ban className="h-3.5 w-3.5" /> 오늘 피할 움직임
           </div>
           <ul className="space-y-2">
             {avoid.map((a, i) => (
-              <li key={i} className="text-sm text-zinc-200">
+              <li key={i} className="text-sm text-ink">
                 <span className="font-medium">{a.movement}</span>
-                {a.why && <span className="mt-0.5 block text-xs text-zinc-500">{a.why}</span>}
+                {a.why && <span className="mt-0.5 block text-xs text-muted">{a.why}</span>}
               </li>
             ))}
           </ul>
@@ -42,16 +42,16 @@ export default function AcuteBriefView({ brief }) {
       )}
 
       {alts.length > 0 && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-emerald-300">
+        <div className="rounded-xl border border-line bg-elevate p-3">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-primary-strong">
             <ArrowRightLeft className="h-3.5 w-3.5" /> 접근 가능한 결
           </div>
-          <p className="mb-2 text-[10px] text-zinc-500">※ 의학적 확인 이후를 전제로 한 방향입니다(지금 대체 처방 아님).</p>
+          <p className="mb-2 text-[10px] text-muted">※ 의학적 확인 이후를 전제로 한 방향입니다(지금 대체 처방 아님).</p>
           <ul className="space-y-2">
             {alts.map((a, i) => (
-              <li key={i} className="text-sm text-zinc-200">
+              <li key={i} className="text-sm text-ink">
                 <span className="font-medium">{a.direction}</span>
-                {a.why && <span className="mt-0.5 block text-xs text-zinc-500">{a.why}</span>}
+                {a.why && <span className="mt-0.5 block text-xs text-muted">{a.why}</span>}
               </li>
             ))}
           </ul>
@@ -59,19 +59,19 @@ export default function AcuteBriefView({ brief }) {
       )}
 
       {brief.principle && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-zinc-400">
+        <div className="rounded-xl border border-line bg-elevate p-3">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-sub">
             <Lightbulb className="h-3.5 w-3.5" /> 원리
           </div>
-          <p className="text-sm text-zinc-300">{brief.principle}</p>
+          <p className="text-sm text-sub">{brief.principle}</p>
         </div>
       )}
-      {brief.note && <p className="px-1 text-xs leading-relaxed text-zinc-500">{brief.note}</p>}
+      {brief.note && <p className="px-1 text-xs leading-relaxed text-muted">{brief.note}</p>}
 
       {gaps.length > 0 && (
         <ul className="space-y-1 px-1">
           {gaps.map((gap, i) => (
-            <li key={i} className="text-[11px] text-zinc-500">· {gap}</li>
+            <li key={i} className="text-[11px] text-muted">· {gap}</li>
           ))}
         </ul>
       )}

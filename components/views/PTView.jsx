@@ -50,7 +50,7 @@ export default function PTView({ member, tab, onGoList, onMemberPatch }) {
       {onGoList && (
         <button
           onClick={onGoList}
-          className="mb-1 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 transition hover:text-emerald-400"
+          className="mb-1 inline-flex items-center gap-1.5 text-xs font-medium text-sub transition hover:text-primary-strong"
         >
           <ChevronLeft className="h-4 w-4" /> 회원 목록
         </button>

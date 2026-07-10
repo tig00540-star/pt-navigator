@@ -129,23 +129,23 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     <div className="space-y-6">
       {latest ? (
         /* 재등록 결과 기록 (④ 작업4-1) — 최신 계약 행 reg_* UPDATE. 계약 있을 때만 노출. */
-        <details className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
             <Eyebrow icon={RefreshCw}>재등록 결과 기록</Eyebrow>
             {due && (
-              <span className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+              <span className="rounded-md border border-primary/40 bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
                 재등록 타이밍
               </span>
             )}
           </summary>
           <div className="mt-4 space-y-3">
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-zinc-500">결과</span>
+              <span className="mb-1 block text-[11px] font-medium text-muted">결과</span>
               <select
                 value={regResult}
                 onChange={(e) => setRegResult(e.target.value)}
                 disabled={regSaving}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+                className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary disabled:opacity-50"
               >
                 {REG_RESULT_OPTS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -154,12 +154,12 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             </label>
             {(regResult === "hold" || regResult === "fail") && (
               <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-zinc-500">이유</span>
+                <span className="mb-1 block text-[11px] font-medium text-muted">이유</span>
                 <select
                   value={regReason}
                   onChange={(e) => setRegReason(e.target.value)}
                   disabled={regSaving}
-                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+                  className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary disabled:opacity-50"
                 >
                   <option value="">선택 안 함</option>
                   {REG_REASON_OPTS.map((o) => (
@@ -172,7 +172,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               <ReapproachDateField value={regReapproachAt} onChange={setRegReapproachAt} />
             )}
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] leading-relaxed text-zinc-500">
+              <p className="text-[10px] leading-relaxed text-muted">
                 성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 잔여 카드의 &lsquo;재등록&rsquo;으로.
               </p>
               <button
@@ -185,37 +185,37 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             </div>
 
             {/* AI 지원 — 재등록 브리핑(생성·캐시). reg_reason 기록분을 강조. */}
-            <div className="mt-1 border-t border-zinc-800 pt-4">
+            <div className="mt-1 border-t border-line pt-4">
               {!regBrief ? (
                 <button
                   onClick={generateReReg}
                   disabled={regGenerating}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20 active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary-soft px-3 py-1.5 text-xs font-bold text-primary-strong transition hover:bg-primary-soft active:scale-95 disabled:opacity-50"
                 >
                   <Sparkles className="h-3.5 w-3.5" /> {regGenerating ? "생성 중…" : "AI 지원 — 재등록 브리핑"}
                 </button>
               ) : (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-zinc-500">{regBriefMeta?.generatedAt ? `생성: ${new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR")}` : "재등록 브리핑"}</span>
+                  <span className="text-[11px] text-muted">{regBriefMeta?.generatedAt ? `생성: ${new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR")}` : "재등록 브리핑"}</span>
                   <button
                     onClick={generateReReg}
                     disabled={regGenerating}
-                    className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-[11px] font-medium text-zinc-400 transition hover:border-emerald-500/50 hover:text-emerald-300 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-lg border border-line px-2 py-1 text-[11px] font-medium text-sub transition hover:border-emerald-500/50 hover:text-primary-strong disabled:opacity-50"
                   >
                     <RefreshCw className="h-3 w-3" /> {regGenerating ? "생성 중…" : "재생성"}
                   </button>
                 </div>
               )}
-              {regAiError && <p className="mt-2 text-[11px] text-amber-400">{regAiError}</p>}
+              {regAiError && <p className="mt-2 text-[11px] text-amber-700">{regAiError}</p>}
               <RegBriefView brief={regBrief} highlightReason={regReason} />
             </div>
           </div>
         </details>
       ) : (
-        <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
-          <RefreshCw className="mx-auto h-8 w-8 text-zinc-700" />
-          <p className="mt-3 text-sm text-zinc-400">아직 계약이 없습니다.</p>
-          <p className="mt-1 text-xs text-zinc-600">&lsquo;운동일지&rsquo; 탭에서 계약을 먼저 등록하세요.</p>
+        <div className="rounded-2xl border border-dashed border-line bg-card p-10 shadow-sm text-center">
+          <RefreshCw className="mx-auto h-8 w-8 text-muted" />
+          <p className="mt-3 text-sm text-sub">아직 계약이 없습니다.</p>
+          <p className="mt-1 text-xs text-muted">&lsquo;운동일지&rsquo; 탭에서 계약을 먼저 등록하세요.</p>
         </div>
       )}
       <Toast message={toast} />

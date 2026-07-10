@@ -101,11 +101,11 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
-      <div className="flex items-center gap-2 text-sm text-emerald-100">
-        <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+      <div className="flex items-center gap-2 text-sm text-emerald-800">
+        <BadgeCheck className="h-4 w-4 shrink-0 text-primary-strong" />
         <span>
-          <b className="text-emerald-300">클로징 성공</b> 기록됨 — 결제 확정되면 PT 등록을 확정하세요.
-          <span className="text-emerald-400/70"> (성공을 기록해도 자동으로 등록되진 않아요)</span>
+          <b className="text-primary-strong">클로징 성공</b> 기록됨 — 결제 확정되면 PT 등록을 확정하세요.
+          <span className="text-emerald-600"> (성공을 기록해도 자동으로 등록되진 않아요)</span>
         </span>
       </div>
       <button
@@ -119,21 +119,21 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
       {/* 중앙 확인 모달 — 확정 앞단 게이트. 취소·바깥 클릭은 닫힘만(동작 없음), 확정은 명시 버튼으로만. */}
       {confirming && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
           onClick={() => !busy && setConfirming(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl border border-line bg-card p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center gap-2">
-              <BadgeCheck className="h-5 w-5 shrink-0 text-emerald-400" />
-              <h3 className="text-base font-bold text-zinc-100">PT 등록 확정</h3>
+              <BadgeCheck className="h-5 w-5 shrink-0 text-primary-strong" />
+              <h3 className="text-base font-bold text-ink">PT 등록 확정</h3>
             </div>
-            <p className="mb-1 text-sm text-zinc-200">
-              <b className="text-emerald-300">{member?.name || "회원"}</b>님을 PT 등록으로 확정할까요?
+            <p className="mb-1 text-sm text-sub">
+              <b className="text-primary-strong">{member?.name || "회원"}</b>님을 PT 등록으로 확정할까요?
             </p>
-            <p className="mb-4 text-xs text-zinc-500">
+            <p className="mb-4 text-xs text-muted">
               확정하면 PT 회원으로 전환됩니다. 결제가 끝난 뒤 진행하세요.
             </p>
 
@@ -151,13 +151,13 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
               />
             </div>
 
-            {err && <p className="mb-3 text-xs font-medium text-red-400">{err}</p>}
+            {err && <p className="mb-3 text-xs font-medium text-red-600">{err}</p>}
 
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirming(false)}
                 disabled={busy}
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 active:scale-95 disabled:opacity-50"
+                className="rounded-lg border border-line bg-elevate px-4 py-2 text-sm font-medium text-sub transition hover:border-primary active:scale-95 disabled:opacity-50"
               >
                 취소
               </button>

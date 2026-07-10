@@ -15,23 +15,23 @@ export default function RegBriefView({ brief, highlightReason }) {
   const gaps = Array.isArray(brief.data_gaps) ? brief.data_gaps : [];
   return (
     <div className="mt-3 space-y-4 text-sm">
-      <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-emerald-400">등록 당위성</div>
+      <div className="rounded-xl border border-line bg-elevate p-3">
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary-strong">등록 당위성</div>
         <dl className="space-y-1.5">
           {F.map(([k, lbl]) => (b[k] ? (
-            <div key={k}><dt className="text-[11px] font-medium text-zinc-500">{lbl}</dt><dd className="text-zinc-300">{b[k]}</dd></div>
+            <div key={k}><dt className="text-[11px] font-medium text-muted">{lbl}</dt><dd className="text-sub">{b[k]}</dd></div>
           ) : null))}
         </dl>
       </div>
       {arc.length > 0 && (
         <div>
-          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">대화 흐름</div>
+          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-sub">대화 흐름</div>
           <ol className="space-y-1.5">
             {arc.map((a, i) => (
-              <li key={i} className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-2.5">
-                <div className="text-[11px] font-semibold text-emerald-300">{a.when}</div>
-                <div className="text-zinc-300">{a.direction}</div>
-                {a.example && <div className="mt-1 text-[12px] italic text-zinc-500">예) {a.example}</div>}
+              <li key={i} className="rounded-lg border border-line bg-elevate p-2.5">
+                <div className="text-[11px] font-semibold text-primary-strong">{a.when}</div>
+                <div className="text-sub">{a.direction}</div>
+                {a.example && <div className="mt-1 text-[12px] italic text-muted">예) {a.example}</div>}
               </li>
             ))}
           </ol>
@@ -39,18 +39,18 @@ export default function RegBriefView({ brief, highlightReason }) {
       )}
       {objections.length > 0 && (
         <div>
-          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">이유별 대처</div>
+          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-sub">이유별 대처</div>
           <div className="space-y-1.5">
             {objections.map((o, i) => {
               const on = highlightReason && o.reason === highlightReason;
               return (
-                <div key={i} className={`rounded-lg border p-2.5 ${on ? "border-emerald-500/50 bg-emerald-500/[0.06]" : "border-zinc-800 bg-zinc-950/40"}`}>
+                <div key={i} className={`rounded-lg border p-2.5 ${on ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`}>
                   <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${on ? "bg-emerald-500/20 text-emerald-300" : "bg-zinc-800 text-zinc-400"}`}>{labelOf(REG_REASON_OPTS, o.reason)}</span>
-                    {o.customer_says && <span className="text-[12px] text-zinc-500">&ldquo;{o.customer_says}&rdquo;</span>}
+                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${on ? "bg-primary-soft text-primary-strong" : "bg-card text-sub"}`}>{labelOf(REG_REASON_OPTS, o.reason)}</span>
+                    {o.customer_says && <span className="text-[12px] text-muted">&ldquo;{o.customer_says}&rdquo;</span>}
                   </div>
-                  <div className="text-zinc-300">{o.reframe_direction}</div>
-                  {o.example && <div className="mt-1 text-[12px] italic text-zinc-500">예) {o.example}</div>}
+                  <div className="text-sub">{o.reframe_direction}</div>
+                  {o.example && <div className="mt-1 text-[12px] italic text-muted">예) {o.example}</div>}
                 </div>
               );
             })}
@@ -58,19 +58,19 @@ export default function RegBriefView({ brief, highlightReason }) {
         </div>
       )}
       {(c.enter || c.paint || c.land || c.hold) && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-emerald-400">클로징 4단계</div>
+        <div className="rounded-xl border border-line bg-elevate p-3">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary-strong">클로징 4단계</div>
           <dl className="space-y-1.5">
             {CLOSE.map(([k, lbl]) => (c[k] ? (
-              <div key={k}><dt className="text-[11px] font-medium text-zinc-500">{lbl}</dt><dd className="text-zinc-300">{c[k]}</dd></div>
+              <div key={k}><dt className="text-[11px] font-medium text-muted">{lbl}</dt><dd className="text-sub">{c[k]}</dd></div>
             ) : null))}
           </dl>
         </div>
       )}
       {gaps.length > 0 && (
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 p-3">
-          <div className="mb-1 text-[11px] font-medium text-zinc-500">더 관찰하면 브리핑이 좋아지는 점</div>
-          <ul className="list-disc space-y-0.5 pl-4 text-[12px] text-zinc-500">
+        <div className="rounded-xl border border-line bg-elevate p-3">
+          <div className="mb-1 text-[11px] font-medium text-muted">더 관찰하면 브리핑이 좋아지는 점</div>
+          <ul className="list-disc space-y-0.5 pl-4 text-[12px] text-muted">
             {gaps.map((gp, i) => <li key={i}>{gp}</li>)}
           </ul>
         </div>

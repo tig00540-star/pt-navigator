@@ -26,9 +26,9 @@ function fmtDT(iso) {
 }
 // source 배지 정적 클래스 맵(Tailwind purge 안전 — 동적 조립 금지).
 const SOURCE_TONE = {
-  manual: "border-zinc-600/40 bg-zinc-700/30 text-zinc-300",
-  voice:  "border-sky-500/40 bg-sky-500/10 text-sky-300",
-  noshow: "border-red-500/40 bg-red-500/10 text-red-300",
+  manual: "border-line bg-elevate text-sub",
+  voice:  "border-sky-500/30 bg-sky-500/10 text-sky-700",
+  noshow: "border-red-500/30 bg-red-500/10 text-red-600",
 };
 
 export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, loading }) {
@@ -263,32 +263,32 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   return (
     <div className="space-y-6">
       {/* 회원 기본정보 (간단) */}
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
-        <span className="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-400">
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <span className="inline-block rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary-strong">
           PT 회원
         </span>
-        <h1 className="mt-2 text-2xl font-bold text-zinc-50">
+        <h1 className="mt-2 text-2xl font-bold text-ink">
           {member.name}
-          <span className="ml-2 font-mono text-base font-normal text-zinc-500">{member.age}세</span>
+          <span className="ml-2 font-mono text-base font-normal text-muted">{member.age}세</span>
         </h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          {member.job} · 목표 <span className="font-semibold text-emerald-400">{member.goal}</span>
+        <p className="mt-1 text-sm text-sub">
+          {member.job} · 목표 <span className="font-semibold text-primary-strong">{member.goal}</span>
         </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-zinc-400">
-          <span className="rounded-md bg-zinc-800/70 px-2 py-1">거주 {member.residence}</span>
-          <span className="rounded-md bg-zinc-800/70 px-2 py-1">MBTI {member.mbti}</span>
-          <span className="rounded-md bg-zinc-800/70 px-2 py-1">불편 {member.pain}</span>
+        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-sub">
+          <span className="rounded-md bg-elevate px-2 py-1">거주 {member.residence}</span>
+          <span className="rounded-md bg-elevate px-2 py-1">MBTI {member.mbti}</span>
+          <span className="rounded-md bg-elevate px-2 py-1">불편 {member.pain}</span>
         </div>
       </section>
 
       {/* 현재 방향/목표 — PT 살아있는 상태축(③ 작업3-2). goal(OT 스냅샷)과 별개. */}
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <Eyebrow icon={Compass}>현재 방향 · 목표</Eyebrow>
           {!editingDir && (
             <button
               onClick={() => setEditingDir(true)}
-              className="text-xs font-medium text-zinc-400 transition hover:text-emerald-400"
+              className="text-xs font-medium text-sub transition hover:text-primary-strong"
             >
               {direction ? "수정" : "설정"}
             </button>
@@ -302,13 +302,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               disabled={dirSaving}
               rows={3}
               placeholder="이 회원 PT의 현재 방향·목표 (관리하며 갱신)"
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+              className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
             />
             <div className="mt-2 flex justify-end gap-2">
               <button
                 onClick={() => { setDirection(member.pt_direction ?? ""); setEditingDir(false); }}
                 disabled={dirSaving}
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 transition active:scale-95 disabled:opacity-50"
+                className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-medium text-sub transition active:scale-95 disabled:opacity-50"
               >
                 취소
               </button>
@@ -322,46 +322,46 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             </div>
           </div>
         ) : (
-          <p className="mt-2 text-sm text-zinc-300">
-            {direction || <span className="text-zinc-600">아직 방향이 설정되지 않았습니다.</span>}
+          <p className="mt-2 text-sm text-sub">
+            {direction || <span className="text-muted">아직 방향이 설정되지 않았습니다.</span>}
           </p>
         )}
       </section>
 
       {/* 수업 확인서 겸 운동일지 — 손입력 저장 = 차감 (③ step3-1a) */}
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <Eyebrow icon={NotebookPen}>수업 확인서 · 운동일지</Eyebrow>
 
         {/* 잔여 카드 */}
-        <div className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+        <div className="mb-4 rounded-xl border border-line bg-elevate p-4">
           {active ? (
             <div className="flex flex-wrap items-center gap-3">
-              <Dumbbell className="h-4 w-4 shrink-0 text-emerald-400" />
-              <span className="text-sm text-zinc-300">
-                잔여 유료 <b className="text-emerald-400">{rem.paid}</b> · 서비스{" "}
-                <b className="text-zinc-100">{rem.service}</b>
+              <Dumbbell className="h-4 w-4 shrink-0 text-primary-strong" />
+              <span className="text-sm text-sub">
+                잔여 유료 <b className="text-primary-strong">{rem.paid}</b> · 서비스{" "}
+                <b className="text-ink">{rem.service}</b>
               </span>
               {due && (
-                <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                   재등록 타이밍
                 </span>
               )}
               {pendingTotal > 0 && (
-                <span className="rounded-md border border-zinc-600/40 bg-zinc-700/30 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                <span className="rounded-md border border-line bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">
                   다음 계약 {pendingTotal}회 대기
                 </span>
               )}
               <button
                 onClick={() => setShowContract(true)}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20 active:scale-95"
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary-soft px-3 py-1.5 text-xs font-bold text-primary-strong transition hover:bg-primary-soft active:scale-95"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> 재등록
               </button>
             </div>
           ) : (
             <div>
-              <p className="flex items-center gap-2 text-sm text-zinc-400">
-                <Dumbbell className="h-4 w-4 shrink-0 text-zinc-600" />
+              <p className="flex items-center gap-2 text-sm text-sub">
+                <Dumbbell className="h-4 w-4 shrink-0 text-muted" />
                 활성 계약 없음 — 등록/재등록이 필요합니다.
               </p>
               <button
@@ -375,8 +375,8 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
         </div>
 
         {/* 음성으로 채우기 (선택 · 서브) — 손입력이 주(主), 음성은 STT로 아래 칸을 채워주는 보조. 저장·차감은 아래 한 곳. */}
-        <details className="mb-3 rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-          <summary className="cursor-pointer text-xs font-medium text-zinc-400">
+        <details className="mb-3 rounded-xl border border-line bg-elevate p-3">
+          <summary className="cursor-pointer text-xs font-medium text-sub">
             🎙 음성으로 채우기 (선택)
           </summary>
           <div className="mt-3">
@@ -390,7 +390,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           disabled={saving || loading}
           rows={4}
           placeholder="오늘 수업 내용·피드백 (저장하면 세션 1회 차감)"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+          className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
         />
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -404,7 +404,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           <button
             onClick={() => saveLog("noshow")}
             disabled={saving || loading}
-            className="flex items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-red-500/50 hover:text-red-300 active:scale-95 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-lg border border-line bg-elevate px-4 py-2.5 text-sm font-medium text-sub transition hover:border-red-500/50 hover:text-red-600 active:scale-95 disabled:opacity-50"
           >
             <UserX className="h-4 w-4" /> 노쇼 차감
           </button>
@@ -412,14 +412,14 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       </section>
 
       {/* 급한불(⑤) — 회원 급변 대처(수업 전 준비). 세션 전용·DB 무관. 상시 의료 배너. */}
-      <details className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+      <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <summary className="flex cursor-pointer list-none items-center gap-2">
           <Eyebrow icon={Flame}>급한불 — 회원 급변 대처</Eyebrow>
         </summary>
         <div className="mt-4 space-y-3">
           {/* 상시 의료 배너 — AI 출력과 무관하게 항상 노출(이중 방어). */}
           <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
-            <p className="text-[11px] leading-relaxed text-red-200">
+            <p className="text-[11px] leading-relaxed text-red-700">
               ⚠️ 진단·치료·처방 도구가 아닙니다. 부상·급성 통증은 <b>병원·의료진 판단이 우선</b>입니다.
               아래는 트레이너 판단을 돕는 &lsquo;방향&rsquo;일 뿐 의학적 지시가 아닙니다.
             </p>
@@ -430,74 +430,74 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             disabled={acuteGenerating}
             rows={2}
             placeholder="회원 급변 상황 한 줄 (예: 어제 데드리프트 후 허리 삐끗, 숙이면 찌릿)"
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-emerald-500/50 disabled:opacity-50"
+            className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
           />
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[11px] text-zinc-500">
+            <span className="text-[11px] text-muted">
               {acuteMeta?.generatedAt ? `분석: ${new Date(acuteMeta.generatedAt).toLocaleString("ko-KR")}` : "세션 전용 · 저장 안 됨"}
             </span>
             <button
               onClick={generateAcute}
               disabled={acuteGenerating || !acuteSituation.trim()}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 transition hover:bg-red-500/20 active:scale-95 disabled:opacity-50"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-500/20 active:scale-95 disabled:opacity-50"
             >
               <Flame className="h-3.5 w-3.5" /> {acuteGenerating ? "분석 중…" : acuteBrief ? "다시 분석" : "급변 대처 분석"}
             </button>
           </div>
-          {acuteError && <p className="text-[11px] text-amber-400">{acuteError}</p>}
+          {acuteError && <p className="text-[11px] text-amber-700">{acuteError}</p>}
           <AcuteBriefView brief={acuteBrief} />
         </div>
       </details>
 
       {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <Eyebrow icon={History}>지난 수업</Eyebrow>
         {loading ? (
-          <p className="text-sm text-zinc-500">불러오는 중…</p>
+          <p className="text-sm text-muted">불러오는 중…</p>
         ) : timeline.length === 0 ? (
-          <p className="text-sm text-zinc-500">아직 기록된 수업이 없습니다.</p>
+          <p className="text-sm text-muted">아직 기록된 수업이 없습니다.</p>
         ) : (
           <ul className="space-y-2">
             {timeline.map((log) => (
               <li
                 key={log.id}
-                className={`rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 ${log.voided ? "opacity-50" : ""}`}
+                className={`rounded-xl border border-line bg-elevate p-3 ${log.voided ? "opacity-50" : ""}`}
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs text-zinc-400">{fmtDT(log.session_at ?? log.created_at)}</span>
+                  <span className="font-mono text-xs text-sub">{fmtDT(log.session_at ?? log.created_at)}</span>
                   {log.source && (
-                    <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-zinc-700 bg-zinc-800 text-zinc-400"}`}>
+                    <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
                       {labelOf(SOURCE_OPTS, log.source)}
                     </span>
                   )}
                   {log.sent_at && (
-                    <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300">
+                    <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-strong">
                       카톡 전송
                     </span>
                   )}
                   {log.voided && (
-                    <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
+                    <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
                       취소됨
                     </span>
                   )}
                 </div>
                 {log.source === "noshow" ? (
-                  <p className="mt-1.5 text-sm text-zinc-500">노쇼 (본문 없음)</p>
+                  <p className="mt-1.5 text-sm text-muted">노쇼 (본문 없음)</p>
                 ) : log.ai_summary ? (
                   <details className="group mt-1.5">
                     {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
                     <summary className={`cursor-pointer list-none group-open:hidden ${log.voided ? "line-through" : ""}`}>
-                      <span className="text-sm text-zinc-300 line-clamp-3">
+                      <span className="text-sm text-sub line-clamp-3">
                         {log.ai_summary}
                       </span>
-                      <span className="mt-1 block text-[10px] font-medium text-zinc-500">더 보기</span>
+                      <span className="mt-1 block text-[10px] font-medium text-muted">더 보기</span>
                     </summary>
-                    <p className={`hidden whitespace-pre-wrap text-sm text-zinc-300 group-open:block ${log.voided ? "line-through" : ""}`}>
+                    <p className={`hidden whitespace-pre-wrap text-sm text-sub group-open:block ${log.voided ? "line-through" : ""}`}>
                       {log.ai_summary}
                     </p>
                   </details>
                 ) : (
-                  <p className="mt-1.5 text-sm text-zinc-600">본문 없음</p>
+                  <p className="mt-1.5 text-sm text-muted">본문 없음</p>
                 )}
               </li>
             ))}
@@ -508,18 +508,18 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       {/* 계약 등록 모달 — PtConfirmBanner 확인모달과 동일 톤. buildContract·ContractAmountFields 재사용. */}
       {showContract && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
           onClick={() => !cSaving && setShowContract(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl border border-line bg-elevate p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center gap-2">
-              <Dumbbell className="h-5 w-5 shrink-0 text-emerald-400" />
-              <h3 className="text-base font-bold text-zinc-100">{isReReg ? "재등록" : "계약 등록"}</h3>
+              <Dumbbell className="h-5 w-5 shrink-0 text-primary-strong" />
+              <h3 className="text-base font-bold text-ink">{isReReg ? "재등록" : "계약 등록"}</h3>
             </div>
-            <p className="mb-4 text-xs text-zinc-500">
+            <p className="mb-4 text-xs text-muted">
               세션수·회당단가를 입력하면 총액이 자동 계산됩니다(할인이면 총액 수정).
               {isReReg && " 기존 잔여를 먼저 소진한 뒤 이 계약이 적용됩니다(FIFO)."}
             </p>
@@ -537,13 +537,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               />
             </div>
 
-            {cErr && <p className="mb-3 text-xs font-medium text-red-400">{cErr}</p>}
+            {cErr && <p className="mb-3 text-xs font-medium text-red-600">{cErr}</p>}
 
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowContract(false)}
                 disabled={cSaving}
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 active:scale-95 disabled:opacity-50"
+                className="rounded-lg border border-line bg-elevate px-4 py-2 text-sm font-medium text-sub transition hover:border-primary active:scale-95 disabled:opacity-50"
               >
                 취소
               </button>

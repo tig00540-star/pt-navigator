@@ -22,8 +22,8 @@ export default function ReapproachDateField({ value, onChange }) {
 
   return (
     <div>
-      <label className="mb-1 block text-[11px] font-medium text-zinc-500">
-        재접근 예정일 <span className="text-zinc-600">(보류 후속 · &lsquo;오늘 재접근&rsquo; 리스트 재료)</span>
+      <label className="mb-1 block text-[11px] font-medium text-muted">
+        재접근 예정일 <span className="text-muted">(보류 후속 · &lsquo;오늘 재접근&rsquo; 리스트 재료)</span>
       </label>
       <div className="mb-2 flex flex-wrap gap-1.5">
         {PRESETS.map((preset) => (
@@ -31,7 +31,7 @@ export default function ReapproachDateField({ value, onChange }) {
             key={preset.key}
             type="button"
             onClick={() => onChange(reapproachPreset(preset.key, todayISO))}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
+            className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-medium text-sub transition hover:border-primary hover:text-primary-strong active:scale-95"
           >
             {preset.label}
           </button>
@@ -41,9 +41,9 @@ export default function ReapproachDateField({ value, onChange }) {
         type="date"
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-lime-500/50"
+        className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
       />
-      <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">
+      <p className="mt-1 text-[10px] leading-relaxed text-muted">
         프리셋을 탭하면 오늘 기준으로 채워지고, 날짜를 직접 골라 덮어쓸 수 있어요. 비우면 저장은 되되 &lsquo;오늘 재접근&rsquo;엔 안 뜹니다.
       </p>
     </div>
