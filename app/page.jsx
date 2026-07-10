@@ -629,9 +629,9 @@ export default function OTNavigatorDashboard() {
 
 
   return (
-    <div className="min-h-screen bg-zinc-950 pb-28 text-zinc-100 antialiased selection:bg-lime-400/30">
+    <div className="min-h-screen bg-bg pb-28 text-ink antialiased selection:bg-primary/20">
       {/* ================= TOP BAR ================= */}
-      <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
@@ -639,12 +639,12 @@ export default function OTNavigatorDashboard() {
                 <Activity className="h-5 w-5 text-zinc-950" strokeWidth={2.5} />
               </div>
               <div className="leading-tight">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-lime-400">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-strong">
                   OT Navigator
                 </div>
-                <div className="text-sm font-semibold text-zinc-100">
+                <div className="text-sm font-semibold text-ink">
                   {member.name}
-                  <span className="font-normal text-zinc-500"> · 세일즈 네비게이터</span>
+                  <span className="font-normal text-muted"> · 세일즈 네비게이터</span>
                 </div>
               </div>
             </div>
@@ -654,7 +654,7 @@ export default function OTNavigatorDashboard() {
                 <select
                   value={selectedId || ""}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="max-w-[110px] rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-lime-500/50 sm:max-w-[130px]"
+                  className="max-w-[110px] rounded-lg border border-line bg-elevate px-2 py-1.5 text-xs text-sub outline-none focus:border-primary sm:max-w-[130px]"
                   aria-label="회원 선택"
                 >
                   {members.map((m) => (
@@ -666,7 +666,7 @@ export default function OTNavigatorDashboard() {
               )}
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400 active:scale-95"
+                className="flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-sub transition hover:border-primary hover:text-primary-strong active:scale-95"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">신규 등록</span>
@@ -674,7 +674,7 @@ export default function OTNavigatorDashboard() {
 
               <a
                 href="/admin"
-                className="flex items-center gap-1.5 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-300 transition hover:border-fuchsia-500/60 active:scale-95"
+                className="flex items-center gap-1.5 rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-700 transition hover:border-fuchsia-500/60 active:scale-95"
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">관리자</span>
@@ -689,11 +689,11 @@ export default function OTNavigatorDashboard() {
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
-                  tab === t.id ? "text-lime-400" : "text-zinc-500 hover:text-zinc-300"
+                  tab === t.id ? "text-primary-strong" : "text-muted hover:text-ink"
                 }`}
               >
                 {t.label}
-                {tab === t.id && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-lime-400" />}
+                {tab === t.id && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />}
               </button>
             ))}
           </nav>
@@ -702,7 +702,7 @@ export default function OTNavigatorDashboard() {
 
       {dbNote && (
         <div className="mx-auto max-w-5xl px-4 pt-3 sm:px-6">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-[11px] text-zinc-400">
+          <div className="rounded-lg border border-line bg-card px-3 py-2 text-[11px] text-sub shadow-sm">
             {dbNote}
           </div>
         </div>
