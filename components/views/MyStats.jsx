@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, payForMonth } from "@/lib/memberStatus";
+import PtPricingSettings from "@/components/views/PtPricingSettings";
 
 export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
@@ -52,10 +53,12 @@ export default function MyStats({ members = [] }) {
   const pay = payForMonth(rev.total, priceSum, policy);
   const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
 
-  if (loading) return <div className="py-10 text-center text-sm text-muted">불러오는 중…</div>;
-
   return (
     <div className="space-y-4">
+      {loading ? (
+        <div className="py-10 text-center text-sm text-muted">불러오는 중…</div>
+      ) : (
+        <>
       <Eyebrow icon={Award}>내 실적 · {ym}</Eyebrow>
 
       {/* 예상 급여 (헤드라인) */}
@@ -90,6 +93,11 @@ export default function MyStats({ members = [] }) {
       </div>
 
       <p className="text-[10px] text-muted">※ 예상 급여 = 이달 완료 수업(회당단가) 기준 · 구간%는 이달 총매출로 결정. 실지급과 다를 수 있음.</p>
+        </>
+      )}
+
+      {/* 내 PT 가격 설정 — 자체 loading, 통계와 독립. 항상 렌더. */}
+      <PtPricingSettings />
     </div>
   );
 }
