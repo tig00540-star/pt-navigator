@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { fmt } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
+import { supabase } from "@/lib/supabaseClient";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
 
@@ -93,6 +94,7 @@ export default function VoiceLogTab({ member, onResult }) {
   const [report, setReport] = useState(null);
   const [rawText, setRawText] = useState(""); // STT 원본 (onResult로 PTView에 전달)
   const [notice, setNotice] = useState(""); // 폴백/권한 안내
+  const [sessionNo, setSessionNo] = useState(null); // 카톡 헤더 회차(노쇼 포함 누적 · voided 제외)
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -113,6 +115,21 @@ export default function VoiceLogTab({ member, onResult }) {
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
     };
   }, []);
+
+  // 회원별 누적 수업 수 → 다음 회차. 노쇼 포함(voided만 제외) · user_id 전체(재등록 누적).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase || !member?.id) { if (!cancelled) setSessionNo(null); return; }
+      const { count } = await supabase
+        .from("daily_workout_log")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", member.id)
+        .not("voided", "is", true);
+      if (!cancelled) setSessionNo((count ?? 0) + 1);
+    })();
+    return () => { cancelled = true; };
+  }, [member?.id]);
 
   const releaseMic = () => {
     streamRef.current?.getTracks().forEach((tr) => tr.stop());
@@ -195,6 +212,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
     const fd = new FormData();
     fd.append("audio", blob, `recording.${extForMime(type)}`);
+    fd.append("machines", (member.machines || []).join(", "));
 
     try {
       const res = await fetch("/api/voice-log", { method: "POST", body: fd });
@@ -215,7 +233,7 @@ export default function VoiceLogTab({ member, onResult }) {
   };
 
   const buildText = (r) =>
-    `[${todayLabel()}, ${member.name} 회원님 운동일지 입니다!]\n\n` +
+    `[${todayLabel()}${sessionNo ? ` · ${sessionNo}회차` : ""}, ${member.name} 회원님 운동일지 입니다!]\n\n` +
     `1. 오늘 진행한 머신 & 중량/세트\n` +
     r.machines
       .map((m) => `- ${m.name}${m.detail ? `: ${m.detail}` : ""}`)
