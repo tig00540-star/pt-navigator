@@ -12,6 +12,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* 파일럿 밝은테마 색 토큰(린 셋 10개 · 정적 hex). 소비는 Phase 1부터 — 지금은 정의만. */
+@theme {
+  --color-bg: #eef1f5;            /* 페이지 배경(연회색) */
+  --color-card: #ffffff;          /* 카드 */
+  --color-elevate: #f4f6fa;       /* 카드 안 눌린 패널·입력칸 */
+  --color-line: #e6e9ef;          /* 테두리·구분선(옅게) */
+  --color-ink: #0f172a;           /* 본문(고대비) */
+  --color-sub: #475569;           /* 보조 텍스트 */
+  --color-muted: #94a3b8;         /* 흐린 텍스트(부차 정보만) */
+  --color-primary: #10b981;       /* 초록 포인트(채움·점·버튼) */
+  --color-primary-strong: #059669;/* 초록 텍스트(흰 배경 가독) */
+  --color-primary-soft: #ecfdf5;  /* 초록 옅은 배경(절제 사용) */
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
