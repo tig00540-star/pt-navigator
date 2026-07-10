@@ -56,7 +56,7 @@ export default function AuthGate({ children }) {
   // 초기 세션 조회 전 — 깜빡임 방지용 최소 화면
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-500 text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-bg text-muted text-sm">
         불러오는 중…
       </div>
     );
@@ -70,7 +70,7 @@ export default function AuthGate({ children }) {
           <div className="fixed bottom-4 right-4 z-40">
             <button
               onClick={signOut}
-              className="text-[11px] px-2 py-1 rounded-md border border-zinc-700 bg-zinc-900/80 text-zinc-400 hover:text-zinc-200"
+              className="text-[11px] px-2 py-1 rounded-md border border-line bg-card/80 text-sub shadow-sm hover:text-ink"
             >
               로그아웃
             </button>
@@ -83,11 +83,11 @@ export default function AuthGate({ children }) {
 
   // 미로그인 → 로그인 폼
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-zinc-950">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
+      <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
         <div className="mb-6 text-center">
-          <div className="text-lg font-semibold text-zinc-100">PT 내비게이터</div>
-          <div className="mt-1 text-sm text-zinc-500">트레이너 로그인</div>
+          <div className="text-lg font-semibold text-ink">PT 내비게이터</div>
+          <div className="mt-1 text-sm text-muted">트레이너 로그인</div>
         </div>
         <div className="space-y-3">
           <input
@@ -97,7 +97,7 @@ export default function AuthGate({ children }) {
             placeholder="이메일"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+            className="w-full rounded-lg bg-elevate border border-line px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
           />
           <input
             type="password"
@@ -108,18 +108,18 @@ export default function AuthGate({ children }) {
             onKeyDown={(e) => {
               if (e.key === "Enter") signIn();
             }}
-            className="w-full rounded-lg bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-lime-500/50"
+            className="w-full rounded-lg bg-elevate border border-line px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
           />
-          {err && <div className="text-xs text-red-400">{err}</div>}
+          {err && <div className="text-xs text-red-600">{err}</div>}
           <button
             onClick={signIn}
             disabled={busy}
-            className="w-full rounded-lg bg-lime-500 text-zinc-950 font-medium py-2.5 text-sm disabled:opacity-50"
+            className="w-full rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 text-zinc-950 font-medium py-2.5 text-sm disabled:opacity-50"
           >
             {busy ? "로그인 중…" : "로그인"}
           </button>
         </div>
-        <div className="mt-4 text-center text-[11px] text-zinc-600">
+        <div className="mt-4 text-center text-[11px] text-muted">
           계정은 관리자 초대로 발급됩니다.
         </div>
       </div>

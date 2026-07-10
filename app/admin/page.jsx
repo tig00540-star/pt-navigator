@@ -69,10 +69,10 @@ const TRAINERS = [
 
 const gradeColor = (g) =>
   g.startsWith("A")
-    ? "text-lime-400 border-lime-500/40 bg-lime-500/10"
+    ? "text-primary-strong border-primary/30 bg-primary-soft"
     : g.startsWith("B")
-    ? "text-cyan-400 border-cyan-500/40 bg-cyan-500/10"
-    : "text-amber-400 border-amber-500/40 bg-amber-500/10";
+    ? "text-cyan-700 border-cyan-500/40 bg-cyan-500/10"
+    : "text-amber-700 border-amber-500/40 bg-amber-500/10";
 
 /* =========================================================================
    회원 빅데이터 → 마케팅 카피 조합
@@ -146,8 +146,8 @@ function buildCopies(a) {
 function Eyebrow({ icon: Icon, children }) {
   return (
     <div className="mb-4 flex items-center gap-2">
-      <Icon className="h-4 w-4 text-zinc-500" />
-      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+      <Icon className="h-4 w-4 text-muted" />
+      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
         {children}
       </span>
     </div>
@@ -161,7 +161,7 @@ function Bar({ pct, tone = "lime" }) {
     amber: "from-amber-400 to-orange-400",
   }[tone];
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
       <div className={`h-full rounded-full bg-gradient-to-r ${c}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -260,20 +260,20 @@ export default function AdminDashboard() {
 
   if (role === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-500 text-sm bg-zinc-950">
+      <div className="min-h-screen flex items-center justify-center text-muted text-sm bg-bg">
         불러오는 중…
       </div>
     );
   }
   if (role === "denied") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-zinc-950">
-        <ShieldCheck className="h-10 w-10 text-zinc-600" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-bg">
+        <ShieldCheck className="h-10 w-10 text-muted" />
         <div>
-          <div className="text-lg font-semibold text-zinc-100">접근 권한이 없습니다</div>
-          <div className="mt-1 text-sm text-zinc-500">경영 대시보드는 원장(owner) 전용입니다.</div>
+          <div className="text-lg font-semibold text-ink">접근 권한이 없습니다</div>
+          <div className="mt-1 text-sm text-muted">경영 대시보드는 원장(owner) 전용입니다.</div>
         </div>
-        <Link href="/" className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-200 hover:border-lime-500/50 hover:text-lime-400">
+        <Link href="/" className="rounded-lg border border-line bg-elevate px-3 py-2 text-xs font-medium text-ink hover:border-primary hover:text-primary-strong">
           트레이너 화면으로
         </Link>
       </div>
@@ -281,34 +281,34 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-lime-400/30">
+    <div className="min-h-screen bg-bg text-ink antialiased selection:bg-primary/20">
       {/* ===== HEADER ===== */}
-      <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-line/80 bg-card/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 shadow-lg shadow-fuchsia-500/30">
               <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
             <div className="leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-400">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-700">
                 Admin · 총괄 경영
               </div>
-              <div className="text-sm font-semibold text-zinc-100">
-                강남 1호점 <span className="font-normal text-zinc-500">경영 대시보드</span>
+              <div className="text-sm font-semibold text-ink">
+                강남 1호점 <span className="font-normal text-muted">경영 대시보드</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-1.5 rounded-full border border-lime-500/30 bg-lime-500/10 px-3 py-1 sm:flex">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-lime-400">
+            <div className="hidden items-center gap-1.5 rounded-full border border-primary/30 bg-primary-soft px-3 py-1 sm:flex">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-primary-strong">
                 LIVE
               </span>
             </div>
             <Link
               href="/"
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400"
+              className="flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-ink transition hover:border-primary hover:text-primary-strong"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">트레이너 화면</span>
@@ -319,7 +319,7 @@ export default function AdminDashboard() {
 
       {dbNote && (
         <div className="mx-auto max-w-6xl px-4 pt-3 sm:px-6">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-[11px] text-zinc-400">
+          <div className="rounded-lg border border-line bg-card px-3 py-2 text-[11px] text-sub">
             {dbNote}
           </div>
         </div>
@@ -335,32 +335,32 @@ export default function AdminDashboard() {
         <section className="mb-8">
           <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-lime-500/30 bg-lime-500/5 p-5 shadow-lg shadow-lime-500/20">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
+            <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
                 <Wallet className="h-3.5 w-3.5" /> 이달 매출
               </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-lime-400">
+              <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">
                 {won(monthRevenue)}
               </div>
-              <div className="mt-1 text-xs text-zinc-500">{ym} · 인계·외부 제외</div>
+              <div className="mt-1 text-xs text-muted">{ym} · 인계·외부 제외</div>
             </div>
-            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
+            <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
                 <Target className="h-3.5 w-3.5" /> 클로징률
               </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-zinc-50">
+              <div className="mt-2 font-mono text-4xl font-extrabold text-ink">
                 {rateText(closing.rate)}
               </div>
-              <div className="mt-1 text-xs text-zinc-500">누적 · 시도 {closing.attempted}명 중 {closing.success}</div>
+              <div className="mt-1 text-xs text-muted">누적 · 시도 {closing.attempted}명 중 {closing.success}</div>
             </div>
-            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500">
+            <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
                 <Percent className="h-3.5 w-3.5" /> 재등록률
               </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-cyan-400">
+              <div className="mt-2 font-mono text-4xl font-extrabold text-cyan-700">
                 {rateText(rereg.rate)}
               </div>
-              <div className="mt-1 text-xs text-zinc-500">누적 · 시도 {rereg.attempted}건 중 {rereg.success}</div>
+              <div className="mt-1 text-xs text-muted">누적 · 시도 {rereg.attempted}건 중 {rereg.success}</div>
             </div>
           </div>
         </section>
@@ -370,49 +370,49 @@ export default function AdminDashboard() {
           <Eyebrow icon={Award}>트레이너별 실적 · {ym}</Eyebrow>
           <div className="space-y-3">
             {trainerPerf.length === 0 ? (
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 text-xs text-zinc-600">트레이너 데이터가 없습니다.</div>
+              <div className="rounded-2xl border border-line bg-card p-5 text-xs text-muted">트레이너 데이터가 없습니다.</div>
             ) : trainerPerf.map((t) => { const pay = payForMonth(t.rev.total, sessPriceSum.get(t.id) || 0, policy); return (
-              <div key={t.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5">
+              <div key={t.id} className="rounded-2xl border border-line bg-card p-4 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 text-sm font-bold text-zinc-200">{(t.name || "?").slice(0, 1)}</div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-elevate text-sm font-bold text-ink">{(t.name || "?").slice(0, 1)}</div>
                     <div>
-                      <div className="text-sm font-semibold text-zinc-100">{t.name}</div>
-                      <div className="text-[11px] text-zinc-500">클로징 {rateText(t.close.rate)} · 시도 {t.close.attempted}명 중 {t.close.success}</div>
+                      <div className="text-sm font-semibold text-ink">{t.name}</div>
+                      <div className="text-[11px] text-muted">클로징 {rateText(t.close.rate)} · 시도 {t.close.attempted}명 중 {t.close.success}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-wider text-zinc-500">이달 매출</div>
-                    <div className="font-mono text-2xl font-bold text-lime-400">{won(t.rev.total)}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted">이달 매출</div>
+                    <div className="font-mono text-2xl font-bold text-primary-strong">{won(t.rev.total)}</div>
                   </div>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+                  <div className="rounded-xl border border-line bg-elevate p-3">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted">
                       <span>신규</span>
                       <span>{t.rev.total > 0 ? Math.round((t.rev.newRev / t.rev.total) * 100) + "%" : "—"}</span>
                     </div>
-                    <div className="mt-1 font-mono text-lg font-bold text-zinc-100">{won(t.rev.newRev)}</div>
-                    <div className="text-[11px] text-zinc-500">{t.rev.cntNew}건</div>
+                    <div className="mt-1 font-mono text-lg font-bold text-ink">{won(t.rev.newRev)}</div>
+                    <div className="text-[11px] text-muted">{t.rev.cntNew}건</div>
                   </div>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+                  <div className="rounded-xl border border-line bg-elevate p-3">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted">
                       <span>재등록</span>
                       <span>{t.rev.total > 0 ? Math.round((t.rev.reRev / t.rev.total) * 100) + "%" : "—"}</span>
                     </div>
-                    <div className="mt-1 font-mono text-lg font-bold text-cyan-400">{won(t.rev.reRev)}</div>
-                    <div className="text-[11px] text-zinc-500">{t.rev.cntRe}건</div>
+                    <div className="mt-1 font-mono text-lg font-bold text-cyan-700">{won(t.rev.reRev)}</div>
+                    <div className="text-[11px] text-muted">{t.rev.cntRe}건</div>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between rounded-xl border border-lime-500/25 bg-lime-500/5 p-3">
+                <div className="mt-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary-soft p-3">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-lime-400">예상 급여</div>
-                    <div className="mt-0.5 text-[10px] text-zinc-500">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">예상 급여</div>
+                    <div className="mt-0.5 text-[10px] text-muted">
                       구간 {pay.band ? pay.band.base_pct + "%" : "—"} · 이달 수업료 {won(pay.base)}
                       {pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}
                     </div>
                   </div>
-                  <div className="font-mono text-xl font-bold text-lime-300">{won(pay.total)}</div>
+                  <div className="font-mono text-xl font-bold text-primary-strong">{won(pay.total)}</div>
                 </div>
               </div>
             ); })}
@@ -424,20 +424,20 @@ export default function AdminDashboard() {
           <Eyebrow icon={TrendingUp}>클로징 · 재등록 분석</Eyebrow>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {/* 방향별 강점 */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">클로징 방향별 강점</div>
-              <div className="mt-1 text-xs text-zinc-500">성공 클로징의 접근 방향 분포</div>
+            <div className="rounded-2xl border border-line bg-card p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">클로징 방향별 강점</div>
+              <div className="mt-1 text-xs text-muted">성공 클로징의 접근 방향 분포</div>
               <div className="mt-4 space-y-3">
                 {approachDist.length === 0 ? (
-                  <div className="text-xs text-zinc-600">아직 성공 클로징 데이터가 없습니다.</div>
+                  <div className="text-xs text-muted">아직 성공 클로징 데이터가 없습니다.</div>
                 ) : (
                   approachDist.map((d) => {
                     const max = approachDist[0].count || 1;
                     return (
                       <div key={d.approach}>
-                        <div className="mb-1 flex justify-between text-[11px] text-zinc-400">
+                        <div className="mb-1 flex justify-between text-[11px] text-sub">
                           <span>{labelOf(CLOSING_APPROACH_OPTS, d.approach)}</span>
-                          <span className="font-mono text-zinc-300">{d.count}</span>
+                          <span className="font-mono text-sub">{d.count}</span>
                         </div>
                         <Bar pct={(d.count / max) * 100} tone="lime" />
                       </div>
@@ -448,20 +448,20 @@ export default function AdminDashboard() {
             </div>
 
             {/* 클로징 실패·보류 사유 분포 */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">클로징 실패·보류 사유</div>
-              <div className="mt-1 text-xs text-zinc-500">OT 클로징 약점 진단 — 내가 주로 놓치는 이유</div>
+            <div className="rounded-2xl border border-line bg-card p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">클로징 실패·보류 사유</div>
+              <div className="mt-1 text-xs text-muted">OT 클로징 약점 진단 — 내가 주로 놓치는 이유</div>
               <div className="mt-4 space-y-3">
                 {closingReasonDist.length === 0 ? (
-                  <div className="text-xs text-zinc-600">아직 클로징 실패·보류 사유 데이터가 없습니다.</div>
+                  <div className="text-xs text-muted">아직 클로징 실패·보류 사유 데이터가 없습니다.</div>
                 ) : (
                   closingReasonDist.map((d) => {
                     const max = closingReasonDist[0].count || 1;
                     return (
                       <div key={d.reason}>
-                        <div className="mb-1 flex justify-between text-[11px] text-zinc-400">
+                        <div className="mb-1 flex justify-between text-[11px] text-sub">
                           <span>{labelOf(CLOSING_REASON_OPTS, d.reason)}</span>
-                          <span className="font-mono text-zinc-300">{d.count}</span>
+                          <span className="font-mono text-sub">{d.count}</span>
                         </div>
                         <Bar pct={(d.count / max) * 100} tone="amber" />
                       </div>
@@ -472,20 +472,20 @@ export default function AdminDashboard() {
             </div>
 
             {/* 재등록 사유 분포 */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">재등록 실패·보류 사유</div>
-              <div className="mt-1 text-xs text-zinc-500">거절을 데이터로 — 약점 진단</div>
+            <div className="rounded-2xl border border-line bg-card p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">재등록 실패·보류 사유</div>
+              <div className="mt-1 text-xs text-muted">거절을 데이터로 — 약점 진단</div>
               <div className="mt-4 space-y-3">
                 {reasonDist.length === 0 ? (
-                  <div className="text-xs text-zinc-600">아직 재등록 사유 데이터가 없습니다.</div>
+                  <div className="text-xs text-muted">아직 재등록 사유 데이터가 없습니다.</div>
                 ) : (
                   reasonDist.map((d) => {
                     const max = reasonDist[0].count || 1;
                     return (
                       <div key={d.reason}>
-                        <div className="mb-1 flex justify-between text-[11px] text-zinc-400">
+                        <div className="mb-1 flex justify-between text-[11px] text-sub">
                           <span>{labelOf(REG_REASON_OPTS, d.reason)}</span>
-                          <span className="font-mono text-zinc-300">{d.count}</span>
+                          <span className="font-mono text-sub">{d.count}</span>
                         </div>
                         <Bar pct={(d.count / max) * 100} tone="amber" />
                       </div>
@@ -496,13 +496,13 @@ export default function AdminDashboard() {
             </div>
 
             {/* 총 수업수 */}
-            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">총 수업수</div>
+            <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">총 수업수</div>
               <div className="mt-2 flex items-baseline gap-1">
-                <span className="font-mono text-5xl font-extrabold tracking-tight text-zinc-50">{totalSessions}</span>
-                <span className="text-xl font-bold text-zinc-500">회</span>
+                <span className="font-mono text-5xl font-extrabold tracking-tight text-ink">{totalSessions}</span>
+                <span className="text-xl font-bold text-muted">회</span>
               </div>
-              <div className="mt-1 text-xs text-zinc-500">노쇼 취소분(voided) 제외 · 누적</div>
+              <div className="mt-1 text-xs text-muted">노쇼 취소분(voided) 제외 · 누적</div>
             </div>
           </div>
         </section>
@@ -514,16 +514,16 @@ export default function AdminDashboard() {
             {TRAINERS.map((t) => (
               <div
                 key={t.name}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5"
+                className="rounded-2xl border border-line bg-card p-4 sm:p-5"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 text-sm font-bold text-zinc-200">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-elevate text-sm font-bold text-ink">
                       {t.name.slice(0, 1)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-zinc-100">{t.name}</span>
+                        <span className="text-sm font-semibold text-ink">{t.name}</span>
                         <span
                           className={`rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${gradeColor(
                             t.grade
@@ -532,14 +532,14 @@ export default function AdminDashboard() {
                           {t.grade}
                         </span>
                       </div>
-                      <div className="text-[11px] text-zinc-500">{t.role}</div>
+                      <div className="text-[11px] text-muted">{t.role}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+                    <div className="text-[10px] uppercase tracking-wider text-muted">
                       수업 이행률
                     </div>
-                    <div className="font-mono text-2xl font-bold text-lime-400">
+                    <div className="font-mono text-2xl font-bold text-primary-strong">
                       {t.adherence}%
                     </div>
                   </div>
@@ -548,27 +548,27 @@ export default function AdminDashboard() {
                 {/* 세부 지표 */}
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div>
-                    <div className="mb-1 flex justify-between text-[11px] text-zinc-500">
+                    <div className="mb-1 flex justify-between text-[11px] text-muted">
                       <span>네비게이터 조회율</span>
-                      <span className="font-mono text-zinc-300">{t.views}%</span>
+                      <span className="font-mono text-sub">{t.views}%</span>
                     </div>
                     <Bar pct={t.views} tone="cyan" />
                   </div>
                   <div>
-                    <div className="mb-1 flex justify-between text-[11px] text-zinc-500">
+                    <div className="mb-1 flex justify-between text-[11px] text-muted">
                       <span>AI 대본 리딩률</span>
-                      <span className="font-mono text-zinc-300">{t.reading}%</span>
+                      <span className="font-mono text-sub">{t.reading}%</span>
                     </div>
                     <Bar pct={t.reading} tone={t.reading >= 70 ? "lime" : "amber"} />
                   </div>
                 </div>
 
                 {/* 코멘트 */}
-                <div className="mt-3 flex gap-2 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
-                  <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
-                  <p className="text-xs leading-relaxed text-zinc-300">
+                <div className="mt-3 flex gap-2 rounded-xl border border-line bg-elevate p-3">
+                  <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
+                  <p className="text-xs leading-relaxed text-sub">
                     {t.comment}
-                    <span className="ml-1 text-zinc-500">
+                    <span className="ml-1 text-muted">
                       (담당: {t.members.join(", ")})
                     </span>
                   </p>
@@ -584,7 +584,7 @@ export default function AdminDashboard() {
             <Eyebrow icon={Megaphone}>AI 상권 공략 카피봇 · 이번 주 광고</Eyebrow>
             <button
               onClick={() => setCopyOffset((o) => o + 1)}
-              className="mb-4 flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-lime-500/50 hover:text-lime-400"
+              className="mb-4 flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-ink transition hover:border-primary hover:text-primary-strong"
             >
               <RefreshCw className="h-3.5 w-3.5" /> 새로 뽑기
             </button>
@@ -592,17 +592,17 @@ export default function AdminDashboard() {
 
           {/* 빅데이터 요약 */}
           <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-[11px] text-zinc-400">
-              회원 <span className="font-semibold text-zinc-200">{agg.total}명</span> 분석
+            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
+              회원 <span className="font-semibold text-ink">{agg.total}명</span> 분석
             </span>
-            <span className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-[11px] text-zinc-400">
-              주 거주 <span className="font-semibold text-lime-400">{agg.topResidence}</span>
+            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
+              주 거주 <span className="font-semibold text-primary-strong">{agg.topResidence}</span>
             </span>
-            <span className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-[11px] text-zinc-400">
-              주 통증 <span className="font-semibold text-fuchsia-400">{agg.topPain}</span>
+            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
+              주 통증 <span className="font-semibold text-fuchsia-700">{agg.topPain}</span>
             </span>
-            <span className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-[11px] text-zinc-400">
-              주 직군 <span className="font-semibold text-cyan-400">{agg.topJob}</span>
+            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
+              주 직군 <span className="font-semibold text-cyan-700">{agg.topJob}</span>
             </span>
           </div>
 
@@ -612,27 +612,27 @@ export default function AdminDashboard() {
               return (
                 <div
                   key={i}
-                  className="flex flex-col rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5"
+                  className="flex flex-col rounded-2xl border border-line bg-card shadow-sm p-5"
                 >
                   <div className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500/20 to-purple-600/20">
-                      <Icon className="h-4 w-4 text-fuchsia-400" />
+                      <Icon className="h-4 w-4 text-fuchsia-700" />
                     </div>
-                    <div className="text-[11px] font-semibold text-zinc-400">{c.platform}</div>
+                    <div className="text-[11px] font-semibold text-sub">{c.platform}</div>
                   </div>
 
                   <div className="mt-3">
-                    <span className="rounded-md bg-lime-500/10 px-2 py-0.5 text-[10px] font-semibold text-lime-400">
+                    <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
                       {c.tag}
                     </span>
                   </div>
 
-                  <h3 className="mt-2 text-base font-bold leading-snug text-zinc-50">
+                  <h3 className="mt-2 text-base font-bold leading-snug text-ink">
                     “{c.headline}”
                   </h3>
-                  <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400">{c.body}</p>
+                  <p className="mt-2 flex-1 text-xs leading-relaxed text-sub">{c.body}</p>
 
-                  <div className="mt-4 flex items-center gap-1 text-[11px] text-zinc-600">
+                  <div className="mt-4 flex items-center gap-1 text-[11px] text-muted">
                     <Sparkles className="h-3 w-3" /> DB 빅데이터 기반 자동 생성
                   </div>
                 </div>
@@ -640,7 +640,7 @@ export default function AdminDashboard() {
             })}
           </div>
 
-          <p className="mt-4 text-[10px] leading-relaxed text-zinc-600">
+          <p className="mt-4 text-[10px] leading-relaxed text-muted">
             ※ 카피는 현재 회원 데이터 분포를 바탕으로 조합한 초안입니다. 광고 집행 전 과장·의료
             표현(치료·완치 등) 여부를 검토하세요.
           </p>
