@@ -26,8 +26,27 @@ const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
 function buildVoiceReport(member) {
   return {
     machines: [
-      { name: "Gym80 아웃싸이 (힙 어브덕션)", detail: "15kg · 15회 · 4세트" },
-      { name: "이카리안 레그프레스", detail: "60kg · 12회 · 3세트" },
+      {
+        name: "Gym80 아웃싸이 (힙 어브덕션)",
+        detail: "15kg · 15회 · 4세트",
+        method: [
+          "의자 안쪽까지 엉덩이를 밀어넣고 손잡이를 강하게 당겨 가슴을 든 상태로",
+          "발바닥 힘보다 무릎에 힘을 실어 양쪽으로 밀어낸다 생각하고",
+          "이완은 짧게 수축은 깊게(밀어내는 게 수축)",
+          "고관절까지 풀어준다 생각하고 중량을 최대한 올려",
+          "20개씩 5세트",
+        ],
+      },
+      {
+        name: "이카리안 레그프레스",
+        detail: "60kg · 12회 · 3세트",
+        method: [
+          "발은 어깨너비·발끝 11자",
+          "무릎이 발끝 방향 넘어가지 않게",
+          "내릴 땐 천천히 2초·밀 땐 힘차게",
+          "무릎 끝까지 펴 잠그지 말고 살짝 남기기",
+        ],
+      },
     ],
     feedback: `${member.name}님, 오늘 ${member.pain} 우회를 위해 골반 고정과 상체 각도 조절에 집중했습니다. 통증 없이 둔근 자극이 아주 잘 들어갔어요.`,
     homework: [
@@ -234,13 +253,18 @@ export default function VoiceLogTab({ member, onResult }) {
 
   const buildText = (r) =>
     `[${todayLabel()}${sessionNo ? ` · ${sessionNo}회차` : ""}, ${member.name} 회원님 운동일지 입니다!]\n\n` +
-    `1. 오늘 진행한 머신 & 중량/세트\n` +
+    `1. 오늘 진행한 운동\n` +
     r.machines
-      .map((m) => `- ${m.name}${m.detail ? `: ${m.detail}` : ""}`)
-      .join("\n") +
-    `\n\n2. 트레이너 핵심 피드백\n${r.feedback}\n\n` +
-    `3. 홈트레이닝 및 주의사항\n` +
-    r.homework.map((h) => `- ${h}`).join("\n") +
+      .map((m) => {
+        const head = `▪ ${m.name}${m.detail ? ` (${m.detail})` : ""}`;
+        const cues = (m.method || []).map((c) => `   - ${c}`).join("\n");
+        return cues ? `${head}\n${cues}` : head;
+      })
+      .join("\n\n") +
+    `\n\n2. 트레이너 핵심 피드백\n${r.feedback}` +
+    (r.homework?.length
+      ? `\n\n3. 집에서 참고하세요\n` + r.homework.map((h) => `- ${h}`).join("\n")
+      : "") +
     `\n\n${closingMessage()}`;
 
   return (
@@ -354,11 +378,23 @@ export default function VoiceLogTab({ member, onResult }) {
               <Dumbbell className="h-3.5 w-3.5" /> 1. 오늘 진행한 머신 & 중량/세트
             </div>
             {report.machines.length > 0 ? (
-              <ul className="space-y-1.5">
+              <ul className="space-y-3">
                 {report.machines.map((m, i) => (
-                  <li key={i} className="flex justify-between text-sm text-zinc-300">
-                    <span>{m.name}</span>
-                    <span className="font-mono text-zinc-400">{m.detail}</span>
+                  <li key={i} className="text-sm text-zinc-300">
+                    <div className="flex justify-between gap-2">
+                      <span className="font-medium text-zinc-100">{m.name}</span>
+                      {m.detail && <span className="font-mono text-zinc-400">{m.detail}</span>}
+                    </div>
+                    {(m.method || []).length > 0 && (
+                      <ul className="mt-1.5 space-y-1">
+                        {m.method.map((c, j) => (
+                          <li key={j} className="flex gap-1.5 text-[13px] leading-relaxed text-zinc-300">
+                            <span className="text-lime-400">·</span>
+                            <span>{c}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 ))}
               </ul>
