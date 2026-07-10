@@ -76,6 +76,9 @@ function mapMemberRow(r) {
 const TABS = [
   { id: 9, label: "스케줄", always: true },
   { id: 0, label: "회원", always: true },
+  { id: 10, label: "운동일지", pt: true },
+  { id: 11, label: "재등록", pt: true },
+  { id: 12, label: "인바디", pt: true },
   { id: 1, label: "1차 OT", ot: true },
   { id: 5, label: "1차 피드백", ot: true },
   { id: 2, label: "2차 OT", ot: true },
@@ -565,6 +568,13 @@ export default function OTNavigatorDashboard() {
   // ② 라이프사이클 뷰 — 매핑은 memberStatus 모듈에만(여기선 status 직접 비교 X).
   const view = viewFor(member);
 
+  // 교차 전환 보정 — 회원 view와 안 맞는 타입 탭이면 그 뷰 홈탭으로(blank·하이라이트 누락 방지).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (view === "pt" && (tab === 1 || tab === 2 || tab === 5)) setTab(10);
+    else if (view === "ot" && (tab === 10 || tab === 11 || tab === 12)) setTab(1);
+  }, [view, tab]);
+
   // 로컬 member status 갱신(낙관적/롤백용).
   const setMemberStatus = (id, status) =>
     setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, status } : m)));
@@ -674,7 +684,7 @@ export default function OTNavigatorDashboard() {
 
           {/* 탭 네비게이션 — 상시(스케줄·회원) + OT 뷰에서만 OT 탭 노출(§7) */}
           <nav className="-mb-px flex gap-1 overflow-x-auto whitespace-nowrap">
-            {TABS.filter((t) => t.always || (t.ot && view === "ot")).map((t) => (
+            {TABS.filter((t) => t.always || (t.ot && view === "ot") || (t.pt && view === "pt")).map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
@@ -714,7 +724,7 @@ export default function OTNavigatorDashboard() {
           />
         )}
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
-        <MemberViewShell member={member} onGoList={() => setTab(0)} showList={tab === 0} onMemberPatch={onMemberPatch}>
+        <MemberViewShell member={member} tab={tab} onGoList={() => setTab(0)} showList={tab === 0} onMemberPatch={onMemberPatch}>
           {tab === 0 && (
             <MemberListTab
               members={members}
