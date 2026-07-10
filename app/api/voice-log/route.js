@@ -15,6 +15,9 @@ export const runtime = "nodejs"; // SDK는 Node 런타임 필요 (Edge 불가)
 const STT_MODEL = "gpt-4o-mini-transcribe";
 const SUMMARY_MODEL = "claude-haiku-4-5-20251001";
 
+// STT 어휘 힌트 — 헬스 PT 도메인 용어를 prompt로 흘려 오인식 저감(gpt-4o-*-transcribe의 prompt 파라미터).
+const STT_PROMPT_BASE = "헬스 PT 수업 구두 요약. 운동·머신명과 중량·횟수·세트가 나옵니다. 예: 벤치프레스, 인클라인벤치프레스, 레그프레스, 스쿼트, 데드리프트, 랫풀다운, 시티드로우, 숄더프레스, 힙어브덕션, 힙쓰러스트, 레그익스텐션, 레그컬, 케이블, 덤벨, 바벨, 스미스머신, kg, 회, 세트.";
+
 // AI는 트레이너가 말한 내용만 재구성한다 — 언급 안 된 중량·세트·운동을 지어내지 않는다.
 const SUMMARY_SYSTEM = `당신은 PT 트레이너의 수업 종료 구두 요약(한국어 STT 텍스트)을 회원 카톡 전송용 운동 일지로 정제하는 도우미입니다.
 
@@ -73,9 +76,11 @@ export async function POST(request) {
   }
 
   let audio;
+  let machines = "";
   try {
     const form = await request.formData();
     audio = form.get("audio");
+    machines = (form.get("machines") || "").toString().trim();
   } catch {
     return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
   }
@@ -87,10 +92,12 @@ export async function POST(request) {
   let rawText;
   try {
     const openai = new OpenAI({ apiKey: openaiKey });
+    const sttPrompt = machines ? `${STT_PROMPT_BASE} 이 회원 사용 머신: ${machines}.` : STT_PROMPT_BASE;
     const tr = await openai.audio.transcriptions.create({
       file: audio,
       model: STT_MODEL,
       language: "ko",
+      prompt: sttPrompt,
     });
     rawText = (tr.text || "").trim();
   } catch (e) {
@@ -118,7 +125,7 @@ export async function POST(request) {
       messages: [
         {
           role: "user",
-          content: `다음은 트레이너가 수업 종료 시 구두로 남긴 요약(STT 원본)입니다. 규칙에 맞춰 JSON으로 정제하세요.\n\n---\n${rawText}\n---`,
+          content: `다음은 트레이너가 수업 종료 시 구두로 남긴 요약(STT 원본)입니다. 규칙에 맞춰 JSON으로 정제하세요.\n\n---\n${rawText}\n---` + (machines ? `\n\n[참고 · 이 회원 주 사용 머신: ${machines}] (오인식 표기 교정 시 이 목록을 우선 참고. 단, 목록에 없는 운동을 지어내지는 말 것.)` : ""),
         },
       ],
     });
