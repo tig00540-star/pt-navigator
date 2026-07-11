@@ -396,14 +396,14 @@ export default function FirstOTAssist({ member }) {
               </summary>
               <div className="space-y-2.5 px-3.5 pb-3.5">
                 {[
-                  { k: "진입", v: cl.enter },
-                  { k: "그림", v: cl.paint },
-                  { k: "착지", v: cl.land },
-                  { k: "침묵", v: cl.hold },
+                  { k: "진입", v: cl.enter, say: true },
+                  { k: "그림", v: cl.paint, say: true },
+                  { k: "착지", v: cl.land, say: true },
+                  { k: "침묵", v: cl.hold, say: false }, // 지시문이라 따옴표 없음
                 ].map((s) => s.v ? (
                   <div key={s.k} className="rounded-lg border border-line bg-elevate p-3">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-primary-strong">{s.k}</div>
-                    <p className="mt-0.5 text-sm leading-relaxed text-ink">{s.v}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-ink">{s.say ? <>&ldquo;{s.v}&rdquo;</> : s.v}</p>
                   </div>
                 ) : null)}
                 {cl.watch_for && (
@@ -446,7 +446,12 @@ export default function FirstOTAssist({ member }) {
                         <span className="font-semibold text-sub">세일즈 · </span>{o.sales_move}
                       </p>
                     )}
-                    <Example text={o.example} />
+                    {o.example && (
+                      <p className="mt-1.5 rounded-md bg-primary-soft px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
+                        <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>
+                        &ldquo;{o.example}&rdquo;
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
