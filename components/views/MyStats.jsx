@@ -22,6 +22,7 @@ export default function MyStats({ members = [] }) {
   const [policy, setPolicy] = useState([]);
   const [uid, setUid] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [contractNames, setContractNames] = useState(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -34,12 +35,21 @@ export default function MyStats({ members = [] }) {
         supabase.from("ot_log").select("*"),
         supabase.from("pay_policy").select("*"),
       ]);
+      // hidden(소프트삭제) 회원 이름 폴백 — 계약에 등장하는 회원 id를 user_table에서 직접 조회.
+      // members(활성 목록)엔 hidden이 빠져 있어 이름을 못 찾음. RLS 7c2a는 hidden 무관 본인 회원 조회 허용.
+      const uids = [...new Set((c.data || []).map((r) => r.user_id).filter(Boolean))];
+      let names = new Map();
+      if (uids.length) {
+        const { data: nrows } = await supabase.from("user_table").select("id, name").in("id", uids);
+        names = new Map((nrows || []).map((r) => [r.id, r.name]));
+      }
       if (cancelled) return;
       setUid(au?.user?.id ?? null);
       setContracts(c.data || []);
       setLogs(l.data || []);
       setOtRows(o.data || []);
       setPolicy(pp.data || []);
+      setContractNames(names);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -55,6 +65,8 @@ export default function MyStats({ members = [] }) {
   const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
   // P2 — drill-down 파생. memberIds·ym·uid·logs·contracts·members는 이미 있음.
   const nameById = new Map(members.map((m) => [m.id, m.name]));
+  // hidden 회원은 members에 없으니 계약 이름 조회(contractNames)로 폴백.
+  const displayName = (id) => nameById.get(id) || contractNames.get(id) || "(알 수 없음)";
   const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
   const totalSessions = sessionRows.reduce((s, r) => s + r.count, 0);
   const revRows = revenueContractsInMonth(contracts, uid, ym);        // session_log 행[]
@@ -139,7 +151,7 @@ export default function MyStats({ members = [] }) {
             {revRows.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-sm">
                 <div className="min-w-0">
-                  <span className="text-ink">{nameById.get(c.user_id) || "(알 수 없음)"}</span>
+                  <span className="text-ink">{displayName(c.user_id)}</span>
                   <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold ${c.kind === "reregister" ? "bg-sky-500/10 text-sky-700" : "bg-primary-soft text-primary-strong"}`}>
                     {c.kind === "reregister" ? "재등록" : "신규"}
                   </span>
@@ -153,7 +165,7 @@ export default function MyStats({ members = [] }) {
             {refundRows.map((c) => (
               <li key={"rf-" + c.id} className="flex items-center justify-between gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm">
                 <div className="min-w-0">
-                  <span className="text-ink">{nameById.get(c.user_id) || "(알 수 없음)"}</span>
+                  <span className="text-ink">{displayName(c.user_id)}</span>
                   <span className="ml-2 rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">환불</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
