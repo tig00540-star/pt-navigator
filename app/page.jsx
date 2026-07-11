@@ -538,6 +538,7 @@ export default function OTNavigatorDashboard() {
     const { data, error } = await supabase
       .from("user_table")
       .select("*")
+      .eq("hidden", false)                       // 소프트 삭제(환불) 회원 제외
       .order("created_at", { ascending: false });
     if (error) {
       setDbNote("불러오기 실패: " + error.message);

@@ -11,7 +11,7 @@ import { Award, Dumbbell, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, payForMonth, sessionsByMemberInMonth, revenueContractsInMonth } from "@/lib/memberStatus";
+import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, payForMonth, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth } from "@/lib/memberStatus";
 import PtPricingSettings from "@/components/views/PtPricingSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 
@@ -48,7 +48,7 @@ export default function MyStats({ members = [] }) {
   const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
   const memberIds = new Set(members.map((m) => m.id));
   const myOt = otRows.filter((r) => r && memberIds.has(r.user_id));
-  const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 };
+  const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, refund: 0, total: 0, cntNew: 0, cntRe: 0 };
   const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
   const closing = closingStats(myOt);
   const pay = payForMonth(rev.total, priceSum, policy);
@@ -58,6 +58,7 @@ export default function MyStats({ members = [] }) {
   const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
   const totalSessions = sessionRows.reduce((s, r) => s + r.count, 0);
   const revRows = revenueContractsInMonth(contracts, uid, ym);        // session_log 행[]
+  const refundRows = refundsInMonth(contracts, uid, ym);              // 이달 처리 환불[]
 
   return (
     <div className="space-y-4">
@@ -87,6 +88,9 @@ export default function MyStats({ members = [] }) {
           <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-sub">
             <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
             <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
+            {rev.refund > 0 && (
+              <span>환불 <b className="text-rose-600">-{won(rev.refund)}</b></span>
+            )}
           </div>
         </div>
         <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
@@ -128,7 +132,7 @@ export default function MyStats({ members = [] }) {
           </span>
           <span className="font-mono text-lg font-bold text-ink">{won(rev.total)}</span>
         </summary>
-        {revRows.length === 0 ? (
+        {revRows.length === 0 && refundRows.length === 0 ? (
           <p className="mt-3 text-sm text-muted">이번달 매출이 없어요.</p>
         ) : (
           <ul className="mt-3 space-y-1.5">
@@ -143,6 +147,18 @@ export default function MyStats({ members = [] }) {
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="font-mono font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
                   <span className="text-[11px] text-muted">{new Date(c.started_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
+                </div>
+              </li>
+            ))}
+            {refundRows.map((c) => (
+              <li key={"rf-" + c.id} className="flex items-center justify-between gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <span className="text-ink">{nameById.get(c.user_id) || "(알 수 없음)"}</span>
+                  <span className="ml-2 rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">환불</span>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="font-mono font-semibold text-rose-600">-{won(c.refund_amount)}</span>
+                  <span className="text-[11px] text-muted">{new Date(c.refunded_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
                 </div>
               </li>
             ))}
