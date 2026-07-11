@@ -13,6 +13,7 @@ import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, payForMonth } from "@/lib/memberStatus";
 import PtPricingSettings from "@/components/views/PtPricingSettings";
+import PasswordChange from "@/components/views/PasswordChange";
 
 export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
@@ -98,6 +99,9 @@ export default function MyStats({ members = [] }) {
 
       {/* 내 PT 가격 설정 — 자체 loading, 통계와 독립. 항상 렌더. */}
       <PtPricingSettings />
+
+      {/* 계정 · 비밀번호 변경 — 자기완결. */}
+      <PasswordChange />
     </div>
   );
 }
