@@ -32,7 +32,10 @@ export async function POST(req) {
   if (!email || !name) return Response.json({ error: "이메일과 이름을 입력하세요." }, { status: 400 });
 
   const password = genPassword();
-  const { data: created, error: ce } = await sb.auth.admin.createUser({ email, password, email_confirm: true });
+  const { data: created, error: ce } = await sb.auth.admin.createUser({
+    email, password, email_confirm: true,
+    user_metadata: { must_change_pw: true }, // 최초 로그인 시 비번 변경 강제(P1b)
+  });
   if (ce || !created?.user?.id) return Response.json({ error: "계정 생성 실패: " + (ce?.message || "unknown") }, { status: 400 });
 
   const { error: te } = await sb.from("trainer").insert({

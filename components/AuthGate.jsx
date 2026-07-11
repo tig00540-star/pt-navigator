@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import PasswordChange from "@/components/views/PasswordChange";
 
 export default function AuthGate({ children }) {
   const [ready, setReady] = useState(false);   // 초기 세션 조회 완료 여부
@@ -53,6 +54,13 @@ export default function AuthGate({ children }) {
     await supabase.auth.signOut();
   };
 
+  // 세션 재조회 — forced 비번 변경 완료(onDone) 후 갱신된 user_metadata 반영 → 게이트 오픈.
+  const refreshSession = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    setSession(data.session ?? null);
+  };
+
   // 초기 세션 조회 전 — 깜빡임 방지용 최소 화면
   if (!ready) {
     return (
@@ -64,6 +72,8 @@ export default function AuthGate({ children }) {
 
   // 데모 모드(supabase null) or 로그인됨 → 앱 렌더
   if (!supabase || session) {
+    // 임시비번 최초 로그인 플래그면 강제 비번 변경(신규 트레이너만 — 기존은 플래그 없음).
+    const mustChange = Boolean(supabase && session && session.user?.user_metadata?.must_change_pw === true);
     return (
       <>
         {supabase && session && (
@@ -76,7 +86,7 @@ export default function AuthGate({ children }) {
             </button>
           </div>
         )}
-        {children}
+        {mustChange ? <PasswordChange forced onDone={refreshSession} /> : children}
       </>
     );
   }
