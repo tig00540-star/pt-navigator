@@ -7,11 +7,11 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { Award, Target, Wallet } from "lucide-react";
+import { Award, Dumbbell, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, payForMonth } from "@/lib/memberStatus";
+import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, payForMonth, sessionsByMemberInMonth, revenueContractsInMonth } from "@/lib/memberStatus";
 import PtPricingSettings from "@/components/views/PtPricingSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 
@@ -53,6 +53,11 @@ export default function MyStats({ members = [] }) {
   const closing = closingStats(myOt);
   const pay = payForMonth(rev.total, priceSum, policy);
   const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
+  // P2 — drill-down 파생. memberIds·ym·uid·logs·contracts·members는 이미 있음.
+  const nameById = new Map(members.map((m) => [m.id, m.name]));
+  const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
+  const totalSessions = sessionRows.reduce((s, r) => s + r.count, 0);
+  const revRows = revenueContractsInMonth(contracts, uid, ym);        // session_log 행[]
 
   return (
     <div className="space-y-4">
@@ -92,6 +97,58 @@ export default function MyStats({ members = [] }) {
           <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공</div>
         </div>
       </div>
+
+      {/* 이번달 수업 — 누르면 회원별 (P2) */}
+      <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <Dumbbell className="h-3.5 w-3.5" /> 이번달 수업
+          </span>
+          <span className="font-mono text-lg font-bold text-ink">{totalSessions}회</span>
+        </summary>
+        {sessionRows.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">이번달 수업 기록이 없어요.</p>
+        ) : (
+          <ul className="mt-3 space-y-1.5">
+            {sessionRows.map((r) => (
+              <li key={r.user_id} className="flex items-center justify-between rounded-lg border border-line bg-elevate px-3 py-2 text-sm">
+                <span className="text-ink">{nameById.get(r.user_id) || "(알 수 없음)"}</span>
+                <span className="font-mono font-semibold text-sub">{r.count}회</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
+
+      {/* 매출 내역 — 누구·얼마·언제 (P2) */}
+      <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <Wallet className="h-3.5 w-3.5" /> 매출 내역
+          </span>
+          <span className="font-mono text-lg font-bold text-ink">{won(rev.total)}</span>
+        </summary>
+        {revRows.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">이번달 매출이 없어요.</p>
+        ) : (
+          <ul className="mt-3 space-y-1.5">
+            {revRows.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <span className="text-ink">{nameById.get(c.user_id) || "(알 수 없음)"}</span>
+                  <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold ${c.kind === "reregister" ? "bg-sky-500/10 text-sky-700" : "bg-primary-soft text-primary-strong"}`}>
+                    {c.kind === "reregister" ? "재등록" : "신규"}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="font-mono font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
+                  <span className="text-[11px] text-muted">{new Date(c.started_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
 
       <p className="text-[10px] text-muted">※ 예상 급여 = 이달 완료 수업(회당단가) 기준 · 구간%는 이달 총매출로 결정. 실지급과 다를 수 있음.</p>
         </>
