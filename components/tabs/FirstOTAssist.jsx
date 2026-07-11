@@ -1,29 +1,42 @@
 "use client";
 
 /* =========================================================================
-   탭1 · ① AI 1차 OT 지원 블록 (추가형 — 탭1 legacy 스캐폴드는 이 커밋에서 미삭제).
-   기본정보 → /api/ot-brief {phase:"first"} (S4 확정본) → 6단계 arc·movement_cues
-   ·closing_compass·soft_closing. 화면: 핵심 3줄(🧭🎯📍 · 항상 보임) + 펼치기 4개.
+   탭1 · ① AI 1차 OT 지원 블록 (B-2: Sonnet + 내 패키지 주입).
+   기본정보 + 내 active 패키지 → /api/ot-brief {phase:"first"} → 6단계 arc·movement_cues
+   ·recommended_program·closing(4단계)·objections(거절 4종). 화면: 핵심 3줄(💳🎯📍 · 항상 보임) + 펼치기.
+   추천 가격은 AI가 준 pick_ref로 내 패키지 목록에서 조회해 렌더(AI는 번호만 = 환각 방지).
    ⚠️ 데모 폴백 없음. 캐시 = ot_log round-1 `report.first_assist`(관찰 데이터와 공존 · 병합 저장).
    round-1 행이 없으면(관찰 저장 전) 캐시 스킵 = 세션 전용. inputHash로 스테일 감지(회원 데이터 변경 시).
    example·cueing·dialogue는 '발판(예시)'이라 흐림 처리(낭독 대본 방지).
+   구 Haiku 캐시(closing_compass 有·recommended_program 無)는 신필드 섹션이 조용히 비고 arc·치트키만 뜸 → '다시 생성'으로 갱신.
    ========================================================================= */
 
 import { useEffect, useState } from "react";
 import {
   Sparkles,
   MessageSquareQuote,
-  Handshake,
   ShieldCheck,
   Dumbbell,
   Zap,
   Lightbulb,
   Target,
+  CreditCard,
+  Flag,
+  MessageSquare,
 } from "lucide-react";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { supabase } from "@/lib/supabaseClient";
+import { won } from "@/lib/format";
 import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
 import { firstInputHash } from "@/lib/otHash";
+
+// 거절 이유 한글 라벨(purge-safe 정적 맵). B-1 objections[].reason 키와 물림.
+const OBJ_LABEL = {
+  hesitation: "생각해볼게요 (망설임)",
+  price: "가격 부담",
+  decider: "배우자·가족과 상의",
+  doubt: "효과·필요성 의심",
+};
 
 // example / cueing / dialogue = '발판(예시)' → 흐림 + "예시" 라벨 (낭독기 방지).
 const Example = ({ text }) =>
@@ -43,6 +56,7 @@ export default function FirstOTAssist({ member }) {
   const [notice, setNotice] = useState(""); // 실패/키미설정/세션전용 안내
   const [row1Id, setRow1Id] = useState(null); // round-1 행 id (없으면 캐시 스킵)
   const [row1Report, setRow1Report] = useState(null); // round-1 report(병합 대상 — 관찰 보존)
+  const [packages, setPackages] = useState([]); // 본인 active 패키지(추천 재료 · pick_ref 조회)
 
   // 회원 변경 시 round-1 캐시(report.first_assist) 로드. 데모/미설정 시 세션 전용.
   useEffect(() => {
@@ -83,6 +97,22 @@ export default function FirstOTAssist({ member }) {
     };
   }, [member?.id]);
 
+  // 본인 active 패키지 로드(마운트 1회 · 회원 의존 아님). pick_ref로 실가격 조회하는 재료.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const { data: au } = await supabase.auth.getUser();
+      const uid = au?.user?.id ?? null;
+      const { data } = await supabase
+        .from("pt_package").select("*")
+        .eq("trainer_id", uid).eq("active", true) // 노출(active) 패키지만
+        .order("sort", { ascending: true }).order("created_at", { ascending: true });
+      if (!cancelled) setPackages(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const generate = async () => {
     setLoading(true);
     setNotice("");
@@ -90,7 +120,7 @@ export default function FirstOTAssist({ member }) {
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phase: "first", member }),
+        body: JSON.stringify({ phase: "first", member, packages }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -104,7 +134,7 @@ export default function FirstOTAssist({ member }) {
       const result = await res.json();
       const newMeta = {
         generatedAt: new Date().toISOString(),
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-5",
         inputHash: firstInputHash(member),
       };
       setData(result);
@@ -146,14 +176,18 @@ export default function FirstOTAssist({ member }) {
     return t.length > n ? t.slice(0, n) + "…" : t;
   };
 
-  // 신스키마 defensive 접근 (필드 일부 누락에도 크래시 없이).
-  const cc = data?.closing_compass || {};
+  // 신스키마 defensive 접근 (필드 일부 누락·구 캐시에도 크래시 없이).
   const mc = data?.movement_cues || {};
-  const sc = data?.soft_closing || {};
+  const rp = data?.recommended_program || {};
+  const cl = data?.closing || {};
+  const obj = Array.isArray(data?.objections) ? data.objections : [];
+  // pick_ref/alt_ref로 실제 패키지 조회(범위 밖·null이면 null). 가격 숫자는 AI가 아니라 내 목록에서.
+  const pick = Number.isInteger(rp.pick_ref) ? (packages[rp.pick_ref] || null) : null;
+  const alt = Number.isInteger(rp.alt_ref) ? (packages[rp.alt_ref] || null) : null;
+  const perSession = (p) => (p && p.sessions ? won(Math.round(p.price / p.sessions)) : null);
   const arc = Array.isArray(data?.arc) ? data.arc : [];
   const beatBy = (kw) => arc.find((b) => (b?.when || "").includes(kw)) || null;
   const awareBeat = beatBy("자각");
-  const salesBeat = beatBy("세일즈");
   const observe = Array.isArray(data?.observe_targets) ? data.observe_targets : [];
   const gaps = Array.isArray(data?.data_gaps) ? data.data_gaps : [];
 
@@ -227,26 +261,31 @@ export default function FirstOTAssist({ member }) {
         <div className="mt-4 space-y-4">
           {/* ================= 핵심 3줄 (항상 보임 · 3초 스캔) ================= */}
           <div className="space-y-2.5">
-            {/* 🧭 세일즈 나침반 */}
+            {/* 💳 추천 프로그램 */}
             <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-base">🧭</span>
+                <span className="text-base">💳</span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
-                  세일즈 나침반
+                  추천 프로그램
                 </span>
-                {cc.approach_tag && (
-                  <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[11px] font-bold text-primary-strong">
-                    {labelOf(CLOSING_APPROACH_OPTS, cc.approach_tag)}
-                  </span>
-                )}
               </div>
-              {cc.why_higher_odds && (
-                <p className="mt-1.5 text-sm leading-relaxed text-ink">
-                  {oneLine(cc.why_higher_odds, 62)}
-                  <span className="ml-1 text-[11px] text-muted">
-                    (풀텍스트는 &lsquo;세일즈 상세&rsquo;)
-                  </span>
+              {pick ? (
+                <>
+                  <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm text-ink">
+                    <span className="font-bold">{pick.name}</span>
+                    <span className="font-mono font-semibold">{won(pick.price)}</span>
+                    {perSession(pick) && <span className="text-[11px] text-muted">· {perSession(pick)}/회</span>}
+                  </p>
+                  {rp.why_fit && (
+                    <p className="mt-1 text-[12px] leading-relaxed text-sub">{oneLine(rp.why_fit, 62)}</p>
+                  )}
+                </>
+              ) : packages.length === 0 ? (
+                <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+                  가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
                 </p>
+              ) : (
+                <p className="mt-1.5 text-[12px] text-muted">추천을 콕 집지 못했어요 — &lsquo;다시 생성&rsquo;을 눌러보세요.</p>
               )}
             </div>
 
@@ -269,27 +308,151 @@ export default function FirstOTAssist({ member }) {
               )}
             </div>
 
-            {/* 📍 클로징 타이밍 */}
+            {/* 📍 클로징 진입 */}
             <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
               <div className="flex items-center gap-2">
                 <span className="text-base">📍</span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
-                  클로징 타이밍
+                  클로징 진입
                 </span>
               </div>
-              {salesBeat ? (
+              {cl.enter ? (
                 <p className="mt-1.5 text-sm leading-relaxed text-ink">
-                  {oneLine(salesBeat.intent || salesBeat.direction, 84)}
+                  {oneLine(cl.enter, 84)}
                 </p>
               ) : (
-                <p className="mt-1.5 text-[12px] text-muted">
-                  &lsquo;세일즈&rsquo; 비트가 아직 없어요.
-                </p>
+                <p className="mt-1.5 text-[12px] text-muted">클로징 진입은 아래 상세에서.</p>
               )}
             </div>
           </div>
 
-          {/* ================= 펼치기 4개 (접힘 기본) ================= */}
+          {/* ================= 펼치기 (접힘 기본) ================= */}
+          {/* 추천 프로그램 상세 — 베스트 + 대안. 가격 숫자는 내 목록(pick/alt)에서. */}
+          {packages.length > 0 && (pick || alt) && (
+            <details className="rounded-xl border border-line bg-card">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+                <CreditCard className="h-3.5 w-3.5 text-primary-strong" /> 추천 프로그램
+              </summary>
+              <div className="space-y-3 px-3.5 pb-3.5">
+                {pick && (() => {
+                  const disc = pick.list_price != null && pick.list_price > pick.price;
+                  return (
+                    <div className="rounded-lg border border-primary/30 bg-primary-soft p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-bold text-ink">{pick.name}</span>
+                        {pick.sessions != null && (
+                          <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{pick.sessions}회</span>
+                        )}
+                        {pick.duration_label && (
+                          <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{pick.duration_label}</span>
+                        )}
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <span className="font-mono text-lg font-bold text-ink">{won(pick.price)}</span>
+                        {disc && (
+                          <>
+                            <span className="font-mono text-xs text-muted line-through">{won(pick.list_price)}</span>
+                            <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-bold text-primary-strong">
+                              -{Math.round((1 - pick.price / pick.list_price) * 100)}%
+                            </span>
+                          </>
+                        )}
+                        {perSession(pick) && <span className="text-[11px] text-muted">{perSession(pick)}/회</span>}
+                      </div>
+                      {rp.why_fit && (
+                        <p className="mt-1.5 text-[13px] leading-relaxed text-sub">
+                          <span className="font-semibold text-sub">왜 맞나 · </span>{rp.why_fit}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+                {alt && (
+                  <div className="rounded-lg border border-line bg-elevate p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-semibold text-muted">대안</span>
+                      <span className="text-sm font-semibold text-ink">{alt.name}</span>
+                      <span className="font-mono text-sm font-semibold text-ink">{won(alt.price)}</span>
+                    </div>
+                    {rp.alt_why && (
+                      <p className="mt-1 text-[12px] leading-relaxed text-sub">{oneLine(rp.alt_why, 80)}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </details>
+          )}
+
+          {/* 클로징 4단계 — 진입→그림→착지→침묵 + 안전핀(watch_for). */}
+          {(cl.enter || cl.paint || cl.land || cl.hold) && (
+            <details className="rounded-xl border border-line bg-card">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+                <Flag className="h-3.5 w-3.5 text-primary-strong" /> 클로징 4단계
+                {cl.approach_tag && (
+                  <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary-strong">
+                    {labelOf(CLOSING_APPROACH_OPTS, cl.approach_tag)}
+                  </span>
+                )}
+              </summary>
+              <div className="space-y-2.5 px-3.5 pb-3.5">
+                {[
+                  { k: "진입", v: cl.enter },
+                  { k: "그림", v: cl.paint },
+                  { k: "착지", v: cl.land },
+                  { k: "침묵", v: cl.hold },
+                ].map((s) => s.v ? (
+                  <div key={s.k} className="rounded-lg border border-line bg-elevate p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-primary-strong">{s.k}</div>
+                    <p className="mt-0.5 text-sm leading-relaxed text-ink">{s.v}</p>
+                  </div>
+                ) : null)}
+                {cl.watch_for && (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700">
+                      <ShieldCheck className="h-3.5 w-3.5" /> 안 통할 신호 = 안전핀 (밀지 말고 2차로)
+                    </div>
+                    <p className="mt-1 text-[13px] leading-relaxed text-sub">{cl.watch_for}</p>
+                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
+                      ※ 미루기는 &lsquo;포기&rsquo;가 아니라 1차↔2차를 잇는 다리 — 관찰기록을 남기면 2차 AI가 더 강한 클로징을 준비합니다.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </details>
+          )}
+
+          {/* 거절 대응 4종 — 공감 방향 + 세일즈 무브. */}
+          {obj.length > 0 && (
+            <details className="rounded-xl border border-line bg-card">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+                <MessageSquare className="h-3.5 w-3.5 text-primary-strong" /> 거절 대응 ({obj.length})
+              </summary>
+              <div className="space-y-2 px-3.5 pb-3.5">
+                {obj.map((o, i) => (
+                  <div key={i} className="rounded-lg border border-line bg-elevate p-3">
+                    <span className="inline-block rounded-md bg-card px-2 py-0.5 text-[10px] font-semibold text-sub">
+                      {OBJ_LABEL[o.reason] || o.reason}
+                    </span>
+                    {o.customer_says && (
+                      <p className="mt-1.5 text-[12px] italic leading-relaxed text-muted">회원: &ldquo;{o.customer_says}&rdquo;</p>
+                    )}
+                    {o.reframe_direction && (
+                      <p className="mt-1 text-sm leading-relaxed text-ink">
+                        <span className="font-semibold text-sub">공감 · </span>{o.reframe_direction}
+                      </p>
+                    )}
+                    {o.sales_move && (
+                      <p className="mt-1 text-[13px] leading-relaxed text-sub">
+                        <span className="font-semibold text-sub">세일즈 · </span>{o.sales_move}
+                      </p>
+                    )}
+                    <Example text={o.example} />
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+
           {/* 전체 arc */}
           {arc.length > 0 && (
             <details className="rounded-xl border border-line bg-card">
@@ -321,48 +484,6 @@ export default function FirstOTAssist({ member }) {
                     <Example text={b.example} />
                   </div>
                 ))}
-              </div>
-            </details>
-          )}
-
-          {/* 세일즈 상세 — closing_compass 풀 + soft_closing */}
-          {(cc.why_higher_odds || cc.watch_for || sc.logic || sc.example) && (
-            <details className="rounded-xl border border-line bg-card">
-              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
-                <Handshake className="h-3.5 w-3.5 text-primary-strong" /> 세일즈 상세 · 나침반 풀
-              </summary>
-              <div className="space-y-3 px-3.5 pb-3.5">
-                {cc.why_higher_odds && (
-                  <div>
-                    <div className="text-[11px] font-semibold text-primary-strong">
-                      왜 이 방향인가 (압박 아니라 공감 근거)
-                    </div>
-                    <p className="mt-1 text-sm leading-relaxed text-ink">{cc.why_higher_odds}</p>
-                  </div>
-                )}
-                {cc.watch_for && (
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700">
-                      <ShieldCheck className="h-3.5 w-3.5" /> 안 통할 신호 = 안전핀 (밀지 말고 2차로)
-                    </div>
-                    <p className="mt-1 text-[13px] leading-relaxed text-sub">{cc.watch_for}</p>
-                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
-                      ※ 미루기는 &lsquo;포기&rsquo;가 아니라 1차↔2차를 잇는 다리 — 관찰기록을 남기면 2차 AI가 더 강한 클로징을 준비합니다.
-                    </p>
-                  </div>
-                )}
-                {(sc.logic || sc.example) && (
-                  <div>
-                    <div className="text-[11px] font-semibold text-primary-strong">
-                      부담 없는 1차 마무리
-                      {sc.approach_tag ? ` · ${labelOf(CLOSING_APPROACH_OPTS, sc.approach_tag)}` : ""}
-                    </div>
-                    {sc.logic && (
-                      <p className="mt-1 text-sm leading-relaxed text-ink">{sc.logic}</p>
-                    )}
-                    <Example text={sc.example} />
-                  </div>
-                )}
               </div>
             </details>
           )}
@@ -463,7 +584,7 @@ export default function FirstOTAssist({ member }) {
       {/* 최초 안내 (생성 전) */}
       {!data && !loading && !notice && (
         <p className="mt-3 text-[11px] leading-relaxed text-muted">
-          회원 기본정보로 1차 OT 6단계 흐름 · 세일즈 나침반 · 치트키를 생성합니다. (관찰 아님 · 가설)
+          회원 기본정보 + 내 패키지로 1차 OT 6단계 흐름 · 추천 프로그램 · 클로징 4단계 · 거절 대응을 생성합니다. (관찰 아님 · 가설)
         </p>
       )}
     </section>
