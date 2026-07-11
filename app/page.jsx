@@ -60,6 +60,7 @@ function mapMemberRow(r) {
     pain: r.pain ?? "-",
     goal: r.goal ?? "미설정",
     machines: r.machines ?? [],
+    trainer_id: r.trainer_id ?? null,   // 내 회원 판별(원장 스코프)
     // ② member_status — 컬럼 미반영(마이그레이션 전)·demo 행에서도 기본값으로 안전.
     status: r.status ?? "ot_active",
     origin: r.origin ?? "ot_funnel",
@@ -376,18 +377,22 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
    회원 목록 (전용 탭)
    ========================================================================= */
 
-function MemberListTab({ members, selectedId, onSelect, onAdd }) {
+function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
   const [q, setQ] = useState("");
   const [segment, setSegment] = useState("all"); // all | ot | pt | inactive
+  // 원장 = 본인 것 아닌 회원이 보임(RLS상 trainer는 본인 것만 → 토글 불필요).
+  const isOwner = members.some((m) => m.trainer_id && uid && m.trainer_id !== uid);
+  const [mineOnly, setMineOnly] = useState(true); // 기본 '내 회원'
+  const scoped = isOwner && mineOnly ? members.filter((m) => m.trainer_id === uid) : members;
 
   // 세그먼트 인원수 + 세그먼트 base(all=보관 제외). 검색은 그 위 AND.
   const counts = { ot: 0, pt: 0, inactive: 0 };
-  for (const m of members) {
+  for (const m of scoped) {
     const v = viewFor(m);
     if (v in counts) counts[v] += 1;
   }
   const totalActive = counts.ot + counts.pt; // 전체 = inactive 제외
-  const bySegment = members.filter((m) => {
+  const bySegment = scoped.filter((m) => {
     const v = viewFor(m);
     return segment === "all" ? v !== "inactive" : v === segment;
   });
@@ -400,9 +405,9 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
   return (
     <div>
       {/* Step7 reader — 오늘 재접근(보류 도래분). 선택 시 해당 회원으로(onSelect → 1차 OT). */}
-      <ReapproachToday members={members} onSelect={onSelect} />
-      <RegisterDueToday members={members} onSelect={onSelect} />
-      <RegisterReapproachToday members={members} onSelect={onSelect} />
+      <ReapproachToday members={scoped} onSelect={onSelect} />
+      <RegisterDueToday members={scoped} onSelect={onSelect} />
+      <RegisterReapproachToday members={scoped} onSelect={onSelect} />
 
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
@@ -421,6 +426,24 @@ function MemberListTab({ members, selectedId, onSelect, onAdd }) {
           <UserPlus className="h-4 w-4" /> 등록
         </button>
       </div>
+
+      {isOwner && (
+        <div className="mb-3 flex gap-1.5">
+          {[{ k: true, l: "내 회원" }, { k: false, l: "전체" }].map((t) => (
+            <button
+              key={String(t.k)}
+              onClick={() => setMineOnly(t.k)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                mineOnly === t.k
+                  ? "border border-primary/30 bg-primary-soft text-primary-strong"
+                  : "border border-line bg-card text-muted hover:text-ink"
+              }`}
+            >
+              {t.l}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mb-3 flex gap-1.5">
         {[
@@ -529,6 +552,7 @@ export default function OTNavigatorDashboard() {
   // 클로징 저장(1·2차) 성공 시 증가 → PtConfirmBanner가 ot_log 재조회(같은 회원 stale 방지).
   // ⚠️ ③에서 클로징 저장 지점(재등록·이탈 UI 등)이 늘면 그 성공 지점에도 onClosingSaved를 물려야 함.
   const [closingVersion, setClosingVersion] = useState(0);
+  const [myUid, setMyUid] = useState(null); // 현재 로그인 uid — 내 회원 판별(원장 스코프)
 
   const loadMembers = async () => {
     if (!supabase) {
@@ -560,6 +584,11 @@ export default function OTNavigatorDashboard() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMembers();
     loadMachines();
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data }) => setMyUid(data?.user?.id ?? null));
   }, []);
 
   // DB 회원이 있으면 선택된 회원을, 없으면 데모 회원을 렌더
@@ -736,6 +765,7 @@ export default function OTNavigatorDashboard() {
                 setTab(1);
               }}
               onAdd={() => setShowForm(true)}
+              uid={myUid}
             />
             </div>
           )}

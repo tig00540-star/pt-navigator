@@ -56,7 +56,8 @@ export default function MyStats({ members = [] }) {
   }, []);
 
   const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
-  const memberIds = new Set(members.map((m) => m.id));
+  // 내 회원만(원장이 남의 회원 수업/클로징까지 세던 버그 수정 — 급여 스코프와 일치).
+  const memberIds = new Set(members.filter((m) => m.trainer_id === uid).map((m) => m.id));
   const myOt = otRows.filter((r) => r && memberIds.has(r.user_id));
   const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, refund: 0, total: 0, cntNew: 0, cntRe: 0 };
   const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
