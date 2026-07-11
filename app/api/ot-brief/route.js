@@ -230,7 +230,10 @@ ${JSON.stringify(
 3) closing: 2차 실시간 자극 결과 분기(yes/partial/no) 3버전 프리생성. 각 분기를 아래 4단계
    골격으로(진입→그림→착지→침묵). 각 분기에 approach_tag 제안.
    "마지막 OT"급으로 확실하되, 압박이 아니라 '깊이 이해받았다'는 공감으로.
-4) objections(거절 대처): 황현진 4유형(망설임·거부·의심·재확인)으로. 반박이 아니라 '공감으로 빗장 풀기'.
+4) objections(거절 대처): 황현진 4유형(망설임·거부·의심·재확인)으로. 반박이 아니라 '공감으로 빗장 풀기 + 세일즈 무브'.
+   각 유형: customer_says(그 유형이 흔히 하는 말) / reframe_direction(공감으로 빗장 푸는 방향, 반박 아님) /
+   sales_move(공감 뒤 바로 잇는 세일즈 무브 — 무엇을 보여주고 어떤 제안으로 다시 클로징으로 끌어오나, 물러서지 말 것) /
+   example(그 자리에서 회원에게 바로 말할 '실제 대사' 한 줄, 발판·흐림 아님 · 완성 문장 "○○님, …").
 5) stimulus_response(자극반응별 운동 대처 · 수업 전 준비물): 오늘 자극 결과 3분기(yes/partial/no)별로
    트레이너가 '수업 전에 미리 숙지'할 운동 대처를 설계하라. 이건 세일즈(closing)가 아니라 '몸을 어떻게
    조정하나'다. 각 분기:
@@ -242,6 +245,8 @@ ${JSON.stringify(
    끌어올리나'로. ⚠️ no라고 '그러니 등록하라'는 세일즈로 새지 말 것 — 여긴 운동 대처만, 세일즈는 closing 소관.
 
 [클로징 4단계 골격 — 각 분기 필수]
+  ★enter·paint·land의 값은 트레이너가 회원에게 그대로 말할 '실제 대사'로 써라(설명·지시문 아님,
+   "○○님, …" 1인칭). 확신 있게, 흐릿한 예시로 물러서지 말 것. hold만 트레이너용 지시(멈춤)다.
   enter(진입):  "등록" 단어로 시작 금지. 오늘 회원 몸에서 일어난 사실을 짚고 "그래서 회원에게
                 무슨 의미인지(So what?)"로 연다. memberQuote/memberAware를 여기서 소환하면 강력.
   paint(그림):  핵심 진단·필요성을 추상 설명 금지. 반드시 '일상 비유 하나'로 회원 머릿속에
@@ -290,7 +295,7 @@ ${JSON.stringify(
     "partial": { "approach_tag": "...", "enter": "...", "paint": "...", "land": "...", "hold": "..." },
     "no":      { "approach_tag": "...", "enter": "...", "paint": "...", "land": "...", "hold": "..." }
   },
-  "objections": [ { "type": "망설임|거부|의심|재확인", "customer_says": "이 유형이 흔히 하는 말", "reframe_direction": "공감으로 빗장 푸는 방향(반박 아님)", "example": "..." } ],
+  "objections": [ { "type": "망설임|거부|의심|재확인", "customer_says": "이 유형이 흔히 하는 말", "reframe_direction": "공감으로 빗장 푸는 방향(반박 아님)", "sales_move": "...", "example": "..." } ],
   "stimulus_response": {
     "yes":     { "cause": "...", "adjustment": "숫자 없이 방향만", "direction": "..." },
     "partial": { "cause": "...", "adjustment": "...", "direction": "..." },

@@ -533,7 +533,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                           >
                             {s.label}
                           </div>
-                          <p className="mt-1.5 text-base leading-relaxed text-ink">{s.v || "—"}</p>
+                          <p className="mt-1.5 text-base leading-relaxed text-ink">{s.v ? <>&ldquo;{s.v}&rdquo;</> : "—"}</p>
                         </div>
                       ))}
                       {/* hold — 침묵 강조 */}
@@ -660,8 +660,22 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                     <span className="text-[11px] italic text-sub">“{o.customer_says}”</span>
                   )}
                 </div>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink">{o.reframe_direction}</p>
-                {renderExample(o.example)}
+                {o.reframe_direction && (
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink">
+                    <span className="font-semibold text-sub">공감 · </span>{o.reframe_direction}
+                  </p>
+                )}
+                {o.sales_move && (
+                  <p className="mt-1 text-[13px] leading-relaxed text-sub">
+                    <span className="font-semibold text-sub">세일즈 · </span>{o.sales_move}
+                  </p>
+                )}
+                {o.example && (
+                  <p className="mt-1.5 rounded-md bg-primary-soft px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
+                    <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>
+                    &ldquo;{o.example}&rdquo;
+                  </p>
+                )}
               </div>
             ))}
           </div>
