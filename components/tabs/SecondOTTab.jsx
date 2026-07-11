@@ -214,6 +214,16 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                 : null,
             }
           : {}),
+        // D-3 재료 — 클로징 시점 회원 프로파일 스냅샷(2차 성공 케이스에도 필요). 2차는 form.goal 없음 → round1 goal_type 재사용.
+        ...(isClosed
+          ? {
+              closing_profile: {
+                age: member.age ?? null, job: member.job ?? null, residence: member.residence ?? null,
+                mbti: member.mbti ?? null, pain: member.pain ?? null, goal: member.goal ?? null,
+                goal_type: row1?.goal_type ?? null,
+              },
+            }
+          : {}),
       };
       if (existingRow2Id) {
         const { data, error } = await supabase

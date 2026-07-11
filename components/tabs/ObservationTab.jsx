@@ -19,6 +19,7 @@ import {
   GOAL_TYPE_OPTS,
   CLOSING_RESULT_OPTS,
   CLOSING_APPROACH_OPTS,
+  CLOSING_REASON_OPTS,
   SALES_INTENSITY_OPTS,
 } from "@/lib/labels";
 
@@ -37,6 +38,10 @@ function emptyForm() {
     closingResult: "none", // ㉠ closing_result (top-level 컬럼)
     closingApproach: "other", // ㉠ closing_approach (top-level 컬럼)
     closingReapproachAt: "", // 보류 재접근 예정일 (closing_reapproach_at, date)
+    closingReason: "", // 실패/보류 사유 카테고리(closing_reason)
+    detailApproach: "", // 3박자 ① 접근(closing_detail.approach)
+    detailReaction: "", // 3박자 ② 반응(closing_detail.reaction)
+    detailOutcome: "", // 3박자 ③ 결과(closing_detail.outcome)
   };
 }
 
@@ -71,6 +76,10 @@ function rowToForm(row) {
     closingResult: row?.closing_result || "none",
     closingApproach: row?.closing_approach || "other",
     closingReapproachAt: row?.closing_reapproach_at || "",
+    closingReason: row?.closing_reason || "",
+    detailApproach: row?.closing_detail?.approach || "",
+    detailReaction: row?.closing_detail?.reaction || "",
+    detailOutcome: row?.closing_detail?.outcome || "",
   };
 }
 
@@ -184,6 +193,8 @@ export default function ObservationTab({ member, onClosingSaved }) {
       };
       // goal_type / goal_identified 는 report.goal 값을 미러링(조회 편의).
       // closing_result / closing_approach 는 top-level 컬럼(㉠ 1차 클로징 결과).
+      const isClosed = ["success", "fail", "hold"].includes(form.closingResult);
+      const hasDetail = form.detailApproach || form.detailReaction || form.detailOutcome;
       const payload = {
         user_id: member.id,
         ot_round: 1,
@@ -194,6 +205,31 @@ export default function ObservationTab({ member, onClosingSaved }) {
         // 보류일 때만 재접근 예정일 top-level 추가(그 외엔 미포함=미변경). report·closing_* 안 덮음.
         ...(form.closingResult === "hold"
           ? { closing_reapproach_at: form.closingReapproachAt || null }
+          : {}),
+        // 사유(실패/보류) · 3박자(클로징된 경우) — round2와 동일 규칙. 미시도(none)면 3개 다 미포함=미변경.
+        ...((form.closingResult === "fail" || form.closingResult === "hold")
+          ? { closing_reason: form.closingReason || null }
+          : {}),
+        ...(isClosed
+          ? {
+              closing_detail: hasDetail
+                ? {
+                    approach: form.detailApproach || null,
+                    reaction: form.detailReaction || null,
+                    outcome: form.detailOutcome || null,
+                  }
+                : null,
+            }
+          : {}),
+        // D-3 재료 — 클로징 시점 회원 프로파일 스냅샷(클로징된 경우만).
+        ...(isClosed
+          ? {
+              closing_profile: {
+                age: member.age ?? null, job: member.job ?? null, residence: member.residence ?? null,
+                mbti: member.mbti ?? null, pain: member.pain ?? null, goal: member.goal ?? null,
+                goal_type: form.goal.type ?? null,
+              },
+            }
           : {}),
         report,
       };
@@ -533,6 +569,34 @@ export default function ObservationTab({ member, onClosingSaved }) {
               ))}
             </select>
           </div>
+
+          {/* 실패/보류일 때만 사유 카테고리 (약점 진단 · 집계) — round2 미러 */}
+          {(form.closingResult === "fail" || form.closingResult === "hold") && (
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-[11px] font-medium text-muted">사유 <span className="text-muted">(약점 진단 · 집계)</span></label>
+              <select value={form.closingReason} onChange={(e) => setTop("closingReason", e.target.value)} className={inputCls}>
+                <option value="">선택 안 함</option>
+                {CLOSING_REASON_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* 성공/실패/보류일 때 클로징 케이스 3박자 (선택 · AI 리딩 재료) — round2 미러 */}
+          {["success", "fail", "hold"].includes(form.closingResult) && (
+            <div className="sm:col-span-2 space-y-2">
+              <p className="text-[11px] text-muted">클로징 케이스 (선택 · 나중 AI 리딩 재료)</p>
+              {[
+                { key: "detailApproach", label: "① 어떻게 접근했나", ph: "어떤 방향·멘트로 제안했나" },
+                { key: "detailReaction", label: "② 회원 반응·멘트", ph: "회원이 뭐라 했나(가능하면 그대로) — 마음 연/거절한 말" },
+                { key: "detailOutcome", label: "③ 그래서 어떻게 됐나", ph: "결과·내 대응 — 예: 등록(12주) / 물러섬·재접근일 안 잡음" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <label className="mb-1 block text-[11px] font-medium text-muted">{f.label}</label>
+                  <textarea value={form[f.key]} onChange={(e) => setTop(f.key, e.target.value)} rows={2} placeholder={f.ph} className={inputCls + " resize-none"} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* 보류('hold')일 때만 재접근 예정일 (B안: 프리셋 + 수동) */}
           {form.closingResult === "hold" && (
