@@ -12,8 +12,9 @@ import { supabase } from "@/lib/supabaseClient";
 import PtWorkoutTab from "@/components/views/PtWorkoutTab";
 import PtReRegTab from "@/components/views/PtReRegTab";
 import PtInbodyTab from "@/components/views/PtInbodyTab";
+import RefundMember from "@/components/views/RefundMember";
 
-export default function PTView({ member, tab, onGoList, onMemberPatch }) {
+export default function PTView({ member, tab, onGoList, onMemberPatch, onMembersChanged }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
   const [logs, setLogs] = useState([]); // daily_workout_log (수업로그)
   const [loading, setLoading] = useState(false);
@@ -73,6 +74,13 @@ export default function PTView({ member, tab, onGoList, onMemberPatch }) {
           />
         )}
       </div>
+
+      {/* P3b — 환불 처리 · 회원 삭제(소프트). PT 뷰에서만 마운트 = 'PT 회원만' 자동 충족. */}
+      <RefundMember
+        member={member}
+        contracts={contracts}
+        onDone={() => { onMembersChanged?.(); onGoList?.(); }}
+      />
     </div>
   );
 }
