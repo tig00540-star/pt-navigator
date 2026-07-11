@@ -49,8 +49,16 @@ export default function RegBriefView({ brief, highlightReason }) {
                     <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${on ? "bg-primary-soft text-primary-strong" : "bg-card text-sub"}`}>{labelOf(REG_REASON_OPTS, o.reason)}</span>
                     {o.customer_says && <span className="text-[12px] text-muted">&ldquo;{o.customer_says}&rdquo;</span>}
                   </div>
-                  <div className="text-sub">{o.reframe_direction}</div>
-                  {o.example && <div className="mt-1 text-[12px] italic text-muted">예) {o.example}</div>}
+                  <div className="text-sub"><span className="font-semibold text-sub">공감 · </span>{o.reframe_direction}</div>
+                  {o.sales_move && (
+                    <div className="mt-1 text-[13px] text-sub"><span className="font-semibold text-sub">세일즈 · </span>{o.sales_move}</div>
+                  )}
+                  {o.example && (
+                    <div className="mt-1 rounded-md bg-primary-soft px-2 py-1 text-[12px] leading-relaxed text-ink">
+                      <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>
+                      &ldquo;{o.example}&rdquo;
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -62,7 +70,7 @@ export default function RegBriefView({ brief, highlightReason }) {
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary-strong">클로징 4단계</div>
           <dl className="space-y-1.5">
             {CLOSE.map(([k, lbl]) => (c[k] ? (
-              <div key={k}><dt className="text-[11px] font-medium text-muted">{lbl}</dt><dd className="text-sub">{c[k]}</dd></div>
+              <div key={k}><dt className="text-[11px] font-medium text-muted">{lbl}</dt><dd className="text-sub">{k === "hold" ? c[k] : <>&ldquo;{c[k]}&rdquo;</>}</dd></div>
             ) : null))}
           </dl>
         </div>

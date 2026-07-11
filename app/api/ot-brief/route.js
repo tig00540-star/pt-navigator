@@ -330,12 +330,16 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
    (회원이 어떤 이유를 대든 트레이너가 방향을 갖고 있도록). 각 이유:
    · money(금전 부담) · time(시간 부족) · schedule(스케줄 안 맞음)
    · sessions_left(수업 남아 나중에) · low_effect(효과 체감 부족) · personal(개인 사정)
-   각 항목: customer_says(그 이유의 회원이 흔히 하는 말) / reframe_direction(공감으로 걱정 푸는 방향, 반박 아님) / example(예시 한 문장).
+   각 항목: customer_says(그 이유의 회원이 흔히 하는 말) / reframe_direction(공감으로 걱정 푸는 방향, 반박 아님) /
+   sales_move(공감 뒤 바로 잇는 세일즈 무브 — 무엇을 보여주고 어떤 제안으로 다시 재등록으로 끌어오나, 물러서지 말 것) /
+   example(그 자리에서 회원에게 바로 말할 '실제 대사' 한 줄, 발판·흐림 아님 · 완성 문장 "○○님, …").
    ⚠️ "지금 안 하시면 손해예요" 류 압박·공포 대본 금지. 사실 기반 + 회원 이익 방향으로만.
    특히 low_effect(효과 체감 부족)는 방어가 아니라 '왜 아직인지 + 앞으로 어떻게'의 정직한 방향으로.
 4) closing(재등록 클로징 4단계): 진입→그림→착지→침묵.
 
 [클로징 4단계 골격]
+  ★enter·paint·land의 값은 트레이너가 회원에게 그대로 말할 '실제 대사'로 써라(설명·지시문 아님,
+   "○○님, …" 1인칭). 확신 있게, 흐릿한 예시로 물러서지 말 것. hold만 트레이너용 지시(멈춤)다.
   enter(진입): "재등록" 단어로 시작 금지. 그동안 회원 몸/생활 변화를 짚고 "그래서 무슨 의미인지(So what?)"로 연다.
   paint(그림): 추상 설명 금지. 회원 세계(직업·일상·목표)의 '일상 비유 하나'로 그린다.
   land(착지): 재등록 제안을 '왜 필요한가 + 왜 지금인가'로. '재등록하세요'(판매 동사) 금지 → 가정 종결("다음 달도 이렇게 이어가시죠"). 긴급성은 '사실 기반 손실'만.
@@ -364,7 +368,7 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
   "data_gaps": ["..."],
   "briefing": { "proven_in_pt": "...", "risk_if_stop": "...", "next_roadmap": "...", "closing_logic": "..." },
   "arc": [ { "when": "도입|중반|후반|마무리", "intent": "...", "direction": "...", "example": "...", "tone": "..." } ],
-  "objections": [ { "reason": "money|time|schedule|sessions_left|low_effect|personal", "customer_says": "...", "reframe_direction": "공감으로 걱정 푸는 방향(반박 아님)", "example": "..." } ],
+  "objections": [ { "reason": "money|time|schedule|sessions_left|low_effect|personal", "customer_says": "...", "reframe_direction": "공감으로 걱정 푸는 방향(반박 아님)", "sales_move": "...", "example": "..." } ],
   "closing": { "enter": "진입(재등록 단어 금지, So what?)", "paint": "일상 비유 하나", "land": "착지(왜+지금, 가정 종결)", "hold": "여기서 멈추고 회원 답을 기다리세요" }
 }`;
 }
