@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor, activeContract } from "@/lib/memberStatus";
+import { personName } from "@/lib/format";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
@@ -114,7 +115,7 @@ export default function ScheduleBoard({ members = [] }) {
   const handleVoiceResult = (raw, summaryText) => { setNote(summaryText || ""); setRawText(raw || ""); setUsedVoice(true); };
 
   const memberName = (id) => members.find((m) => m.id === id)?.name ?? "회원";
-  const trainerName = (id) => trainers.find((t) => t.id === id)?.name ?? "";
+  const trainerName = (id) => personName(trainers.find((t) => t.id === id)?.name ?? "");
   // 트레이너 색 — trainers 배열 순서 인덱스 %6(세션 내 안정 · uuid 해시 아님). 못 찾으면 [0].
   const trainerTone = (id) => { const i = trainers.findIndex((t) => t.id === id); return i >= 0 ? TRAINER_PALETTE[i % 6] : TRAINER_PALETTE[0]; };
   // 회원 상태(ot|pt|inactive) — 카드 배지/색점용.
@@ -233,7 +234,7 @@ export default function ScheduleBoard({ members = [] }) {
         {isOwnerView && (
           <select value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)} className="ml-auto rounded-lg border border-line bg-elevate px-2 py-1.5 text-xs text-sub outline-none focus:border-primary">
             <option value="all">전체 트레이너</option>
-            {trainers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {trainers.map((t) => <option key={t.id} value={t.id}>{personName(t.name)}</option>)}
           </select>
         )}
       </div>
@@ -244,7 +245,7 @@ export default function ScheduleBoard({ members = [] }) {
           {trainers.map((t) => (
             <span key={t.id} className="inline-flex items-center gap-1 text-[11px] text-sub">
               <span className={`inline-block h-2 w-2 rounded-full ${trainerTone(t.id).dot}`} />
-              {t.name}
+              {personName(t.name)}
             </span>
           ))}
         </div>

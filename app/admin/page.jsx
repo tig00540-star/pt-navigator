@@ -23,7 +23,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats, revenueByTrainer, closingStatsByTrainer, sessionPriceSumByTrainer, resolveScheme, payForScheme, sessionCountByTrainer } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
-import { won } from "@/lib/format";
+import { won, personName } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import PayrollConfirm from "@/components/PayrollConfirm";
@@ -249,7 +249,7 @@ export default function AdminDashboard() {
   }, [rows]);
   const revByTrainer = useMemo(() => revenueByTrainer(contracts, ym), [contracts, ym]);
   const closingByTrainer = useMemo(() => closingStatsByTrainer(otRows, memberTrainer), [otRows, memberTrainer]);
-  const trainerName = (id) => trainers.find((t) => t.id === id)?.name ?? (id === "unknown" ? "미배정" : String(id).slice(0, 8));
+  const trainerName = (id) => personName(trainers.find((t) => t.id === id)?.name) || (id === "unknown" ? "미배정" : String(id).slice(0, 8));
   const trainerPerf = useMemo(() => {
     const revMap = new Map(revByTrainer.map((r) => [r.trainer_id, r]));
     const closeMap = new Map(closingByTrainer.map((c) => [c.trainer_id, c]));
