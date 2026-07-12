@@ -27,6 +27,7 @@ import { won } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import PayrollConfirm from "@/components/PayrollConfirm";
+import AdminAnnouncements from "@/components/AdminAnnouncements";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -336,6 +337,11 @@ export default function AdminDashboard() {
         {/* ===== 트레이너 초대 온보딩 (A) ===== */}
         <section className="mb-8">
           <AddTrainerForm />
+        </section>
+
+        {/* ===== 공지 (기능1) — 원장 작성·목록 ===== */}
+        <section className="mb-8">
+          <AdminAnnouncements trainers={trainers} />
         </section>
 
         {/* ===== 실데이터 요약 (④) ===== */}
