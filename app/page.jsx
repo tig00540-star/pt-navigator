@@ -21,6 +21,7 @@ import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import ScheduleBoard from "@/components/views/ScheduleBoard";
 import MyStats from "@/components/views/MyStats";
+import SettingsView from "@/components/views/SettingsView";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import TodoTab from "@/components/views/TodoTab";
 import AnnouncementGate from "@/components/AnnouncementGate";
@@ -85,6 +86,7 @@ const TABS = [
   { id: 9,  label: "오늘",     always: true },              // 스케줄 보드 + 오늘 할일 스택
   { id: 0,  label: "회원",     always: true },
   { id: 8,  label: "내 실적",  always: true },
+  { id: 7,  label: "설정",     always: true },              // 트레이너 설정 모음(목표·프로필·라이브러리·가격·계정)
   { id: 1,  label: "1차 지원", ot: true, group: "ot" },      // FirstOTTab
   { id: 5,  label: "관찰 기록", ot: true, group: "ot" },      // ObservationTab (옛 '1차 피드백')
   { id: 2,  label: "2차 브리핑", ot: true, group: "ot" },     // SecondOTTab
@@ -782,6 +784,8 @@ export default function OTNavigatorDashboard() {
               onSelect={(id, toTab) => { setSelectedId(id); if (toTab === 9) scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); else setTab(toTab ?? 1); }}
             />
           </div>
+        ) : tab === 7 ? (
+          <div className="tab-anim"><SettingsView /></div>
         ) : tab === 8 ? (
           <div className="tab-anim"><MyStats members={members} /></div>
         ) : (

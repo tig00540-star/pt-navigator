@@ -12,15 +12,10 @@ import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth } from "@/lib/memberStatus";
-import PtPricingSettings from "@/components/views/PtPricingSettings";
-import PasswordChange from "@/components/views/PasswordChange";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
-import TrainerGoalSetter from "@/components/views/TrainerGoalSetter";
-import TrainerProfileSettings from "@/components/views/TrainerProfileSettings";
-import TrainerLibrary from "@/components/views/TrainerLibrary";
 
 export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
@@ -235,25 +230,6 @@ export default function MyStats({ members = [] }) {
       <p className="text-[10px] text-muted">※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 원장이 확정한 금액 기준입니다.</p>
         </>
       )}
-
-      {/* 이달 목표매출 설정 — trainer_goal upsert, 저장 시 goals 반영. */}
-      <TrainerGoalSetter uid={uid} ym={ym} target={target} revTotal={rev.total}
-        onSaved={(row) => setGoals((p) => {
-          const rest = p.filter((g) => !(g.trainer_id === row.trainer_id && g.ym === row.ym));
-          return [...rest, row];
-        })} />
-
-      {/* 내 프로필 — 자기완결, 통계와 독립. AI 개인화 재료(후속). */}
-      <TrainerProfileSettings />
-
-      {/* 내 라이브러리 — 카테고리별 참고 영상·링크 CRUD(자기완결). */}
-      <TrainerLibrary />
-
-      {/* 내 PT 가격 설정 — 자체 loading, 통계와 독립. 항상 렌더. */}
-      <PtPricingSettings />
-
-      {/* 계정 · 비밀번호 변경 — 자기완결. */}
-      <PasswordChange />
 
       {/* 월간 리포트 오버레이 (4-a) — 읽기 전용 재집계, MyStats 데이터 그대로 전달. */}
       {reportOpen && (
