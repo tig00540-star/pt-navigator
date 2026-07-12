@@ -21,11 +21,12 @@ import {
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats, revenueByTrainer, closingStatsByTrainer, sessionPriceSumByTrainer, payForMonth } from "@/lib/memberStatus";
+import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats, revenueByTrainer, closingStatsByTrainer, sessionPriceSumByTrainer, resolveScheme, payForScheme, sessionCountByTrainer } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import { won } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
+import PayrollConfirm from "@/components/PayrollConfirm";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -181,7 +182,8 @@ export default function AdminDashboard() {
   const [logs, setLogs] = useState([]);
   const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
   const [trainers, setTrainers] = useState([]);
-  const [policy, setPolicy] = useState([]);
+  const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
+  const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
 
   useEffect(() => {
     (async () => {
@@ -201,13 +203,14 @@ export default function AdminDashboard() {
       setRole(myRole);
       if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
       // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
-      const [u, o, c, l, tr, pp] = await Promise.all([
+      const [u, o, c, l, tr, ps, pr] = await Promise.all([
         supabase.from("user_table").select("*"),
         supabase.from("ot_log").select("*"),
         supabase.from("session_log").select("*"),
         supabase.from("daily_workout_log").select("*"),
         supabase.from("trainer").select("id, name"),
-        supabase.from("pay_policy").select("*"),
+        supabase.from("pay_scheme").select("*"),
+        supabase.from("payroll_run").select("*"),
       ]);
       const firstErr = u.error || o.error || c.error || l.error;
       if (firstErr) {
@@ -219,7 +222,8 @@ export default function AdminDashboard() {
       setContracts(c.data || []);
       setLogs(l.data || []);
       setTrainers(tr.data || []);
-      setPolicy(pp.data || []);
+      setSchemes(ps.data || []);
+      setRuns(pr.data || []);
     })();
   }, []);
 
@@ -258,6 +262,8 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainers, revByTrainer, closingByTrainer]);
   const sessPriceSum = useMemo(() => sessionPriceSumByTrainer(logs, contracts, ym), [logs, contracts, ym]);
+  const sessCount = useMemo(() => sessionCountByTrainer(logs, contracts, ym), [logs, contracts, ym]);
+  const runMap = useMemo(() => { const m = new Map(); for (const r of runs) if (r.ym === ym) m.set(r.trainer_id, r); return m; }, [runs, ym]);
 
   if (role === null) {
     return (
@@ -372,7 +378,7 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             {trainerPerf.length === 0 ? (
               <div className="rounded-2xl border border-line bg-card p-5 text-xs text-muted">트레이너 데이터가 없습니다.</div>
-            ) : trainerPerf.map((t) => { const pay = payForMonth(t.rev.total, sessPriceSum.get(t.id) || 0, policy); return (
+            ) : trainerPerf.map((t) => { const pay = payForScheme(resolveScheme(schemes, t.id), { monthRevenue: t.rev.total, sessionCount: sessCount.get(t.id) || 0, sessionPriceSum: sessPriceSum.get(t.id) || 0 }); const run = runMap.get(t.id) || null; return (
               <div key={t.id} className="rounded-2xl border border-line bg-card p-4 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -405,16 +411,7 @@ export default function AdminDashboard() {
                     <div className="text-[11px] text-muted">{t.rev.cntRe}건</div>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary-soft p-3">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">예상 급여</div>
-                    <div className="mt-0.5 text-[10px] text-muted">
-                      구간 {pay.band ? pay.band.base_pct + "%" : "—"} · 이달 수업료 {won(pay.base)}
-                      {pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}
-                    </div>
-                  </div>
-                  <div className="font-mono text-xl font-bold text-primary-strong">{won(pay.total)}</div>
-                </div>
+                <PayrollConfirm trainerId={t.id} ym={ym} pay={pay} run={run} onSaved={(row) => setRuns((p) => [...p.filter((r) => r.id !== row.id), row])} />
               </div>
             ); })}
           </div>
