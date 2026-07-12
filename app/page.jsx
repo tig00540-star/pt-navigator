@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
-  Activity,
   Bell,
   CalendarDays,
   ChevronRight,
@@ -668,9 +668,7 @@ export default function OTNavigatorDashboard() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 shadow-lg shadow-lime-500/30">
-                <Activity className="h-5 w-5 text-zinc-950" strokeWidth={2.5} />
-              </div>
+              <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 rounded-lg" />
               <div className="leading-tight">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-strong">
                   OT Navigator
