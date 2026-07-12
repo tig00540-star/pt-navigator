@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { won } from "@/lib/format";
+import { won, hasVal } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import ObservationTab from "@/components/tabs/ObservationTab";
 import SecondOTTab from "@/components/tabs/SecondOTTab";
@@ -494,6 +494,7 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
         <div className="grid gap-3 sm:grid-cols-2">
           {list.map((m) => {
             const on = m.id === selectedId;
+            const goalSet = hasVal(m.goal) && m.goal !== "미설정";
             return (
               <button
                 key={m.id}
@@ -511,23 +512,27 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-ink">{m.name}</span>
                     <MemberBadge view={viewFor(m)} />
-                    <span className="font-mono text-xs text-muted">{m.age}세</span>
+                    {hasVal(m.age) && <span className="font-mono text-xs text-muted">{m.age}세</span>}
                     {on && (
                       <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">
                         선택됨
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 text-xs text-sub">{m.job}</div>
+                  {hasVal(m.job) && <div className="mt-0.5 text-xs text-sub">{m.job}</div>}
                   <div className="mt-2 flex flex-wrap gap-1">
-                    <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
-                      {m.mbti}
-                    </span>
-                    <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
-                      {m.pain}
-                    </span>
-                    <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
-                      목표 {m.goal}
+                    {hasVal(m.mbti) && (
+                      <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
+                        {m.mbti}
+                      </span>
+                    )}
+                    {hasVal(m.pain) && (
+                      <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
+                        {m.pain}
+                      </span>
+                    )}
+                    <span className={`rounded bg-elevate px-1.5 py-0.5 text-[10px] ${goalSet ? "text-sub" : "text-muted"}`}>
+                      {goalSet ? `목표 ${m.goal}` : "목표 미설정"}
                     </span>
                   </div>
                 </div>
