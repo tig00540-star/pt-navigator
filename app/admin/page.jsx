@@ -23,13 +23,13 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats, revenueByTrainer, closingStatsByTrainer, sessionPriceSumByTrainer, payForMonth } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
+import { won } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
    ========================================================================= */
 
-const won = (n) => "₩" + n.toLocaleString("ko-KR");
 // rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
 const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
