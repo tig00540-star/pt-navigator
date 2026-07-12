@@ -9,6 +9,8 @@ import ReapproachToday from "@/components/views/ReapproachToday";
 import RegisterDueToday from "@/components/views/RegisterDueToday";
 import RegisterReapproachToday from "@/components/views/RegisterReapproachToday";
 import TodoManual from "@/components/views/TodoManual";
+import UnclosedClosingToday from "@/components/views/UnclosedClosingToday";
+import PastDueAppointments from "@/components/views/PastDueAppointments";
 
 export default function TodoTab({ members, onSelect }) {
   return (
@@ -22,6 +24,10 @@ export default function TodoTab({ members, onSelect }) {
       <ReapproachToday members={members} onSelect={(id) => onSelect(id, 1)} />
       <RegisterDueToday members={members} onSelect={(id) => onSelect(id, 11)} />
       <RegisterReapproachToday members={members} onSelect={(id) => onSelect(id, 11)} />
+
+      {/* 자동 4~5 — 신규 파생 섹션(미확정 클로징=2차 OT, 미처리 예약=스케줄) */}
+      <UnclosedClosingToday members={members} onSelect={(id) => onSelect(id, 2)} />
+      <PastDueAppointments members={members} onSelect={(id) => onSelect(id, 9)} />
 
       {/* 수동 메모 — 자동 아래. */}
       <TodoManual />
