@@ -8,6 +8,7 @@
 import ReapproachToday from "@/components/views/ReapproachToday";
 import RegisterDueToday from "@/components/views/RegisterDueToday";
 import RegisterReapproachToday from "@/components/views/RegisterReapproachToday";
+import TodoManual from "@/components/views/TodoManual";
 
 export default function TodoTab({ members, onSelect }) {
   return (
@@ -21,6 +22,9 @@ export default function TodoTab({ members, onSelect }) {
       <ReapproachToday members={members} onSelect={(id) => onSelect(id, 1)} />
       <RegisterDueToday members={members} onSelect={(id) => onSelect(id, 11)} />
       <RegisterReapproachToday members={members} onSelect={(id) => onSelect(id, 11)} />
+
+      {/* 수동 메모 — 자동 아래. */}
+      <TodoManual />
     </div>
   );
 }
