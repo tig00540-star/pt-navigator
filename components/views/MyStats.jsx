@@ -95,17 +95,17 @@ export default function MyStats({ members = [] }) {
         </div>
         {confirmed ? (
           <>
-            <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
+            <div className="mt-2 tabular-nums text-4xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
             <div className="mt-1 text-xs text-muted">원장 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동계산 ${won(pay.computed)}` : ""}</div>
           </>
         ) : pay.computed != null ? (
           <>
-            <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
+            <div className="mt-2 tabular-nums text-4xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
             <div className="mt-1 text-xs text-muted">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
           </>
         ) : (
           <>
-            <div className="mt-2 font-mono text-2xl font-extrabold text-muted">원장 확정 대기</div>
+            <div className="mt-2 tabular-nums text-2xl font-extrabold text-muted">원장 확정 대기</div>
             <div className="mt-1 text-xs text-muted">자동계산 없음(수동 급여)</div>
           </>
         )}
@@ -115,7 +115,7 @@ export default function MyStats({ members = [] }) {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
           <div className="text-[11px] uppercase tracking-wider text-muted">이달 매출(내 등록)</div>
-          <div className="mt-1 font-mono text-2xl font-bold text-ink">{won(rev.total)}</div>
+          <div className="mt-1 tabular-nums text-2xl font-bold text-ink">{won(rev.total)}</div>
           <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-sub">
             <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
             <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
@@ -128,7 +128,7 @@ export default function MyStats({ members = [] }) {
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
             <Target className="h-3.5 w-3.5" /> 클로징률
           </div>
-          <div className="mt-1 font-mono text-2xl font-bold text-ink">{rate}</div>
+          <div className="mt-1 tabular-nums text-2xl font-bold text-ink">{rate}</div>
           <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공</div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export default function MyStats({ members = [] }) {
           <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
             <Dumbbell className="h-3.5 w-3.5" /> 이번달 수업
           </span>
-          <span className="font-mono text-lg font-bold text-ink">{totalSessions}회</span>
+          <span className="tabular-nums text-lg font-bold text-ink">{totalSessions}회</span>
         </summary>
         {sessionRows.length === 0 ? (
           <p className="mt-3 text-sm text-muted">이번달 수업 기록이 없어요.</p>
@@ -148,7 +148,7 @@ export default function MyStats({ members = [] }) {
             {sessionRows.map((r) => (
               <li key={r.user_id} className="flex items-center justify-between rounded-lg border border-line bg-elevate px-3 py-2 text-sm">
                 <span className="text-ink">{nameById.get(r.user_id) || "(알 수 없음)"}</span>
-                <span className="font-mono font-semibold text-sub">{r.count}회</span>
+                <span className="tabular-nums font-semibold text-sub">{r.count}회</span>
               </li>
             ))}
           </ul>
@@ -161,7 +161,7 @@ export default function MyStats({ members = [] }) {
           <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
             <Wallet className="h-3.5 w-3.5" /> 매출 내역
           </span>
-          <span className="font-mono text-lg font-bold text-ink">{won(rev.total)}</span>
+          <span className="tabular-nums text-lg font-bold text-ink">{won(rev.total)}</span>
         </summary>
         {revRows.length === 0 && refundRows.length === 0 ? (
           <p className="mt-3 text-sm text-muted">이번달 매출이 없어요.</p>
@@ -176,7 +176,7 @@ export default function MyStats({ members = [] }) {
                   </span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="font-mono font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
+                  <span className="tabular-nums font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
                   <span className="text-[11px] text-muted">{new Date(c.started_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
                 </div>
               </li>
@@ -188,7 +188,7 @@ export default function MyStats({ members = [] }) {
                   <span className="ml-2 rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">환불</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="font-mono font-semibold text-rose-600">-{won(c.refund_amount)}</span>
+                  <span className="tabular-nums font-semibold text-rose-600">-{won(c.refund_amount)}</span>
                   <span className="text-[11px] text-muted">{new Date(c.refunded_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
                 </div>
               </li>
