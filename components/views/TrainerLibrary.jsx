@@ -3,7 +3,7 @@
    library_item(본인 것 · trainer_id 필터). 지금은 관리만 — 수업중 표시·회원 공유는 후속.
    account_id·trainer_id는 DB DEFAULT라 insert 시 미포함. .select() 하드닝·데모 가드·Toast. */
 import { useEffect, useState } from "react";
-import { BookMarked, Plus, Trash2, Pencil, X, ExternalLink } from "lucide-react";
+import { BookMarked, Plus, Trash2, Pencil, X, ExternalLink, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Toast from "@/components/ui/Toast";
@@ -28,6 +28,8 @@ export default function TrainerLibrary() {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [note, setNote] = useState("");
+  const [q, setQ] = useState("");
+  const [collapsed, setCollapsed] = useState({});   // category -> true면 접힘(기본 펼침)
   const { toast, showToast } = useToast();
 
   useEffect(() => {
@@ -96,11 +98,20 @@ export default function TrainerLibrary() {
     setConfirmId(null); showToast("삭제됨");
   };
 
-  // 카테고리별 그룹(빈 카테고리는 '기타'). datalist 제안용 기존 카테고리.
+  // 카테고리별 그룹(빈 카테고리는 '기타') — 검색 필터 후. datalist 제안은 전체 rows 기준.
+  const ql = q.trim().toLowerCase();
+  const filtered = ql
+    ? rows.filter((r) =>
+        (r.title || "").toLowerCase().includes(ql) ||
+        (r.note || "").toLowerCase().includes(ql) ||
+        (r.category || "").toLowerCase().includes(ql))
+    : rows;
   const groups = {};
-  for (const r of rows) { const k = r.category || "기타"; (groups[k] ||= []).push(r); }
+  for (const r of filtered) { const k = r.category || "기타"; (groups[k] ||= []).push(r); }
   const cats = Object.keys(groups);
   const existingCats = [...new Set(rows.map((r) => r.category).filter(Boolean))];
+  const isOpen = (cat) => ql !== "" || !collapsed[cat];        // 검색 중이면 강제 펼침
+  const toggleCat = (cat) => setCollapsed((p) => ({ ...p, [cat]: !p[cat] }));
 
   const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
@@ -149,41 +160,59 @@ export default function TrainerLibrary() {
         ) : rows.length === 0 ? (
           <p className="mt-2 text-sm text-muted">아직 저장한 자료가 없어요. 카테고리별로 영상·링크를 모아두면 수업 중 빠르게 꺼내 쓸 수 있어요.</p>
         ) : (
-          <div className="mt-3 space-y-4">
-            {cats.map((cat) => (
-              <div key={cat}>
-                <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">{cat}</div>
-                <ul className="space-y-2">
-                  {groups[cat].map((r) => (
-                    <li key={r.id} className="rounded-xl border border-line bg-elevate p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-semibold text-ink hover:text-primary-strong">
-                            <span className="truncate">{r.title}</span><ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
-                          </a>
-                          <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{SOURCE_LABEL[r.source] || "링크"}</span>
-                            {r.note && <span className="text-[11px] text-muted">{r.note}</span>}
-                          </div>
-                        </div>
-                        {confirmId === r.id ? (
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button onClick={() => remove(r.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
-                            <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[10px] font-medium text-sub transition hover:text-ink">취소</button>
-                          </div>
-                        ) : (
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button onClick={() => startEdit(r)} className="text-muted transition hover:text-primary-strong" aria-label="수정"><Pencil className="h-4 w-4" /></button>
-                            <button onClick={() => setConfirmId(r.id)} className="text-muted transition hover:text-rose-600" aria-label="삭제"><Trash2 className="h-4 w-4" /></button>
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+          <>
+            {/* 검색 */}
+            <div className="relative mt-3">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="제목·메모·카테고리 검색"
+                className="w-full rounded-lg border border-line bg-elevate py-2 pl-9 pr-3 text-sm text-ink placeholder-muted outline-none focus:border-primary" />
+            </div>
+            {cats.length === 0 ? (
+              <p className="mt-3 text-sm text-muted">검색 결과가 없어요.</p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                {cats.map((cat) => (
+                  <div key={cat}>
+                    <button type="button" onClick={() => toggleCat(cat)} className="flex w-full items-center gap-1.5 py-1 text-left">
+                      {isOpen(cat) ? <ChevronDown className="h-3.5 w-3.5 text-muted" /> : <ChevronRight className="h-3.5 w-3.5 text-muted" />}
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{cat}</span>
+                      <span className="rounded-full bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">{groups[cat].length}</span>
+                    </button>
+                    {isOpen(cat) && (
+                      <ul className="mt-1.5 space-y-2">
+                        {groups[cat].map((r) => (
+                          <li key={r.id} className="rounded-xl border border-line bg-elevate p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-semibold text-ink hover:text-primary-strong">
+                                  <span className="truncate">{r.title}</span><ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
+                                </a>
+                                <div className="mt-1 flex flex-wrap items-center gap-2">
+                                  <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{SOURCE_LABEL[r.source] || "링크"}</span>
+                                  {r.note && <span className="text-[11px] text-muted">{r.note}</span>}
+                                </div>
+                              </div>
+                              {confirmId === r.id ? (
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button onClick={() => remove(r.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
+                                  <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[10px] font-medium text-sub transition hover:text-ink">취소</button>
+                                </div>
+                              ) : (
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button onClick={() => startEdit(r)} className="text-muted transition hover:text-primary-strong" aria-label="수정"><Pencil className="h-4 w-4" /></button>
+                                  <button onClick={() => setConfirmId(r.id)} className="text-muted transition hover:text-rose-600" aria-label="삭제"><Trash2 className="h-4 w-4" /></button>
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </section>
       <Toast message={toast} />
