@@ -283,7 +283,7 @@ export default function ScheduleBoard({ members = [] }) {
           <div className="overflow-x-auto rounded-2xl border border-line bg-card shadow-sm">
             <div className="min-w-[720px]">
               <div className="flex border-b border-line bg-elevate">
-                <div className="w-12 shrink-0" />
+                <div className="sticky left-0 z-20 w-12 shrink-0 border-r border-line bg-elevate" />
                 {DAY_LABELS.map((d, i) => {
                   const day = addDays(weekStart, i);
                   return (
@@ -296,7 +296,7 @@ export default function ScheduleBoard({ members = [] }) {
               </div>
               {hours.map((h) => (
                 <div key={h} className="flex border-b border-line">
-                  <div className="w-12 shrink-0 px-1 py-2 text-right font-mono text-[10px] text-muted">{h}시</div>
+                  <div className="sticky left-0 z-10 w-12 shrink-0 border-r border-line bg-card px-1 py-2 text-right font-mono text-[10px] text-muted">{h}시</div>
                   {DAY_LABELS.map((_, i) => {
                     const list = apptAt(i, h);
                     return (
