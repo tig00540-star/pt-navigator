@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { Award, Dumbbell, Target, Wallet } from "lucide-react";
+import { Award, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -16,6 +16,7 @@ import PtPricingSettings from "@/components/views/PtPricingSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
+import MonthlyReport from "@/components/views/MonthlyReport";
 
 export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
@@ -24,8 +25,10 @@ export default function MyStats({ members = [] }) {
   const [schemes, setSchemes] = useState([]);
   const [runs, setRuns] = useState([]);
   const [uid, setUid] = useState(null);
+  const [email, setEmail] = useState("");        // 리포트 헤더용(personName 가드) — trainer.name 조인은 백로그
   const [loading, setLoading] = useState(true);
   const [contractNames, setContractNames] = useState(new Map());
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +52,7 @@ export default function MyStats({ members = [] }) {
       }
       if (cancelled) return;
       setUid(au?.user?.id ?? null);
+      setEmail(au?.user?.email ?? "");
       setContracts(c.data || []);
       setLogs(l.data || []);
       setOtRows(o.data || []);
@@ -88,7 +92,13 @@ export default function MyStats({ members = [] }) {
         <div className="py-10 text-center text-sm text-muted">불러오는 중…</div>
       ) : (
         <>
-      <Eyebrow icon={Award}>내 실적 · {ym}</Eyebrow>
+      <div className="flex items-center justify-between gap-2">
+        <Eyebrow icon={Award}>내 실적 · {ym}</Eyebrow>
+        <button onClick={() => setReportOpen(true)}
+          className="mb-4 flex shrink-0 items-center gap-1 rounded-lg border border-line bg-card px-3 py-1.5 text-xs font-semibold text-sub hover:text-ink">
+          <FileText className="h-3.5 w-3.5" /> 월간 리포트
+        </button>
+      </div>
 
       {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
       <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
@@ -202,6 +212,20 @@ export default function MyStats({ members = [] }) {
 
       {/* 계정 · 비밀번호 변경 — 자기완결. */}
       <PasswordChange />
+
+      {/* 월간 리포트 오버레이 (4-a) — 읽기 전용 재집계, MyStats 데이터 그대로 전달. */}
+      {reportOpen && (
+        <MonthlyReport
+          onClose={() => setReportOpen(false)}
+          data={{
+            contracts, logs, otRows, schemes, runs, uid,
+            memberIds,        // 내 회원 Set(파생) — 재집계 스코프
+            members,
+            contractNames,
+            trainerName: email, // 이메일 원천(MonthlyReport가 personName으로 @앞만 · P0-1 가드)
+          }}
+        />
+      )}
     </div>
   );
 }
