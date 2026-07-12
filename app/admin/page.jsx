@@ -25,6 +25,7 @@ import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, re
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import { won } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
+import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -417,6 +418,11 @@ export default function AdminDashboard() {
               </div>
             ); })}
           </div>
+        </section>
+
+        {/* ===== 급여 정책 설정 (페이롤 C1) — 계정 기본 스킴 편집. pay_policy 표시는 D에서 전환. ===== */}
+        <section className="mb-8">
+          <AdminPayrollSettings />
         </section>
 
         {/* ===== KPI · 방향/사유 분포 (④) ===== */}
