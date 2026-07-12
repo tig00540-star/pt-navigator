@@ -16,6 +16,7 @@ import PtPricingSettings from "@/components/views/PtPricingSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
+import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
 
 export default function MyStats({ members = [] }) {
@@ -177,9 +178,9 @@ export default function MyStats({ members = [] }) {
               <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <span className="text-ink">{displayName(c.user_id)}</span>
-                  <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold ${c.kind === "reregister" ? "bg-sky-500/10 text-sky-700" : "bg-primary-soft text-primary-strong"}`}>
+                  <Badge tone={c.kind === "reregister" ? "sky" : "primary"} className="ml-2">
                     {c.kind === "reregister" ? "재등록" : "신규"}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="tabular-nums font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
@@ -191,7 +192,7 @@ export default function MyStats({ members = [] }) {
               <li key={"rf-" + c.id} className="flex items-center justify-between gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <span className="text-ink">{displayName(c.user_id)}</span>
-                  <span className="ml-2 rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">환불</span>
+                  <Badge tone="rose" className="ml-2">환불</Badge>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="tabular-nums font-semibold text-rose-600">-{won(c.refund_amount)}</span>

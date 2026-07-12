@@ -24,6 +24,8 @@ import MyStats from "@/components/views/MyStats";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import TodoTab from "@/components/views/TodoTab";
 import AnnouncementGate from "@/components/AnnouncementGate";
+import Badge from "@/components/ui/Badge";
+import Chip from "@/components/ui/Chip";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
@@ -513,27 +515,13 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
                     <span className="text-sm font-semibold text-ink">{m.name}</span>
                     <MemberBadge view={viewFor(m)} />
                     {hasVal(m.age) && <span className="font-mono text-xs text-muted">{m.age}세</span>}
-                    {on && (
-                      <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">
-                        선택됨
-                      </span>
-                    )}
+                    {on && <Badge tone="primary">선택됨</Badge>}
                   </div>
                   {hasVal(m.job) && <div className="mt-0.5 text-xs text-sub">{m.job}</div>}
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {hasVal(m.mbti) && (
-                      <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
-                        {m.mbti}
-                      </span>
-                    )}
-                    {hasVal(m.pain) && (
-                      <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
-                        {m.pain}
-                      </span>
-                    )}
-                    <span className={`rounded bg-elevate px-1.5 py-0.5 text-[10px] ${goalSet ? "text-sub" : "text-muted"}`}>
-                      {goalSet ? `목표 ${m.goal}` : "목표 미설정"}
-                    </span>
+                    {hasVal(m.mbti) && <Chip>{m.mbti}</Chip>}
+                    {hasVal(m.pain) && <Chip>{m.pain}</Chip>}
+                    <Chip muted={!goalSet}>{goalSet ? `목표 ${m.goal}` : "목표 미설정"}</Chip>
                   </div>
                 </div>
                 <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted group-hover:text-primary-strong" />

@@ -8,6 +8,7 @@ import Card from "@/components/ui/Card";
 import SectionHeader from "@/components/ui/SectionHeader";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
+import Badge from "@/components/ui/Badge";
 import {
   revenueByTrainer, sessionCountByTrainer, sessionPriceSumByTrainer,
   sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth,
@@ -123,8 +124,8 @@ export default function MonthlyReport({ data, onClose }) {
               {revRows.map((c) => (
                 <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 py-2 text-sm">
                   <span className="min-w-0 truncate text-ink">{nameOf(c.user_id)}
-                    <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold ${c.kind === "reregister" ? "bg-sky-500/10 text-sky-700" : "bg-primary-soft text-primary-strong"}`}>
-                      {c.kind === "reregister" ? "재등록" : "신규"}</span>
+                    <Badge tone={c.kind === "reregister" ? "sky" : "primary"} className="ml-2">
+                      {c.kind === "reregister" ? "재등록" : "신규"}</Badge>
                   </span>
                   <span className="shrink-0 tabular-nums font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
                 </li>
@@ -132,7 +133,7 @@ export default function MonthlyReport({ data, onClose }) {
               {refundRows.map((c) => (
                 <li key={"rf-" + c.id} className="flex items-center justify-between gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm">
                   <span className="min-w-0 truncate text-ink">{nameOf(c.user_id)}
-                    <span className="ml-2 rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">환불</span></span>
+                    <Badge tone="rose" className="ml-2">환불</Badge></span>
                   <span className="shrink-0 tabular-nums font-semibold text-rose-600">-{won(c.refund_amount)}</span>
                 </li>
               ))}
