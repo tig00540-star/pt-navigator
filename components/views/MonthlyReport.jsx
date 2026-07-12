@@ -2,17 +2,20 @@
 /* 원장 보고용 월간 실적 리포트 — 월 셀렉터로 과거월 조회. 데이터는 MyStats에서 props로(추가 fetch X).
    4-a: 뷰 + 집계 + 앱 내 보기. 내보내기(PDF/이미지)는 4-b에서 .report-sheet/.no-print 위에 얹음. */
 import { useState, useRef } from "react";
-import { X, Award, Wallet, Target, Dumbbell, RefreshCw } from "lucide-react";
+import { X, Award, Wallet, Target, Dumbbell, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import { won, personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
 import SectionHeader from "@/components/ui/SectionHeader";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
+import Chip from "@/components/ui/Chip";
+import { labelOf, CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 import {
   revenueByTrainer, sessionCountByTrainer, sessionPriceSumByTrainer,
   sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth,
   resolveScheme, payForScheme, closingStats,
+  closingApproachStats, closingReasonStats, reregisterStats, reregisterReasonStats,
 } from "@/lib/memberStatus";
 
 // 최근 n개월 ym 리스트(KST). 컴포넌트는 now 읽어도 됨(저장소 컨벤션).
@@ -23,6 +26,30 @@ function lastMonths(n) {
     const t = new Date(Date.UTC(y0, m0 - i, 1));
     return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}`;
   });
+}
+
+// 전월 ym('YYYY-MM' → 한 달 전 'YYYY-MM'). 연도 경계·1월 안전(UTC 순수 계산, now 안 읽음).
+function prevYm(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 2, 1)); // m은 1-based → m-2 = 전월의 0-based month index
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+// 전월대비 증감 pill. up=긍정지표(매출·수업·급여는 오를수록 좋음).
+// prev===0 처리: 신규 발생(cur>0)이면 "신규", 둘 다 0이면 렌더 안 함(null).
+function Delta({ cur, prev }) {
+  if (!prev && !cur) return null;
+  if (!prev) return <span className="text-[11px] font-semibold text-emerald-600">신규</span>;
+  const pct = Math.round(((cur - prev) / prev) * 100);
+  if (pct === 0) return <span className="text-[11px] text-muted">± 0%</span>;
+  const up = pct > 0;
+  const Icon = up ? TrendingUp : TrendingDown;
+  const cls = up ? "text-emerald-600" : "text-rose-600";
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${cls}`}>
+      <Icon className="h-3 w-3" /> {Math.abs(pct)}%
+    </span>
+  );
 }
 
 // props.data = MyStats가 로드한 { contracts, logs, otRows, schemes, runs, uid, memberIds(Set), members, contractNames(Map), trainerName }
@@ -39,6 +66,12 @@ export default function MonthlyReport({ data, onClose }) {
   const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
   const scheme = resolveScheme(schemes, uid);
   const pay = payForScheme(scheme, { monthRevenue: rev.total, sessionCount, sessionPriceSum: priceSum });
+  // ── 전월 재집계(MoM) — 같은 순수함수에 pym 주입. 추가 fetch 없음. ──
+  const pym = prevYm(ym);
+  const revP = revenueByTrainer(contracts, pym).find((r) => r.trainer_id === uid) || { total: 0 };
+  const sessP = sessionCountByTrainer(logs, contracts, pym).get(uid) || 0;
+  const priceP = sessionPriceSumByTrainer(logs, contracts, pym).get(uid) || 0;
+  const payP = payForScheme(scheme, { monthRevenue: revP.total, sessionCount: sessP, sessionPriceSum: priceP });
   const myRun = runs.find((r) => r.trainer_id === uid && r.ym === ym) || null;
   const confirmed = myRun?.final_total != null;
   const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
@@ -48,6 +81,18 @@ export default function MonthlyReport({ data, onClose }) {
   const myOt = (otRows || []).filter((r) => r && memberIds.has(r.user_id));
   const closing = closingStats(myOt);
   const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
+  // 클로징 성과 상세(누적) — 성공 방향(강점)·실패/보류 사유(약점).
+  const approachRows = closingApproachStats(myOt); // [{approach, count}]
+  const reasonRows = closingReasonStats(myOt);     // [{reason, count}]
+  // 재등록 파이프라인(누적) — 내 계약만(방어 필터). 전환 퍼널 + 미등록 사유.
+  const myContracts = contracts.filter((c) => c && c.trainer_id === uid);
+  const reReg = reregisterStats(myContracts);            // {attempted, success, hold, fail, rate}
+  const regReasonRows = reregisterReasonStats(myContracts); // [{reason, count}]
+  // 다음 급여 구간까지(banded 스킴 한정 · manual이면 bands 빈 배열 → 자동 숨김). 읽기 전용 파생.
+  const bands = [...(scheme?.bands || [])].sort((a, b) => (a.min ?? 0) - (b.min ?? 0));
+  const basisVal = scheme?.band_basis === "session_count" ? sessionCount : rev.total;
+  const nextBand = bands.find((b) => (b.min ?? 0) > basisVal);
+  const toNext = nextBand ? (nextBand.min ?? 0) - basisVal : 0;
 
   const nameOf = (id) => (members.find((m) => m.id === id)?.name) || contractNames.get(id) || "(알 수 없음)";
 
@@ -90,6 +135,14 @@ export default function MonthlyReport({ data, onClose }) {
             <>
               <div className="mt-2 tabular-nums text-3xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
               <div className="mt-1 text-xs text-muted">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
+              {payP.computed != null && payP.computed > 0 && (
+                <div className="mt-1 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={pay.computed} prev={payP.computed} /></div>
+              )}
+              {nextBand && (
+                <div className="mt-1 text-[11px] text-muted">
+                  다음 급여 구간까지 {scheme.band_basis === "session_count" ? `${toNext}회` : won(toNext)}
+                </div>
+              )}
             </>
           ) : (
             <div className="mt-2 tabular-nums text-2xl font-extrabold text-muted">확정 대기(수동 급여)</div>
@@ -104,8 +157,15 @@ export default function MonthlyReport({ data, onClose }) {
               <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
               {rev.refund > 0 && <span>환불 <b className="text-rose-600">-{won(rev.refund)}</b></span>}
             </div>
+            {revP.total > 0 && (
+              <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={rev.total} prev={revP.total} /></div>
+            )}
           </StatTile>
-          <StatTile icon={Dumbbell} label="이달 수업" value={`${sessionCount}회`} />
+          <StatTile icon={Dumbbell} label="이달 수업" value={`${sessionCount}회`}>
+            {sessP > 0 && (
+              <div className="mt-2 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={sessionCount} prev={sessP} /></div>
+            )}
+          </StatTile>
           <StatTile icon={RefreshCw} label="재등록" value={`${rev.cntRe}건`}>
             <div className="mt-2 text-[11px] text-muted">재등록 매출 {won(rev.reRev)}</div>
           </StatTile>
@@ -113,6 +173,84 @@ export default function MonthlyReport({ data, onClose }) {
             <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공 · 전체 기간</div>
           </StatTile>
         </div>
+
+        {/* 클로징 성과 — ot_log 누적(월 스코프 불가). 성공/보류/실패 + 강점 방향 + 놓친 이유 */}
+        <Card tone="zinc">
+          <SectionHeader tone="zinc" icon={Target} title="클로징 성과" hint="전체 기간 누적" />
+          {closing.attempted === 0 ? (
+            <EmptyState className="py-1 text-sm">아직 클로징 시도 기록이 없어요.</EmptyState>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wider text-muted">성공</div>
+                  <div className="tabular-nums text-lg font-bold text-primary-strong">{closing.success}</div>
+                </div>
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wider text-muted">보류</div>
+                  <div className="tabular-nums text-lg font-bold text-amber-700">{closing.hold}</div>
+                </div>
+                <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wider text-muted">실패</div>
+                  <div className="tabular-nums text-lg font-bold text-rose-700">{closing.fail}</div>
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 · 성공률 {rate}</div>
+              {approachRows.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-[11px] font-semibold text-sub">통한 방향</div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {approachRows.map((a) => (
+                      <Chip key={a.approach}>{labelOf(CLOSING_APPROACH_OPTS, a.approach)} <b className="ml-0.5 text-ink">{a.count}</b></Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {reasonRows.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-[11px] font-semibold text-sub">놓친 이유</div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {reasonRows.map((x) => (
+                      <Chip key={x.reason} muted>{labelOf(CLOSING_REASON_OPTS, x.reason)} <b className="ml-0.5 text-sub">{x.count}</b></Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </Card>
+
+        {/* 재등록 파이프라인 — 이달 결과(월) + 누적 전환 퍼널(reg_result, 월 스코프 불가) */}
+        <Card tone="zinc">
+          <SectionHeader tone="zinc" icon={RefreshCw} title="재등록 파이프라인" />
+          <div className="flex items-center justify-between rounded-lg border border-line bg-card px-3 py-2 text-sm">
+            <span className="text-sub">이달 재등록</span>
+            <span className="tabular-nums font-semibold text-ink">{rev.cntRe}건 · <span className="text-sky-700">{won(rev.reRev)}</span></span>
+          </div>
+          {reReg.attempted === 0 ? (
+            <EmptyState className="mt-2 py-1 text-sm">아직 재등록 시도 기록이 없어요.</EmptyState>
+          ) : (
+            <>
+              <div className="mt-2 flex items-center justify-between text-[11px]">
+                <span className="text-muted">누적 전환</span>
+                <span className="tabular-nums text-sub">
+                  성공 <b className="text-primary-strong">{reReg.success}</b> · 보류 <b className="text-amber-700">{reReg.hold}</b> · 미등록 <b className="text-rose-700">{reReg.fail}</b>
+                  {reReg.rate != null && <> · 전환율 <b className="text-ink">{Math.round(reReg.rate * 100)}%</b></>}
+                </span>
+              </div>
+              {regReasonRows.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-[11px] font-semibold text-sub">미등록 사유</div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {regReasonRows.map((x) => (
+                      <Chip key={x.reason} muted>{labelOf(REG_REASON_OPTS, x.reason)} <b className="ml-0.5 text-sub">{x.count}</b></Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </Card>
 
         {/* 매출 내역 */}
         <Card tone="zinc">
