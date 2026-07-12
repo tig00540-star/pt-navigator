@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   Activity,
   Bell,
+  CalendarDays,
   ChevronRight,
   Search,
   ShieldCheck,
@@ -73,19 +74,27 @@ function mapMemberRow(r) {
   };
 }
 
-/* ---- 탭 메타 ---- */
+/* ---- 탭 메타 ----
+   글로벌 3탭(오늘·회원·내실적)은 왼쪽 고정·위치 불변(근육기억).
+   회원 워크플로우 탭은 view(ot/pt)에 따라 그 오른쪽에 묶여 붙는다(group=색·구분선).
+   id는 기존 값 재사용: 9=오늘(옛 스케줄, 할일 흡수)·13(옛 할일 단독)은 폐지. */
 const TABS = [
-  { id: 9, label: "스케줄", always: true },
-  { id: 13, label: "할일", always: true },
-  { id: 0, label: "회원", always: true },
-  { id: 10, label: "운동일지", pt: true },
-  { id: 11, label: "재등록", pt: true },
-  { id: 12, label: "인바디", pt: true },
-  { id: 1, label: "1차 OT", ot: true },
-  { id: 5, label: "1차 피드백", ot: true },
-  { id: 2, label: "2차 OT", ot: true },
-  { id: 8, label: "내 실적", always: true },
+  { id: 9,  label: "오늘",     always: true },              // 스케줄 보드 + 오늘 할일 스택
+  { id: 0,  label: "회원",     always: true },
+  { id: 8,  label: "내 실적",  always: true },
+  { id: 1,  label: "1차 지원", ot: true, group: "ot" },      // FirstOTTab
+  { id: 5,  label: "관찰 기록", ot: true, group: "ot" },      // ObservationTab (옛 '1차 피드백')
+  { id: 2,  label: "2차 브리핑", ot: true, group: "ot" },     // SecondOTTab
+  { id: 10, label: "운동일지", pt: true, group: "pt" },
+  { id: 12, label: "인바디",   pt: true, group: "pt" },
+  { id: 11, label: "재등록",   pt: true, group: "pt" },
 ];
+
+/* 회원 워크플로우 탭 그룹 색(purge-safe · 정적) — OT=amber, PT=sky */
+const GROUP_TAB = {
+  ot: { active: "text-amber-600", idle: "text-amber-700/60 hover:text-amber-700", bar: "bg-amber-500" },
+  pt: { active: "text-sky-600",   idle: "text-sky-700/60 hover:text-sky-700",     bar: "bg-sky-500" },
+};
 
 /* =========================================================================
    PURGE-SAFE COLOR TOKENS
@@ -730,20 +739,35 @@ export default function OTNavigatorDashboard() {
             </div>
           </div>
 
-          {/* 탭 네비게이션 — 상시(스케줄·회원) + OT 뷰에서만 OT 탭 노출(§7) */}
-          <nav className="-mb-px flex gap-1 overflow-x-auto whitespace-nowrap">
-            {TABS.filter((t) => t.always || (t.ot && view === "ot") || (t.pt && view === "pt")).map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
-                  tab === t.id ? "text-primary-strong" : "text-muted hover:text-ink"
-                }`}
-              >
-                {t.label}
-                {tab === t.id && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />}
-              </button>
-            ))}
+          {/* 탭 네비 — 글로벌 3탭(초록·위치고정) ‖ 회원 워크플로우 그룹(OT amber / PT sky).
+             글로벌↔회원그룹 경계에 세로 구분선 1개. */}
+          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
+            {TABS
+              .filter((t) => t.always || (t.ot && view === "ot") || (t.pt && view === "pt"))
+              .map((t, i, arr) => {
+                const active = tab === t.id;
+                const g = t.group ? GROUP_TAB[t.group] : null;
+                // 앞 탭은 글로벌인데 이 탭이 첫 회원그룹 탭이면 그 앞에 구분선.
+                const showSep = !!t.group && (i === 0 || !arr[i - 1].group);
+                return (
+                  <div key={t.id} className="flex items-stretch">
+                    {showSep && <span aria-hidden className="mx-1.5 my-2 w-px shrink-0 self-stretch bg-line" />}
+                    <button
+                      onClick={() => setTab(t.id)}
+                      className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
+                        active
+                          ? (g ? g.active : "text-primary-strong")
+                          : (g ? g.idle : "text-muted hover:text-ink")
+                      }`}
+                    >
+                      {t.label}
+                      {active && (
+                        <span className={`absolute inset-x-2 bottom-0 h-0.5 rounded-full ${g ? g.bar : "bg-primary"}`} />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
           </nav>
         </div>
       </header>
@@ -758,9 +782,13 @@ export default function OTNavigatorDashboard() {
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {tab === 9 ? (
-          <div className="tab-anim"><ScheduleBoard members={members} /></div>
-        ) : tab === 13 ? (
-          <div className="tab-anim">
+          <div className="tab-anim space-y-8">
+            {/* 스케줄 보드는 자체 최상단 제목이 없어 Eyebrow로 섹션 헤더를 얹음(TodoTab은 자체 '오늘 할일' 제목 보유). */}
+            <div>
+              <Eyebrow icon={CalendarDays}>오늘 스케줄</Eyebrow>
+              <ScheduleBoard members={members} />
+            </div>
+            <div className="border-t border-line" />
             <TodoTab
               members={members}
               uid={myUid}
