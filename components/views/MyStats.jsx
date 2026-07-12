@@ -26,7 +26,8 @@ export default function MyStats({ members = [] }) {
   const [schemes, setSchemes] = useState([]);
   const [runs, setRuns] = useState([]);
   const [uid, setUid] = useState(null);
-  const [email, setEmail] = useState("");        // 리포트 헤더용(personName 가드) — trainer.name 조인은 백로그
+  const [email, setEmail] = useState("");        // 리포트 헤더 폴백(실명 없을 때) · personName 가드
+  const [trainerName, setTrainerName] = useState("");  // trainer.name(실명) · 없으면 email 폴백
   const [loading, setLoading] = useState(true);
   const [contractNames, setContractNames] = useState(new Map());
   const [reportOpen, setReportOpen] = useState(false);
@@ -36,12 +37,16 @@ export default function MyStats({ members = [] }) {
     (async () => {
       if (!supabase) { setLoading(false); return; }
       const { data: au } = await supabase.auth.getUser();
-      const [c, l, o, ps, pr] = await Promise.all([
+      const myId = au?.user?.id ?? null;
+      const [c, l, o, ps, pr, tr] = await Promise.all([
         supabase.from("session_log").select("*"),        // RLS: 본인 계약
         supabase.from("daily_workout_log").select("*"),
         supabase.from("ot_log").select("*"),
         supabase.from("pay_scheme").select("*"),
         supabase.from("payroll_run").select("*"),
+        // trainer RLS(id = auth.uid())로 본인 행 select 허용 · maybeSingle은 행 없어도 에러 아님.
+        myId ? supabase.from("trainer").select("name").eq("id", myId).maybeSingle()
+             : Promise.resolve({ data: null }),
       ]);
       // hidden(소프트삭제) 회원 이름 폴백 — 계약에 등장하는 회원 id를 user_table에서 직접 조회.
       // members(활성 목록)엔 hidden이 빠져 있어 이름을 못 찾음. RLS 7c2a는 hidden 무관 본인 회원 조회 허용.
@@ -54,6 +59,7 @@ export default function MyStats({ members = [] }) {
       if (cancelled) return;
       setUid(au?.user?.id ?? null);
       setEmail(au?.user?.email ?? "");
+      setTrainerName(tr?.data?.name || au?.user?.email || "");
       setContracts(c.data || []);
       setLogs(l.data || []);
       setOtRows(o.data || []);
@@ -223,7 +229,7 @@ export default function MyStats({ members = [] }) {
             memberIds,        // 내 회원 Set(파생) — 재집계 스코프
             members,
             contractNames,
-            trainerName: email, // 이메일 원천(MonthlyReport가 personName으로 @앞만 · P0-1 가드)
+            trainerName: trainerName || email, // 실명 우선(trainer.name), 없으면 이메일 폴백(personName이 @앞만)
           }}
         />
       )}
