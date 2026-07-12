@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { ListTodo, Plus, Check, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function TodoManual() {
   const [todos, setTodos] = useState([]);
@@ -108,7 +109,7 @@ export default function TodoManual() {
       {err && <div className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-600">{err}</div>}
 
       {sorted.length === 0 ? (
-        <p className="py-2 text-xs text-muted">적어둔 할 일이 없어요.</p>
+        <EmptyState className="py-2 text-xs">적어둔 할 일이 없어요.</EmptyState>
       ) : (
         <div className="grid gap-1.5">
           {sorted.map((t) => (

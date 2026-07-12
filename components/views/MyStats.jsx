@@ -14,6 +14,8 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth } from "@/lib/memberStatus";
 import PtPricingSettings from "@/components/views/PtPricingSettings";
 import PasswordChange from "@/components/views/PasswordChange";
+import StatTile from "@/components/ui/StatTile";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
@@ -113,9 +115,7 @@ export default function MyStats({ members = [] }) {
 
       {/* 매출 · 클로징 */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-          <div className="text-[11px] uppercase tracking-wider text-muted">이달 매출(내 등록)</div>
-          <div className="mt-1 tabular-nums text-2xl font-bold text-ink">{won(rev.total)}</div>
+        <StatTile label="이달 매출(내 등록)" value={won(rev.total)}>
           <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-sub">
             <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
             <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
@@ -123,14 +123,10 @@ export default function MyStats({ members = [] }) {
               <span>환불 <b className="text-rose-600">-{won(rev.refund)}</b></span>
             )}
           </div>
-        </div>
-        <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
-            <Target className="h-3.5 w-3.5" /> 클로징률
-          </div>
-          <div className="mt-1 tabular-nums text-2xl font-bold text-ink">{rate}</div>
+        </StatTile>
+        <StatTile icon={Target} label="클로징률" value={rate}>
           <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공</div>
-        </div>
+        </StatTile>
       </div>
 
       {/* 이번달 수업 — 누르면 회원별 (P2) */}
@@ -142,7 +138,7 @@ export default function MyStats({ members = [] }) {
           <span className="tabular-nums text-lg font-bold text-ink">{totalSessions}회</span>
         </summary>
         {sessionRows.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">이번달 수업 기록이 없어요.</p>
+          <EmptyState className="mt-3 text-sm">이번달 수업 기록이 없어요.</EmptyState>
         ) : (
           <ul className="mt-3 space-y-1.5">
             {sessionRows.map((r) => (
@@ -164,7 +160,7 @@ export default function MyStats({ members = [] }) {
           <span className="tabular-nums text-lg font-bold text-ink">{won(rev.total)}</span>
         </summary>
         {revRows.length === 0 && refundRows.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">이번달 매출이 없어요.</p>
+          <EmptyState className="mt-3 text-sm">이번달 매출이 없어요.</EmptyState>
         ) : (
           <ul className="mt-3 space-y-1.5">
             {revRows.map((c) => (
