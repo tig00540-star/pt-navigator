@@ -26,6 +26,7 @@ import TodoTab from "@/components/views/TodoTab";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import Badge from "@/components/ui/Badge";
 import Chip from "@/components/ui/Chip";
+import Modal from "@/components/ui/Modal";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
@@ -248,14 +249,7 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
   ];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-line bg-card p-5 shadow-xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal variant="sheet" onClose={onClose}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary-strong" />
@@ -380,8 +374,7 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
             {saving ? "저장 중…" : "저장"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

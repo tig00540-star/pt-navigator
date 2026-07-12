@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { Megaphone, Pin, Check, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { mustAckUnread, unreadAnnouncements, visibleAnnouncements } from "@/lib/announce";
+import Modal from "@/components/ui/Modal";
+import Badge from "@/components/ui/Badge";
 
 function fmtDate(iso) {
   if (!iso) return "";
@@ -89,69 +91,65 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
   // 게이트(강제) — 필수확인 안읽음 있으면 앱 전체를 덮음. 배경 클릭·ESC로 안 닫힘.
   if (gateList.length > 0) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-        <div className="w-full max-w-md rounded-2xl border border-line bg-card p-5 shadow-xl">
-          <div className="mb-3 flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-primary-strong" />
-            <h2 className="text-sm font-bold text-ink">필수 확인 공지</h2>
-            <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">{gateList.length}</span>
-          </div>
-          <div className="max-h-[60vh] space-y-3 overflow-y-auto">
-            {gateList.map((a) => (
-              <div key={a.id} className="rounded-xl border border-line bg-elevate p-3">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {a.pinned && <Pin className="h-3.5 w-3.5 text-primary-strong" />}
-                  <span className="text-sm font-semibold text-ink">{a.title}</span>
-                  <span className="ml-auto text-[10px] text-muted">{fmtDate(a.created_at)}</span>
-                </div>
-                <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-sub">{a.body}</p>
-              </div>
-            ))}
-          </div>
-          {err && <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-600">{err}</div>}
-          <button
-            onClick={() => ackAll(gateList)}
-            disabled={acking}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
-          >
-            <Check className="h-4 w-4" strokeWidth={2.5} /> {acking ? "반영 중…" : "확인했습니다"}
-          </button>
+      <Modal variant="center" dismissable={false}>
+        <div className="mb-3 flex items-center gap-2">
+          <Megaphone className="h-4 w-4 text-primary-strong" />
+          <h2 className="text-sm font-bold text-ink">필수 확인 공지</h2>
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">{gateList.length}</span>
         </div>
-      </div>
+        <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+          {gateList.map((a) => (
+            <div key={a.id} className="rounded-xl border border-line bg-elevate p-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {a.pinned && <Pin className="h-3.5 w-3.5 text-primary-strong" />}
+                <span className="text-sm font-semibold text-ink">{a.title}</span>
+                <span className="ml-auto text-[10px] text-muted">{fmtDate(a.created_at)}</span>
+              </div>
+              <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-sub">{a.body}</p>
+            </div>
+          ))}
+        </div>
+        {err && <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-600">{err}</div>}
+        <button
+          onClick={() => ackAll(gateList)}
+          disabled={acking}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+        >
+          <Check className="h-4 w-4" strokeWidth={2.5} /> {acking ? "반영 중…" : "확인했습니다"}
+        </button>
+      </Modal>
     );
   }
 
   // 재열람(벨) — 읽음 포함 전체. X/배경으로 닫힘.
   if (reviewOpen) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" onClick={onCloseReview}>
-        <div className="w-full max-w-md rounded-2xl border border-line bg-card p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-          <div className="mb-3 flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-primary-strong" />
-            <h2 className="text-sm font-bold text-ink">공지</h2>
-            <button onClick={onCloseReview} className="ml-auto rounded p-1 text-muted transition hover:text-ink" aria-label="닫기">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          {reviewList.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted">받은 공지가 없어요.</p>
-          ) : (
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto">
-              {reviewList.map((a) => (
-                <div key={a.id} className={`rounded-xl border border-line bg-elevate p-3 ${a.read ? "opacity-60" : ""}`}>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {a.pinned && <Pin className="h-3.5 w-3.5 text-primary-strong" />}
-                    <span className="text-sm font-semibold text-ink">{a.title}</span>
-                    {a.must_ack && <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">필수확인</span>}
-                    <span className="ml-auto text-[10px] text-muted">{fmtDate(a.created_at)}</span>
-                  </div>
-                  <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-sub">{a.body}</p>
-                </div>
-              ))}
-            </div>
-          )}
+      <Modal variant="center" onClose={onCloseReview}>
+        <div className="mb-3 flex items-center gap-2">
+          <Megaphone className="h-4 w-4 text-primary-strong" />
+          <h2 className="text-sm font-bold text-ink">공지</h2>
+          <button onClick={onCloseReview} className="ml-auto rounded p-1 text-muted transition hover:text-ink" aria-label="닫기">
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      </div>
+        {reviewList.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted">받은 공지가 없어요.</p>
+        ) : (
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+            {reviewList.map((a) => (
+              <div key={a.id} className={`rounded-xl border border-line bg-elevate p-3 ${a.read ? "opacity-60" : ""}`}>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {a.pinned && <Pin className="h-3.5 w-3.5 text-primary-strong" />}
+                  <span className="text-sm font-semibold text-ink">{a.title}</span>
+                  {a.must_ack && <Badge tone="primary">필수확인</Badge>}
+                  <span className="ml-auto text-[10px] text-muted">{fmtDate(a.created_at)}</span>
+                </div>
+                <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-sub">{a.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
     );
   }
 
