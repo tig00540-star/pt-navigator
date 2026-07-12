@@ -192,9 +192,52 @@ watch_for·observe_targets·connects_to_closing·hypothesis·data_gaps 등은 JS
 }
 
 // ③ phase="second" user 프롬프트
-function secondPrompt(member, report) {
+// D-3: cases(내 과거 클로징 케이스)가 있을 때만 case 입력블록·case_feedback 스키마를 additive로 삽입.
+//      cases 없거나 빈 배열이면 지금과 바이트 동일한 프롬프트(회귀 안전 제1원칙).
+function secondPrompt(member, report, cases = [], caseTier = "tentative") {
   const m = member || {};
   const r = report || {};
+  const validCases = Array.isArray(cases) ? cases.filter(Boolean) : [];
+  const hasCases = validCases.length > 0;
+  const tierLabel = caseTier === "confident" ? "뚜렷" : "잠정(케이스 아직 적음)";
+  const caseInputBlock = hasCases
+    ? `
+[내 과거 클로징 케이스 — 이 트레이너 본인 것만 · 경향 신뢰도=${tierLabel}]
+아래는 네가 과거에 클로징한 회원들의 '익명 프로파일 + 3박자(접근·반응·결과)'다. 이번 회원과
+비슷한 프로파일을 골라 case_feedback을 채워라. 이건 세일즈 대본 하달이 아니라 '거울'이다 —
+네 과거를 비춰 이번 판단을 돕는 스파링이다.
+ - 진단 먼저: 표면 거절(가격·망설임)이 아니라 '진짜 장애물'을 짚어라(예: '남편 상의'=가격이
+   아니라 결정권이 회원한테 없던 것). 트레이너에게 '다음에도 쓸 안목'을 남겨라.
+ - 성공 케이스=리딩 재료: 비슷한 프로파일에 통한 접근을 근거로, 회원이 그 욕구를 '자기 말로'
+   꺼내게 어떻게 리딩할지 방향을 줘라. ⚠️ 회원 입에 트레이너 논리를 이식(외운 대사)하는 건
+   역효과다 — '배우고 싶다/혼자보다 낫다'는 느낌에 스스로 도달하게 이끄는 리딩이어야 한다.
+ - 막힌 케이스=다른 벡터: 같은 프레임을 반복하지 마라. 과거 이 프로파일에서 막힌 방향이 있으면
+   '이번엔 그거 말고 X 방향으로' + 왜인지 명시하라(같은 실패 반복 차단).
+ - 강도 가드: 압박 ≠ 정당한 강조. 강도는 근거·책임의 세기지 소진·조작이 아니다. 허위 긴급성·
+   공포·죄책감·2~3시간 붙잡기 금지. 단 회원 상태가 진짜 필요하면(부상 위험 등) 책임에서 나온
+   '제대로 배우셔야 한다' 강조는 정당하다(의료 단정은 여전히 금지).
+ - 경향이 '잠정'이면 단정하지 말고 '아직 케이스가 적어 잠정 경향' 톤으로 하되, 반드시 채워라.
+[케이스 목록] (result=success/fail/hold · profile=익명)
+${validCases.map((c, i) => `${i + 1}. [${c.result}] 프로파일=${JSON.stringify(c.profile)} · 접근=${c.detail?.approach ?? c.approach ?? "-"} · 반응=${c.detail?.reaction ?? "-"} · 결과=${c.detail?.outcome ?? c.reason ?? "-"}`).join("\n")}
+`
+    : "";
+  const caseFieldsBlock = hasCases
+    ? `
+[case_feedback — 내 과거 케이스 거울 (cases 있을 때만)]
+ - diagnosis: 과거 케이스에 비춘 이 회원의 '진짜 장애물' 진단(표면 아닌 근본). 근거 얇으면
+   1차 관찰로 가설. 1~2문장. [거울 톤 — 단정보다 '~로 보인다']
+ - proven_lead: 비슷한 프로파일에 통한 접근을 근거로, 이번에 회원이 욕구를 '자기 말로' 꺼내게
+   어떻게 리딩할지 방향. 대사 이식·낭독 금지. 1~2문장.
+ - avoid_repeat: 과거 이 프로파일에서 막힌 벡터가 있으면 '이번엔 그거 반복 말고 X 방향' + 왜.
+   해당 없으면 null. 1문장.
+ - example: proven_lead의 한 문장 샘플('예시'·발판 — 낭독 대본 아님). 1문장.
+ - your_read: 트레이너에게 사고를 되돌리는 넛지 1문장("네 판단은? 이 진단이 맞다고 보나?" 결).
+`
+    : "";
+  const caseSchemaLine = hasCases
+    ? `,
+  "case_feedback": { "diagnosis": "...", "proven_lead": "...", "avoid_repeat": "... 또는 null", "example": "...", "your_read": "..." }`
+    : "";
   return `[상황] 2차 OT. 아래 '1차 관찰 기록'은 트레이너가 실제 입력한 관찰이다(가설 아님).
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, mbti=${g(m.mbti)}, pain=${g(m.pain)}, goal=${g(m.goal)}
 [1차 관찰 기록]
@@ -210,7 +253,7 @@ ${JSON.stringify(
     null,
     2
   )}
-
+${caseInputBlock}
 이 '1차 관찰'을 유일한 근거로 2차를 설계하라.
 [재료 확장] 트레이너 종합 소견(자유서술)이 있으면 정형 관찰과 함께 근거로 삼아라. 정형 항목에
 안 담긴 트레이너의 판단·가설이니 briefing·closing 논리에 반영하되, 없는 사실을 지어내진 마라.
@@ -262,7 +305,7 @@ ${JSON.stringify(
   - So what?: 사실 나열 금지. 반드시 "그래서 회원에게 무슨 의미인지"까지 연결.
   - 담백하게: 화려한 설득·고상한 단어 금지. 쉬운 말로.
   - 위협 소구(겁주기) 금지 → 사실 기반 손실 프레이밍으로 대체(공포 조장은 재등록을 무너뜨림).
-
+${caseFieldsBlock}
 [data_gaps = 성장 프레임 (부족/결핍 아님)]
 - 관찰이 1~2개로 얇더라도, 있는 것만으로 클로징 4단계와 arc를 '반드시' 생성한다.
   "데이터 부족으로 못 한다"는 반환 금지. 빈손으로 돌려주지 말 것.
@@ -300,7 +343,7 @@ ${JSON.stringify(
     "yes":     { "cause": "...", "adjustment": "숫자 없이 방향만", "direction": "..." },
     "partial": { "cause": "...", "adjustment": "...", "direction": "..." },
     "no":      { "cause": "...", "adjustment": "...", "direction": "..." }
-  }
+  }${caseSchemaLine}
 }`;
 }
 
@@ -442,6 +485,7 @@ const FIELD_TERMS = [
   ["hypothesis", "가설"],
   // ⑤ acute 필드명 — 값 텍스트 누출 방어.
   ["safety", "안전 안내"],
+  ["avoid_repeat", "다른 벡터"], // ⚠️ avoid보다 먼저(긴 키 우선) — sanitizeText 순차치환 오치환 방지.
   ["avoid", "피할 움직임"],
   ["alternatives", "대체 접근"],
   ["principle", "원리"],
@@ -455,6 +499,12 @@ const FIELD_TERMS = [
   ["sales_move", "세일즈 방향"],
   ["customer_says", "회원이 흔히 하는 말"],
   ["objections", "거절 대응"],
+  // D-3 case_feedback 필드명 — 값 텍스트 누출 방어.
+  ["case_feedback", "과거 케이스 거울"],
+  ["diagnosis", "진단"],
+  ["proven_lead", "통한 접근 리딩"],
+  ["your_read", "네 판단"],
+  ["caseTier", "경향 신뢰도"],
   ["closing", "클로징"],
 ];
 
@@ -596,7 +646,7 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
   }
 
-  const { phase, member, report, ptContext, acuteContext, packages } = body || {};
+  const { phase, member, report, ptContext, acuteContext, packages, closingCases, caseTier } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute") {
     return Response.json({ error: "phase는 'first'·'second'·'reregister'·'acute' 중 하나여야 합니다." }, { status: 400 });
   }
@@ -604,11 +654,12 @@ export async function POST(request) {
   const model = MODEL_SECOND; // 전 phase Sonnet(1차도 승급).
   const prompt =
     phase === "first" ? firstPrompt(member, packages)
-    : phase === "second" ? secondPrompt(member, report)
+    : phase === "second" ? secondPrompt(member, report, closingCases, caseTier)
     : phase === "reregister" ? reregisterPrompt(member, ptContext)
     : acutePrompt(member, acuteContext);
-  // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120 유지.
-  const maxTokens = phase === "first" ? 8192 : 5120;
+  // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120,
+  // 단 D-3 케이스 동봉 시 case_feedback ~300~500토큰 더 → 6144(잘림 방지).
+  const maxTokens = phase === "first" ? 8192 : (phase === "second" && closingCases?.length ? 6144 : 5120);
 
   try {
     const anthropic = new Anthropic({ apiKey });

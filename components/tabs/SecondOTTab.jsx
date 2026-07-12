@@ -14,6 +14,7 @@ import {
   Footprints,
   Gauge,
   Handshake,
+  History,
   Microscope,
   MessageSquareQuote,
   RefreshCw,
@@ -30,6 +31,7 @@ import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
 import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS, labelOf } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
+import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
 const RAW_FEEDBACK =
@@ -118,6 +120,21 @@ const ACT_LABEL = { yes: "자극 잘 옴", partial: "약하게 옴", no: "아직
 const inputCls =
   "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary";
 
+// D-3 개발용: URL에 ?d3=1 이면 게이트 무시 + 실 케이스 5건 미만이면 데모 케이스로 렌더/프롬프트 경로 점검.
+// 실사용자는 이 플래그를 안 쓰므로 영향 0. ⑦ 상용화 때 제거 권장.
+const D3_FORCE = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("d3") === "1";
+
+// 명백히 가짜인 데모 케이스(오버라이드일 때만·실데이터 5건 미만일 때만 사용).
+const DEMO_CLOSING_CASES = [
+  { result: "success", approach: "value", reason: null,
+    profile: { age: 41, job: "개발자", residence: "판교", mbti: "INTJ", pain: "목·어깨", goal: "체형개선", goal_type: "appearance" },
+    detail: { approach: "오늘 자극 들어간 순간 사진 보여주고 '혼자선 이 세팅 못 잡는다'로 착지",
+              reaction: "'확실히 다르네요' 하며 스스로 다음 주 얘기 꺼냄", outcome: "10회 등록" } },
+  { result: "hold", approach: "pain", reason: "decider",
+    profile: { age: 36, job: "주부", residence: "분당", mbti: null, pain: "허리", goal: "통증개선", goal_type: "pain" },
+    detail: { approach: "통증 개선 근거로 바로 가격 제안", reaction: "'남편이랑 상의할게요'", outcome: "보류·2주 뒤 재접근" } },
+];
+
 export default function SecondOTTab({ member, onClosingSaved }) {
   const [loading, setLoading] = useState(false);
   const [row1, setRow1] = useState(null); // round-1 전체 행 (closing_result 판정용)
@@ -136,6 +153,9 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   const [detailReaction, setDetailReaction] = useState(""); // 케이스 ② 반응
   const [detailOutcome, setDetailOutcome] = useState(""); // 케이스 ③ 결과
   const [savingClose, setSavingClose] = useState(false);
+  // D-3 — 내 과거 클로징 케이스(게이트·재료). 게이트 OFF/미전송이면 프롬프트·출력·캐시가 지금과 동일(additive).
+  const [caseData, setCaseData] = useState([]);
+  const [caseGate, setCaseGate] = useState({ on: false, tier: "off" });
   const { toast, showToast } = useToast();
 
   const canAI = Boolean(supabase && member?.id);
@@ -145,10 +165,17 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     setGenerating(true);
     setAiError("");
     try {
+      // D-3 — 게이트 ON이고 케이스가 있을 때만 additive 첨부(없으면 필드 자체를 안 넣어 서버가 지금처럼 동작).
+      const useCases = caseGate?.on && caseData?.length;
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phase: "second", member, report: obsReport }),
+        body: JSON.stringify({
+          phase: "second",
+          member,
+          report: obsReport,
+          ...(useCases ? { closingCases: caseData, caseTier: caseGate.tier } : {}),
+        }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -160,6 +187,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         generatedAt: new Date().toISOString(),
         model: "claude-sonnet-5",
         obsHash: otObsHash(obsReport), // 생성 시점 관찰 스냅샷 → 스테일 감지
+        ...(useCases ? { caseTier: caseGate.tier } : {}), // 렌더 배지·캐시용
       };
       const report2 = { brief: data, briefMeta: meta };
       if (row2Id) {
@@ -275,6 +303,8 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           setDetailApproach("");
           setDetailReaction("");
           setDetailOutcome("");
+          setCaseData([]);
+          setCaseGate({ on: false, tier: "off" });
         }
         return;
       }
@@ -317,6 +347,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
 
       // ③ 캐시 우선: round-2 report.brief 있으면 재방문 즉시 렌더(재호출 X). 없으면 자동 호출 대신
       // 버튼 트리거(결정#2) — renderPreGenerate의 "AI 지원 준비 생성하기" 클릭 시 generateBrief.
+      // ⚠️ D-3 케이스 조회보다 앞에 둔다 — 캐시된 회원 재방문 시 카운트 쿼리를 안 기다리고 즉시 렌더.
       const cached = r2?.report?.brief || null;
       if (cached) {
         setBrief(cached);
@@ -324,6 +355,28 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       } else {
         setBrief(null);
         setBriefMeta(null);
+      }
+
+      // D-3 — 내 과거 케이스 로드(트레이너 스코프). caseData는 generateBrief 버튼 클릭 때만 쓰여
+      // 캐시 렌더 뒤로 미룸(재방문 즉시성). 게이트 ON(성공 5건+)이면 실 케이스,
+      // OFF+오버라이드(?d3=1)면 실 케이스 or 데모, 그 외 미전송(지금 동작). trainer_id 없으면 스킵.
+      const tid = member.trainer_id || null;
+      if (tid) {
+        const cnt = await closingSuccessCount(supabase, tid, member.id);
+        const gate = closingCaseGate(cnt);
+        let cases = [];
+        if (gate.on) cases = await closingCasesForTrainer(supabase, tid, { excludeUserId: member.id });
+        else if (D3_FORCE()) {
+          const real = await closingCasesForTrainer(supabase, tid, { excludeUserId: member.id });
+          cases = real.length ? real : DEMO_CLOSING_CASES;
+        }
+        if (!cancelled) {
+          setCaseGate(gate.on || D3_FORCE() ? { on: true, tier: gate.tier === "off" ? "tentative" : gate.tier } : gate);
+          setCaseData(cases);
+        }
+      } else if (!cancelled) {
+        setCaseGate({ on: false, tier: "off" });
+        setCaseData([]);
       }
     })();
     return () => {
@@ -491,6 +544,40 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             <RefreshCw className="h-3 w-3" /> 재생성
           </button>
         </div>
+
+        {/* D-3 — 내 과거 케이스 거울. 진단 먼저(스파링 톤) → 통한 접근 리딩 → 다른 벡터 → 네 판단 넛지.
+            게이트 OFF/케이스 미전송이면 brief.case_feedback 자체가 없어 카드 안 뜸(회귀 안전). */}
+        {b.case_feedback && (
+          <section className="rounded-2xl border border-line bg-elevate p-5 shadow-sm">
+            <Eyebrow icon={History}>
+              내 과거 케이스 거울 {meta?.caseTier === "confident" ? "· 뚜렷" : "· 잠정 경향"}
+            </Eyebrow>
+            <div className="mt-3 space-y-3">
+              {b.case_feedback.diagnosis && (
+                <div className="rounded-xl border border-line bg-card p-3.5 shadow-sm">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-sub">진단 · 진짜 장애물</div>
+                  <p className="mt-1 text-sm leading-relaxed text-ink">{b.case_feedback.diagnosis}</p>
+                </div>
+              )}
+              {b.case_feedback.proven_lead && (
+                <div className="rounded-xl border border-primary/30 bg-primary-soft p-3.5">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">통한 접근 → 이렇게 리딩</div>
+                  <p className="mt-1 text-sm leading-relaxed text-ink">{b.case_feedback.proven_lead}</p>
+                  {renderExample(b.case_feedback.example)}
+                </div>
+              )}
+              {b.case_feedback.avoid_repeat && (
+                <div className="rounded-xl border border-orange-500/40 bg-orange-500/10 p-3.5">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-orange-600">이번엔 다른 벡터</div>
+                  <p className="mt-1 text-sm leading-relaxed text-ink">{b.case_feedback.avoid_repeat}</p>
+                </div>
+              )}
+              {b.case_feedback.your_read && (
+                <p className="text-[11px] italic leading-relaxed text-muted">{b.case_feedback.your_read}</p>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* 클로징 — 3분기 읽기전용 아코디언(yes/partial/no · 기본 접힘, 동시 펼침 허용). 신규 AI 생성 없음(캐시 재사용). */}
         <section>
