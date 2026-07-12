@@ -23,6 +23,7 @@ import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import ReapproachToday from "@/components/views/ReapproachToday";
 import RegisterDueToday from "@/components/views/RegisterDueToday";
 import RegisterReapproachToday from "@/components/views/RegisterReapproachToday";
+import TodoTab from "@/components/views/TodoTab";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
@@ -76,6 +77,7 @@ function mapMemberRow(r) {
 /* ---- 탭 메타 ---- */
 const TABS = [
   { id: 9, label: "스케줄", always: true },
+  { id: 13, label: "할일", always: true },
   { id: 0, label: "회원", always: true },
   { id: 10, label: "운동일지", pt: true },
   { id: 11, label: "재등록", pt: true },
@@ -741,6 +743,13 @@ export default function OTNavigatorDashboard() {
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {tab === 9 ? (
           <div className="tab-anim"><ScheduleBoard members={members} /></div>
+        ) : tab === 13 ? (
+          <div className="tab-anim">
+            <TodoTab
+              members={members}
+              onSelect={(id, toTab) => { setSelectedId(id); setTab(toTab ?? 1); }}
+            />
+          </div>
         ) : tab === 8 ? (
           <div className="tab-anim"><MyStats members={members} /></div>
         ) : (
