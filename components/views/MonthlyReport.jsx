@@ -57,7 +57,7 @@ export default function MonthlyReport({ data, onClose }) {
   const months = lastMonths(12);
   const [ym, setYm] = useState(months[0]);          // 기본 = 이번달(KST). 원장이 지난달 고르면 셀렉트로.
   const sheetRef = useRef(null);                     // 4-b 내보내기 타깃
-  const { contracts, logs, otRows, schemes, runs, uid, memberIds, members, contractNames, trainerName } = data;
+  const { contracts, logs, otRows, schemes, runs, uid, memberIds, members, contractNames, trainerName, goals } = data;
 
   // ── 선택 ym 재집계(전부 순수 함수·ym 주입) ──
   const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid)
@@ -93,6 +93,9 @@ export default function MonthlyReport({ data, onClose }) {
   const basisVal = scheme?.band_basis === "session_count" ? sessionCount : rev.total;
   const nextBand = bands.find((b) => (b.min ?? 0) > basisVal);
   const toNext = nextBand ? (nextBand.min ?? 0) - basisVal : 0;
+  // 목표 달성률(nextBand 프록시 대체) — 선택 ym의 trainer_goal.
+  const goalRow = (goals || []).find((g) => g.ym === ym) || null;
+  const target = goalRow?.target_revenue ?? null;
 
   const nameOf = (id) => (members.find((m) => m.id === id)?.name) || contractNames.get(id) || "(알 수 없음)";
 
@@ -138,11 +141,21 @@ export default function MonthlyReport({ data, onClose }) {
               {payP.computed != null && payP.computed > 0 && (
                 <div className="mt-1 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={pay.computed} prev={payP.computed} /></div>
               )}
-              {nextBand && (
+              {target != null ? (
+                <div className="mt-2">
+                  <div className="flex items-baseline justify-between text-[11px]">
+                    <span className="text-muted">목표 달성</span>
+                    <span className="tabular-nums font-bold text-ink">{Math.round((rev.total / target) * 100)}% <span className="font-normal text-muted">({won(rev.total)} / {won(target)})</span></span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-elevate">
+                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
+                  </div>
+                </div>
+              ) : nextBand ? (
                 <div className="mt-1 text-[11px] text-muted">
                   다음 급여 구간까지 {scheme.band_basis === "session_count" ? `${toNext}회` : won(toNext)}
                 </div>
-              )}
+              ) : null}
             </>
           ) : (
             <div className="mt-2 tabular-nums text-2xl font-extrabold text-muted">확정 대기(수동 급여)</div>

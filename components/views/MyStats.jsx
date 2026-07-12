@@ -18,6 +18,7 @@ import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
+import TrainerGoalSetter from "@/components/views/TrainerGoalSetter";
 
 export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
@@ -31,6 +32,7 @@ export default function MyStats({ members = [] }) {
   const [loading, setLoading] = useState(true);
   const [contractNames, setContractNames] = useState(new Map());
   const [reportOpen, setReportOpen] = useState(false);
+  const [goals, setGoals] = useState([]);        // trainer_goal(월별 목표) — 달성률·리포트 전달
 
   useEffect(() => {
     let cancelled = false;
@@ -38,7 +40,7 @@ export default function MyStats({ members = [] }) {
       if (!supabase) { setLoading(false); return; }
       const { data: au } = await supabase.auth.getUser();
       const myId = au?.user?.id ?? null;
-      const [c, l, o, ps, pr, tr] = await Promise.all([
+      const [c, l, o, ps, pr, tr, tg] = await Promise.all([
         supabase.from("session_log").select("*"),        // RLS: 본인 계약
         supabase.from("daily_workout_log").select("*"),
         supabase.from("ot_log").select("*"),
@@ -47,6 +49,7 @@ export default function MyStats({ members = [] }) {
         // trainer RLS(id = auth.uid())로 본인 행 select 허용 · maybeSingle은 행 없어도 에러 아님.
         myId ? supabase.from("trainer").select("name").eq("id", myId).maybeSingle()
              : Promise.resolve({ data: null }),
+        supabase.from("trainer_goal").select("*"),       // 월별 목표(본인 것 · RLS)
       ]);
       // hidden(소프트삭제) 회원 이름 폴백 — 계약에 등장하는 회원 id를 user_table에서 직접 조회.
       // members(활성 목록)엔 hidden이 빠져 있어 이름을 못 찾음. RLS 7c2a는 hidden 무관 본인 회원 조회 허용.
@@ -60,6 +63,7 @@ export default function MyStats({ members = [] }) {
       setUid(au?.user?.id ?? null);
       setEmail(au?.user?.email ?? "");
       setTrainerName(tr?.data?.name || au?.user?.email || "");
+      setGoals(tg.data || []);
       setContracts(c.data || []);
       setLogs(l.data || []);
       setOtRows(o.data || []);
@@ -76,6 +80,8 @@ export default function MyStats({ members = [] }) {
   const memberIds = new Set(members.filter((m) => m.trainer_id === uid).map((m) => m.id));
   const myOt = otRows.filter((r) => r && memberIds.has(r.user_id));
   const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, refund: 0, total: 0, cntNew: 0, cntRe: 0 };
+  const goalRow = goals.find((g) => g.ym === ym) || null;
+  const target = goalRow?.target_revenue ?? null;
   const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
   const closing = closingStats(myOt);
   const sessionCount = sessionCountByTrainer(logs, contracts, ym).get(uid) || 0;
@@ -146,6 +152,20 @@ export default function MyStats({ members = [] }) {
         </StatTile>
       </div>
 
+      {/* 이달 목표 달성 (설정돼 있을 때만) */}
+      {target != null && (
+        <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <div className="flex items-baseline justify-between text-sm">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
+            <span className="tabular-nums font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
+            <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
+          </div>
+          <div className="mt-1 text-[11px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
+        </div>
+      )}
+
       {/* 이번달 수업 — 누르면 회원별 (P2) */}
       <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
@@ -214,6 +234,13 @@ export default function MyStats({ members = [] }) {
         </>
       )}
 
+      {/* 이달 목표매출 설정 — trainer_goal upsert, 저장 시 goals 반영. */}
+      <TrainerGoalSetter uid={uid} ym={ym} target={target} revTotal={rev.total}
+        onSaved={(row) => setGoals((p) => {
+          const rest = p.filter((g) => !(g.trainer_id === row.trainer_id && g.ym === row.ym));
+          return [...rest, row];
+        })} />
+
       {/* 내 PT 가격 설정 — 자체 loading, 통계와 독립. 항상 렌더. */}
       <PtPricingSettings />
 
@@ -229,6 +256,7 @@ export default function MyStats({ members = [] }) {
             memberIds,        // 내 회원 Set(파생) — 재집계 스코프
             members,
             contractNames,
+            goals,            // 월별 목표 배열 — 리포트가 선택 ym으로 조회
             trainerName: trainerName || email, // 실명 우선(trainer.name), 없으면 이메일 폴백(personName이 @앞만)
           }}
         />
