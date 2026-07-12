@@ -5,9 +5,12 @@
    선택 시 스케줄 탭으로. 빈배열이면 null.
    ========================================================================= */
 import { useEffect, useState } from "react";
-import { CalendarX, ChevronRight } from "lucide-react";
+import { CalendarX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { pastDueAppointments } from "@/lib/memberStatus";
+import Card from "@/components/ui/Card";
+import SectionHeader from "@/components/ui/SectionHeader";
+import ListRow from "@/components/ui/ListRow";
 
 function fmtDT(iso) {
   const d = new Date(iso);
@@ -48,34 +51,32 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
   };
 
   return (
-    <section className="mb-4 rounded-2xl border border-zinc-400/25 bg-zinc-500/[0.06] p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <CalendarX className="h-4 w-4 text-sub" />
-        <h3 className="text-sm font-semibold text-ink">미처리 예약</h3>
-        <span className="rounded-full bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">{rows.length}</span>
-        <span className="text-[11px] text-muted">지난 예약 · 완료/취소 안 함</span>
-      </div>
+    <Card tone="zinc">
+      <SectionHeader
+        tone="zinc"
+        icon={CalendarX}
+        title="미처리 예약"
+        count={rows.length}
+        hint="지난 예약 · 완료/취소 안 함"
+      />
       <div className="grid gap-2">
         {rows.map((a) => {
           const ago = daysAgo(a.start_at, nowMs);
           return (
-            <button
+            <ListRow
               key={a.id}
+              tone="zinc"
+              name={nameOfEl(a.user_id)}
               onClick={() => onSelect(a.user_id)}
-              className="group flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-3 py-2.5 text-left shadow-sm transition hover:border-primary active:scale-[0.99]"
             >
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink">{nameOfEl(a.user_id)}</div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-sub">
-                  <span className="font-mono">{fmtDT(a.start_at)}</span>
-                  <span className="font-medium text-amber-600">{ago > 0 ? `${ago}일 지남` : "오늘 지남"}</span>
-                </div>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-sub">
+                <span className="font-mono">{fmtDT(a.start_at)}</span>
+                <span className="font-medium text-amber-600">{ago > 0 ? `${ago}일 지남` : "오늘 지남"}</span>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted group-hover:text-primary-strong" />
-            </button>
+            </ListRow>
           );
         })}
       </div>
-    </section>
+    </Card>
   );
 }

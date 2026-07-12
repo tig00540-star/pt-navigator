@@ -5,9 +5,12 @@
    ReapproachToday 형제(원본 안 건드림). 빈배열이면 null. hold/success/fail은 제외(빈 결과만).
    ========================================================================= */
 import { useEffect, useState } from "react";
-import { AlertCircle, ChevronRight } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { unclosedClosings, viewFor } from "@/lib/memberStatus";
+import Card from "@/components/ui/Card";
+import SectionHeader from "@/components/ui/SectionHeader";
+import ListRow from "@/components/ui/ListRow";
 
 export default function UnclosedClosingToday({ members, onSelect }) {
   const [rows, setRows] = useState([]);
@@ -33,28 +36,26 @@ export default function UnclosedClosingToday({ members, onSelect }) {
   const nameOf = (id) => members?.find((m) => m.id === id)?.name || "회원";
 
   return (
-    <section className="mb-4 rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <AlertCircle className="h-4 w-4 text-rose-600" />
-        <h3 className="text-sm font-semibold text-rose-700">클로징 미마감</h3>
-        <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-semibold text-rose-700">{rows.length}</span>
-        <span className="text-[11px] text-muted">2차까지 갔는데 결과 미기록</span>
-      </div>
+    <Card tone="rose">
+      <SectionHeader
+        tone="rose"
+        icon={AlertCircle}
+        title="클로징 미마감"
+        count={rows.length}
+        hint="2차까지 갔는데 결과 미기록"
+      />
       <div className="grid gap-2">
         {rows.map((r) => (
-          <button
+          <ListRow
             key={r.user_id}
+            tone="rose"
+            name={nameOf(r.user_id)}
             onClick={() => onSelect(r.user_id)}
-            className="group flex items-center justify-between gap-3 rounded-xl border border-rose-500/20 bg-card px-3 py-2.5 text-left shadow-sm transition hover:border-rose-400/50 active:scale-[0.99]"
           >
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-ink">{nameOf(r.user_id)}</div>
-              <div className="mt-0.5 text-[11px] text-sub">2차 클로징 결과 입력</div>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-rose-500/50 group-hover:text-rose-600" />
-          </button>
+            <div className="mt-0.5 text-[11px] text-sub">2차 클로징 결과 입력</div>
+          </ListRow>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

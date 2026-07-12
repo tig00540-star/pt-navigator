@@ -1,8 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { RefreshCw, ChevronRight } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor, activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
+import Card from "@/components/ui/Card";
+import SectionHeader from "@/components/ui/SectionHeader";
+import ListRow from "@/components/ui/ListRow";
 
 export default function RegisterDueToday({ members, onSelect }) {
   const [rows, setRows] = useState([]);
@@ -43,33 +46,29 @@ export default function RegisterDueToday({ members, onSelect }) {
   const list = [...rows].sort((a, b) => a.paid - b.paid);
 
   return (
-    <section className="mb-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <RefreshCw className="h-4 w-4 text-primary-strong" />
-        <h3 className="text-sm font-semibold text-primary-strong">재등록 타이밍</h3>
-        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
-          {list.length}
-        </span>
-        <span className="text-[11px] text-muted">잔여 임계 도래분</span>
-      </div>
+    <Card tone="emerald">
+      <SectionHeader
+        tone="emerald"
+        icon={RefreshCw}
+        title="재등록 타이밍"
+        count={list.length}
+        hint="잔여 임계 도래분"
+      />
       <div className="grid gap-2">
         {list.map((r) => (
-          <button
+          <ListRow
             key={r.user_id}
+            tone="emerald"
+            name={nameOf(r.user_id)}
             onClick={() => onSelect(r.user_id)}
-            className="group flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-card px-3 py-2.5 text-left shadow-sm transition hover:border-primary active:scale-[0.99]"
           >
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-ink">{nameOf(r.user_id)}</div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
-                <span>잔여 유료 <b className="text-primary-strong">{r.paid}</b></span>
-                <span className="text-muted">· 서비스 {r.service}</span>
-              </div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
+              <span>잔여 유료 <b className="text-primary-strong">{r.paid}</b></span>
+              <span className="text-muted">· 서비스 {r.service}</span>
             </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-emerald-500/50 group-hover:text-primary-strong" />
-          </button>
+          </ListRow>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

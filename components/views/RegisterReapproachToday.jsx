@@ -6,9 +6,12 @@
    ReapproachToday(OT)의 재등록 대칭 · 원본 안 건드리고 형제. 선택 시 onSelect(user_id) → PTView.
    ========================================================================= */
 import { useEffect, useState } from "react";
-import { CalendarClock, ChevronRight } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { reregisterReapproachToday, viewFor } from "@/lib/memberStatus";
+import Card from "@/components/ui/Card";
+import SectionHeader from "@/components/ui/SectionHeader";
+import ListRow from "@/components/ui/ListRow";
 
 function todayISOLocal() {
   const n = new Date();
@@ -51,39 +54,35 @@ export default function RegisterReapproachToday({ members, onSelect }) {
   const list = [...rows].sort((a, b) => (a.reg_reapproach_at < b.reg_reapproach_at ? -1 : 1));
 
   return (
-    <section className="mb-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <CalendarClock className="h-4 w-4 text-primary-strong" />
-        <h3 className="text-sm font-semibold text-primary-strong">재등록 재접근</h3>
-        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
-          {list.length}
-        </span>
-        <span className="text-[11px] text-muted">재등록 보류 후 예정일 도래분</span>
-      </div>
+    <Card tone="emerald">
+      <SectionHeader
+        tone="emerald"
+        icon={CalendarClock}
+        title="재등록 재접근"
+        count={list.length}
+        hint="재등록 보류 후 예정일 도래분"
+      />
       <div className="grid gap-2">
         {list.map((r) => {
           const over = daysOverdue(r.reg_reapproach_at, today);
           return (
-            <button
+            <ListRow
               key={r.user_id}
+              tone="emerald"
+              name={nameOf(r.user_id)}
               onClick={() => onSelect(r.user_id)}
-              className="group flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-card px-3 py-2.5 text-left shadow-sm transition hover:border-primary active:scale-[0.99]"
             >
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink">{nameOf(r.user_id)}</div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
-                  <span className="font-mono">{r.reg_reapproach_at}</span>
-                  <span className={over > 0 ? "font-medium text-amber-600" : "font-medium text-primary-strong"}>
-                    {over > 0 ? `${over}일 경과` : "오늘"}
-                  </span>
-                  <span className="text-muted">· 재등록 보류</span>
-                </div>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
+                <span className="font-mono">{r.reg_reapproach_at}</span>
+                <span className={over > 0 ? "font-medium text-amber-600" : "font-medium text-primary-strong"}>
+                  {over > 0 ? `${over}일 경과` : "오늘"}
+                </span>
+                <span className="text-muted">· 재등록 보류</span>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-emerald-500/50 group-hover:text-primary-strong" />
-            </button>
+            </ListRow>
           );
         })}
       </div>
-    </section>
+    </Card>
   );
 }
