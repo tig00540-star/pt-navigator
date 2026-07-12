@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  Bell,
   ChevronRight,
   Search,
   ShieldCheck,
@@ -21,6 +22,7 @@ import ScheduleBoard from "@/components/views/ScheduleBoard";
 import MyStats from "@/components/views/MyStats";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import TodoTab from "@/components/views/TodoTab";
+import AnnouncementGate from "@/components/AnnouncementGate";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
@@ -547,6 +549,8 @@ export default function OTNavigatorDashboard() {
   // ⚠️ ③에서 클로징 저장 지점(재등록·이탈 UI 등)이 늘면 그 성공 지점에도 onClosingSaved를 물려야 함.
   const [closingVersion, setClosingVersion] = useState(0);
   const [myUid, setMyUid] = useState(null); // 현재 로그인 uid — 내 회원 판별(원장 스코프)
+  const [bellOpen, setBellOpen] = useState(false);   // 공지 재열람(벨) 모달
+  const [unreadCount, setUnreadCount] = useState(0); // 공지 안읽음 배지 수
 
   const loadMembers = async () => {
     if (!supabase) {
@@ -654,6 +658,13 @@ export default function OTNavigatorDashboard() {
 
   return (
     <div className="min-h-screen bg-bg pb-28 text-ink antialiased selection:bg-primary/20">
+      {/* 공지 — 게이트(필수확인 강제) + 재열람(벨). gateList 0·!supabase·uid null이면 오버레이 없음. */}
+      <AnnouncementGate
+        uid={myUid}
+        onUnreadCount={setUnreadCount}
+        reviewOpen={bellOpen}
+        onCloseReview={() => setBellOpen(false)}
+      />
       {/* ================= TOP BAR ================= */}
       <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
@@ -694,6 +705,19 @@ export default function OTNavigatorDashboard() {
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">신규 등록</span>
+              </button>
+
+              <button
+                onClick={() => setBellOpen(true)}
+                className="relative flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-sub transition hover:border-primary hover:text-primary-strong active:scale-95"
+                aria-label="공지"
+              >
+                <Bell className="h-3.5 w-3.5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
+                    {unreadCount}
+                  </span>
+                )}
               </button>
 
               <a
