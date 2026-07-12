@@ -114,7 +114,13 @@ export default function ScheduleBoard({ members = [] }) {
   // 음성 STT 결과 → 내용칸 채움(이후 손편집). PTView handleVoiceResult 미러.
   const handleVoiceResult = (raw, summaryText) => { setNote(summaryText || ""); setRawText(raw || ""); setUsedVoice(true); };
 
-  const memberName = (id) => members.find((m) => m.id === id)?.name ?? "회원";
+  const knownMember = (id) => members.find((m) => m.id === id)?.name || "";
+  const memberName = (id) => knownMember(id) || "이름 미상"; // 모달 제목 등 문자열 필요 지점용
+  // 리스트 표시용 — 명단 밖(숨김·환불) 회원은 muted "이름 미상"(미완성처럼 안 보이게). 컴포넌트 아닌 JSX 반환 헬퍼.
+  const memberNameEl = (id) => {
+    const n = knownMember(id);
+    return n ? n : <span className="font-normal not-italic text-muted">이름 미상</span>;
+  };
   const trainerName = (id) => personName(trainers.find((t) => t.id === id)?.name ?? "");
   // 트레이너 색 — trainers 배열 순서 인덱스 %6(세션 내 안정 · uuid 해시 아님). 못 찾으면 [0].
   const trainerTone = (id) => { const i = trainers.findIndex((t) => t.id === id); return i >= 0 ? TRAINER_PALETTE[i % 6] : TRAINER_PALETTE[0]; };
@@ -307,7 +313,7 @@ export default function ScheduleBoard({ members = [] }) {
                               <button key={a.id} onClick={(e) => { e.stopPropagation(); openAction(a); }} className={chipCls(a)}>
                                 {a.status === "done" ? "✓ " : ""}
                                 <span className={`${viewMeta(memberView(a.user_id)).dot} mr-1 inline-block h-1.5 w-1.5 rounded-full`} />
-                                {memberName(a.user_id)}
+                                {memberNameEl(a.user_id)}
                                 {isOwnerView && trainerFilter === "all" && (
                                   <span className="block truncate text-[9px] font-normal text-muted">{trainerName(a.trainer_id)}</span>
                                 )}
@@ -350,7 +356,7 @@ export default function ScheduleBoard({ members = [] }) {
                     {isOwnerView && <span className={`-my-3 -ml-3 mr-0 w-1 self-stretch ${trainerTone(a.trainer_id).bar}`} />}
                     <span className="font-mono text-sm font-semibold text-sub">{hhmm(a.start_at)}</span>
                     <MemberBadge view={memberView(a.user_id)} />
-                    <span className="flex-1 text-sm font-medium text-ink">{memberName(a.user_id)}</span>
+                    <span className="flex-1 text-sm font-medium text-ink">{memberNameEl(a.user_id)}</span>
                     {isOwnerView && <span className="text-[11px] text-muted">{trainerName(a.trainer_id)}</span>}
                     {a.status === "done" ? (
                       <span className="inline-flex items-center gap-1 rounded-md bg-elevate px-2 py-0.5 text-[10px] font-semibold text-muted"><Check className="h-3 w-3" /> 완료</span>

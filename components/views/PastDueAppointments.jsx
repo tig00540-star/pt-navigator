@@ -40,7 +40,12 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
 
   if (!rows.length) return null;
   const nowMs = new Date().getTime(); // Date.now()는 react-hooks/purity 룰에 걸림 → 저장소 컨벤션(new Date().getTime()) 사용
-  const nameOf = (id) => members?.find((m) => m.id === id)?.name || "회원";
+  const knownName = (id) => members?.find((m) => m.id === id)?.name || "";
+  // 명단 밖(숨김·환불) 회원은 muted "이름 미상". 컴포넌트 아닌 JSX 반환 헬퍼(nested-component lint 회피).
+  const nameOfEl = (id) => {
+    const n = knownName(id);
+    return n ? n : <span className="font-normal not-italic text-muted">이름 미상</span>;
+  };
 
   return (
     <section className="mb-4 rounded-2xl border border-zinc-400/25 bg-zinc-500/[0.06] p-4">
@@ -60,7 +65,7 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
               className="group flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-3 py-2.5 text-left shadow-sm transition hover:border-primary active:scale-[0.99]"
             >
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink">{nameOf(a.user_id)}</div>
+                <div className="text-sm font-semibold text-ink">{nameOfEl(a.user_id)}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-sub">
                   <span className="font-mono">{fmtDT(a.start_at)}</span>
                   <span className="font-medium text-amber-600">{ago > 0 ? `${ago}일 지남` : "오늘 지남"}</span>
