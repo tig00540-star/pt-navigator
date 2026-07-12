@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   Bell,
@@ -560,6 +560,7 @@ export default function OTNavigatorDashboard() {
   const [myUid, setMyUid] = useState(null); // 현재 로그인 uid — 내 회원 판별(원장 스코프)
   const [bellOpen, setBellOpen] = useState(false);   // 공지 재열람(벨) 모달
   const [unreadCount, setUnreadCount] = useState(0); // 공지 안읽음 배지 수
+  const scheduleRef = useRef(null); // '오늘' 스택 내 스케줄 섹션 — 미처리예약 클릭 시 스크롤 타겟(같은 탭이라 setTab no-op 회귀 방지)
 
   const loadMembers = async () => {
     if (!supabase) {
@@ -784,7 +785,7 @@ export default function OTNavigatorDashboard() {
         {tab === 9 ? (
           <div className="tab-anim space-y-8">
             {/* 스케줄 보드는 자체 최상단 제목이 없어 Eyebrow로 섹션 헤더를 얹음(TodoTab은 자체 '오늘 할일' 제목 보유). */}
-            <div>
+            <div ref={scheduleRef} className="scroll-mt-20">
               <Eyebrow icon={CalendarDays}>오늘 스케줄</Eyebrow>
               <ScheduleBoard members={members} />
             </div>
@@ -792,7 +793,7 @@ export default function OTNavigatorDashboard() {
             <TodoTab
               members={members}
               uid={myUid}
-              onSelect={(id, toTab) => { setSelectedId(id); setTab(toTab ?? 1); }}
+              onSelect={(id, toTab) => { setSelectedId(id); if (toTab === 9) scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); else setTab(toTab ?? 1); }}
             />
           </div>
         ) : tab === 8 ? (
