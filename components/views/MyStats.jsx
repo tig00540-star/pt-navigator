@@ -20,6 +20,7 @@ import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
 import TrainerGoalSetter from "@/components/views/TrainerGoalSetter";
 import TrainerProfileSettings from "@/components/views/TrainerProfileSettings";
+import TrainerLibrary from "@/components/views/TrainerLibrary";
 
 export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
@@ -244,6 +245,9 @@ export default function MyStats({ members = [] }) {
 
       {/* 내 프로필 — 자기완결, 통계와 독립. AI 개인화 재료(후속). */}
       <TrainerProfileSettings />
+
+      {/* 내 라이브러리 — 카테고리별 참고 영상·링크 CRUD(자기완결). */}
+      <TrainerLibrary />
 
       {/* 내 PT 가격 설정 — 자체 loading, 통계와 독립. 항상 렌더. */}
       <PtPricingSettings />
