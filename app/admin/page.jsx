@@ -36,6 +36,14 @@ import AdminAnnouncements from "@/components/AdminAnnouncements";
 // rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
 const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
+// admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). fuchsia accent.
+const ATABS = [
+  { id: "perf",    label: "실적" },
+  { id: "qc",      label: "QC" },
+  { id: "payroll", label: "급여" },
+  { id: "ops",     label: "운영" },
+];
+
 // 트레이너 QC 모니터링
 const TRAINERS = [
   {
@@ -185,6 +193,7 @@ export default function AdminDashboard() {
   const [trainers, setTrainers] = useState([]);
   const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
   const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
+  const [atab, setAtab] = useState("perf");    // admin 섹션 탭(기본=실적)
 
   useEffect(() => {
     (async () => {
@@ -323,6 +332,21 @@ export default function AdminDashboard() {
             </Link>
           </div>
         </div>
+        {/* 섹션 탭 네비 (admin fuchsia) */}
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
+            {ATABS.map((t) => {
+              const active = atab === t.id;
+              return (
+                <button key={t.id} onClick={() => setAtab(t.id)}
+                  className={`relative px-4 py-2.5 text-xs font-semibold transition ${active ? "text-fuchsia-700" : "text-muted hover:text-ink"}`}>
+                  {t.label}
+                  {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-fuchsia-500" />}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </header>
 
       {dbNote && (
@@ -335,16 +359,21 @@ export default function AdminDashboard() {
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         {/* ===== 트레이너 초대 온보딩 (A) ===== */}
+        {atab === "ops" && (
         <section className="mb-8">
           <AddTrainerForm />
         </section>
+        )}
 
         {/* ===== 공지 (기능1) — 원장 작성·목록 ===== */}
+        {atab === "ops" && (
         <section className="mb-8">
           <AdminAnnouncements trainers={trainers} />
         </section>
+        )}
 
         {/* ===== 실데이터 요약 (④) ===== */}
+        {atab === "perf" && (
         <section className="mb-8">
           <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -377,8 +406,10 @@ export default function AdminDashboard() {
             </div>
           </div>
         </section>
+        )}
 
         {/* ===== 트레이너별 실적 (④) ===== */}
+        {atab === "perf" && (
         <section className="mb-8">
           <Eyebrow icon={Award}>트레이너별 실적 · {ym}</Eyebrow>
           <div className="space-y-3">
@@ -422,13 +453,17 @@ export default function AdminDashboard() {
             ); })}
           </div>
         </section>
+        )}
 
         {/* ===== 급여 정책 설정 (페이롤 C1) — 계정 기본 스킴 편집. pay_policy 표시는 D에서 전환. ===== */}
+        {atab === "payroll" && (
         <section className="mb-8">
           <AdminPayrollSettings trainers={trainers} />
         </section>
+        )}
 
         {/* ===== KPI · 방향/사유 분포 (④) ===== */}
+        {atab === "perf" && (
         <section className="mb-8">
           <Eyebrow icon={TrendingUp}>클로징 · 재등록 분석</Eyebrow>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -515,8 +550,10 @@ export default function AdminDashboard() {
             </div>
           </div>
         </section>
+        )}
 
         {/* ===== Trainer Activity & QC ===== */}
+        {atab === "qc" && (
         <section className="mb-8">
           <Eyebrow icon={Users}>트레이너 세일즈 QC 모니터링</Eyebrow>
           <div className="space-y-3">
@@ -586,8 +623,10 @@ export default function AdminDashboard() {
             ))}
           </div>
         </section>
+        )}
 
         {/* ===== AI Marketing 카피봇 ===== */}
+        {atab === "ops" && (
         <section>
           <div className="mb-4 flex items-center justify-between">
             <Eyebrow icon={Megaphone}>AI 상권 공략 카피봇 · 이번 주 광고</Eyebrow>
@@ -654,6 +693,7 @@ export default function AdminDashboard() {
             표현(치료·완치 등) 여부를 검토하세요.
           </p>
         </section>
+        )}
       </main>
     </div>
   );
