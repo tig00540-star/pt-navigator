@@ -3,7 +3,7 @@
 /* =========================================================================
    내 실적 (트레이너 본인) — 이달 매출·예상 급여·클로징률.
    session_log는 RLS로 본인 계약만. ot_log는 본인 회원(members)으로 필터.
-   admin과 동일 함수 재사용(revenueByTrainer·sessionPriceSumByTrainer·closingStats·payForMonth).
+   admin과 동일 함수 재사용(revenueByTrainer·sessionPriceSumByTrainer·closingStats·payForScheme).
    ========================================================================= */
 
 import { useEffect, useState } from "react";
@@ -11,7 +11,7 @@ import { Award, Dumbbell, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, payForMonth, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth } from "@/lib/memberStatus";
+import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth } from "@/lib/memberStatus";
 import PtPricingSettings from "@/components/views/PtPricingSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 
@@ -19,7 +19,8 @@ export default function MyStats({ members = [] }) {
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [otRows, setOtRows] = useState([]);
-  const [policy, setPolicy] = useState([]);
+  const [schemes, setSchemes] = useState([]);
+  const [runs, setRuns] = useState([]);
   const [uid, setUid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [contractNames, setContractNames] = useState(new Map());
@@ -29,11 +30,12 @@ export default function MyStats({ members = [] }) {
     (async () => {
       if (!supabase) { setLoading(false); return; }
       const { data: au } = await supabase.auth.getUser();
-      const [c, l, o, pp] = await Promise.all([
+      const [c, l, o, ps, pr] = await Promise.all([
         supabase.from("session_log").select("*"),        // RLS: 본인 계약
         supabase.from("daily_workout_log").select("*"),
         supabase.from("ot_log").select("*"),
-        supabase.from("pay_policy").select("*"),
+        supabase.from("pay_scheme").select("*"),
+        supabase.from("payroll_run").select("*"),
       ]);
       // hidden(소프트삭제) 회원 이름 폴백 — 계약에 등장하는 회원 id를 user_table에서 직접 조회.
       // members(활성 목록)엔 hidden이 빠져 있어 이름을 못 찾음. RLS 7c2a는 hidden 무관 본인 회원 조회 허용.
@@ -48,7 +50,8 @@ export default function MyStats({ members = [] }) {
       setContracts(c.data || []);
       setLogs(l.data || []);
       setOtRows(o.data || []);
-      setPolicy(pp.data || []);
+      setSchemes(ps.data || []);
+      setRuns(pr.data || []);
       setContractNames(names);
       setLoading(false);
     })();
@@ -62,7 +65,11 @@ export default function MyStats({ members = [] }) {
   const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, refund: 0, total: 0, cntNew: 0, cntRe: 0 };
   const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
   const closing = closingStats(myOt);
-  const pay = payForMonth(rev.total, priceSum, policy);
+  const sessionCount = sessionCountByTrainer(logs, contracts, ym).get(uid) || 0;
+  const scheme = resolveScheme(schemes, uid);
+  const pay = payForScheme(scheme, { monthRevenue: rev.total, sessionCount, sessionPriceSum: priceSum });
+  const myRun = runs.find((r) => r.trainer_id === uid && r.ym === ym) || null;
+  const confirmed = myRun?.final_total != null;
   const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
   // P2 — drill-down 파생. memberIds·ym·uid·logs·contracts·members는 이미 있음.
   const nameById = new Map(members.map((m) => [m.id, m.name]));
@@ -81,16 +88,27 @@ export default function MyStats({ members = [] }) {
         <>
       <Eyebrow icon={Award}>내 실적 · {ym}</Eyebrow>
 
-      {/* 예상 급여 (헤드라인) */}
+      {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
       <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
-          <Wallet className="h-3.5 w-3.5" /> 이달 예상 급여
+          <Wallet className="h-3.5 w-3.5" /> 이달 {confirmed ? "확정" : "예상"} 급여
         </div>
-        <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(pay.total)}</div>
-        <div className="mt-1 text-xs text-muted">
-          구간 {pay.band ? pay.band.base_pct + "%" : "—"} · 이달 수업료 {won(pay.base)}
-          {pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}
-        </div>
+        {confirmed ? (
+          <>
+            <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
+            <div className="mt-1 text-xs text-muted">원장 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동계산 ${won(pay.computed)}` : ""}</div>
+          </>
+        ) : pay.computed != null ? (
+          <>
+            <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
+            <div className="mt-1 text-xs text-muted">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
+          </>
+        ) : (
+          <>
+            <div className="mt-2 font-mono text-2xl font-extrabold text-muted">원장 확정 대기</div>
+            <div className="mt-1 text-xs text-muted">자동계산 없음(수동 급여)</div>
+          </>
+        )}
       </div>
 
       {/* 매출 · 클로징 */}
@@ -179,7 +197,7 @@ export default function MyStats({ members = [] }) {
         )}
       </details>
 
-      <p className="text-[10px] text-muted">※ 예상 급여 = 이달 완료 수업(회당단가) 기준 · 구간%는 이달 총매출로 결정. 실지급과 다를 수 있음.</p>
+      <p className="text-[10px] text-muted">※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 원장이 확정한 금액 기준입니다.</p>
         </>
       )}
 
