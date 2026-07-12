@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  applicationName: "PT 내비",
-  title: "PT 내비게이터",
+  applicationName: "오직 트레이너",
+  title: "오직 트레이너",
   description: "트레이너용 OT 세일즈·PT 관리 내비게이터",
   appleWebApp: {
     capable: true,
-    title: "PT 내비",
+    title: "오직 트레이너",
     statusBarStyle: "black",
   },
   icons: {

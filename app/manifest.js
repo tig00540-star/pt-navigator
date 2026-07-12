@@ -1,7 +1,7 @@
 export default function manifest() {
   return {
-    name: "pt-navigator",
-    short_name: "PT 내비",
+    name: "오직 트레이너",
+    short_name: "오직 트레이너",
     description: "트레이너용 OT 세일즈·PT 관리 내비게이터",
     start_url: "/",
     display: "standalone",

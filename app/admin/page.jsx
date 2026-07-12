@@ -36,7 +36,7 @@ import AdminAnnouncements from "@/components/AdminAnnouncements";
 // rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
 const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
-// admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). fuchsia accent.
+// admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). indigo accent.
 const ATABS = [
   { id: "perf",    label: "실적" },
   { id: "qc",      label: "QC" },
@@ -303,11 +303,11 @@ export default function AdminDashboard() {
       <header className="sticky top-0 z-30 border-b border-line/80 bg-card/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 shadow-lg shadow-fuchsia-500/30">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-lg shadow-indigo-500/30">
               <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
             <div className="leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-700">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-700">
                 Admin · 총괄 경영
               </div>
               <div className="text-sm font-semibold text-ink">
@@ -332,16 +332,16 @@ export default function AdminDashboard() {
             </Link>
           </div>
         </div>
-        {/* 섹션 탭 네비 (admin fuchsia) */}
+        {/* 섹션 탭 네비 (admin indigo) */}
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
             {ATABS.map((t) => {
               const active = atab === t.id;
               return (
                 <button key={t.id} onClick={() => setAtab(t.id)}
-                  className={`relative px-4 py-2.5 text-xs font-semibold transition ${active ? "text-fuchsia-700" : "text-muted hover:text-ink"}`}>
+                  className={`relative px-4 py-2.5 text-xs font-semibold transition ${active ? "text-indigo-700" : "text-muted hover:text-ink"}`}>
                   {t.label}
-                  {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-fuchsia-500" />}
+                  {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-500" />}
                 </button>
               );
             })}
@@ -647,7 +647,7 @@ export default function AdminDashboard() {
               주 거주 <span className="font-semibold text-primary-strong">{agg.topResidence}</span>
             </span>
             <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
-              주 통증 <span className="font-semibold text-fuchsia-700">{agg.topPain}</span>
+              주 통증 <span className="font-semibold text-indigo-700">{agg.topPain}</span>
             </span>
             <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
               주 직군 <span className="font-semibold text-cyan-700">{agg.topJob}</span>
@@ -663,8 +663,8 @@ export default function AdminDashboard() {
                   className="flex flex-col rounded-2xl border border-line bg-card shadow-sm p-5"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500/20 to-purple-600/20">
-                      <Icon className="h-4 w-4 text-fuchsia-700" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/20 to-indigo-600/20">
+                      <Icon className="h-4 w-4 text-indigo-700" />
                     </div>
                     <div className="text-[11px] font-semibold text-sub">{c.platform}</div>
                   </div>

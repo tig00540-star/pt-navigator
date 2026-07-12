@@ -671,7 +671,7 @@ export default function OTNavigatorDashboard() {
               <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 rounded-lg" />
               <div className="leading-tight">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-strong">
-                  OT Navigator
+                  오직 트레이너
                 </div>
                 <div className="text-sm font-semibold text-ink">
                   {member.name}
