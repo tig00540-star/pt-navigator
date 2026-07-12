@@ -739,6 +739,7 @@ export default function OTNavigatorDashboard() {
           <div className="tab-anim">
             <TodoTab
               members={members}
+              uid={myUid}
               onSelect={(id, toTab) => { setSelectedId(id); setTab(toTab ?? 1); }}
             />
           </div>

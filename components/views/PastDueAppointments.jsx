@@ -18,24 +18,25 @@ function daysAgo(iso, nowMs) {
   return Math.floor((nowMs - new Date(iso).getTime()) / 86400000);
 }
 
-export default function PastDueAppointments({ members, onSelect }) {
+export default function PastDueAppointments({ members, uid, onSelect }) {
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !uid) return;   // uid 없으면 스코프 불가 → 대기
     const nowISO = new Date().toISOString();
     let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("appointment")
-        .select("id, user_id, start_at, status")
+        .select("id, user_id, start_at, status, trainer_id")
         .eq("status", "booked")
+        .eq("trainer_id", uid)
         .lt("start_at", nowISO);
       if (cancelled) return;
       setRows(pastDueAppointments(data || [], nowISO));
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [uid]);
 
   if (!rows.length) return null;
   const nowMs = new Date().getTime(); // Date.now()는 react-hooks/purity 룰에 걸림 → 저장소 컨벤션(new Date().getTime()) 사용
