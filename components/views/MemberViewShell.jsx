@@ -8,9 +8,24 @@
    lazy 가능한 구조: PTView·InactiveView는 별도 컴포넌트라 필요 시 next/dynamic으로 교체 가능(optional).
    ========================================================================= */
 
+import dynamic from "next/dynamic";
 import { viewFor } from "@/lib/memberStatus";
-import PTView from "@/components/views/PTView";
 import InactiveView from "@/components/views/InactiveView";
+
+// PT 전용 서브트리는 첫 로드에서 빼고 PT 회원 선택 시에만 청크 로드(무게 위생).
+// MemberViewShell이 이미 "use client"라 ssr:false 정상 동작.
+const PTView = dynamic(() => import("@/components/views/PTView"), {
+  ssr: false,
+  loading: () => <ViewLoading />,
+});
+
+function ViewLoading() {
+  return (
+    <div className="flex items-center justify-center py-16 text-sm text-sub">
+      불러오는 중…
+    </div>
+  );
+}
 
 export default function MemberViewShell({ member, children, onGoList, showList, onMemberPatch, onMembersChanged, tab }) {
   const view = viewFor(member);
