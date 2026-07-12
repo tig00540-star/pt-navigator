@@ -141,21 +141,11 @@ export default function MonthlyReport({ data, onClose }) {
               {payP.computed != null && payP.computed > 0 && (
                 <div className="mt-1 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={pay.computed} prev={payP.computed} /></div>
               )}
-              {target != null ? (
-                <div className="mt-2">
-                  <div className="flex items-baseline justify-between text-[11px]">
-                    <span className="text-muted">목표 달성</span>
-                    <span className="tabular-nums font-bold text-ink">{Math.round((rev.total / target) * 100)}% <span className="font-normal text-muted">({won(rev.total)} / {won(target)})</span></span>
-                  </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-elevate">
-                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
-                  </div>
-                </div>
-              ) : nextBand ? (
+              {nextBand && (
                 <div className="mt-1 text-[11px] text-muted">
                   다음 급여 구간까지 {scheme.band_basis === "session_count" ? `${toNext}회` : won(toNext)}
                 </div>
-              ) : null}
+              )}
             </>
           ) : (
             <div className="mt-2 tabular-nums text-2xl font-extrabold text-muted">확정 대기(수동 급여)</div>
@@ -186,6 +176,20 @@ export default function MonthlyReport({ data, onClose }) {
             <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공 · 전체 기간</div>
           </StatTile>
         </div>
+
+        {/* 목표 달성 — trainer_goal(선택 ym). 급여 확정/예상 무관(매출 기준)이라 여기 독립 표시. */}
+        {target != null && (
+          <div className="mb-4 rounded-2xl border border-line bg-card p-4">
+            <div className="flex items-baseline justify-between">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
+              <span className="tabular-nums text-lg font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
+            </div>
+            <div className="mt-1 text-[11px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
+          </div>
+        )}
 
         {/* 클로징 성과 — ot_log 누적(월 스코프 불가). 성공/보류/실패 + 강점 방향 + 놓친 이유 */}
         <Card tone="zinc">
