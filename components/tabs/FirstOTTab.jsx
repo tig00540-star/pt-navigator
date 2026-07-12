@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Activity, Brain, Briefcase, MapPin, Send } from "lucide-react";
 import FirstOTAssist from "@/components/tabs/FirstOTAssist";
 import { STATUS_OPTS, labelOf } from "@/lib/labels";
+import { hasVal } from "@/lib/format";
 
 // 상태 배지 색(정적 클래스맵 · Tailwind purge 안전 — 동적 조립 금지). 값=user_table.status.
 const STATUS_TONE = {
@@ -68,6 +69,7 @@ function Chip({ icon: Icon, label, value }) {
 export default function FirstOTTab({ member }) {
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState([]);
+  const goalSet = hasVal(member.goal) && member.goal !== "미설정";
 
   const addNote = () => {
     const v = note.trim();
@@ -93,21 +95,25 @@ export default function FirstOTTab({ member }) {
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                   {member.name}
-                  <span className="ml-2 font-mono text-lg font-normal text-muted">
-                    {member.age}세
-                  </span>
+                  {hasVal(member.age) && (
+                    <span className="ml-2 font-mono text-lg font-normal text-muted">
+                      {member.age}세
+                    </span>
+                  )}
                 </h1>
                 <p className="mt-1 text-sm text-sub">
-                  {member.job} · 목표{" "}
-                  <span className="font-semibold text-primary-strong">{member.goal}</span>
+                  {hasVal(member.job) && <>{member.job} · </>}목표{" "}
+                  {goalSet
+                    ? <span className="font-semibold text-primary-strong">{member.goal}</span>
+                    : <span className="text-muted">미설정</span>}
                 </p>
               </div>
 
               <div className="grid shrink-0 grid-cols-2 gap-2 sm:w-64">
-                <Chip icon={MapPin} label="거주" value={member.residence} />
-                <Chip icon={Brain} label="MBTI" value={member.mbti} />
-                <Chip icon={Briefcase} label="직업" value={member.job} />
-                <Chip icon={Activity} label="불편 부위" value={member.pain} />
+                {hasVal(member.residence) && <Chip icon={MapPin} label="거주" value={member.residence} />}
+                {hasVal(member.mbti) && <Chip icon={Brain} label="MBTI" value={member.mbti} />}
+                {hasVal(member.job) && <Chip icon={Briefcase} label="직업" value={member.job} />}
+                {hasVal(member.pain) && <Chip icon={Activity} label="불편 부위" value={member.pain} />}
               </div>
             </div>
           </div>

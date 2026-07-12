@@ -17,6 +17,7 @@ import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 import AcuteBriefView from "@/components/views/AcuteBriefView";
 import { SOURCE_OPTS, labelOf } from "@/lib/labels";
+import { hasVal } from "@/lib/format";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
 function fmtDT(iso) {
@@ -260,6 +261,8 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     }
   };
 
+  const goalSet = hasVal(member.goal) && member.goal !== "미설정";
+
   return (
     <div className="space-y-6">
       {/* 회원 기본정보 (간단) */}
@@ -269,15 +272,18 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
         </span>
         <h1 className="mt-2 text-2xl font-bold text-ink">
           {member.name}
-          <span className="ml-2 font-mono text-base font-normal text-muted">{member.age}세</span>
+          {hasVal(member.age) && <span className="ml-2 font-mono text-base font-normal text-muted">{member.age}세</span>}
         </h1>
         <p className="mt-1 text-sm text-sub">
-          {member.job} · 목표 <span className="font-semibold text-primary-strong">{member.goal}</span>
+          {hasVal(member.job) && <>{member.job} · </>}목표{" "}
+          {goalSet
+            ? <span className="font-semibold text-primary-strong">{member.goal}</span>
+            : <span className="text-muted">미설정</span>}
         </p>
         <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-sub">
-          <span className="rounded-md bg-elevate px-2 py-1">거주 {member.residence}</span>
-          <span className="rounded-md bg-elevate px-2 py-1">MBTI {member.mbti}</span>
-          <span className="rounded-md bg-elevate px-2 py-1">불편 {member.pain}</span>
+          {hasVal(member.residence) && <span className="rounded-md bg-elevate px-2 py-1">거주 {member.residence}</span>}
+          {hasVal(member.mbti) && <span className="rounded-md bg-elevate px-2 py-1">MBTI {member.mbti}</span>}
+          {hasVal(member.pain) && <span className="rounded-md bg-elevate px-2 py-1">불편 {member.pain}</span>}
         </div>
       </section>
 
