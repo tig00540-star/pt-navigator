@@ -28,8 +28,18 @@ const INCENTIVE_OPTS = [
 ];
 const emptyBand = () => ({ min: "", payout_type: "pct_of_price", payout_value: "", incentive_type: "none", incentive_value: "" });
 
-export default function AdminPayrollSettings() {
-  const [scheme, setScheme] = useState(null);
+// DB 밴드 행 → 폼 문자열 밴드(로드·스코프 전환 공용). 모듈 스코프라 effect 의존성 안전.
+const bandsFromRow = (row) => (Array.isArray(row?.bands) ? row.bands.map((b) => ({
+  min: b.min == null ? "" : String(b.min),
+  payout_type: b.payout_type || "pct_of_price",
+  payout_value: b.payout_value == null ? "" : String(b.payout_value),
+  incentive_type: b.incentive_type || "none",
+  incentive_value: b.incentive_value == null ? "" : String(b.incentive_value),
+})) : []);
+
+export default function AdminPayrollSettings({ trainers = [] }) {
+  const [schemes, setSchemes] = useState([]);        // 전체 pay_scheme 행(계정 기본 + override)
+  const [scope, setScope] = useState(null);          // null=계정 기본 · trainerId=그 트레이너 override
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [type, setType] = useState("banded");      // 'banded' | 'manual'
@@ -43,25 +53,32 @@ export default function AdminPayrollSettings() {
 
   const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
-  // 마운트 1회 로드 — 계정 기본 스킴(trainer_id=null) 한 행.
+  // 스코프 행 → 폼 프리필(없으면 기본값). scope 전환·로드 공용.
+  const loadForm = (row) => {
+    setType(row?.type || "banded");
+    setBandBasis(row?.band_basis || "revenue");
+    setBands(bandsFromRow(row));
+  };
+
+  // 스코프 전환 — 그 스코프의 override 행(없으면 null)을 폼에 로드.
+  const selectScope = (s) => {
+    setScope(s);
+    loadForm(schemes.find((r) => (r.trainer_id ?? null) === (s ?? null)) || null);
+  };
+
+  // 마운트 1회 로드 — 전체 스킴(계정 기본 + override). 계정 기본(trainer_id=null)을 폼에 프리필.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setLoading(false); return; }
-      const { data } = await supabase.from("pay_scheme").select("*").is("trainer_id", null).maybeSingle();
+      const { data } = await supabase.from("pay_scheme").select("*");
       if (cancelled) return;
-      if (data) {
-        setScheme(data);
-        setType(data.type || "banded");
-        setBandBasis(data.band_basis || "revenue");
-        setBands(Array.isArray(data.bands) ? data.bands.map((b) => ({
-          min: b.min == null ? "" : String(b.min),
-          payout_type: b.payout_type || "pct_of_price",
-          payout_value: b.payout_value == null ? "" : String(b.payout_value),
-          incentive_type: b.incentive_type || "none",
-          incentive_value: b.incentive_value == null ? "" : String(b.incentive_value),
-        })) : []);
-      }
+      const all = data || [];
+      const base = all.find((s) => s.trainer_id == null) || null;
+      setSchemes(all);
+      setType(base?.type || "banded");
+      setBandBasis(base?.band_basis || "revenue");
+      setBands(bandsFromRow(base));
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -88,41 +105,96 @@ export default function AdminPayrollSettings() {
 
   const payoutUnit = (t) => (t === "pct_of_price" ? "%" : t === "flat_per_session" ? "원/회" : "원");
 
+  // 현재 스코프 행(없으면 계정 기본을 따르는 중) · 트레이너 override 존재 표식.
+  const currentRow = schemes.find((s) => (s.trainer_id ?? null) === (scope ?? null)) || null;
+  const hasOverride = (tid) => schemes.some((s) => s.trainer_id === tid);
+  const scopeBtnCls = (active) =>
+    `rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+      active
+        ? "border border-primary/30 bg-primary-soft text-primary-strong"
+        : "border border-line bg-elevate text-muted hover:text-ink"
+    }`;
+
   const save = async () => {
     if (saving) return;
     const payload = {
       type,
       band_basis: type === "banded" ? bandBasis : null,
       bands: type === "banded" ? numericBands() : [],
-      trainer_id: null,
+      trainer_id: scope ?? null, // 계정 기본=null · override=trainerId. account_id는 DB DEFAULT.
       updated_at: new Date().toISOString(),
     };
+    // 현재 스코프의 기존 행(update 대상). ⚠️ override insert는 pay_scheme.account_id DEFAULT 보정에 의존.
+    const existing = schemes.find((s) => (s.trainer_id ?? null) === (scope ?? null));
     setSaving(true);
     if (!supabase) {
-      setScheme((p) => ({ ...(p || {}), ...payload, id: p?.id || `demo-${Date.now()}` }));
+      const row = { ...(existing || {}), ...payload, id: existing?.id || `demo-${Date.now()}` };
+      setSchemes((p) => (existing ? p.map((s) => (s.id === existing.id ? row : s)) : [...p, row]));
       showToast("저장됨(데모)");
       setSaving(false);
       return;
     }
-    if (scheme?.id) {
+    if (existing?.id) {
       // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패. .select() length>0로 확정.
-      const { data, error } = await supabase.from("pay_scheme").update(payload).eq("id", scheme.id).select();
+      const { data, error } = await supabase.from("pay_scheme").update(payload).eq("id", existing.id).select();
       if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
-      setScheme(data[0]);
+      setSchemes((p) => p.map((s) => (s.id === data[0].id ? data[0] : s)));
     } else {
       const { data, error } = await supabase.from("pay_scheme").insert(payload).select();
       if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
-      setScheme(data[0]);
+      setSchemes((p) => [...p, data[0]]);
     }
     showToast("급여 스킴이 저장되었어요");
     setSaving(false);
   };
 
+  // override 삭제 — 이 트레이너 전용 정책을 지워 계정 기본을 따르게. 계정 기본(null)엔 없음.
+  const removeOverride = async () => {
+    if (saving || scope == null) return;
+    const row = schemes.find((s) => (s.trainer_id ?? null) === (scope ?? null));
+    if (!row) return;
+    setSaving(true);
+    if (!supabase) {
+      setSchemes((p) => p.filter((s) => s.id !== row.id));
+      selectScope(null);
+      showToast("삭제됨(데모)");
+      setSaving(false);
+      return;
+    }
+    const { data, error } = await supabase.from("pay_scheme").delete().eq("id", row.id).select();
+    if (error || !data || data.length === 0) { showToast("삭제 실패 — 권한/정책을 확인하세요"); setSaving(false); return; }
+    setSchemes((p) => p.filter((s) => s.id !== row.id));
+    selectScope(null);
+    showToast("이 트레이너 정책 삭제 — 계정 기본을 따릅니다");
+    setSaving(false);
+  };
+
   return (
     <div className="space-y-4">
-      <Eyebrow icon={Wallet}>급여 정책 설정 · 계정 기본</Eyebrow>
+      <Eyebrow icon={Wallet}>급여 정책 설정 · {scope == null ? "계정 기본" : (trainers.find((t) => t.id === scope)?.name || "트레이너")}</Eyebrow>
 
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        {/* 스코프 선택 — 계정 기본 + 트레이너별 override */}
+        <div className="mb-4">
+          <span className="mb-1.5 block text-[11px] font-medium text-muted">적용 대상</span>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => selectScope(null)} disabled={saving} className={scopeBtnCls(scope == null)}>
+              계정 기본
+            </button>
+            {trainers.map((t) => (
+              <button key={t.id} onClick={() => selectScope(t.id)} disabled={saving} className={scopeBtnCls(scope === t.id)}>
+                {t.name || "이름없음"}
+                {hasOverride(t.id) && <span className="ml-1 text-primary-strong">●</span>}
+              </button>
+            ))}
+          </div>
+          {!loading && scope != null && !currentRow && (
+            <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              이 트레이너는 계정 기본을 따르는 중 — 저장하면 전용 정책이 생겨요.
+            </p>
+          )}
+        </div>
+
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : (
@@ -263,6 +335,17 @@ export default function AdminPayrollSettings() {
             >
               <Wallet className="h-4 w-4" strokeWidth={2.5} /> {saving ? "저장 중…" : "급여 스킴 저장"}
             </button>
+
+            {/* override 삭제 — 트레이너 스코프이고 전용 정책이 있을 때만(계정 기본은 못 지움) */}
+            {scope != null && currentRow && (
+              <button
+                onClick={removeOverride}
+                disabled={saving}
+                className="w-full rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-500/20 disabled:opacity-50"
+              >
+                이 트레이너 정책 삭제 (계정 기본 따름)
+              </button>
+            )}
           </div>
         )}
       </section>

@@ -422,7 +422,7 @@ export default function AdminDashboard() {
 
         {/* ===== 급여 정책 설정 (페이롤 C1) — 계정 기본 스킴 편집. pay_policy 표시는 D에서 전환. ===== */}
         <section className="mb-8">
-          <AdminPayrollSettings />
+          <AdminPayrollSettings trainers={trainers} />
         </section>
 
         {/* ===== KPI · 방향/사유 분포 (④) ===== */}
