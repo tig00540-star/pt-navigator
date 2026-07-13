@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Award,
@@ -190,6 +191,7 @@ export default function AdminDashboard() {
   const [otRows, setOtRows] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
+  const router = useRouter(); // solo면 /admin 접근 시 통합 화면(/)으로 바운스
   const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
   const [trainers, setTrainers] = useState([]);
   const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
@@ -208,7 +210,8 @@ export default function AdminDashboard() {
       let myRole = "denied";
       if (uid) {
         const { data: t } = await supabase
-          .from("trainer").select("role").eq("id", uid).maybeSingle();
+          .from("trainer").select("role, account:account_id(type)").eq("id", uid).maybeSingle();
+        if (t?.account?.type === "solo") { router.replace("/"); return; } // solo는 통합 화면만(admin 누수 차단)
         if (t?.role === "owner") myRole = "owner";
       }
       setRole(myRole);
@@ -236,6 +239,8 @@ export default function AdminDashboard() {
       setSchemes(ps.data || []);
       setRuns(pr.data || []);
     })();
+    // router는 next/navigation에서 안정 참조 — 마운트 1회 게이트만. deps 불필요.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const agg = useMemo(() => aggregate(rows), [rows]);

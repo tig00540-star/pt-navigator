@@ -17,7 +17,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
 
-export default function MyStats({ members = [] }) {
+export default function MyStats({ members = [], isSolo = false }) {
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [otRows, setOtRows] = useState([]);
@@ -113,7 +113,7 @@ export default function MyStats({ members = [] }) {
       {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
       <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
-          <Wallet className="h-3.5 w-3.5" /> 이달 {confirmed ? "확정" : "예상"} 급여
+          <Wallet className="h-3.5 w-3.5" /> 이달 {isSolo ? "급여(자동계산)" : `${confirmed ? "확정" : "예상"} 급여`}
         </div>
         {confirmed ? (
           <>
@@ -127,8 +127,8 @@ export default function MyStats({ members = [] }) {
           </>
         ) : (
           <>
-            <div className="mt-2 tabular-nums text-2xl font-extrabold text-muted">원장 확정 대기</div>
-            <div className="mt-1 text-xs text-muted">자동계산 없음(수동 급여)</div>
+            <div className="mt-2 text-2xl font-extrabold text-muted">{isSolo ? "급여 방식 미설정" : "원장 확정 대기"}</div>
+            <div className="mt-1 text-xs text-muted">{isSolo ? "급여 방식을 설정하면 자동계산돼요" : "자동계산 없음(수동 급여)"}</div>
           </>
         )}
       </div>
@@ -227,7 +227,7 @@ export default function MyStats({ members = [] }) {
         )}
       </details>
 
-      <p className="text-[10px] text-muted">※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 원장이 확정한 금액 기준입니다.</p>
+      <p className="text-[10px] text-muted">{isSolo ? "※ 자동계산은 이달 완료 수업 기준입니다." : "※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 원장이 확정한 금액 기준입니다."}</p>
         </>
       )}
 

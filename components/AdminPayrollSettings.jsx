@@ -38,7 +38,7 @@ const bandsFromRow = (row) => (Array.isArray(row?.bands) ? row.bands.map((b) => 
   incentive_value: b.incentive_value == null ? "" : String(b.incentive_value),
 })) : []);
 
-export default function AdminPayrollSettings({ trainers = [] }) {
+export default function AdminPayrollSettings({ trainers = [], solo = false }) {
   const [schemes, setSchemes] = useState([]);        // 전체 pay_scheme 행(계정 기본 + override)
   const [scope, setScope] = useState(null);          // null=계정 기본 · trainerId=그 트레이너 override
   const [loading, setLoading] = useState(true);
@@ -172,10 +172,11 @@ export default function AdminPayrollSettings({ trainers = [] }) {
 
   return (
     <div className="space-y-4">
-      <Eyebrow icon={Wallet}>급여 정책 설정 · {scope == null ? "계정 기본" : (trainers.find((t) => t.id === scope)?.name || "트레이너")}</Eyebrow>
+      <Eyebrow icon={Wallet}>{solo ? "내 급여 방식" : `급여 정책 설정 · ${scope == null ? "계정 기본" : (trainers.find((t) => t.id === scope)?.name || "트레이너")}`}</Eyebrow>
 
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        {/* 스코프 선택 — 계정 기본 + 트레이너별 override */}
+        {/* 스코프 선택 — 계정 기본 + 트레이너별 override. solo면 대상이 본인 1명뿐이라 숨김(scope=null 유지). */}
+        {!solo && (
         <div className="mb-4">
           <span className="mb-1.5 block text-[11px] font-medium text-muted">적용 대상</span>
           <div className="flex flex-wrap gap-2">
@@ -195,6 +196,7 @@ export default function AdminPayrollSettings({ trainers = [] }) {
             </p>
           )}
         </div>
+        )}
 
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>

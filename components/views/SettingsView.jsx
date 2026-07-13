@@ -5,14 +5,16 @@ import TrainerProfileSettings from "@/components/views/TrainerProfileSettings";
 import TrainerLibrary from "@/components/views/TrainerLibrary";
 import PtPricingSettings from "@/components/views/PtPricingSettings";
 import PasswordChange from "@/components/views/PasswordChange";
+import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 
-export default function SettingsView() {
+export default function SettingsView({ isSolo = false }) {
   return (
     <div className="space-y-6">
       <TrainerGoalSetter />
       <TrainerProfileSettings />
       <TrainerLibrary />
       <PtPricingSettings />
+      {isSolo && <AdminPayrollSettings trainers={[]} solo />}
       <PasswordChange />
     </div>
   );

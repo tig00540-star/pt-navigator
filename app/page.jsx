@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { useAccount } from "@/lib/useAccount";
 import { won, hasVal } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import ObservationTab from "@/components/tabs/ObservationTab";
@@ -491,6 +492,7 @@ export default function OTNavigatorDashboard() {
   // ⚠️ ③에서 클로징 저장 지점(재등록·이탈 UI 등)이 늘면 그 성공 지점에도 onClosingSaved를 물려야 함.
   const [closingVersion, setClosingVersion] = useState(0);
   const [myUid, setMyUid] = useState(null); // 현재 로그인 uid — 내 회원 판별(원장 스코프)
+  const { isSolo } = useAccount(); // solo(1인 SaaS)면 admin 분기 숨김·설정에 셀프 페이롤. center면 false=기존 동작.
   const [bellOpen, setBellOpen] = useState(false);   // 공지 재열람(벨) 모달
   const [unreadCount, setUnreadCount] = useState(0); // 공지 안읽음 배지 수
   const scheduleRef = useRef(null); // '오늘' 스택 내 스케줄 섹션 — 미처리예약 클릭 시 스크롤 타겟(같은 탭이라 setTab no-op 회귀 방지)
@@ -665,13 +667,15 @@ export default function OTNavigatorDashboard() {
                 )}
               </button>
 
-              <a
-                href="/admin"
-                className="flex items-center gap-1.5 rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-700 transition hover:border-fuchsia-500/60 active:scale-95"
-              >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">관리자</span>
-              </a>
+              {!isSolo && (
+                <a
+                  href="/admin"
+                  className="flex items-center gap-1.5 rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-700 transition hover:border-fuchsia-500/60 active:scale-95"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">관리자</span>
+                </a>
+              )}
             </div>
           </div>
 
@@ -732,9 +736,9 @@ export default function OTNavigatorDashboard() {
             />
           </div>
         ) : tab === 7 ? (
-          <div className="tab-anim"><SettingsView /></div>
+          <div className="tab-anim"><SettingsView isSolo={isSolo} /></div>
         ) : tab === 8 ? (
-          <div className="tab-anim"><MyStats members={members} /></div>
+          <div className="tab-anim"><MyStats members={members} isSolo={isSolo} /></div>
         ) : (
           <>
         {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}
