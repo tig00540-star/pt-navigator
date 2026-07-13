@@ -102,49 +102,6 @@ const GROUP_TAB = {
 };
 
 /* =========================================================================
-   PURGE-SAFE COLOR TOKENS
-   ========================================================================= */
-
-const C = {
-  sky: {
-    text: "text-sky-400",
-    soft: "bg-sky-500/10",
-    border: "border-sky-500/30",
-    ring: "ring-sky-500/50",
-    dot: "bg-sky-400",
-    bar: "bg-sky-400",
-    glow: "shadow-sky-500/20",
-  },
-  lime: {
-    text: "text-lime-400",
-    soft: "bg-lime-500/10",
-    border: "border-lime-500/30",
-    ring: "ring-lime-500/50",
-    dot: "bg-lime-400",
-    bar: "bg-lime-400",
-    glow: "shadow-lime-500/20",
-  },
-  orange: {
-    text: "text-orange-400",
-    soft: "bg-orange-500/10",
-    border: "border-orange-500/30",
-    ring: "ring-orange-500/50",
-    dot: "bg-orange-400",
-    bar: "bg-orange-400",
-    glow: "shadow-orange-500/20",
-  },
-  emerald: {
-    text: "text-emerald-400",
-    soft: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    ring: "ring-emerald-500/50",
-    dot: "bg-emerald-400",
-    bar: "bg-emerald-400",
-    glow: "shadow-emerald-500/20",
-  },
-};
-
-/* =========================================================================
    SMALL PIECES
    ========================================================================= */
 
@@ -682,18 +639,22 @@ export default function OTNavigatorDashboard() {
 
             <div className="flex items-center gap-2">
               {members.length > 0 && (
-                <select
-                  value={selectedId || ""}
-                  onChange={(e) => setSelectedId(e.target.value)}
-                  className="max-w-[110px] rounded-lg border border-line bg-elevate px-2 py-1.5 text-xs text-sub outline-none focus:border-primary sm:max-w-[130px]"
-                  aria-label="회원 선택"
-                >
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="flex items-center gap-1 rounded-lg border border-line bg-elevate pl-2 pr-1 focus-within:border-primary">
+                  <User className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+                  <span className="hidden text-[10px] font-medium text-muted sm:inline">회원</span>
+                  <select
+                    value={selectedId || ""}
+                    onChange={(e) => setSelectedId(e.target.value)}
+                    className="max-w-[88px] bg-transparent py-1.5 pr-1 text-xs text-sub outline-none sm:max-w-[120px]"
+                    aria-label="회원 선택"
+                  >
+                    {members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
               <button
                 onClick={() => setShowForm(true)}
