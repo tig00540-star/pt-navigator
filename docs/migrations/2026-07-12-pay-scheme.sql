@@ -46,3 +46,6 @@ select p.account_id, null, 'banded', 'revenue',
 from pay_policy p
 group by p.account_id
 on conflict do nothing;
+
+-- [C 착수 시 추가] 앱이 account_id 생략하고 insert하도록 DEFAULT(pt_package 패턴). RLS with_check와 일치.
+alter table pay_scheme alter column account_id set default auth_account_id();

@@ -26,3 +26,6 @@ create policy payroll_run_ins on payroll_run for insert
 create policy payroll_run_upd on payroll_run for update
   using (account_id = auth_account_id() and auth_is_owner())
   with check (account_id = auth_account_id() and auth_is_owner());
+
+-- [D 착수 시 추가] 앱이 account_id 생략하고 insert하도록 DEFAULT(pay_scheme 패턴). RLS with_check와 일치.
+alter table payroll_run alter column account_id set default auth_account_id();
