@@ -25,6 +25,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
@@ -195,19 +196,16 @@ export default function FirstOTAssist({ member }) {
     <section className="rounded-2xl border border-line bg-card shadow-sm p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Eyebrow icon={Sparkles}>① AI 1차 OT 지원 (가설)</Eyebrow>
-        <button
+        <Button
+          variant={sameInput && !loading ? "ghost" : "primary"}
+          size="md"
           onClick={generate}
           disabled={loading}
           title={sameInput ? "회원 정보가 바뀌면 다시 생성하세요 (지금은 같은 입력)" : undefined}
-          className={
-            sameInput && !loading
-              ? "flex items-center gap-2 rounded-lg border border-line bg-elevate px-4 py-2 text-sm font-semibold text-sub transition active:scale-95"
-              : "flex items-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-          }
+          className="gap-2"
         >
-          <Sparkles className="h-4 w-4" strokeWidth={2.5} />
-          {loading ? "생성 중…" : data ? "다시 생성" : "AI 지원 생성"}
-        </button>
+          <Sparkles className="h-4 w-4" strokeWidth={2.5} /> {loading ? "생성 중…" : data ? "다시 생성" : "AI 지원 생성"}
+        </Button>
       </div>
 
       {/* 캐시/스테일 상태 */}

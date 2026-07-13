@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { fmt } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import { supabase } from "@/lib/supabaseClient";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
@@ -426,13 +427,10 @@ export default function VoiceLogTab({ member, onResult }) {
           </div>
 
           {/* 일지 채우기 — PTView textarea로 전달(저장·차감·복사는 PTView saveLog 한 곳) */}
-          <button
-            onClick={() => onResult?.(rawText, buildText(report))}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition active:scale-95"
-          >
+          <Button variant="primary" size="md" fullWidth onClick={() => onResult?.(rawText, buildText(report))} className="mt-4 gap-2">
             <NotebookPen className="h-5 w-5" strokeWidth={2.5} />
             이 내용으로 일지 채우기
-          </button>
+          </Button>
 
           <p className="mt-3 text-[10px] leading-relaxed text-muted">
             ※ 실제 마이크 녹음 → 음성인식(STT) → AI 요약으로 생성됩니다. 키 미설정·오류·미지원

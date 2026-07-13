@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
@@ -536,13 +537,9 @@ export default function SecondOTTab({ member, onClosingSaved }) {
               관찰이 바뀌었습니다 — 재생성 권장
             </span>
           )}
-          <button
-            onClick={() => generateBrief(obs, existingRow2Id)}
-            disabled={generating}
-            className="ml-auto flex items-center gap-1 rounded-lg border border-line bg-elevate px-2.5 py-1 text-[11px] font-medium text-ink transition hover:border-primary disabled:opacity-50"
-          >
+          <Button variant="ghost" size="sm" onClick={() => generateBrief(obs, existingRow2Id)} disabled={generating} className="ml-auto">
             <RefreshCw className="h-3 w-3" /> 재생성
-          </button>
+          </Button>
         </div>
 
         {/* D-3 — 내 과거 케이스 거울. 진단 먼저(스파링 톤) → 통한 접근 리딩 → 다른 벡터 → 네 판단 넛지.
@@ -822,13 +819,9 @@ export default function SecondOTTab({ member, onClosingSaved }) {
               </select>
             </div>
             <div className="flex items-end">
-              <button
-                onClick={() => saveClosing(effApproach)}
-                disabled={savingClose}
-                className="w-full rounded-lg bg-gradient-to-br from-red-500 to-red-600 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-              >
+              <Button variant="primary" size="md" fullWidth onClick={() => saveClosing(effApproach)} disabled={savingClose}>
                 {savingClose ? "저장 중…" : "결과 저장"}
-              </button>
+              </Button>
             </div>
 
             {/* 실패/보류일 때만 사유 카테고리 (약점 진단 · 집계) — full width */}
@@ -916,13 +909,9 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         <span className="font-semibold text-ink">{member.name}</span> 회원의 1차 관찰을 근거로 2차 AI 지원(등록 당위성·클로징·거절 대처)을 준비합니다.
       </p>
       <p className="mt-1 text-xs text-muted">수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.</p>
-      <button
-        onClick={() => generateBrief(obs, existingRow2Id)}
-        disabled={generating}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-      >
+      <Button variant="primary" size="md" onClick={() => generateBrief(obs, existingRow2Id)} disabled={generating} className="mt-4 gap-2">
         <Sparkles className="h-4 w-4" strokeWidth={2.5} /> AI 지원 준비 생성하기
-      </button>
+      </Button>
     </div>
   );
 

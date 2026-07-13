@@ -9,6 +9,7 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import { labelOf, CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 import {
@@ -109,9 +110,9 @@ export default function MonthlyReport({ data, onClose }) {
         </select>
         <div className="flex items-center gap-2">
           {/* 4-b에서 여기 'PDF 저장'·'이미지 저장' 버튼 추가 */}
-          <button onClick={onClose} className="flex items-center gap-1 rounded-lg border border-line bg-card px-3 py-2 text-sm text-sub hover:text-ink">
+          <Button variant="ghost" size="md" onClick={onClose}>
             <X className="h-4 w-4" /> 닫기
-          </button>
+          </Button>
         </div>
       </div>
 

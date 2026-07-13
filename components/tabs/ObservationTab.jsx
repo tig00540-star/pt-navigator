@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { FileText, Footprints, Handshake, Plus, Save, Smile, Target, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
@@ -308,13 +309,9 @@ export default function ObservationTab({ member, onClosingSaved }) {
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
             <Footprints className="h-3.5 w-3.5" /> ① 움직임 관찰
           </div>
-          <button
-            onClick={addMovement}
-            disabled={form.movements.length >= 3}
-            className="flex items-center gap-1 rounded-lg border border-line bg-elevate px-2.5 py-1 text-xs font-medium text-ink transition hover:border-primary disabled:opacity-40"
-          >
+          <Button variant="ghost" size="sm" onClick={addMovement} disabled={form.movements.length >= 3}>
             <Plus className="h-3.5 w-3.5" /> 추가
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-3">
@@ -614,14 +611,10 @@ export default function ObservationTab({ member, onClosingSaved }) {
       </section>
 
       {/* 저장 */}
-      <button
-        onClick={save}
-        disabled={!canEdit || saving || loading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition active:scale-95 disabled:opacity-50"
-      >
+      <Button variant="primary" size="md" fullWidth onClick={save} disabled={!canEdit || saving || loading} className="gap-2">
         <Save className="h-5 w-5" strokeWidth={2.5} />
         {saving ? "저장 중…" : existingRowId ? "관찰 기록 수정" : "관찰 기록 저장"}
-      </button>
+      </Button>
 
       <Toast message={toast} />
     </div>
