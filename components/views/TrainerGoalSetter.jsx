@@ -56,7 +56,7 @@ export default function TrainerGoalSetter() {
         <div className="mt-3 flex gap-2">
           <input type="number" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} disabled={saving} placeholder="목표 순매출(원)" className={inputCls} />
           <button onClick={save} disabled={saving}
-            className="shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50">
+            className="shrink-0 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50">
             {saving ? "저장 중…" : "저장"}
           </button>
         </div>

@@ -143,7 +143,7 @@ export default function FirstOTTab({ member }) {
             />
             <button
               onClick={addNote}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30 transition active:scale-95"
               aria-label="메모 저장"
             >
               <Send className="h-4 w-4" strokeWidth={2.5} />

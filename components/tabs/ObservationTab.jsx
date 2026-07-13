@@ -617,7 +617,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
       <button
         onClick={save}
         disabled={!canEdit || saving || loading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 py-3.5 text-sm font-bold text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition active:scale-95 disabled:opacity-50"
       >
         <Save className="h-5 w-5" strokeWidth={2.5} />
         {saving ? "저장 중…" : existingRowId ? "관찰 기록 수정" : "관찰 기록 저장"}

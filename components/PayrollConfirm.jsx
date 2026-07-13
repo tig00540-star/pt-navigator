@@ -66,7 +66,7 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
         <span className="text-[11px] text-sub">최종</span>
         <input type="number" inputMode="numeric" value={final} onChange={(e) => setFinal(e.target.value)} disabled={saving} className={inputCls} />
         <span className="text-[11px] text-sub">원</span>
-        <button onClick={confirm} disabled={saving} className="rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1.5 text-xs font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50">
+        <button onClick={confirm} disabled={saving} className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50">
           {confirmed ? "재확정" : "확정"}
         </button>
       </div>

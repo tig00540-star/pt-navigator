@@ -167,7 +167,7 @@ function Eyebrow({ icon: Icon, children }) {
 
 function Bar({ pct, tone = "lime" }) {
   const c = {
-    lime: "from-lime-400 to-emerald-400",
+    lime: "from-red-500 to-red-600",
     cyan: "from-cyan-400 to-sky-400",
     amber: "from-amber-400 to-orange-400",
   }[tone];

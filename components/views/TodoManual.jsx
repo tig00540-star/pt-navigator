@@ -100,7 +100,7 @@ export default function TodoManual() {
         <button
           onClick={add}
           disabled={saving || !body.trim()}
-          className="flex items-center gap-1 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+          className="flex items-center gap-1 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-2 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-50"
         >
           <Plus className="h-4 w-4" /> 추가
         </button>

@@ -185,7 +185,7 @@ export default function MonthlyReport({ data, onClose }) {
               <span className="tabular-nums text-lg font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
-              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
             </div>
             <div className="mt-1 text-[11px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
           </div>

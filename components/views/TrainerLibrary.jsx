@@ -139,7 +139,7 @@ export default function TrainerLibrary() {
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="어떤 상황에 쓰는지" className={inputCls} />
           </label>
           <div className="flex gap-2">
-            <button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50">
+            <button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50">
               {editingId ? <Pencil className="h-4 w-4" strokeWidth={2.5} /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
               {saving ? "저장 중…" : editingId ? "수정 저장" : "자료 추가"}
             </button>

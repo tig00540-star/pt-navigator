@@ -310,7 +310,7 @@ export default function VoiceLogTab({ member, onResult }) {
           {phase === "idle" || phase === "done" ? (
             <button
               onClick={start}
-              className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-br from-lime-400 to-emerald-500 px-6 py-3 text-sm font-bold text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95"
+              className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-br from-red-500 to-red-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition active:scale-95"
             >
               <Mic className="h-5 w-5" strokeWidth={2.5} />
               {phase === "done" ? "다시 녹음" : "수업 요약 녹음 시작"}
@@ -428,7 +428,7 @@ export default function VoiceLogTab({ member, onResult }) {
           {/* 일지 채우기 — PTView textarea로 전달(저장·차감·복사는 PTView saveLog 한 곳) */}
           <button
             onClick={() => onResult?.(rawText, buildText(report))}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-lime-400 to-emerald-500 py-3.5 text-sm font-bold text-zinc-950 shadow-lg shadow-lime-500/30 transition active:scale-95"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition active:scale-95"
           >
             <NotebookPen className="h-5 w-5" strokeWidth={2.5} />
             이 내용으로 일지 채우기

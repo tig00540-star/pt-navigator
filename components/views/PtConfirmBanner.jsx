@@ -110,7 +110,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
       </div>
       <button
         onClick={() => setConfirming(true)}
-        className="shrink-0 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-3.5 py-1.5 text-sm font-bold text-zinc-950 transition active:scale-95"
+        className="shrink-0 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3.5 py-1.5 text-sm font-bold text-white transition active:scale-95"
       >
         PT 등록 확정
       </button>
@@ -164,7 +164,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
               <button
                 onClick={doConfirm}
                 disabled={busy}
-                className="rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+                className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
               >
                 {busy ? "확정 중…" : "확정"}
               </button>

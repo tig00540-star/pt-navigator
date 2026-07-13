@@ -124,7 +124,7 @@ export default function AuthGate({ children }) {
           <button
             onClick={signIn}
             disabled={busy}
-            className="w-full rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 text-zinc-950 font-medium py-2.5 text-sm disabled:opacity-50"
+            className="w-full rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white font-medium py-2.5 text-sm disabled:opacity-50"
           >
             {busy ? "로그인 중…" : "로그인"}
           </button>

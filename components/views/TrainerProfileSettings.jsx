@@ -101,7 +101,7 @@ export default function TrainerProfileSettings() {
               <textarea value={bio} onChange={(e) => setBio(e.target.value)} disabled={saving} rows={3} placeholder="예: 통증개선 특화, 공감형 상담, 초보자 편하게" className={inputCls} />
             </label>
             <button onClick={save} disabled={saving}
-              className="w-full rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50">
+              className="w-full rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50">
               {saving ? "저장 중…" : "프로필 저장"}
             </button>
           </div>

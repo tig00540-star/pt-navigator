@@ -178,7 +178,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               <button
                 onClick={saveReg}
                 disabled={regSaving}
-                className="shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1.5 text-xs font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+                className="shrink-0 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50"
               >
                 {regSaving ? "저장 중…" : "저장"}
               </button>

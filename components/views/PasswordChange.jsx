@@ -51,7 +51,7 @@ export default function PasswordChange({ forced = false, onDone }) {
         <button
           onClick={submit}
           disabled={saving || !supabase}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
         >
           <KeyRound className="h-4 w-4" strokeWidth={2.5} /> {saving ? "변경 중…" : "비밀번호 변경"}
         </button>

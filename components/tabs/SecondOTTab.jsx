@@ -825,7 +825,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
               <button
                 onClick={() => saveClosing(effApproach)}
                 disabled={savingClose}
-                className="w-full rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+                className="w-full rounded-lg bg-gradient-to-br from-red-500 to-red-600 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
               >
                 {savingClose ? "저장 중…" : "결과 저장"}
               </button>
@@ -919,7 +919,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       <button
         onClick={() => generateBrief(obs, existingRow2Id)}
         disabled={generating}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
       >
         <Sparkles className="h-4 w-4" strokeWidth={2.5} /> AI 지원 준비 생성하기
       </button>

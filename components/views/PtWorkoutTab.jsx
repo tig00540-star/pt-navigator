@@ -321,7 +321,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               <button
                 onClick={saveDirection}
                 disabled={dirSaving}
-                className="rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1.5 text-xs font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+                className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50"
               >
                 {dirSaving ? "저장 중…" : "저장"}
               </button>
@@ -372,7 +372,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               </p>
               <button
                 onClick={() => setShowContract(true)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1.5 text-xs font-bold text-zinc-950 transition active:scale-95"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95"
               >
                 <Dumbbell className="h-3.5 w-3.5" /> 계약 등록
               </button>
@@ -402,7 +402,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           <button
             onClick={() => saveLog(usedVoice ? "voice" : "manual")}
             disabled={saving || loading || !body.trim()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
           >
             <NotebookPen className="h-4 w-4" strokeWidth={2.5} />
             {saving ? "저장 중…" : "저장 + 차감"}
@@ -556,7 +556,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               <button
                 onClick={saveContract}
                 disabled={cSaving}
-                className="rounded-lg bg-gradient-to-br from-lime-400 to-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition active:scale-95 disabled:opacity-50"
+                className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
               >
                 {cSaving ? (isReReg ? "재등록 중…" : "등록 중…") : (isReReg ? "재등록" : "등록")}
               </button>
