@@ -11,6 +11,7 @@ import { Compass, Dumbbell, Flame, History, NotebookPen, RefreshCw, UserX } from
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
@@ -311,20 +312,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
             />
             <div className="mt-2 flex justify-end gap-2">
-              <button
-                onClick={() => { setDirection(member.pt_direction ?? ""); setEditingDir(false); }}
-                disabled={dirSaving}
-                className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-medium text-sub transition active:scale-95 disabled:opacity-50"
-              >
+              <Button variant="ghost" size="sm" onClick={() => { setDirection(member.pt_direction ?? ""); setEditingDir(false); }} disabled={dirSaving}>
                 취소
-              </button>
-              <button
-                onClick={saveDirection}
-                disabled={dirSaving}
-                className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="primary" size="sm" onClick={saveDirection} disabled={dirSaving}>
                 {dirSaving ? "저장 중…" : "저장"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -370,12 +363,9 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                 <Dumbbell className="h-4 w-4 shrink-0 text-muted" />
                 활성 계약 없음 — 등록/재등록이 필요합니다.
               </p>
-              <button
-                onClick={() => setShowContract(true)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95"
-              >
+              <Button variant="primary" size="sm" onClick={() => setShowContract(true)} className="mt-3">
                 <Dumbbell className="h-3.5 w-3.5" /> 계약 등록
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -399,21 +389,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
         />
         <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            onClick={() => saveLog(usedVoice ? "voice" : "manual")}
-            disabled={saving || loading || !body.trim()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-          >
+          <Button variant="primary" size="md" onClick={() => saveLog(usedVoice ? "voice" : "manual")} disabled={saving || loading || !body.trim()} className="flex-1 gap-2">
             <NotebookPen className="h-4 w-4" strokeWidth={2.5} />
             {saving ? "저장 중…" : "저장 + 차감"}
-          </button>
-          <button
-            onClick={() => saveLog("noshow")}
-            disabled={saving || loading}
-            className="flex items-center justify-center gap-2 rounded-lg border border-line bg-elevate px-4 py-2.5 text-sm font-medium text-sub transition hover:border-red-500/50 hover:text-red-600 active:scale-95 disabled:opacity-50"
-          >
+          </Button>
+          <Button variant="ghost" size="md" onClick={() => saveLog("noshow")} disabled={saving || loading} className="gap-2">
             <UserX className="h-4 w-4" /> 노쇼 차감
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -546,20 +528,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             {cErr && <p className="mb-3 text-xs font-medium text-red-600">{cErr}</p>}
 
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowContract(false)}
-                disabled={cSaving}
-                className="rounded-lg border border-line bg-elevate px-4 py-2 text-sm font-medium text-sub transition hover:border-primary active:scale-95 disabled:opacity-50"
-              >
+              <Button variant="ghost" size="md" onClick={() => setShowContract(false)} disabled={cSaving}>
                 취소
-              </button>
-              <button
-                onClick={saveContract}
-                disabled={cSaving}
-                className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="primary" size="md" onClick={saveContract} disabled={cSaving}>
                 {cSaving ? (isReReg ? "재등록 중…" : "등록 중…") : (isReReg ? "재등록" : "등록")}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

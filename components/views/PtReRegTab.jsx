@@ -11,6 +11,7 @@ import { RefreshCw, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue, latestContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
@@ -175,13 +176,9 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               <p className="text-[10px] leading-relaxed text-muted">
                 성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 잔여 카드의 &lsquo;재등록&rsquo;으로.
               </p>
-              <button
-                onClick={saveReg}
-                disabled={regSaving}
-                className="shrink-0 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50"
-              >
+              <Button variant="primary" size="sm" onClick={saveReg} disabled={regSaving} className="shrink-0">
                 {regSaving ? "저장 중…" : "저장"}
-              </button>
+              </Button>
             </div>
 
             {/* AI 지원 — 재등록 브리핑(생성·캐시). reg_reason 기록분을 강조. */}
@@ -197,13 +194,9 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               ) : (
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] text-muted">{regBriefMeta?.generatedAt ? `생성: ${new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR")}` : "재등록 브리핑"}</span>
-                  <button
-                    onClick={generateReReg}
-                    disabled={regGenerating}
-                    className="inline-flex items-center gap-1 rounded-lg border border-line px-2 py-1 text-[11px] font-medium text-sub transition hover:border-primary hover:text-primary-strong disabled:opacity-50"
-                  >
+                  <Button variant="ghost" size="sm" onClick={generateReReg} disabled={regGenerating}>
                     <RefreshCw className="h-3 w-3" /> {regGenerating ? "생성 중…" : "재생성"}
-                  </button>
+                  </Button>
                 </div>
               )}
               {regAiError && <p className="mt-2 text-[11px] text-amber-700">{regAiError}</p>}

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { Scale, Plus, Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { INBODY_FIELDS } from "@/lib/labels";
@@ -180,13 +181,9 @@ export default function PtInbodyTab({ member }) {
             <span className="mb-1 block text-[11px] font-medium text-muted">메모 <span className="text-muted">(선택)</span></span>
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="측정 조건·특이사항" className={inputCls} />
           </label>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-          >
+          <Button variant="primary" size="md" fullWidth onClick={save} disabled={saving} className="gap-2">
             <Plus className="h-4 w-4" strokeWidth={2.5} /> {saving ? "저장 중…" : "측정 저장"}
-          </button>
+          </Button>
         </div>
       </section>
 

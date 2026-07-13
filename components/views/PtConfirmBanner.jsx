@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import Button from "@/components/ui/Button";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 
 export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
@@ -108,12 +109,9 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
           <span className="text-muted"> (성공을 기록해도 자동으로 등록되진 않아요)</span>
         </span>
       </div>
-      <button
-        onClick={() => setConfirming(true)}
-        className="shrink-0 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3.5 py-1.5 text-sm font-bold text-white transition active:scale-95"
-      >
+      <Button variant="primary" size="md" onClick={() => setConfirming(true)} className="shrink-0">
         PT 등록 확정
-      </button>
+      </Button>
       </div>
 
       {/* 중앙 확인 모달 — 확정 앞단 게이트. 취소·바깥 클릭은 닫힘만(동작 없음), 확정은 명시 버튼으로만. */}
@@ -154,20 +152,12 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
             {err && <p className="mb-3 text-xs font-medium text-red-600">{err}</p>}
 
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setConfirming(false)}
-                disabled={busy}
-                className="rounded-lg border border-line bg-elevate px-4 py-2 text-sm font-medium text-sub transition hover:border-primary active:scale-95 disabled:opacity-50"
-              >
+              <Button variant="ghost" size="md" onClick={() => setConfirming(false)} disabled={busy}>
                 취소
-              </button>
-              <button
-                onClick={doConfirm}
-                disabled={busy}
-                className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="primary" size="md" onClick={doConfirm} disabled={busy}>
                 {busy ? "확정 중…" : "확정"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

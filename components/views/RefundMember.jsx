@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { won } from "@/lib/format";
@@ -91,30 +92,18 @@ export default function RefundMember({ member, contracts, onDone }) {
           <div className="space-y-2">
             <p className="text-[12px] font-semibold text-rose-700">정말 환불·삭제할까요?</p>
             <div className="flex gap-2">
-              <button
-                onClick={doRefund}
-                disabled={saving}
-                className="flex-1 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-              >
+              <Button variant="danger" size="md" onClick={doRefund} disabled={saving} className="flex-1 font-bold">
                 {saving ? "처리 중…" : "확정"}
-              </button>
-              <button
-                onClick={() => setConfirming(false)}
-                disabled={saving}
-                className="rounded-lg border border-line bg-card px-4 py-2.5 text-sm font-medium text-sub transition hover:text-ink disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="ghost" size="md" onClick={() => setConfirming(false)} disabled={saving}>
                 취소
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <button
-            onClick={doRefund}
-            disabled={saving || !target}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-sm font-bold text-rose-700 transition active:scale-95 disabled:opacity-50"
-          >
+          <Button variant="danger" size="md" fullWidth onClick={doRefund} disabled={saving || !target} className="gap-2 font-bold">
             <Undo2 className="h-4 w-4" strokeWidth={2.5} /> 환불 처리
-          </button>
+          </Button>
         )}
       </div>
       <Toast message={toast} />
