@@ -111,18 +111,18 @@ export default function MyStats({ members = [] }) {
       </div>
 
       {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
-      <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
+      <div className="rounded-2xl border border-success/30 bg-success-soft p-5 shadow-sm">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
           <Wallet className="h-3.5 w-3.5" /> 이달 {confirmed ? "확정" : "예상"} 급여
         </div>
         {confirmed ? (
           <>
-            <div className="mt-2 tabular-nums text-4xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
+            <div className="mt-2 tabular-nums text-4xl font-extrabold text-success-strong">{won(myRun.final_total)}</div>
             <div className="mt-1 text-xs text-muted">원장 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동계산 ${won(pay.computed)}` : ""}</div>
           </>
         ) : pay.computed != null ? (
           <>
-            <div className="mt-2 tabular-nums text-4xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
+            <div className="mt-2 tabular-nums text-4xl font-extrabold text-success-strong">{won(pay.computed)}</div>
             <div className="mt-1 text-xs text-muted">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
           </>
         ) : (

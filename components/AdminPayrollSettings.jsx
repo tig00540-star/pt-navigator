@@ -299,8 +299,8 @@ export default function AdminPayrollSettings({ trainers = [] }) {
                 </div>
 
                 {/* 라이브 미리보기 */}
-                <div className="rounded-xl border border-primary/30 bg-primary-soft p-3.5">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">예상 급여 미리보기</div>
+                <div className="rounded-xl border border-success/30 bg-success-soft p-3.5">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-success-strong">예상 급여 미리보기</div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 매출</span>
@@ -319,7 +319,7 @@ export default function AdminPayrollSettings({ trainers = [] }) {
                     <span className="text-[11px] text-muted">
                       {preview.computed === 0 && !preview.band ? "해당 밴드 없음" : `기본 ${won(preview.base)}${preview.incentive > 0 ? ` + 인센 ${won(preview.incentive)}` : ""}`}
                     </span>
-                    <span className="font-mono text-xl font-bold text-primary-strong">
+                    <span className="font-mono text-xl font-bold text-success-strong">
                       예상 급여 {won(preview.computed ?? 0)}
                     </span>
                   </div>

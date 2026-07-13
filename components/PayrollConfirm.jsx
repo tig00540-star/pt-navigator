@@ -50,12 +50,12 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
   const inputCls = "w-28 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-right font-mono text-sm text-ink outline-none focus:border-primary disabled:opacity-50";
 
   return (
-    <div className="mt-3 rounded-xl border border-primary/30 bg-primary-soft p-3">
+    <div className="mt-3 rounded-xl border border-success/30 bg-success-soft p-3">
       <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-success-strong">
           {isManual ? "자동계산 없음 · 최종액 입력" : "예상 급여"}
         </div>
-        {!isManual && <div className="font-mono text-lg font-bold text-primary-strong">{won(pay.computed)}</div>}
+        {!isManual && <div className="font-mono text-lg font-bold text-success-strong">{won(pay.computed)}</div>}
       </div>
       {!isManual && (
         <div className="mt-0.5 text-[10px] text-muted">
@@ -70,7 +70,7 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
           {confirmed ? "재확정" : "확정"}
         </button>
       </div>
-      {confirmed && <div className="mt-1 text-right text-[10px] text-primary-strong">확정됨 · {won(run.final_total)}</div>}
+      {confirmed && <div className="mt-1 text-right text-[10px] text-success-strong">확정됨 · {won(run.final_total)}</div>}
       <Toast message={toast} />
     </div>
   );
