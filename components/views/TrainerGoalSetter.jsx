@@ -6,6 +6,7 @@ import { Target } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
@@ -55,10 +56,9 @@ export default function TrainerGoalSetter() {
         <div className="text-[11px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
         <div className="mt-3 flex gap-2">
           <input type="number" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} disabled={saving} placeholder="목표 순매출(원)" className={inputCls} />
-          <button onClick={save} disabled={saving}
-            className="shrink-0 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50">
+          <Button variant="primary" size="md" onClick={save} disabled={saving} className="shrink-0">
             {saving ? "저장 중…" : "저장"}
-          </button>
+          </Button>
         </div>
         <p className="mt-2 text-[11px] text-muted">달성률은 &lsquo;내 실적&rsquo;에서 확인돼요.</p>
       </section>

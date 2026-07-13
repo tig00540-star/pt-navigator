@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { UserCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { CLOSING_APPROACH_OPTS, SALES_INTENSITY_OPTS } from "@/lib/labels";
@@ -100,10 +101,9 @@ export default function TrainerProfileSettings() {
               <span className="mb-1 block text-[11px] font-medium text-muted">성향·한줄 소개 <span className="text-muted">(선택)</span></span>
               <textarea value={bio} onChange={(e) => setBio(e.target.value)} disabled={saving} rows={3} placeholder="예: 통증개선 특화, 공감형 상담, 초보자 편하게" className={inputCls} />
             </label>
-            <button onClick={save} disabled={saving}
-              className="w-full rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50">
+            <Button variant="primary" size="md" fullWidth onClick={save} disabled={saving}>
               {saving ? "저장 중…" : "프로필 저장"}
-            </button>
+            </Button>
           </div>
         )}
       </section>
