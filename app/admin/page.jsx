@@ -377,11 +377,11 @@ export default function AdminDashboard() {
         <section className="mb-8">
           <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-success/30 bg-success-soft p-5 shadow-sm">
+            <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
               <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
                 <Wallet className="h-3.5 w-3.5" /> 이달 매출
               </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-success-strong">
+              <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">
                 {won(monthRevenue)}
               </div>
               <div className="mt-1 text-xs text-muted">{ym} · 인계·외부 제외</div>
@@ -427,7 +427,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-right">
                     <div className="text-[10px] uppercase tracking-wider text-muted">이달 매출</div>
-                    <div className="font-mono text-2xl font-bold text-success-strong">{won(t.rev.total)}</div>
+                    <div className="font-mono text-2xl font-bold text-primary-strong">{won(t.rev.total)}</div>
                   </div>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">

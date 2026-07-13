@@ -24,9 +24,6 @@
   --color-primary: #dc2626;       /* 레드 포인트(채움·점·버튼) */
   --color-primary-strong: #b91c1c;/* 레드 텍스트(흰 배경 가독) */
   --color-primary-soft: #fef2f2;  /* 레드 옅은 배경(절제 사용) */
-  --color-success: #10b981;       /* 성공/긍정(달성·완료) — §2에서 재지정 */
-  --color-success-strong: #059669;/* 성공 텍스트(흰 배경 가독) */
-  --color-success-soft: #ecfdf5;  /* 성공 옅은 배경 */
 }
 
 @media (prefers-color-scheme: dark) {

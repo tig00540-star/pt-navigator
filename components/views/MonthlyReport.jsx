@@ -133,10 +133,10 @@ export default function MonthlyReport({ data, onClose }) {
             <Wallet className="h-3.5 w-3.5" /> {confirmed ? "확정" : "예상"} 급여
           </div>
           {confirmed ? (
-            <div className="mt-2 tabular-nums text-3xl font-extrabold text-success-strong">{won(myRun.final_total)}</div>
+            <div className="mt-2 tabular-nums text-3xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
           ) : pay.computed != null ? (
             <>
-              <div className="mt-2 tabular-nums text-3xl font-extrabold text-success-strong">{won(pay.computed)}</div>
+              <div className="mt-2 tabular-nums text-3xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
               <div className="mt-1 text-xs text-muted">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
               {payP.computed != null && payP.computed > 0 && (
                 <div className="mt-1 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={pay.computed} prev={payP.computed} /></div>
@@ -201,7 +201,7 @@ export default function MonthlyReport({ data, onClose }) {
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-center">
                   <div className="text-[10px] uppercase tracking-wider text-muted">성공</div>
-                  <div className="tabular-nums text-lg font-bold text-success-strong">{closing.success}</div>
+                  <div className="tabular-nums text-lg font-bold text-primary-strong">{closing.success}</div>
                 </div>
                 <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-center">
                   <div className="text-[10px] uppercase tracking-wider text-muted">보류</div>
@@ -251,7 +251,7 @@ export default function MonthlyReport({ data, onClose }) {
               <div className="mt-2 flex items-center justify-between text-[11px]">
                 <span className="text-muted">누적 전환</span>
                 <span className="tabular-nums text-sub">
-                  성공 <b className="text-success-strong">{reReg.success}</b> · 보류 <b className="text-amber-700">{reReg.hold}</b> · 미등록 <b className="text-rose-700">{reReg.fail}</b>
+                  성공 <b className="text-primary-strong">{reReg.success}</b> · 보류 <b className="text-amber-700">{reReg.hold}</b> · 미등록 <b className="text-rose-700">{reReg.fail}</b>
                   {reReg.rate != null && <> · 전환율 <b className="text-ink">{Math.round(reReg.rate * 100)}%</b></>}
                 </span>
               </div>
