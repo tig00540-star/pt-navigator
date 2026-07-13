@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { Megaphone, Pin, Users, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import Button from "@/components/ui/Button";
 
 export default function AdminAnnouncements({ trainers = [] }) {
   const [anns, setAnns] = useState([]);
@@ -194,17 +195,13 @@ export default function AdminAnnouncements({ trainers = [] }) {
           {err && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-600">{err}</div>}
 
           <div className="flex gap-2">
-            <button
-              onClick={post}
-              disabled={posting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-            >
+            <Button variant="primary" accent="owner" size="md" onClick={post} disabled={posting} className="flex-1 gap-2">
               <Megaphone className="h-4 w-4" strokeWidth={2.5} /> {posting ? "게시 중…" : editingId ? "수정 저장" : "게시"}
-            </button>
+            </Button>
             {editingId && (
-              <button onClick={resetForm} disabled={posting} className="flex items-center gap-1 rounded-lg border border-line bg-elevate px-3 py-2.5 text-sm font-medium text-sub transition hover:text-ink disabled:opacity-50">
+              <Button variant="ghost" accent="owner" size="md" onClick={resetForm} disabled={posting}>
                 <X className="h-4 w-4" /> 취소
-              </button>
+              </Button>
             )}
           </div>
         </div>

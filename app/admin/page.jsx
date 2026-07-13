@@ -25,6 +25,7 @@ import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, re
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import { won, personName } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
+import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import PayrollConfirm from "@/components/PayrollConfirm";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
@@ -630,12 +631,9 @@ export default function AdminDashboard() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <Eyebrow icon={Megaphone}>AI 상권 공략 카피봇 · 이번 주 광고</Eyebrow>
-            <button
-              onClick={() => setCopyOffset((o) => o + 1)}
-              className="mb-4 flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-ink transition hover:border-primary hover:text-primary-strong"
-            >
+            <Button variant="ghost" accent="owner" size="sm" onClick={() => setCopyOffset((o) => o + 1)} className="mb-4">
               <RefreshCw className="h-3.5 w-3.5" /> 새로 뽑기
-            </button>
+            </Button>
           </div>
 
           {/* 빅데이터 요약 */}

@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { mustAckUnread, unreadAnnouncements, visibleAnnouncements } from "@/lib/announce";
 import Modal from "@/components/ui/Modal";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 
 function fmtDate(iso) {
   if (!iso) return "";
@@ -110,13 +111,9 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
           ))}
         </div>
         {err && <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-600">{err}</div>}
-        <button
-          onClick={() => ackAll(gateList)}
-          disabled={acking}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-        >
+        <Button variant="primary" size="md" fullWidth onClick={() => ackAll(gateList)} disabled={acking} className="mt-4 gap-2">
           <Check className="h-4 w-4" strokeWidth={2.5} /> {acking ? "반영 중…" : "확인했습니다"}
-        </button>
+        </Button>
       </Modal>
     );
   }

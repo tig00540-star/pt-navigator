@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import PasswordChange from "@/components/views/PasswordChange";
+import Button from "@/components/ui/Button";
 
 export default function AuthGate({ children }) {
   const [ready, setReady] = useState(false);   // 초기 세션 조회 완료 여부
@@ -121,13 +122,9 @@ export default function AuthGate({ children }) {
             className="w-full rounded-lg bg-elevate border border-line px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
           />
           {err && <div className="text-xs text-red-600">{err}</div>}
-          <button
-            onClick={signIn}
-            disabled={busy}
-            className="w-full rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white font-medium py-2.5 text-sm disabled:opacity-50"
-          >
+          <Button variant="primary" size="md" fullWidth onClick={signIn} disabled={busy}>
             {busy ? "로그인 중…" : "로그인"}
-          </button>
+          </Button>
         </div>
         <div className="mt-4 text-center text-[11px] text-muted">
           계정은 관리자 초대로 발급됩니다.

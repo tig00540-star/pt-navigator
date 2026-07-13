@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
+import Button from "@/components/ui/Button";
 
 export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
   const isManual = pay?.computed == null;
@@ -66,9 +67,9 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
         <span className="text-[11px] text-sub">최종</span>
         <input type="number" inputMode="numeric" value={final} onChange={(e) => setFinal(e.target.value)} disabled={saving} className={inputCls} />
         <span className="text-[11px] text-sub">원</span>
-        <button onClick={confirm} disabled={saving} className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50">
+        <Button variant="primary" size="sm" onClick={confirm} disabled={saving}>
           {confirmed ? "재확정" : "확정"}
-        </button>
+        </Button>
       </div>
       {confirmed && <div className="mt-1 text-right text-[10px] text-primary-strong">확정됨 · {won(run.final_total)}</div>}
       <Toast message={toast} />

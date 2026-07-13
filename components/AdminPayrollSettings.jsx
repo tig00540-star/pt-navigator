@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import { payForScheme } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
@@ -293,9 +294,9 @@ export default function AdminPayrollSettings({ trainers = [] }) {
                       </div>
                     ))
                   )}
-                  <button onClick={addBand} disabled={saving} className="flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-3 py-2 text-xs font-semibold text-sub transition hover:border-primary hover:text-ink disabled:opacity-50">
+                  <Button variant="ghost" accent="owner" size="sm" onClick={addBand} disabled={saving}>
                     <Plus className="h-4 w-4" /> 밴드 추가
-                  </button>
+                  </Button>
                 </div>
 
                 {/* 라이브 미리보기 */}
@@ -328,23 +329,15 @@ export default function AdminPayrollSettings({ trainers = [] }) {
             )}
 
             {/* 저장 */}
-            <button
-              onClick={save}
-              disabled={saving}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-            >
+            <Button variant="primary" size="md" fullWidth onClick={save} disabled={saving} className="gap-2">
               <Wallet className="h-4 w-4" strokeWidth={2.5} /> {saving ? "저장 중…" : "급여 스킴 저장"}
-            </button>
+            </Button>
 
             {/* override 삭제 — 트레이너 스코프이고 전용 정책이 있을 때만(계정 기본은 못 지움) */}
             {scope != null && currentRow && (
-              <button
-                onClick={removeOverride}
-                disabled={saving}
-                className="w-full rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-500/20 disabled:opacity-50"
-              >
+              <Button variant="danger" size="sm" fullWidth onClick={removeOverride} disabled={saving}>
                 이 트레이너 정책 삭제 (계정 기본 따름)
-              </button>
+              </Button>
             )}
           </div>
         )}

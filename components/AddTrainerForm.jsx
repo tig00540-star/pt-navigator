@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import Button from "@/components/ui/Button";
 
 export default function AddTrainerForm() {
   const [email, setEmail] = useState("");
@@ -39,10 +40,9 @@ export default function AddTrainerForm() {
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
         <input type="email" placeholder="이메일" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
         <input type="text" placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
-        <button onClick={submit} disabled={busy}
-          className="rounded-lg bg-fuchsia-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+        <Button variant="primary" accent="owner" size="md" onClick={submit} disabled={busy}>
           {busy ? "추가 중…" : "추가"}
-        </button>
+        </Button>
       </div>
       {err && <div className="mt-2 text-xs text-red-600">{err}</div>}
       {result && (
