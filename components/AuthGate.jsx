@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import PasswordChange from "@/components/views/PasswordChange";
 import Button from "@/components/ui/Button";
@@ -14,6 +15,7 @@ export default function AuthGate({ children }) {
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const pathname = usePathname(); // /signup 등 공개 경로 판정
 
   useEffect(() => {
     // 키 없으면(데모 모드) 게이트를 건너뛰고 그대로 앱을 보여준다(개발 편의).
@@ -71,6 +73,10 @@ export default function AuthGate({ children }) {
     );
   }
 
+  // /signup 등 공개 경로는 로그아웃 상태에서도 통과(게이트 우회). 로그인 상태면 아래 앱 렌더로 흐름.
+  const isPublicRoute = pathname === "/signup";
+  if (isPublicRoute && !session) return <>{children}</>;
+
   // 데모 모드(supabase null) or 로그인됨 → 앱 렌더
   if (!supabase || session) {
     // 임시비번 최초 로그인 플래그면 강제 비번 변경(신규 트레이너만 — 기존은 플래그 없음).
@@ -127,7 +133,8 @@ export default function AuthGate({ children }) {
           </Button>
         </div>
         <div className="mt-4 text-center text-[11px] text-muted">
-          계정은 관리자 초대로 발급됩니다.
+          트레이너는 원장 초대로 참여합니다 ·{" "}
+          <a href="/signup" className="font-semibold text-primary-strong hover:underline">새 계정 만들기</a>
         </div>
       </div>
     </div>
