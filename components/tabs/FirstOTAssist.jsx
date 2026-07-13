@@ -27,6 +27,7 @@ import {
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import { supabase } from "@/lib/supabaseClient";
+import { authHeader } from "@/lib/authHeader";
 import { won } from "@/lib/format";
 import { CLOSING_APPROACH_OPTS, labelOf } from "@/lib/labels";
 import { firstInputHash } from "@/lib/otHash";
@@ -120,7 +121,7 @@ export default function FirstOTAssist({ member }) {
     try {
       const res = await fetch("/api/ot-brief", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ phase: "first", member, packages }),
       });
       if (!res.ok) {

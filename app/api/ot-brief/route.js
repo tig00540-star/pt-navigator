@@ -7,6 +7,7 @@
 // 키 미설정·API 실패·JSON 파싱 실패 → 명확한 상태코드 (프론트가 데모 폴백 판별).
 // -----------------------------------------------------------------------------
 import Anthropic from "@anthropic-ai/sdk";
+import { requireTrainer } from "@/lib/requireTrainer";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // ③ Sonnet 생성이 최대 ~1분 → Vercel 함수 타임아웃 상향
@@ -631,6 +632,9 @@ function parseBrief(text, requiredKeys = []) {
 }
 
 export async function POST(request) {
+  const auth = await requireTrainer(request);
+  if (!auth.ok) return auth.res;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return Response.json(

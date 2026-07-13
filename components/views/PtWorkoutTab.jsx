@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { Compass, Dumbbell, Flame, History, NotebookPen, RefreshCw, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
@@ -244,7 +245,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       };
       const res = await fetch("/api/ot-brief", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ phase: "acute", member, acuteContext }),
       });
       if (!res.ok) {

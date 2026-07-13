@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, latestContract } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
@@ -100,7 +101,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       };
       const res = await fetch("/api/ot-brief", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ phase: "reregister", member, ptContext }),
       });
       if (!res.ok) {

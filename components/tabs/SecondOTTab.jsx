@@ -25,6 +25,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { authHeader } from "@/lib/authHeader";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
@@ -170,7 +171,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       const useCases = caseGate?.on && caseData?.length;
       const res = await fetch("/api/ot-brief", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({
           phase: "second",
           member,

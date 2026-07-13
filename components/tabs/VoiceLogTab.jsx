@@ -20,6 +20,7 @@ import { fmt } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import { supabase } from "@/lib/supabaseClient";
+import { authHeader } from "@/lib/authHeader";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
 
@@ -235,7 +236,7 @@ export default function VoiceLogTab({ member, onResult }) {
     fd.append("machines", (member.machines || []).join(", "));
 
     try {
-      const res = await fetch("/api/voice-log", { method: "POST", body: fd });
+      const res = await fetch("/api/voice-log", { method: "POST", headers: { ...(await authHeader()) }, body: fd });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setNotice((data.error || "AI 처리에 실패했습니다.") + " 데모 리포트로 대체합니다.");

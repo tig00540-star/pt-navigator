@@ -9,6 +9,7 @@
 // -----------------------------------------------------------------------------
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { requireTrainer } from "@/lib/requireTrainer";
 
 export const runtime = "nodejs"; // SDK는 Node 런타임 필요 (Edge 불가)
 
@@ -62,6 +63,9 @@ function parseReport(text) {
 }
 
 export async function POST(request) {
+  const auth = await requireTrainer(request);
+  if (!auth.ok) return auth.res;
+
   const openaiKey = process.env.OPENAI_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
