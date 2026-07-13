@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { ListTodo, Plus, Check, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 
 export default function TodoManual() {
@@ -97,13 +98,9 @@ export default function TodoManual() {
           className="rounded-lg border border-line bg-elevate px-2 py-2 text-xs text-sub outline-none focus:border-primary"
           aria-label="마감일(선택)"
         />
-        <button
-          onClick={add}
-          disabled={saving || !body.trim()}
-          className="flex items-center gap-1 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-3 py-2 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-50"
-        >
+        <Button variant="primary" size="md" onClick={add} disabled={saving || !body.trim()}>
           <Plus className="h-4 w-4" /> 추가
-        </button>
+        </Button>
       </div>
 
       {err && <div className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-600">{err}</div>}
@@ -129,7 +126,7 @@ export default function TodoManual() {
               </div>
               {confirmId === t.id ? (
                 <div className="flex shrink-0 items-center gap-1">
-                  <button onClick={() => remove(t)} className="rounded px-2 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-500/10">삭제</button>
+                  <Button variant="danger" subtle size="sm" onClick={() => remove(t)}>삭제</Button>
                   <button onClick={() => setConfirmId(null)} className="rounded px-1.5 py-1 text-muted hover:text-ink"><X className="h-3.5 w-3.5" /></button>
                 </div>
               ) : (

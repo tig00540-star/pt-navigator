@@ -26,6 +26,7 @@ import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import TodoTab from "@/components/views/TodoTab";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import Modal from "@/components/ui/Modal";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
@@ -319,19 +320,12 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
         )}
 
         <div className="mt-5 flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-line bg-elevate py-2.5 text-sm font-medium text-sub transition hover:border-primary"
-          >
+          <Button variant="ghost" size="md" onClick={onClose} className="flex-1">
             취소
-          </button>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="flex-1 rounded-xl bg-gradient-to-br from-red-500 to-red-600 py-2.5 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-60"
-          >
+          </Button>
+          <Button variant="primary" size="md" onClick={save} disabled={saving} className="flex-1">
             {saving ? "저장 중…" : "저장"}
-          </button>
+          </Button>
         </div>
     </Modal>
   );
@@ -378,12 +372,9 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
             className="w-full rounded-xl border border-line bg-card py-2.5 pl-9 pr-3 text-sm text-ink placeholder-muted shadow-sm outline-none focus:border-primary"
           />
         </div>
-        <button
-          onClick={onAdd}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-br from-red-500 to-red-600 px-3 py-2.5 text-sm font-semibold text-white transition active:scale-95"
-        >
+        <Button variant="primary" size="md" onClick={onAdd} className="shrink-0">
           <UserPlus className="h-4 w-4" /> 등록
-        </button>
+        </Button>
       </div>
 
       {isOwner && (
@@ -436,12 +427,9 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
               : "이 그룹에 회원이 없어요."}
           </p>
           {members.length === 0 && (
-            <button
-              onClick={onAdd}
-              className="mt-4 rounded-lg border border-line bg-elevate px-4 py-2 text-xs font-medium text-sub transition hover:border-primary"
-            >
+            <Button variant="ghost" size="sm" onClick={onAdd} className="mt-4">
               첫 회원 등록하기
-            </button>
+            </Button>
           )}
         </div>
       ) : (

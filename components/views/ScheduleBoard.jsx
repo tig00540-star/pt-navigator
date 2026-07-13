@@ -16,6 +16,7 @@ import { viewFor, activeContract } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import Button from "@/components/ui/Button";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
@@ -437,15 +438,15 @@ export default function ScheduleBoard({ members = [] }) {
                   placeholder="오늘 수업 내용·피드백 (입력하고 완료하면 카톡용으로 복사돼요 · 선택)"
                   className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
                 />
-                <button onClick={() => complete(action, true)} disabled={acting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50">
+                <Button variant="primary" size="md" fullWidth onClick={() => complete(action, true)} disabled={acting} className="gap-2">
                   <Check className="h-4 w-4" strokeWidth={2.5} /> {acting ? "처리 중…" : `완료 · 차감${note.trim() ? " · 카톡 복사" : ""}`}
-                </button>
-                <button onClick={() => complete(action, false)} disabled={acting} className="w-full rounded-lg border border-line bg-elevate py-2.5 text-sm font-medium text-sub transition hover:border-primary active:scale-95 disabled:opacity-50">
+                </Button>
+                <Button variant="ghost" size="md" fullWidth onClick={() => complete(action, false)} disabled={acting}>
                   완료 · 차감 안 함 (보강·무료)
-                </button>
-                <button onClick={() => cancelAppt(action)} disabled={acting} className="w-full rounded-lg border border-line bg-card py-2.5 text-sm font-medium text-muted transition hover:border-red-500/50 hover:text-red-600 active:scale-95 disabled:opacity-50">
+                </Button>
+                <Button variant="danger" size="md" fullWidth onClick={() => cancelAppt(action)} disabled={acting}>
                   예약 취소
-                </button>
+                </Button>
               </div>
             )}
           </div>
