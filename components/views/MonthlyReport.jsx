@@ -39,12 +39,12 @@ function prevYm(ym) {
 // prev===0 처리: 신규 발생(cur>0)이면 "신규", 둘 다 0이면 렌더 안 함(null).
 function Delta({ cur, prev }) {
   if (!prev && !cur) return null;
-  if (!prev) return <span className="text-[11px] font-semibold text-emerald-600">신규</span>;
+  if (!prev) return <span className="text-[11px] font-semibold text-sub">신규</span>;
   const pct = Math.round(((cur - prev) / prev) * 100);
   if (pct === 0) return <span className="text-[11px] text-muted">± 0%</span>;
   const up = pct > 0;
   const Icon = up ? TrendingUp : TrendingDown;
-  const cls = up ? "text-emerald-600" : "text-rose-600";
+  const cls = up ? "text-primary-strong" : "text-rose-600";
   return (
     <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${cls}`}>
       <Icon className="h-3 w-3" /> {Math.abs(pct)}%
@@ -199,7 +199,7 @@ export default function MonthlyReport({ data, onClose }) {
           ) : (
             <>
               <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-center">
+                <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-center">
                   <div className="text-[10px] uppercase tracking-wider text-muted">성공</div>
                   <div className="tabular-nums text-lg font-bold text-primary-strong">{closing.success}</div>
                 </div>

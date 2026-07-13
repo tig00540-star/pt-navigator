@@ -5,10 +5,10 @@
    ========================================================================= */
 
 // purge-safe 정적 맵 (C 토큰 패턴 · 동적 클래스 조립 금지).
-// 밝은테마 목업 팔레트: OT=파랑/sky · PT=초록/emerald · 보관=zinc.
+// 그룹탭 색과 정렬: OT=amber · PT=sky · 보관=zinc.
 const VIEW_META = {
-  ot:       { label: "OT", badge: "bg-sky-500/12 text-sky-700",         avatar: "bg-sky-500/12 text-sky-700",         dot: "bg-sky-500" },
-  pt:       { label: "PT", badge: "bg-emerald-500/12 text-emerald-700", avatar: "bg-emerald-500/12 text-emerald-700", dot: "bg-emerald-500" },
+  ot:       { label: "OT", badge: "bg-amber-500/12 text-amber-700",   avatar: "bg-amber-500/12 text-amber-700",   dot: "bg-amber-500" },
+  pt:       { label: "PT", badge: "bg-sky-500/12 text-sky-700",       avatar: "bg-sky-500/12 text-sky-700",       dot: "bg-sky-500" },
   inactive: { label: "보관", badge: "bg-slate-400/15 text-slate-600",   avatar: "bg-elevate text-muted",              dot: "bg-slate-400" },
 };
 

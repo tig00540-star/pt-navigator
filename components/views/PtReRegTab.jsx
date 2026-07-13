@@ -200,7 +200,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
                   <button
                     onClick={generateReReg}
                     disabled={regGenerating}
-                    className="inline-flex items-center gap-1 rounded-lg border border-line px-2 py-1 text-[11px] font-medium text-sub transition hover:border-emerald-500/50 hover:text-primary-strong disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-lg border border-line px-2 py-1 text-[11px] font-medium text-sub transition hover:border-primary hover:text-primary-strong disabled:opacity-50"
                   >
                     <RefreshCw className="h-3 w-3" /> {regGenerating ? "생성 중…" : "재생성"}
                   </button>

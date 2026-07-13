@@ -25,7 +25,7 @@ function emptyVals() {
   return o;
 }
 // purge-safe delta 색 맵(동적 클래스 조립 금지).
-const DELTA_TONE = { good: "text-emerald-600", bad: "text-rose-600", flat: "text-muted" };
+const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
 
 // 미니 스파크라인 — 지표 하나의 값 추이(오래된→최신, 좌→우). 값 2개 미만이면 안 그림.
 // non-scaling-stroke로 가로 늘려도 선 두께 유지. 축·격자·호버 없음(수치는 이력 리스트가 담당).
@@ -43,7 +43,7 @@ function Sparkline({ values }) {
     })
     .join(" ");
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="mt-1 text-emerald-500/70">
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="mt-1 text-primary/70">
       <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );

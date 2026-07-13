@@ -36,13 +36,13 @@ export const WIDGET_TONE = {
     chevronHover: "group-hover:text-rose-600",
   },
   emerald: {
-    card:         "border-emerald-500/25 bg-emerald-500/[0.06]",
+    card:         "border-red-500/25 bg-red-500/[0.06]",
     icon:         "text-primary-strong",
     title:        "text-primary-strong",
     countBadge:   "bg-primary-soft text-primary-strong",
-    rowBorder:    "border-emerald-500/20",
+    rowBorder:    "border-red-500/20",
     rowHover:     "hover:border-primary",
-    chevron:      "text-emerald-500/50",
+    chevron:      "text-red-500/50",
     chevronHover: "group-hover:text-primary-strong",
   },
 };
