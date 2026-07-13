@@ -109,6 +109,13 @@ export default function ScheduleBoard({ members = [] }) {
     return () => { cancelled = true; };
   }, []);
 
+  // 좁은 폭(모바일)에선 기본을 '오늘(일)' 뷰로 — 주간 7열이 폰에서 압박(감사 P0-④).
+  // 마운트 1회만(빈 deps) → 이후 사용자 토글 존중. lazy init은 하이드레이션 mismatch라 effect로.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (typeof window !== "undefined" && window.innerWidth < 640) setMode("today");
+  }, []);
+
   // 액션 모달 열 때 수업내용 입력 초기화(이전 회원 내용 오전송 방지 · effect 대신 핸들러에서).
   const openAction = (a) => { setNote(""); setRawText(""); setUsedVoice(false); setAction(a); };
   // 음성 STT 결과 → 내용칸 채움(이후 손편집). PTView handleVoiceResult 미러.
