@@ -20,7 +20,7 @@
   --color-line: #e6e9ef;          /* 테두리·구분선(옅게) */
   --color-ink: #0f172a;           /* 본문(고대비) */
   --color-sub: #475569;           /* 보조 텍스트 */
-  --color-muted: #94a3b8;         /* 흐린 텍스트(부차 정보만) */
+  --color-muted: #64748b;         /* 흐린 텍스트(부차 정보만) · AA 4.5:1 확보(흰 카드 위 4.77:1) */
   --color-primary: #10b981;       /* 초록 포인트(채움·점·버튼) */
   --color-primary-strong: #059669;/* 초록 텍스트(흰 배경 가독) */
   --color-primary-soft: #ecfdf5;  /* 초록 옅은 배경(절제 사용) */
