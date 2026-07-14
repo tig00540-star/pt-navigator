@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import {
   Bell,
@@ -611,7 +612,7 @@ export default function OTNavigatorDashboard() {
         onCloseReview={() => setBellOpen(false)}
       />
       {/* ================= TOP BAR ================= */}
-      <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
@@ -720,8 +721,16 @@ export default function OTNavigatorDashboard() {
       )}
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.8 }}
+          >
         {tab === 9 ? (
-          <div className="tab-anim space-y-8">
+          <div className="space-y-8">
             {/* 스케줄 보드는 자체 최상단 제목이 없어 Eyebrow로 섹션 헤더를 얹음(TodoTab은 자체 '오늘 할일' 제목 보유). */}
             <div ref={scheduleRef} className="scroll-mt-20">
               <Eyebrow icon={CalendarDays}>오늘 스케줄</Eyebrow>
@@ -735,9 +744,9 @@ export default function OTNavigatorDashboard() {
             />
           </div>
         ) : tab === 7 ? (
-          <div className="tab-anim"><SettingsView isSolo={isSolo} /></div>
+          <div><SettingsView isSolo={isSolo} /></div>
         ) : tab === 8 ? (
-          <div className="tab-anim"><MyStats members={members} isSolo={isSolo} /></div>
+          <div><MyStats members={members} isSolo={isSolo} /></div>
         ) : (
           <>
         {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}
@@ -751,7 +760,7 @@ export default function OTNavigatorDashboard() {
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
         <MemberViewShell member={member} tab={tab} onGoList={() => setTab(0)} showList={tab === 0} onMemberPatch={onMemberPatch} onMembersChanged={loadMembers}>
           {tab === 0 && (
-            <div className="tab-anim">
+            <div>
             <MemberListTab
               members={members}
               selectedId={selectedId}
@@ -766,11 +775,11 @@ export default function OTNavigatorDashboard() {
           )}
 
           {tab === 1 && (
-            <div className="tab-anim"><FirstOTTab member={member} /></div>
+            <div><FirstOTTab member={member} /></div>
           )}
 
           {tab === 2 && (
-            <div className="tab-anim">
+            <div>
             <SecondOTTab
               member={member}
               onClosingSaved={() => setClosingVersion((v) => v + 1)}
@@ -778,7 +787,7 @@ export default function OTNavigatorDashboard() {
             </div>
           )}
           {tab === 5 && (
-            <div className="tab-anim">
+            <div>
             <ObservationTab
               member={member}
               onClosingSaved={() => setClosingVersion((v) => v + 1)}
@@ -788,6 +797,8 @@ export default function OTNavigatorDashboard() {
         </MemberViewShell>
           </>
         )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
 

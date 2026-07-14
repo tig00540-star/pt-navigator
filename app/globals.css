@@ -39,6 +39,6 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* 탭 전환 — 은은한 fade+rise(마운트 시에만 재생). */
-@keyframes tabIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-.tab-anim { animation: tabIn 0.5s ease-out; }
+/* 앱 느낌 — 탭 하이라이트 제거 + 관성/당겨서새로고침 차단 */
+html { -webkit-tap-highlight-color: transparent; }
+body { overscroll-behavior-y: none; }   /* 웹 특유의 고무줄·pull-to-refresh 제거 = 앱 시그널 큼 */

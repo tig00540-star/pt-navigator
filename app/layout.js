@@ -19,7 +19,7 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     title: "오직 트레이너",
-    statusBarStyle: "black",
+    statusBarStyle: "default",
   },
   icons: {
     apple: "/icons/apple-touch-icon.png",
@@ -27,9 +27,10 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: "#09090b",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {
