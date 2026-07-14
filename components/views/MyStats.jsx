@@ -11,7 +11,7 @@ import { Award, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth } from "@/lib/memberStatus";
+import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
@@ -96,6 +96,20 @@ export default function MyStats({ members = [], isSolo = false }) {
   const revRows = revenueContractsInMonth(contracts, uid, ym);        // session_log 행[]
   const refundRows = refundsInMonth(contracts, uid, ym);              // 이달 처리 환불[]
 
+  // #1 — 내 활성 PT 회원(pt_active) 전체의 총/잔여 수업 합. inactive·OT·남의 회원 제외.
+  const ptMemberIds = new Set(
+    members.filter((m) => m.trainer_id === uid && viewFor(m) === "pt").map((m) => m.id)
+  );
+  const ptContracts = contracts.filter((c) => ptMemberIds.has(c.user_id));
+  const sessTotalAll = ptContracts.reduce(
+    (s, c) => s + (c.sessions_total ?? 0) + (c.service_sessions ?? 0), 0
+  );
+  const remAll = ptContracts.reduce((a, c) => {
+    const r = remainingSessions(c, logs);
+    a.paid += r.paid; a.service += r.service; a.total += r.total; return a;
+  }, { paid: 0, service: 0, total: 0 });
+  const doneAll = sessTotalAll - remAll.total; // 진행+노쇼(차감분). 총 상한·음수 없음.
+
   return (
     <div className="space-y-4">
       {loading ? (
@@ -160,6 +174,28 @@ export default function MyStats({ members = [], isSolo = false }) {
             <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
           </div>
           <div className="mt-1 text-[11px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
+        </div>
+      )}
+
+      {/* #1 — PT 수업 현황(내 활성 PT 회원 전체 합). 회원 없으면 숨김. */}
+      {ptMemberIds.size > 0 && (
+        <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <Dumbbell className="h-3.5 w-3.5" /> PT 수업 현황 · 활성 회원 {ptMemberIds.size}명
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="tabular-nums text-3xl font-extrabold text-primary-strong">{remAll.total}</span>
+            <span className="text-sm text-muted">회 잔여</span>
+          </div>
+          <div className="mt-1 text-xs text-sub">
+            완료 <b className="tabular-nums text-ink">{doneAll}</b> / 총{" "}
+            <b className="tabular-nums text-ink">{sessTotalAll}</b>회
+            <span className="ml-1 text-[11px] text-muted">(유료 {remAll.paid}·서비스 {remAll.service})</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
+            <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600"
+              style={{ width: `${sessTotalAll ? Math.round((doneAll / sessTotalAll) * 100) : 0}%` }} />
+          </div>
         </div>
       )}
 
