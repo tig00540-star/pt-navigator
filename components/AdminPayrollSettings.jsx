@@ -14,6 +14,7 @@ import { won } from "@/lib/format";
 import { payForScheme } from "@/lib/memberStatus";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
+import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
@@ -268,7 +269,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
                             <span className="mb-1 block text-[10px] font-medium text-muted">
                               {bandBasis === "session_count" ? "수업 ○개 이상" : "매출 ○원 이상"}
                             </span>
-                            <input type="number" inputMode="numeric" value={b.min} onChange={(e) => updateBand(i, { min: e.target.value })} disabled={saving} placeholder="0" className={inputCls} />
+                            <NumberInput value={b.min} onValueChange={(v) => updateBand(i, { min: v })} disabled={saving} placeholder="0" className={inputCls} />
                           </label>
                           <label className="block">
                             <span className="mb-1 block text-[10px] font-medium text-muted">지급 유형</span>
@@ -307,15 +308,15 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 매출</span>
-                      <input type="number" inputMode="numeric" value={sRev} onChange={(e) => setSRev(e.target.value)} placeholder="0" className={inputCls} />
+                      <NumberInput value={sRev} onValueChange={setSRev} placeholder="0" className={inputCls} />
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 수업수</span>
-                      <input type="number" inputMode="numeric" value={sCnt} onChange={(e) => setSCnt(e.target.value)} placeholder="0" className={inputCls} />
+                      <NumberInput value={sCnt} onValueChange={setSCnt} placeholder="0" className={inputCls} />
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 수업료합</span>
-                      <input type="number" inputMode="numeric" value={sSum} onChange={(e) => setSSum(e.target.value)} placeholder="0" className={inputCls} />
+                      <NumberInput value={sSum} onValueChange={setSSum} placeholder="0" className={inputCls} />
                     </label>
                   </div>
                   <div className="mt-3 flex items-baseline justify-between">

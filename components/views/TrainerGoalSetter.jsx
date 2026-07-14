@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
+import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
@@ -55,7 +56,7 @@ export default function TrainerGoalSetter() {
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <div className="text-[11px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
         <div className="mt-3 flex gap-2">
-          <input type="number" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} disabled={saving} placeholder="목표 순매출(원)" className={inputCls} />
+          <NumberInput value={value} onValueChange={setValue} disabled={saving} placeholder="목표 순매출(원)" className={inputCls} />
           <Button variant="primary" size="md" onClick={save} disabled={saving} className="shrink-0">
             {saving ? "저장 중…" : "저장"}
           </Button>

@@ -12,6 +12,7 @@ import { Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
+import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { won } from "@/lib/format";
@@ -78,11 +79,9 @@ export default function RefundMember({ member, contracts, onDone }) {
         )}
         <label className="block">
           <span className="mb-1 block text-[11px] font-medium text-muted">환불 금액</span>
-          <input
-            type="number"
-            inputMode="numeric"
+          <NumberInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onValueChange={setAmount}
             disabled={saving || !target}
             placeholder={target ? String(target.amount_total ?? "") : "0"}
             className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-rose-500 disabled:opacity-50"

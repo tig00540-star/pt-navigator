@@ -13,6 +13,7 @@ import { won } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
+import NumberInput from "@/components/ui/NumberInput";
 
 export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
   const isManual = pay?.computed == null;
@@ -65,7 +66,7 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
       )}
       <div className="mt-2 flex items-center justify-end gap-2">
         <span className="text-[11px] text-sub">최종</span>
-        <input type="number" inputMode="numeric" value={final} onChange={(e) => setFinal(e.target.value)} disabled={saving} className={inputCls} />
+        <NumberInput value={final} onValueChange={setFinal} disabled={saving} className={inputCls} />
         <span className="text-[11px] text-sub">원</span>
         <Button variant="primary" size="sm" onClick={confirm} disabled={saving}>
           {confirmed ? "재확정" : "확정"}

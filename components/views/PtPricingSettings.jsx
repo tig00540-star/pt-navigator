@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
+import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
@@ -162,7 +163,7 @@ export default function PtPricingSettings() {
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">세션수</span>
-              <input type="number" inputMode="numeric" value={sessions} onChange={(e) => setSessions(e.target.value)} disabled={saving} placeholder="회 (비우면 기간제)" className={inputCls} />
+              <NumberInput value={sessions} onValueChange={setSessions} disabled={saving} placeholder="회 (비우면 기간제)" className={inputCls} />
             </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">기간</span>
@@ -170,11 +171,11 @@ export default function PtPricingSettings() {
             </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">실판매가(원) *</span>
-              <input type="number" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} disabled={saving} placeholder="1200000" className={inputCls} />
+              <NumberInput value={price} onValueChange={setPrice} disabled={saving} placeholder="1200000" className={inputCls} />
             </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">정가(원) <span className="text-muted">(선택)</span></span>
-              <input type="number" inputMode="numeric" value={listPrice} onChange={(e) => setListPrice(e.target.value)} disabled={saving} placeholder="할인 전 가격" className={inputCls} />
+              <NumberInput value={listPrice} onValueChange={setListPrice} disabled={saving} placeholder="할인 전 가격" className={inputCls} />
             </label>
           </div>
           <label className="block">
