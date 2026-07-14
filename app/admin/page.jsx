@@ -193,6 +193,7 @@ export default function AdminDashboard() {
   const [logs, setLogs] = useState([]);
   const router = useRouter(); // solo면 /admin 접근 시 통합 화면(/)으로 바운스
   const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
+  const [centerName, setCenterName] = useState(""); // 소속 account 이름(헤더 표기)
   const [trainers, setTrainers] = useState([]);
   const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
   const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
@@ -210,8 +211,9 @@ export default function AdminDashboard() {
       let myRole = "denied";
       if (uid) {
         const { data: t } = await supabase
-          .from("trainer").select("role, account:account_id(type)").eq("id", uid).maybeSingle();
+          .from("trainer").select("role, account:account_id(type, name)").eq("id", uid).maybeSingle();
         if (t?.account?.type === "solo") { router.replace("/"); return; } // solo는 통합 화면만(admin 누수 차단)
+        setCenterName(t?.account?.name || "");
         if (t?.role === "owner") myRole = "owner";
       }
       setRole(myRole);
@@ -317,7 +319,7 @@ export default function AdminDashboard() {
                 Admin · 총괄 경영
               </div>
               <div className="text-sm font-semibold text-ink">
-                강남 1호점 <span className="font-normal text-muted">경영 대시보드</span>
+                {centerName || "내 센터"}
               </div>
             </div>
           </div>
