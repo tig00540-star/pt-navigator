@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import PasswordChange from "@/components/views/PasswordChange";
@@ -102,9 +103,10 @@ export default function AuthGate({ children }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
-        <div className="mb-6 text-center">
-          <div className="text-lg font-semibold text-ink">PT 내비게이터</div>
-          <div className="mt-1 text-sm text-muted">트레이너 로그인</div>
+        <div className="mb-6 flex flex-col items-center text-center">
+          <Image src="/icons/icon-192.png" alt="오직 트레이너" width={56} height={56} priority className="mb-3 h-14 w-14 rounded-2xl shadow-sm" />
+          <div className="text-lg font-semibold text-ink">오직 트레이너</div>
+          <div className="mt-1 text-xs uppercase tracking-widest text-muted">Only for Trainer</div>
         </div>
         <div className="space-y-3">
           <input
