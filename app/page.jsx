@@ -31,6 +31,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import Modal from "@/components/ui/Modal";
+import BottomNav from "@/components/ui/BottomNav";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
@@ -679,36 +680,28 @@ export default function OTNavigatorDashboard() {
             </div>
           </div>
 
-          {/* 탭 네비 — 글로벌 3탭(초록·위치고정) ‖ 회원 워크플로우 그룹(OT amber / PT sky).
-             글로벌↔회원그룹 경계에 세로 구분선 1개. */}
-          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
-            {TABS
-              .filter((t) => t.always || (t.ot && view === "ot") || (t.pt && view === "pt"))
-              .map((t, i, arr) => {
-                const active = tab === t.id;
-                const g = t.group ? GROUP_TAB[t.group] : null;
-                // 앞 탭은 글로벌인데 이 탭이 첫 회원그룹 탭이면 그 앞에 구분선.
-                const showSep = !!t.group && (i === 0 || !arr[i - 1].group);
-                return (
-                  <div key={t.id} className="flex items-stretch">
-                    {showSep && <span aria-hidden className="mx-1.5 my-2 w-px shrink-0 self-stretch bg-line" />}
+          {/* 상단 컨텍스트 탭 — 회원 워크플로우(OT amber / PT sky) 서브탭만. 글로벌 4탭은 하단바로 이관.
+             워크플로우 탭(group 있는 탭)에 들어갔을 때만 노출. */}
+          {TABS.find((t) => t.id === tab)?.group && (
+            <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
+              {TABS
+                .filter((t) => (t.ot && view === "ot") || (t.pt && view === "pt"))
+                .map((t) => {
+                  const on = tab === t.id;
+                  const g = GROUP_TAB[t.group];
+                  return (
                     <button
+                      key={t.id}
                       onClick={() => setTab(t.id)}
-                      className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${
-                        active
-                          ? (g ? g.active : "text-primary-strong")
-                          : (g ? g.idle : "text-muted hover:text-ink")
-                      }`}
+                      className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${on ? g.active : g.idle}`}
                     >
                       {t.label}
-                      {active && (
-                        <span className={`absolute inset-x-2 bottom-0 h-0.5 rounded-full ${g ? g.bar : "bg-primary"}`} />
-                      )}
+                      {on && <span className={`absolute inset-x-2 bottom-0 h-0.5 rounded-full ${g.bar}`} />}
                     </button>
-                  </div>
-                );
-              })}
-          </nav>
+                  );
+                })}
+            </nav>
+          )}
         </div>
       </header>
 
@@ -813,6 +806,8 @@ export default function OTNavigatorDashboard() {
           }}
         />
       )}
+
+      <BottomNav tab={tab} onTab={setTab} />
     </div>
   );
 }

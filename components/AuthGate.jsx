@@ -84,7 +84,7 @@ export default function AuthGate({ children }) {
     return (
       <>
         {supabase && session && (
-          <div className="fixed bottom-4 right-4 z-40">
+          <div className="fixed bottom-20 right-4 z-40">
             <button
               onClick={signOut}
               className="text-[11px] px-2 py-1 rounded-md border border-line bg-card/80 text-sub shadow-sm hover:text-ink"
