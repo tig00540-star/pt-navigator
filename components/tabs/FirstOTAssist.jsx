@@ -261,28 +261,43 @@ export default function FirstOTAssist({ member }) {
             </div>
           )}
 
-          {/* ② 타겟 운동 & 리액션 */}
-          {(te.exercise || te.point_it_out) && (
-            <div className="rounded-xl border border-line bg-card p-4">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🎯</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">타겟 운동 · 증거 만들기</span>
+          {/* ② 타겟 운동 & 리액션 — 증거 동작 2개 (구 단일캐시 폴백) */}
+          {(() => {
+            const moves = Array.isArray(te.moves)
+              ? te.moves
+              : (te.exercise ? [{ exercise: te.exercise, target_reaction: te.target_reaction, point_it_out: te.point_it_out }] : []);
+            if (moves.length === 0) return null;
+            return (
+              <div className="rounded-xl border border-line bg-card p-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🎯</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">타겟 운동 · 증거 만들기</span>
+                </div>
+                <div className="mt-2 space-y-3">
+                  {moves.map((mv, i) => (
+                    <div key={i} className={i > 0 ? "border-t border-line pt-3" : ""}>
+                      <div className="flex items-start gap-1.5">
+                        <span className="mt-0.5 rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-bold text-primary-strong">증거 {i + 1}</span>
+                        {mv.exercise && <p className="text-sm font-semibold text-ink">{mv.exercise}</p>}
+                      </div>
+                      {mv.target_reaction && (
+                        <p className="mt-1 text-[13px] leading-relaxed text-sub"><span className="font-semibold">노릴 반응 · </span>{mv.target_reaction}</p>
+                      )}
+                      {mv.point_it_out && (
+                        <p className="mt-1.5 rounded-lg bg-primary-soft px-3 py-2 text-sm leading-relaxed text-ink">
+                          <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">짚어줄 말</span>
+                          &ldquo;{mv.point_it_out}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {te.so_what && (
+                  <p className="mt-2.5 text-[12px] leading-relaxed text-muted"><span className="font-semibold text-sub">등록 논리 · </span>{te.so_what}</p>
+                )}
               </div>
-              {te.exercise && <p className="mt-1.5 text-sm font-semibold text-ink">{te.exercise}</p>}
-              {te.target_reaction && (
-                <p className="mt-1 text-[13px] leading-relaxed text-sub"><span className="font-semibold">노릴 반응 · </span>{te.target_reaction}</p>
-              )}
-              {te.point_it_out && (
-                <p className="mt-2 rounded-lg bg-primary-soft px-3 py-2 text-sm leading-relaxed text-ink">
-                  <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">짚어줄 말</span>
-                  &ldquo;{te.point_it_out}&rdquo;
-                </p>
-              )}
-              {te.so_what && (
-                <p className="mt-1.5 text-[12px] leading-relaxed text-muted"><span className="font-semibold text-sub">등록 논리 · </span>{te.so_what}</p>
-              )}
-            </div>
-          )}
+            );
+          })()}
 
           {/* ③ 세일즈 비유 */}
           {sm.metaphor && (
