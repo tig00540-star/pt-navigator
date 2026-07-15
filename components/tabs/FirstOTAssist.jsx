@@ -311,30 +311,27 @@ export default function FirstOTAssist({ member }) {
             </div>
           )}
 
-          {/* ④ 클로징 한마디 — 크게(L0) */}
-          {cline && (
-            <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
-              <div className="flex items-center gap-2">
-                <Flag className="h-4 w-4 text-primary-strong" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">클로징 한마디</span>
-              </div>
-              <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
-            </div>
-          )}
-
-          {/* 추천 프로그램 — 가격은 내 목록(pick/alt)에서 */}
+          {/* 추천 프로그램 — 클로징 직전에 배치 · 왜 이 횟수 근거(가격은 내 목록에서) */}
           {pick ? (
             <div className="rounded-xl border border-primary/30 bg-card p-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-3.5 w-3.5 text-primary-strong" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">추천 프로그램</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
               </div>
               <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm text-ink">
                 <span className="font-bold">{pick.name}</span>
                 <span className="font-mono font-semibold">{won(pick.price)}</span>
+                {pick.sessions != null && <span className="text-[11px] text-muted">· {pick.sessions}회</span>}
                 {perSession(pick) && <span className="text-[11px] text-muted">· {perSession(pick)}/회</span>}
               </p>
               {rp.why_fit && <p className="mt-1 text-[12px] leading-relaxed text-sub">{rp.why_fit}</p>}
+              {(rp.frequency || rp.duration || rp.session_logic) && (
+                <div className="mt-2 space-y-1 rounded-lg bg-elevate px-3 py-2">
+                  {rp.frequency && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">빈도 · </span>{rp.frequency}</p>}
+                  {rp.duration && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">기간 · </span>{rp.duration}</p>}
+                  {rp.session_logic && <p className="text-[12px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">그래서 · </span>{rp.session_logic}</p>}
+                </div>
+              )}
               {alt && (
                 <p className="mt-2 text-[11px] leading-relaxed text-muted">
                   <span className="rounded bg-elevate px-1.5 py-0.5 font-semibold">대안</span> {alt.name} · {won(alt.price)}{rp.alt_why ? ` — ${rp.alt_why}` : ""}
@@ -346,6 +343,17 @@ export default function FirstOTAssist({ member }) {
               가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
             </div>
           ) : null}
+
+          {/* ④ 클로징 한마디 — 크게(L0) */}
+          {cline && (
+            <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
+              <div className="flex items-center gap-2">
+                <Flag className="h-4 w-4 text-primary-strong" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">클로징 한마디</span>
+              </div>
+              <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
+            </div>
+          )}
 
           {/* 거절 5방어 — 기본 펼침(현장 핵심) */}
           {obj.length > 0 && (

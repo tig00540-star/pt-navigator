@@ -125,9 +125,20 @@ ${pkgBlock}
      선점 우위로("다른 데선 0부터 다시 파악해야 해요. 저는 오늘 이미 ○○을 봤고요").
    ⚠️ 허위 긴급성·공포·죄책감 금지(PREAMBLE 상속).
 
-[recommended_program] 위 패키지에서 가장 맞는 1개(pick_ref)만 확신 있게. 가격·세션수를 값 텍스트에 쓰지
-   마라(앱이 목록에서 채움). why_fit=목적·직업·나이 근거 2문장 이내. 대안(alt_ref) 마땅찮으면 null.
-   패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
+[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 가장 맞는
+   1개(pick_ref)를 확신 있게 골라라. 클로징 직전에 회원에게 '세션수·금액'을 제시할 때 쓸, 반박 안 되는
+   근거를 만드는 게 이 블록의 핵심 — "왜 이 횟수를 받아야 하는지"를 회원 상황에서 역산해 준다.
+   - why_fit: 이 패키지가 이 회원에게 맞는 이유(목적·불편·직업·나이). 2문장 이내.
+   - frequency: 권장 주간 빈도(예: "주 2회")와 '왜 그 빈도인지' 근거(회복시간 확보·습관형성 최소빈도·
+     목표 속도 등 회원 상황 기반). 1문장.
+   - duration: 권장 총 기간(예: "약 3개월")과 '왜 그 기간인지' 근거(눈에 띄는 변화까지 필요한 시간 등). 1문장.
+   - session_logic: frequency × duration으로 총 세션수를 역산해 'pick_ref 패키지의 회차가 왜 딱 맞는지'를
+     한 줄로 잇는다(예: "주 2회로 약 3개월이면 24~30회라, 이 패키지 회차가 목표에 딱 맞습니다").
+     ★여기 나오는 세션수는 반드시 네가 고른 pick_ref 패키지의 실제 sessions 값에 맞춰 역산하라(새 숫자
+     창작 금지). ★단 '가격(원)'은 값 텍스트에 절대 쓰지 마라 — 금액은 앱이 목록에서 채운다.
+     ※ 패키지가 '기간제'(세션수 없음)면 session_logic은 '왜 이 기간이 필요한지'로 대체한다.
+   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내.
+   - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
 
 [data_gaps — 성장 프레임] 기본정보로 위 전부를 반드시 생성한다("정보 부족" 반환 금지). data_gaps는 결핍이
    아니라 "○○를 관찰해오면 △△까지" 형태 긍정 코칭. 충실하면 빈 배열.
@@ -142,7 +153,7 @@ ${pkgBlock}
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   "closing_line": "가정 종결 한마디('등록' 단어 없이)",
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
-  "recommended_program": { "pick_ref": 0, "why_fit": "...", "alt_ref": null, "alt_why": "" },
+  "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]
 }
 ※ objection_defense는 위 5개 reason을 각각 1개씩(총 5). pick_ref/alt_ref는 정수 또는 null.`;
@@ -472,6 +483,9 @@ const FIELD_TERMS = [
   ["objection_defense", "거절 방어"],
   ["closing_line", "클로징 한마디"],
   ["moves", "동작"],
+  ["session_logic", "세션 근거"],
+  ["frequency", "빈도"],
+  ["duration", "기간"],
   ["closing", "클로징"],
 ];
 
