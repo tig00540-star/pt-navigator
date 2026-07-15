@@ -69,6 +69,10 @@ function firstPrompt(member, packages) {
 
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, residence=${g(m.residence)},
                mbti=${g(m.mbti)}, pain=${g(m.pain)}, goal=${g(m.goal)}, machines=${machines}
+[OT 사전 문진 — 회원이 등록 때 작성(있는 것만 활용, 없으면 무시)]
+ 목표시점/계기=${g(m.goal_deadline)}, 원하는페이스=${g(m.training_pace)}, 부상·수술=${g(m.injury_history)},
+ 운동경험=${g(m.exercise_level)}, 예전중단이유=${g(m.quit_reason)}, 받아본유료운동=${g(m.past_exercise)},
+ 가능빈도·시간=${g(m.availability)}, 하루활동량=${g(m.activity_level)}, 바라는점=${g(m.member_note)}
 아직 관찰 전이다 — 신체 판단은 '~일 가능성' 가설 톤. 없는 관찰·수치·에피소드 창작 금지. 단 오프닝·
 비유·거절 대사는 세일즈 기술이라 확신 있게 완성해도 된다(사실 왜곡이 아니므로).
 
@@ -80,6 +84,18 @@ ${pkgBlock}
  - 외형/체중감량/바디라인 → 체형·라인·자신감을 전면, pain은 보조.
  - 건강/체력/활력 → 컨디션·에너지를 전면.  - 벌크업/근육 → 근성장·볼륨·자세를 전면.
  ⚠️ goal과 무관하게 pain만 물지 말 것. pain은 goal이 통증개선일 때만 주인공.
+
+[사전 문진 활용 — 클로징 근거 강화]
+ - goal_deadline(시점): session_logic 기간 역산과 '왜 지금'에 최우선 반영("데드라인까지 N개월이라 주2회 필수"). 없으면 일반 기간 논리.
+ - availability(가능 빈도): recommended_program.frequency의 현실 빈도 근거로, 목표에 부족하면 그 격차를 objection_defense의 time(시간부족) 선제 방어로 연결.
+ - quit_reason(예전 중단 이유): objection_defense.doubt와 클로징 손실 프레이밍의 직접 근거("혼자 하다 ○○로 멈추셨잖아요 — 이번엔 그 지점을 제가 잡아드려요"). 없는 이유 창작 금지.
+ - injury_history·exercise_level·activity_level: target_exercise 동작 선택·난이도·안전(부상 부위 우회)과 비유 소재로. injury_history 있으면 의료경계 유지.
+ - training_pace·member_note: 오프닝·전반 톤 보조(있을 때만).
+
+[★재정·투자 신호 → 세션·단가 제시 강도] job·past_exercise·training_pace로 지불 여력·투자 의향을 읽어라.
+ - 여유·의향 높아 보이면(안정 직군·과거 PT/필라테스 경험·'제대로/집중' 선택): recommended_program에서 위축되지 말고 목표에 필요한 만큼 넉넉한 회차의 패키지(pick_ref)를 확신 있게 골라라. session_logic도 당당하게(할인·최소량으로 미리 물러서지 말 것).
+ - 제약 커 보이면(신호 부재·'가볍게 시작'): 최소 필요량부터 제안, 이후 확장 여지 남김.
+ - ⚠️ 이 판단은 pick_ref 선택과 session_logic '톤'에만 반영. 회원에게 '여유 있어 보인다/돈' 식 재정 언급은 값 텍스트에 절대 금지.
 
 [컨닝페이퍼 4블록 — 트레이너가 읽는 순서]
 

@@ -69,6 +69,16 @@ function mapMemberRow(r) {
     mbti: r.mbti ?? "-",
     pain: r.pain ?? "-",
     goal: r.goal ?? "미설정",
+    // OT 사전 문진 — firstPrompt 입력용(빈 값은 g()가 '없음' 처리). 화면 렌더엔 미사용.
+    goal_deadline: r.goal_deadline ?? null,
+    training_pace: r.training_pace ?? null,
+    injury_history: r.injury_history ?? null,
+    exercise_level: r.exercise_level ?? null,
+    quit_reason: r.quit_reason ?? null,
+    past_exercise: r.past_exercise ?? null,
+    availability: r.availability ?? null,
+    activity_level: r.activity_level ?? null,
+    member_note: r.member_note ?? null,
     machines: r.machines ?? [],
     trainer_id: r.trainer_id ?? null,   // 내 회원 판별(원장 스코프)
     // ② member_status — 컬럼 미반영(마이그레이션 전)·demo 행에서도 기본값으로 안전.
@@ -128,6 +138,15 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
     mbti: "",
     pain: "",
     goal: "",
+    goal_deadline: "",
+    training_pace: "",
+    injury_history: "",
+    exercise_level: "",
+    quit_reason: "",
+    past_exercise: "",
+    availability: "",
+    activity_level: "",
+    member_note: "",
     origin: "ot_funnel", // ② 진입 문 — status는 여기서 파생(손으로 status 안 고름 · §7)
     carrySessions: "", // 인계·외부(handover/external)만 — 이월 잔여 세션
     carryPrice: "", // 이월 회당단가(급여 원천이라 인계도 보존 · 매출 제외는 buildContract)
@@ -167,6 +186,15 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
         mbti: form.mbti || null,
         pain: form.pain || null,
         goal: form.goal || null,
+        goal_deadline: form.goal_deadline || null,
+        training_pace: form.training_pace || null,
+        injury_history: form.injury_history || null,
+        exercise_level: form.exercise_level || null,
+        quit_reason: form.quit_reason || null,
+        past_exercise: form.past_exercise || null,
+        availability: form.availability || null,
+        activity_level: form.activity_level || null,
+        member_note: form.member_note || null,
         machines: picked,
         origin: form.origin,
         status: initialStatus(form.origin), // ot_funnel→ot_active, 그 외→pt_active(PT 직행 §1.5)
@@ -210,6 +238,15 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
     { k: "mbti", label: "MBTI", ph: "ISTJ" },
     { k: "pain", label: "불편 부위", ph: "우측 무릎 통증" },
     { k: "goal", label: "목적", ph: "바디프로필" },
+    { k: "goal_deadline",  label: "목표 시점·계기",  ph: "예: 8월 결혼 / 없으면 비움" },
+    { k: "training_pace",  label: "원하는 페이스",    ph: "가볍게 / 제대로 / 집중해서" },
+    { k: "injury_history", label: "부상·수술 이력",  ph: "없음 / 2년 전 무릎 수술 등" },
+    { k: "exercise_level", label: "운동 경험",        ph: "처음 / 가끔 / 꾸준히" },
+    { k: "quit_reason",    label: "예전 중단 이유",   ph: "시간·동기·효과·부상·혼자 막막 등" },
+    { k: "past_exercise",  label: "받아본 유료 운동", ph: "PT, 필라테스 등 / 없음" },
+    { k: "availability",   label: "가능 빈도·시간대", ph: "주 2회 · 저녁" },
+    { k: "activity_level", label: "하루 활동량",      ph: "주로 앉아서 / 활동적" },
+    { k: "member_note",    label: "바라는 점(선택)",  ph: "회원이 미리 남긴 말" },
   ];
 
   return (
