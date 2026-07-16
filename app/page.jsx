@@ -63,6 +63,7 @@ function mapMemberRow(r) {
   return {
     id: r.id,
     name: r.name,
+    phone_number: r.phone_number ?? null,
     age: r.age ?? "-",
     job: r.job ?? "-",
     residence: r.residence ?? "-",
@@ -134,6 +135,7 @@ const GROUP_TAB = {
 function MemberForm({ onClose, onSaved }) {
   const [form, setForm] = useState({
     name: "",
+    phone_number: "",
     age: "",
     job: "",
     residence: "",
@@ -179,6 +181,7 @@ function MemberForm({ onClose, onSaved }) {
       .from("user_table")
       .insert({
         name: form.name.trim(),
+        phone_number: form.phone_number.trim() || null,
         age: form.age ? Number(form.age) : null,
         job: form.job || null,
         residence: form.residence || null,
@@ -230,6 +233,7 @@ function MemberForm({ onClose, onSaved }) {
 
   const fields = [
     { k: "name", label: "이름", ph: "김철수" },
+    { k: "phone_number", label: "휴대폰 번호 (회원앱 로그인용)", ph: "010-1234-5678", type: "tel" },
     { k: "age", label: "나이", ph: "34", type: "number" },
     { k: "job", label: "직업", ph: "IT 개발자" },
     { k: "residence", label: "거주지", ph: "센터 인근 오피스텔" },
