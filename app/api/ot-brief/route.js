@@ -184,154 +184,81 @@ ${pkgBlock}
 function secondPrompt(member, report, cases = [], caseTier = "tentative") {
   const m = member || {};
   const r = report || {};
+  const g2 = (v) => (v == null || v === "" ? "없음" : v);
   const validCases = Array.isArray(cases) ? cases.filter(Boolean) : [];
   const hasCases = validCases.length > 0;
   const tierLabel = caseTier === "confident" ? "뚜렷" : "잠정(케이스 아직 적음)";
   const caseInputBlock = hasCases
     ? `
-[내 과거 클로징 케이스 — 이 트레이너 본인 것만 · 경향 신뢰도=${tierLabel}]
-아래는 네가 과거에 클로징한 회원들의 '익명 프로파일 + 3박자(접근·반응·결과)'다. 이번 회원과
-비슷한 프로파일을 골라 case_feedback을 채워라. 이건 세일즈 대본 하달이 아니라 '거울'이다 —
-네 과거를 비춰 이번 판단을 돕는 스파링이다.
- - 진단 먼저: 표면 거절(가격·망설임)이 아니라 '진짜 장애물'을 짚어라(예: '남편 상의'=가격이
-   아니라 결정권이 회원한테 없던 것). 트레이너에게 '다음에도 쓸 안목'을 남겨라.
- - 성공 케이스=리딩 재료: 비슷한 프로파일에 통한 접근을 근거로, 회원이 그 욕구를 '자기 말로'
-   꺼내게 어떻게 리딩할지 방향을 줘라. ⚠️ 회원 입에 트레이너 논리를 이식(외운 대사)하는 건
-   역효과다 — '배우고 싶다/혼자보다 낫다'는 느낌에 스스로 도달하게 이끄는 리딩이어야 한다.
- - 막힌 케이스=다른 벡터: 같은 프레임을 반복하지 마라. 과거 이 프로파일에서 막힌 방향이 있으면
-   '이번엔 그거 말고 X 방향으로' + 왜인지 명시하라(같은 실패 반복 차단).
- - 강도 가드: 압박 ≠ 정당한 강조. 강도는 근거·책임의 세기지 소진·조작이 아니다. 허위 긴급성·
-   공포·죄책감·2~3시간 붙잡기 금지. 단 회원 상태가 진짜 필요하면(부상 위험 등) 책임에서 나온
-   '제대로 배우셔야 한다' 강조는 정당하다(의료 단정은 여전히 금지).
- - 경향이 '잠정'이면 단정하지 말고 '아직 케이스가 적어 잠정 경향' 톤으로 하되, 반드시 채워라.
-[케이스 목록] (result=success/fail/hold · profile=익명)
+[내 과거 클로징 케이스 — 이 트레이너 본인 것만 · 경향 신뢰도=${tierLabel}] (거울: 비슷한 프로파일에
+통한/막힌 접근을 근거로 이번 리딩을 돕는다. 대사 이식 금지 · 압박≠강조.)
 ${validCases.map((c, i) => `${i + 1}. [${c.result}] 프로파일=${JSON.stringify(c.profile)} · 접근=${c.detail?.approach ?? c.approach ?? "-"} · 반응=${c.detail?.reaction ?? "-"} · 결과=${c.detail?.outcome ?? c.reason ?? "-"}`).join("\n")}
-`
-    : "";
-  const caseFieldsBlock = hasCases
-    ? `
-[case_feedback — 내 과거 케이스 거울 (cases 있을 때만)]
- - diagnosis: 과거 케이스에 비춘 이 회원의 '진짜 장애물' 진단(표면 아닌 근본). 근거 얇으면
-   1차 관찰로 가설. 1~2문장. [거울 톤 — 단정보다 '~로 보인다']
- - proven_lead: 비슷한 프로파일에 통한 접근을 근거로, 이번에 회원이 욕구를 '자기 말로' 꺼내게
-   어떻게 리딩할지 방향. 대사 이식·낭독 금지. 1~2문장.
- - avoid_repeat: 과거 이 프로파일에서 막힌 벡터가 있으면 '이번엔 그거 반복 말고 X 방향' + 왜.
-   해당 없으면 null. 1문장.
- - example: proven_lead의 한 문장 샘플('예시'·발판 — 낭독 대본 아님). 1문장.
- - your_read: 트레이너에게 사고를 되돌리는 넛지 1문장("네 판단은? 이 진단이 맞다고 보나?" 결).
 `
     : "";
   const caseSchemaLine = hasCases
     ? `,
-  "case_feedback": { "diagnosis": "...", "proven_lead": "...", "avoid_repeat": "... 또는 null", "example": "...", "your_read": "..." }`
+  "case_feedback": { "diagnosis": "과거 케이스에 비춘 이 회원의 진짜 장애물(표면 아닌 근본)", "proven_lead": "비슷한 프로파일에 통한 접근 기반, 회원이 욕구를 자기 말로 꺼내게 할 리딩 방향", "avoid_repeat": "과거 막힌 벡터 있으면 '이번엔 그거 말고 X' + 왜(없으면 null)", "your_read": "트레이너에게 되묻는 넛지 1문장" }`
     : "";
-  return `[상황] 2차 OT. 아래 '1차 관찰 기록'은 트레이너가 실제 입력한 관찰이다(가설 아님).
-[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, mbti=${g(m.mbti)}, pain=${g(m.pain)}, goal=${g(m.goal)}
-[1차 관찰 기록]
-${JSON.stringify(
-    {
-      movements: r.movements ?? [],
-      reaction: r.reaction ?? {},
-      goal: r.goal ?? {},
-      memberQuote: r.memberQuote ?? "",
-      trainer_note: r.trainer_note ?? "",
-      sales_intensity: r.sales_intensity ?? "standard",
-    },
-    null,
-    2
-  )}
+  return `[상황·대전제] 2차 OT 입장 3분 전. 유일한 목적 = 이 회원의 등록(클로징) 확률 극대화. 1차와 달리
+아래 '1차 관찰'이라는 실제 근거가 있다 — 이번엔 '증명'으로 클로징을 확실히 닫는다. 트레이너가 30초에
+훑어 외우고 폰을 넣는 컨닝페이퍼니, 바로 말할 완성 대사로.
+
+[이 국면 특칙 — 대본 수위] 세일즈·운동 모두 '그대로 말할 실제 대사'까지. 단 숫자 처방(세트·횟수·각도·
+중량·템포)과 의료 단정(치료·완치·진단)은 절대 금지.
+
+[회원 기본정보] name=${g2(m.name)}, age=${g2(m.age)}, job=${g2(m.job)}, mbti=${g2(m.mbti)}, pain=${g2(m.pain)}, goal=${g2(m.goal)}
+
+[1차 관찰 기록 — 유일 근거(가설 아님, 트레이너가 실제 관찰)]
+${JSON.stringify({
+    movements: r.movements ?? [],
+    reaction: r.reaction ?? {},
+    goal: r.goal ?? {},
+    memberQuote: r.memberQuote ?? "",
+    trainer_note: r.trainer_note ?? "",
+    sales_intensity: r.sales_intensity ?? "standard",
+  }, null, 2)}
 ${caseInputBlock}
-이 '1차 관찰'을 유일한 근거로 2차를 설계하라.
-[재료 확장] 트레이너 종합 소견(자유서술)이 있으면 정형 관찰과 함께 근거로 삼아라. 정형 항목에
-안 담긴 트레이너의 판단·가설이니 briefing·closing 논리에 반영하되, 없는 사실을 지어내진 마라.
-[세일즈 강도] sales_intensity는 트레이너가 이 회원에 지시한 '근거·긴급성을 얼마나 또렷이 짚을지'다.
-압박·설득의 세기가 아니다(PREAMBLE 윤리 상속).
- · standard: 기본. 사실 기반으로 담백하게.
- · strong: 사실 기반 손실·긴급성을 '더 또렷하고 구체적으로' 짚어라(예: 자세 무너짐→통증 악화 경로를
-   회원 일상 언어로 선명히). ⚠️ 단 '없는 위기 창작·공포몰이·허위 긴급성'은 여전히 절대 금지 —
-   또렷함은 근거의 선명도지 위협의 크기가 아니다. 강해지는 건 '증거'지 '압박'이 아니다.
- · soft: 신뢰가 덜 쌓인 회원. 오늘 클로징을 미루고 라포·다음 접점으로 방향을 잡아라(1차 watch_for
-   미루기 로직과 일관). closing 4단계는 여전히 생성하되 land를 '가정 종결' 대신 '다음 약속의 씨앗'
-   톤으로 부드럽게.
-1) briefing(등록 당위성 논리): proven_in_1st(1차 확인) → risk_if_alone(혼자 하면 위험한 지점, 사실 기반)
-   → to_prove_in_2nd(2차에 몸으로 증명할 것) → closing_logic("혼자선 못 잡는다"의 논리, 낭독 대본 아님).
-2) arc(2차 대화 흐름): movements[].plan2nd를 arc의 중심축으로. memberAware=true 항목은 '회원이 스스로 인지한 것'이라
-   소환 비트에 강력하니 우선 활용. memberQuote가 있으면 '1차 소환' 비트에서 회원 본인 워딩을 그대로 되살려라.
-3) closing: 2차 실시간 자극 결과 분기(yes/partial/no) 3버전 프리생성. 각 분기를 아래 4단계
-   골격으로(진입→그림→착지→침묵). 각 분기에 approach_tag 제안.
-   "마지막 OT"급으로 확실하되, 압박이 아니라 '깊이 이해받았다'는 공감으로.
-4) objections(거절 대처): 황현진 4유형(망설임·거부·의심·재확인)으로. 반박이 아니라 '공감으로 빗장 풀기 + 세일즈 무브'.
-   각 유형: customer_says(그 유형이 흔히 하는 말) / reframe_direction(공감으로 빗장 푸는 방향, 반박 아님) /
-   sales_move(공감 뒤 바로 잇는 세일즈 무브 — 무엇을 보여주고 어떤 제안으로 다시 클로징으로 끌어오나, 물러서지 말 것) /
-   example(그 자리에서 회원에게 바로 말할 '실제 대사' 한 줄, 발판·흐림 아님 · 완성 문장 "○○님, …").
-5) stimulus_response(자극반응별 운동 대처 · 수업 전 준비물): 오늘 자극 결과 3분기(yes/partial/no)별로
-   트레이너가 '수업 전에 미리 숙지'할 운동 대처를 설계하라. 이건 세일즈(closing)가 아니라 '몸을 어떻게
-   조정하나'다. 각 분기:
-   · cause: 그 반응이 나온 원인(1차 관찰 근거로. 없는 원인 창작 금지).
-   · adjustment: 수업 중 적용할 조정 '방향'. ⚠️ 숫자 처방 절대 금지(각도·템포·세트·횟수·중량 X) —
-     움직임 방향까지만("발끝 안쪽·상체 전방 힙힌지" O / "15도·3세트" X).
-   · direction: 그 조정으로 노리는 목표(예: 앞허벅지 차단→둔근 단독 점화).
-   yes 분기는 '대처'가 아니라 '잘 온 세팅을 어떻게 각인·유지하나'로. partial/no는 '무엇을 바꿔 자극을
-   끌어올리나'로. ⚠️ no라고 '그러니 등록하라'는 세일즈로 새지 말 것 — 여긴 운동 대처만, 세일즈는 closing 소관.
+이 1차 관찰을 유일 근거로 2차를 설계하라. 없는 관찰·수치·에피소드 창작 금지.
+[세일즈 강도] sales_intensity는 근거의 '선명도'다(압박·설득의 세기 아님). strong=사실 기반 손실·긴급성을
+더 또렷이 / soft=오늘 밀지 말고 다음 접점의 씨앗 톤(closing_line을 부드러운 가정으로) / standard=담백하게.
 
-[클로징 4단계 골격 — 각 분기 필수]
-  ★enter·paint·land의 값은 트레이너가 회원에게 그대로 말할 '실제 대사'로 써라(설명·지시문 아님,
-   "○○님, …" 1인칭). 확신 있게, 흐릿한 예시로 물러서지 말 것. hold만 트레이너용 지시(멈춤)다.
-  enter(진입):  "등록" 단어로 시작 금지. 오늘 회원 몸에서 일어난 사실을 짚고 "그래서 회원에게
-                무슨 의미인지(So what?)"로 연다. memberQuote/memberAware를 여기서 소환하면 강력.
-  paint(그림):  핵심 진단·필요성을 추상 설명 금지. 반드시 '일상 비유 하나'로 회원 머릿속에
-                그림을 그린다(예: "브레이크 밟고 액셀 밟는 격"). 이게 이 화법의 시그니처.
-  land(착지):   등록 제안을 '왜 필요한가 + 왜 지금인가'로. goal_type에 맞는 기대 키워드로 착지
-                (pain→해결·안심 / appearance→자부심 / health→안심 / 기타→이익).
-                '등록하세요'(판매 동사) 금지 → 가정 종결("다음 주부터 이렇게 가시죠")로.
-                긴급성은 '사실 기반 손실'만("지금 멈추면 이 감각 사라져요"), 없는 위기 조장 금지.
-  hold(침묵):   land 후 멈추라는 지시. "여기서 말 멈추고 회원 답을 기다리세요" 문구를 담는다.
+[컨닝페이퍼 — 2차는 '증명 → 클로징']
+① recall(지난 시간 소환): 1차의 체감·회원 한마디(memberQuote)를 되살려 문을 여는 완성 대사. "지난번
+   ○○ 느끼셨던 거 기억나세요?" 결. - line: 그대로 말할 대사 1~2문장. - why: 이걸 여는 이유 1문장.
 
-[화법 원리 — 황현진式, 모든 문장에 적용]
-  - 畵法(그림 그리기): 설명은 추상어 대신 비유·오감으로 생생하게. "설득"이 아니라 "설명".
-  - So what?: 사실 나열 금지. 반드시 "그래서 회원에게 무슨 의미인지"까지 연결.
-  - 담백하게: 화려한 설득·고상한 단어 금지. 쉬운 말로.
-  - 위협 소구(겁주기) 금지 → 사실 기반 손실 프레이밍으로 대체(공포 조장은 재등록을 무너뜨림).
-${caseFieldsBlock}
-[data_gaps = 성장 프레임 (부족/결핍 아님)]
-- 관찰이 1~2개로 얇더라도, 있는 것만으로 클로징 4단계와 arc를 '반드시' 생성한다.
-  "데이터 부족으로 못 한다"는 반환 금지. 빈손으로 돌려주지 말 것.
-- data_gaps는 '부족/결핍'이 아니라 '더하면 좋아지는 것(성장)'이다. "없어서 못 한다" 뉘앙스 금지.
-- 문구는 항상 긍정 코칭: "○○를 더 관찰하시면 클로징에서 △△까지 짚어드릴 수 있어요" 형태.
-- 관찰이 이미 충실하면 이 배열을 빈 배열 또는 1개 이하로. 억지로 채우지 말 것.
-  (채울수록 새 항목이 무한 생성되면 안 됨 — 충실하면 사라져야 함.)
-- memberQuote(회원 한마디)는 얇은 관찰에서도 강력한 재료 — 있으면 도입 소환에 반드시 활용.
+② proof(오늘 '증명'할 동작 2개): 1차 관찰에서 드러난 문제를 오늘 몸으로 증명하는 구체 동작 2개.
+   ★동작은 이 회원의 goal·pain·1차 관찰(movements/reaction)에서 도출하라 — 고정 동작 습관 반복 금지,
+   직업 비어도 goal·pain으로 개인화, 숫자 처방 금지. 각 동작 before→after 체감 실험으로(먼저 시켜→큐 하나
+   잡아줌→확 달라짐, 그 큐가 혼자선 못 잡는 지점).
+   moves[] 각: exercise(구체 동작+한 줄 세팅) / target_reaction(before→after 분명한 차이) /
+   point_it_out(그 순간 그대로 말할 대사 — "아까랑 다르죠?" + '혼자선 이 세팅 못 잡는다' 심기).
+   so_what: 두 증명을 묶어 'PT를 받아야 한다'는 회원 스스로의 결론으로 잇는 한 줄.
+   if_weak: 증거 반응이 약하게 올 때 살릴 큐·조정 한 줄(숫자 없이·방향만).
 
-[출력 언어 규칙]
-- 모든 출력 텍스트는 자연스러운 한국어. 입력으로 받은 영문 코드값(timid, well, pain,
-  appearance, memberQuote 등)을 출력에 그대로 노출 금지. 반드시 한글로 풀어 쓴다
-  (timid→겁많음, active→적극적, well→자극 잘 느낌, pain→통증개선 등). 필드명은 화면에 쓰지 말 것.
-- data_gaps를 포함한 모든 출력에서 memberQuote·memberAware 등 '필드명 자체'를 쓰지 말 것.
-  '회원 한마디', '회원이 스스로 인지한 항목'처럼 한글로 풀어 쓴다.
+③ sales_metaphor: 회원 직업·일상·목표에서 끌어온 비유 하나(운동·기계 클리셰 금지). metaphor + bridge(등록 필요성으로).
 
-[비유 개인화 규칙]
-- paint(비유)는 이 회원의 직업·취미·일상(job, goal.detail)에서 끌어와라
-  (골프→스윙·어드레스, 좌식→책상·의자, 요리사→주방 동작 등). 운동/기계 클리셰
-  ("브레이크-액셀", "기름칠" 등)에 기대지 말 것. 회원 세계의 언어로 그린다.
-  회원 정보에 쓸 소재가 없을 때만 일반 비유 허용.
+④ closing_line: '마지막 OT'급 강한 가정 종결 한마디. '등록하세요'(판매 동사) 금지 → "다음 주부터 이렇게
+   가시죠" 결. 긴급성은 사실 기반 손실만("지금 멈추면 오늘 이 감각 흩어져요"). 1차보다 확신 있게.
 
-아래 JSON 스키마만 출력(설명·코드펜스 금지):
+⑤ objection_defense(거절 선제 방어 5종): price·hesitation·doubt·time·compare 각 1개. 1차 관찰·(있으면)
+   회원 quit_reason을 근거로 더 날카롭게. 각: trigger(나올 신호) / defense(공감+세일즈 무브) /
+   line(그대로 말할 대사). ⚠️compare는 경쟁사 비방 금지→'오늘 이미 당신 몸에서 확인' 데이터 선점 우위.
+   ⚠️허위 긴급성·공포·죄책감 금지.
+
+[member_read] 1차에서 확인된 것 + 지금 클로징 국면을 한 줄로(앵커).
+[data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
+[출력 언어] 자연스러운 한국어. 영문 코드값·필드명(memberQuote·point_it_out 등) 값 텍스트 노출 금지.
+아래 JSON만 출력(설명·마크다운·코드펜스 금지).
 {
-  "data_gaps": ["..."],
-  "briefing": { "proven_in_1st": "...", "risk_if_alone": "...", "to_prove_in_2nd": "...", "closing_logic": "..." },
-  "arc": [ { "when": "도입|중반|후반|마무리", "intent": "...", "direction": "...", "example": "...", "tone": "..." } ],
-  "closing": {
-    "yes":     { "approach_tag": "value|pain|appearance|other", "enter": "진입(등록 단어 금지, So what?)", "paint": "일상 비유 하나", "land": "착지(왜+지금, 가정 종결)", "hold": "여기서 멈추고 회원 답을 기다리세요" },
-    "partial": { "approach_tag": "...", "enter": "...", "paint": "...", "land": "...", "hold": "..." },
-    "no":      { "approach_tag": "...", "enter": "...", "paint": "...", "land": "...", "hold": "..." }
-  },
-  "objections": [ { "type": "망설임|거부|의심|재확인", "customer_says": "이 유형이 흔히 하는 말", "reframe_direction": "공감으로 빗장 푸는 방향(반박 아님)", "sales_move": "...", "example": "..." } ],
-  "stimulus_response": {
-    "yes":     { "cause": "...", "adjustment": "숫자 없이 방향만", "direction": "..." },
-    "partial": { "cause": "...", "adjustment": "...", "direction": "..." },
-    "no":      { "cause": "...", "adjustment": "...", "direction": "..." }
-  }${caseSchemaLine}
-}`;
+  "member_read": "1차 확인된 것 + 지금 클로징 국면 한 줄",
+  "recall": { "line": "...", "why": "..." },
+  "proof": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
+  "sales_metaphor": { "metaphor": "...", "bridge": "..." },
+  "closing_line": "마지막 OT급 강한 가정 종결 한마디",
+  "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
+  "data_gaps": ["..."]${caseSchemaLine}
+}
+※ objection_defense는 5개 각 1개. proof.moves는 2개.`;
 }
 
 // ④ phase="reregister" user 프롬프트 — 재등록 브리핑(OT 클로징의 PT 대칭).
@@ -505,6 +432,9 @@ const FIELD_TERMS = [
   ["session_logic", "세션 근거"],
   ["frequency", "빈도"],
   ["duration", "기간"],
+  ["recall", "지난 소환"],
+  ["proof", "증명 동작"],
+  ["if_weak", "반응 약할 때"],
   ["closing", "클로징"],
 ];
 
@@ -683,9 +613,9 @@ export async function POST(request) {
     // first는 필수 키를 넘겨 스키마 완전성까지 파서가 보장(부분객체·다중블록 방어).
     // second는 별도 스키마라 키 미지정(1순위 단일 파싱 — 기존 동작 유지, 회귀 없음).
     const REQUIRED_FIRST = ["member_read", "opening", "target_exercise", "sales_metaphor", "closing_line", "objection_defense"];
-    const brief = sanitizeFieldNames(
-      parseBrief(textOut, phase === "first" ? REQUIRED_FIRST : [])
-    );
+    const REQUIRED_SECOND = ["member_read", "recall", "proof", "sales_metaphor", "closing_line", "objection_defense"];
+    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : [];
+    const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
     return Response.json(brief);
   } catch (e) {
     return Response.json(

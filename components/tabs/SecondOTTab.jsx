@@ -22,7 +22,6 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
-  Wrench,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
@@ -31,7 +30,7 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
-import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS, labelOf } from "@/lib/labels";
+import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
 import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
 
@@ -116,8 +115,8 @@ const ROUTINE_2 = [
   },
 ];
 
-// 자극 결과 id↔화면 라벨(읽기전용 3분기 클로징 스택 라벨용). 저장/필터 값은 b.closing 키(yes/partial/no) — 화면 라벨만(교훈4).
-const ACT_LABEL = { yes: "자극 잘 옴", partial: "약하게 옴", no: "아직 없음" };
+// 2차 거절 5종 한글 라벨(purge-safe 정적 맵). objection_defense[].reason 키와 물림.
+const SECOND_OBJ_LABEL = { price: "가격 부담", hesitation: "생각해볼게요 (망설임)", doubt: "효과·필요성 의심", time: "시간 부족", compare: "타 센터 비교" };
 
 const inputCls =
   "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary";
@@ -492,31 +491,20 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     </div>
   );
 
-  // example(예시 문장)은 흐리게 + "예시" 라벨 — 낭독기 방지(⭐⭐ 철학). §8-훅.
-  const renderExample = (ex) =>
-    ex ? (
-      <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
-        <span className="mr-1 rounded bg-elevate px-1 py-0.5 text-[9px] font-semibold text-muted">
-          예시
-        </span>
-        {ex}
-      </p>
-    ) : null;
-
   /* ---- 실 AI 브리핑 렌더 ---- */
   const renderBrief = (b, meta) => {
     const gaps = Array.isArray(b.data_gaps) ? b.data_gaps : [];
-    const bf = b.briefing || {};
+    const rc = b.recall || {};
+    const pf = b.proof || {};
+    const moves = Array.isArray(pf.moves) ? pf.moves : [];
+    const sm = b.sales_metaphor || {};
+    const cline = b.closing_line || "";
+    const obj = Array.isArray(b.objection_defense) ? b.objection_defense : [];
     // 저장된 관찰 해시 vs 현재 관찰 해시 → 다르면 스테일(관찰 수정됨).
     const stale = Boolean(meta?.obsHash && obs && meta.obsHash !== otObsHash(obs));
-    // 클로징 방향 프리필: 저장값 > yes분기 AI approach_tag > pain (토글 제거 후 결정적 분기).
+    const legacyCache = Boolean(b) && !rc.line && moves.length === 0 && obj.length === 0;
+    // 클로징 방향 프리필(㉠ 폼) — 신 스키마엔 b.closing 없음 → "pain" 기본.
     const effApproach = closingApproach || b.closing?.yes?.approach_tag || "pain";
-    const briefRows = [
-      { k: "1차 확인", v: bf.proven_in_1st, c: "text-primary-strong" },
-      { k: "혼자 하면 위험", v: bf.risk_if_alone, c: "text-orange-600" },
-      { k: "2차에 증명할 것", v: bf.to_prove_in_2nd, c: "text-sky-700" },
-      { k: "클로징 논리", v: bf.closing_logic, c: "text-primary-strong" },
-    ];
     return (
       <div className="space-y-8">
         {/* ── AI 지원 준비 · 수업 전 ── */}
@@ -543,244 +531,85 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           </Button>
         </div>
 
-        {/* D-3 — 내 과거 케이스 거울. 진단 먼저(스파링 톤) → 통한 접근 리딩 → 다른 벡터 → 네 판단 넛지.
-            게이트 OFF/케이스 미전송이면 brief.case_feedback 자체가 없어 카드 안 뜸(회귀 안전). */}
-        {b.case_feedback && (
-          <section className="rounded-2xl border border-line bg-elevate p-5 shadow-sm">
-            <Eyebrow icon={History}>
-              내 과거 케이스 거울 {meta?.caseTier === "confident" ? "· 뚜렷" : "· 잠정 경향"}
-            </Eyebrow>
-            <div className="mt-3 space-y-3">
-              {b.case_feedback.diagnosis && (
-                <div className="rounded-xl border border-line bg-card p-3.5 shadow-sm">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-sub">진단 · 진짜 장애물</div>
-                  <p className="mt-1 text-sm leading-relaxed text-ink">{b.case_feedback.diagnosis}</p>
-                </div>
-              )}
-              {b.case_feedback.proven_lead && (
-                <div className="rounded-xl border border-primary/30 bg-primary-soft p-3.5">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">통한 접근 → 이렇게 리딩</div>
-                  <p className="mt-1 text-sm leading-relaxed text-ink">{b.case_feedback.proven_lead}</p>
-                  {renderExample(b.case_feedback.example)}
-                </div>
-              )}
-              {b.case_feedback.avoid_repeat && (
-                <div className="rounded-xl border border-orange-500/40 bg-orange-500/10 p-3.5">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-orange-600">이번엔 다른 벡터</div>
-                  <p className="mt-1 text-sm leading-relaxed text-ink">{b.case_feedback.avoid_repeat}</p>
-                </div>
-              )}
-              {b.case_feedback.your_read && (
-                <p className="text-[11px] italic leading-relaxed text-muted">{b.case_feedback.your_read}</p>
-              )}
-            </div>
-          </section>
+        {legacyCache && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
+            이전 형식 브리핑이에요 — &lsquo;재생성&rsquo;을 누르면 새 증명·클로징 컨닝페이퍼로 바뀝니다.
+          </div>
         )}
-
-        {/* 클로징 — 3분기 읽기전용 아코디언(yes/partial/no · 기본 접힘, 동시 펼침 허용). 신규 AI 생성 없음(캐시 재사용). */}
-        <section>
-          <Eyebrow icon={Flame}>오늘의 클로징 · 수업 전 준비</Eyebrow>
-          <div className="space-y-4">
-            {["yes", "partial", "no"].map((id) => {
-              const c = b.closing?.[id] || null;
-              return (
-                <details key={id} className="rounded-xl border border-line bg-card shadow-sm p-3">
-                  <summary className="cursor-pointer">
-                    <span className="rounded-md bg-elevate px-2.5 py-0.5 text-[11px] font-semibold text-sub">
-                      {ACT_LABEL[id]}
-                    </span>
-                  </summary>
-                  <div className="mt-3">
-                  {c ? (
-                    <div className="space-y-3 rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
-                      {c.approach_tag && (
-                        <span className="inline-block rounded-md bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">
-                          방향: {labelOf(CLOSING_APPROACH_OPTS, c.approach_tag)}
-                        </span>
-                      )}
-                      {[
-                        { key: "enter", label: "① 진입 · So what?", v: c.enter },
-                        { key: "paint", label: "② 그림 · 비유", v: c.paint, accent: true },
-                        { key: "land", label: "③ 착지 · 왜+지금", v: c.land },
-                      ].map((s) => (
-                        <div
-                          key={s.key}
-                          className={`rounded-xl border p-4 ${
-                            s.accent
-                              ? "border-orange-500/40 bg-orange-500/10"
-                              : "border-line bg-card"
-                          }`}
-                        >
-                          <div
-                            className={`text-xs font-semibold uppercase tracking-wider ${
-                              s.accent ? "text-orange-600" : "text-primary-strong"
-                            }`}
-                          >
-                            {s.label}
-                          </div>
-                          <p className="mt-1.5 text-base leading-relaxed text-ink">{s.v ? <>&ldquo;{s.v}&rdquo;</> : "—"}</p>
-                        </div>
-                      ))}
-                      {/* hold — 침묵 강조 */}
-                      <div className="rounded-xl border border-dashed border-line bg-card p-4 text-center">
-                        <div className="text-sm font-bold text-ink">🤐 여기서 멈추고 답 기다리기</div>
-                        {c.hold && (
-                          <p className="mt-1 text-[11px] italic leading-relaxed text-muted">{c.hold}</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted">이 분기의 클로징 데이터가 없습니다.</p>
-                  )}
-                  </div>
-                </details>
-              );
-            })}
+        {b.member_read && (
+          <div className="rounded-xl border border-line bg-elevate p-3.5">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted"><Sparkles className="h-3.5 w-3.5" /> 3분 각인</div>
+            <p className="mt-1 text-sm leading-relaxed text-ink">{b.member_read}</p>
           </div>
-        </section>
-
-        {/* 자극 결과별 운동 대처(stimulus_response) — 클로징과 분리(세일즈 아님·운동 도구). 옛 캐시엔 없어 방어 렌더. */}
-        {b.stimulus_response && (
-          <section>
-            <Eyebrow icon={Wrench}>자극 결과별 운동 대처 · 수업 전 준비</Eyebrow>
-            <p className="mb-3 text-[11px] leading-relaxed text-muted">
-              세일즈가 아니라 &lsquo;몸을 어떻게 조정하나&rsquo;. 수업 전에 3갈래를 미리 훑어두세요.
-            </p>
-            <div className="space-y-3">
-              {["yes", "partial", "no"].map((id) => {
-                const s = b.stimulus_response?.[id] || null;
-                return (
-                  <details key={id} className="rounded-xl border border-line bg-card shadow-sm p-3">
-                    <summary className="cursor-pointer">
-                      <span className="rounded-md bg-elevate px-2.5 py-0.5 text-[11px] font-semibold text-sub">
-                        {ACT_LABEL[id]}
-                      </span>
-                    </summary>
-                    <div className="mt-3">
-                      {s ? (
-                        <div className="space-y-2.5 rounded-xl border border-line bg-elevate p-4">
-                          <div>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">원인</div>
-                            <p className="mt-0.5 text-sm leading-relaxed text-sub">{s.cause || "—"}</p>
-                          </div>
-                          <div className="rounded-lg border border-primary/30 bg-primary-soft p-3">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-primary-strong">조정 방향</div>
-                            <p className="mt-0.5 text-base leading-relaxed text-ink">{s.adjustment || "—"}</p>
-                          </div>
-                          <div>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">노리는 것</div>
-                            <p className="mt-0.5 text-sm leading-relaxed text-sub">{s.direction || "—"}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted">이 분기 대처 데이터가 없습니다.</p>
-                      )}
-                    </div>
-                  </details>
-                );
-              })}
-            </div>
-          </section>
         )}
-
-        {/* 근거들 — 접어둠 (클로징이 주인공) */}
-        <details className="rounded-xl border border-line bg-card shadow-sm p-4">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-sub">
-            등록 당위성 브리핑
-          </summary>
-          <div className="mt-3 space-y-2.5">
-            {briefRows.map((r) => (
-              <div key={r.k} className="rounded-xl border border-line bg-card shadow-sm p-3.5">
-                <div className={`text-[11px] font-semibold uppercase tracking-wider ${r.c}`}>{r.k}</div>
-                <p className="mt-1 text-sm leading-relaxed text-ink">{r.v || "—"}</p>
-              </div>
-            ))}
+        {rc.line && (
+          <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
+            <div className="flex items-center gap-2"><span className="text-base">↩️</span><span className="text-[11px] font-semibold uppercase tracking-wider text-sky-700">지난 시간 소환</span></div>
+            <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-ink">&ldquo;{rc.line}&rdquo;</p>
+            {rc.why && <p className="mt-1 text-[11px] leading-relaxed text-muted">{rc.why}</p>}
           </div>
-        </details>
-
-        <details className="rounded-xl border border-line bg-card shadow-sm p-4">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-sub">
-            2차 대화 흐름 · arc
-          </summary>
-          <div className="mt-3 space-y-2.5">
-            {(b.arc || []).map((beat, i) => (
-              <div key={i} className="rounded-xl border border-line bg-card shadow-sm p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
-                    {beat.when}
-                  </span>
-                  {beat.tone && (
-                    <span className="rounded-md bg-elevate px-2 py-0.5 text-[10px] text-sub">
-                      🗣 {beat.tone}
-                    </span>
-                  )}
+        )}
+        {moves.length > 0 && (
+          <div className="rounded-xl border border-line bg-card p-4">
+            <div className="flex items-center gap-2"><span className="text-base">🎯</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 증명할 동작</span></div>
+            <div className="mt-2 space-y-3">
+              {moves.map((mv, i) => (
+                <div key={i} className={i > 0 ? "border-t border-line pt-3" : ""}>
+                  <div className="flex items-start gap-1.5"><span className="mt-0.5 rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-bold text-primary-strong">증명 {i + 1}</span>{mv.exercise && <p className="text-sm font-semibold text-ink">{mv.exercise}</p>}</div>
+                  {mv.target_reaction && <p className="mt-1 text-[13px] leading-relaxed text-sub"><span className="font-semibold">노릴 반응 · </span>{mv.target_reaction}</p>}
+                  {mv.point_it_out && <p className="mt-1.5 rounded-lg bg-primary-soft px-3 py-2 text-sm leading-relaxed text-ink"><span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">짚어줄 말</span>&ldquo;{mv.point_it_out}&rdquo;</p>}
                 </div>
-                {beat.intent && (
-                  <p className="mt-2 text-[11px] leading-relaxed text-muted">
-                    <span className="text-sub">왜: </span>
-                    {beat.intent}
-                  </p>
-                )}
-                {beat.direction && (
-                  <p className="mt-1 text-sm leading-relaxed text-ink">{beat.direction}</p>
-                )}
-                {renderExample(beat.example)}
-              </div>
-            ))}
-          </div>
-        </details>
-
-        <details className="rounded-xl border border-line bg-card shadow-sm p-4">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-sub">
-            거절 대처 · 황현진 4유형
-          </summary>
-          <div className="mt-3 space-y-2.5">
-            {(b.objections || []).map((o, i) => (
-              <div key={i} className="rounded-xl border border-line bg-card shadow-sm p-3.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-md bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-600">
-                    {o.type}
-                  </span>
-                  {o.customer_says && (
-                    <span className="text-[11px] italic text-sub">“{o.customer_says}”</span>
-                  )}
-                </div>
-                {o.reframe_direction && (
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink">
-                    <span className="font-semibold text-sub">공감 · </span>{o.reframe_direction}
-                  </p>
-                )}
-                {o.sales_move && (
-                  <p className="mt-1 text-[13px] leading-relaxed text-sub">
-                    <span className="font-semibold text-sub">세일즈 · </span>{o.sales_move}
-                  </p>
-                )}
-                {o.example && (
-                  <p className="mt-1.5 rounded-md bg-primary-soft px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
-                    <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>
-                    &ldquo;{o.example}&rdquo;
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </details>
-
-        {/* 성장 팁 — 하단에 접힘(격려 톤). 주인공은 클로징. */}
-        {gaps.length > 0 && (
-          <details className="rounded-xl border border-primary/30 bg-primary-soft p-4">
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-primary-strong">
-              이렇게 하면 더 좋아져요 (선택 · {gaps.length})
-            </summary>
-            <ul className="mt-3 space-y-1.5">
-              {gaps.map((gp, i) => (
-                <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-sub">
-                  <span className="mt-0.5 text-primary-strong">＋</span> {gp}
-                </li>
               ))}
-            </ul>
+            </div>
+            {pf.so_what && <p className="mt-2.5 text-[12px] leading-relaxed text-muted"><span className="font-semibold text-sub">등록 논리 · </span>{pf.so_what}</p>}
+            {pf.if_weak && <p className="mt-1 text-[11px] leading-relaxed text-amber-700"><span className="font-semibold">반응 약하면 · </span>{pf.if_weak}</p>}
+          </div>
+        )}
+        {sm.metaphor && (
+          <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
+            <div className="flex items-center gap-2"><span className="text-base">💬</span><span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">세일즈 비유</span></div>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink">&ldquo;{sm.metaphor}&rdquo;</p>
+            {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
+          </div>
+        )}
+        {cline && (
+          <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
+            <div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary-strong" /><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">클로징 한마디</span></div>
+            <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
+          </div>
+        )}
+        {obj.length > 0 && (
+          <details open className="rounded-xl border border-line bg-card">
+            <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub"><ShieldCheck className="h-3.5 w-3.5 text-primary-strong" /> 거절 선제 방어 ({obj.length})</summary>
+            <div className="space-y-2 px-3.5 pb-3.5">
+              {obj.map((o, i) => (
+                <div key={i} className="rounded-lg border border-line bg-elevate p-3">
+                  <div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-card px-2 py-0.5 text-[10px] font-semibold text-sub">{SECOND_OBJ_LABEL[o.reason] || o.reason}</span>{o.trigger && <span className="text-[11px] italic text-muted">&ldquo;{o.trigger}&rdquo;</span>}</div>
+                  {o.defense && <p className="mt-1.5 text-[13px] leading-relaxed text-sub"><span className="font-semibold text-sub">대응 · </span>{o.defense}</p>}
+                  {o.line && <p className="mt-1.5 rounded-md bg-primary-soft px-2.5 py-1.5 text-[13px] leading-relaxed text-ink"><span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>&ldquo;{o.line}&rdquo;</p>}
+                </div>
+              ))}
+            </div>
           </details>
         )}
+        {b.case_feedback && (
+          <details className="rounded-xl border border-line bg-card">
+            <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub"><History className="h-3.5 w-3.5 text-primary-strong" /> 내 과거 케이스 거울 {meta?.caseTier === "confident" ? "· 뚜렷" : "· 잠정"}</summary>
+            <div className="space-y-2 px-3.5 pb-3.5">
+              {b.case_feedback.diagnosis && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-sub">진단 · </span>{b.case_feedback.diagnosis}</p>}
+              {b.case_feedback.proven_lead && <p className="text-[13px] leading-relaxed text-sub"><span className="font-semibold text-sub">통한 접근 · </span>{b.case_feedback.proven_lead}</p>}
+              {b.case_feedback.avoid_repeat && <p className="text-[12px] leading-relaxed text-orange-600"><span className="font-semibold">다른 벡터 · </span>{b.case_feedback.avoid_repeat}</p>}
+              {b.case_feedback.your_read && <p className="text-[11px] italic text-muted">{b.case_feedback.your_read}</p>}
+            </div>
+          </details>
+        )}
+        {gaps.length > 0 && (
+          <details className="rounded-xl border border-primary/30 bg-primary-soft p-4">
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-primary-strong">이렇게 하면 더 좋아져요 (선택 · {gaps.length})</summary>
+            <ul className="mt-3 space-y-1.5">{gaps.map((gp, i) => <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-sub"><span className="mt-0.5 text-primary-strong">＋</span> {gp}</li>)}</ul>
+          </details>
+        )}
+
         {/* ── 클로징 결과 기록 · 수업 후 ── */}
         <div className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-bold text-sub">
           클로징 결과 기록 · 수업 후
