@@ -21,12 +21,17 @@ drop policy if exists "member_photo_obj_delete" on storage.objects;
 create policy "member_photo_obj_delete" on storage.objects for delete to authenticated
   using (bucket_id = 'member-photos' and (storage.foldername(name))[1] = auth_member_id()::text);
 --   트레이너: 폴더(user_id)가 자기 account 회원이면 열람(읽기만)
+--   ★ storage.objects 정책 안에서 user_table을 직접 조인하면 RLS 재귀/권한 이슈가 있어,
+--     SECURITY DEFINER 헬퍼(member_in_my_account)로 감싸 폴더 소유 회원의 account만 확인.
+create or replace function member_in_my_account(p_folder text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from user_table u where u.id::text = p_folder and u.account_id = auth_account_id())
+$$;
+grant execute on function member_in_my_account(text) to authenticated;
+
 drop policy if exists "trainer_photo_obj_select" on storage.objects;
 create policy "trainer_photo_obj_select" on storage.objects for select to authenticated
-  using (bucket_id = 'member-photos' and exists (
-    select 1 from user_table u
-    where u.id::text = (storage.foldername(name))[1] and u.account_id = auth_account_id()
-  ));
+  using (bucket_id = 'member-photos' and member_in_my_account((storage.foldername(name))[1]));
 
 -- 3) member_photo 테이블 + RLS (M1 cardio_log와 동일 틀)
 create table if not exists member_photo (
