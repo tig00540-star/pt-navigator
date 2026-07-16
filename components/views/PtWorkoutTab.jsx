@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useState } from "react";
-import { Compass, Dumbbell, Flame, History, NotebookPen, RefreshCw, UserX } from "lucide-react";
+import { Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
@@ -20,6 +20,9 @@ import ContractAmountFields from "@/components/views/ContractAmountFields";
 import AcuteBriefView from "@/components/views/AcuteBriefView";
 import { SOURCE_OPTS, labelOf } from "@/lib/labels";
 import { hasVal } from "@/lib/format";
+import SetsEditor from "@/components/views/SetsEditor";
+import Sparkline from "@/components/ui/Sparkline";
+import { cleanStructured, buildExerciseSeries } from "@/lib/workout";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
 function fmtDT(iso) {
@@ -34,10 +37,15 @@ const SOURCE_TONE = {
   noshow: "border-red-500/30 bg-red-500/10 text-red-600",
 };
 
+// 무게 delta 색(증가=good) — 공유 import 아니라 로컬 선언(purge-safe · 동적 조립 금지).
+const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
+const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
+
 export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, loading }) {
   const [body, setBody] = useState(""); // 손입력 수업 내용/피드백
   const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
+  const [sets, setSets] = useState([]); // 저장 대기 구조화 세트(음성 자동채움/손입력)
   const [saving, setSaving] = useState(false);
   // 계약 등록 회복 모달(①/② 실패 회복 · ③ 재등록 씨앗) — 금액 4칸은 ContractAmountFields 재사용.
   const [showContract, setShowContract] = useState(false);
@@ -74,12 +82,17 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const timeline = [...logs].sort(
     (a, b) => new Date(b.session_at ?? b.created_at ?? 0) - new Date(a.session_at ?? a.created_at ?? 0)
   );
+  // ③ 종목별 무게 추이 — logs 클라 집계(추가 쿼리 0). 무게 데이터 있는 종목만 그래프.
+  const exerciseSeries = buildExerciseSeries(logs).filter((s) =>
+    s.points.some((p) => p.topWeight != null)
+  );
 
   // 음성 STT 결과 → textarea 채움(이후 손편집). 기존 body 덮어씀(녹음은 의도적 행위).
-  const handleVoiceResult = (raw, summaryText) => {
+  const handleVoiceResult = (raw, summaryText, structured) => {
     setBody(summaryText || "");
     setRawText(raw || "");
     setUsedVoice(true);
+    setSets(Array.isArray(structured) ? structured : []);
   };
 
   // 클립보드 복사 (VoiceLogTab 기존 패턴 재사용).
@@ -124,11 +137,14 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       session_at: new Date().toISOString(), // 기본 now (수정 UI는 후속)
       source,
       sent_at: sentAt,
+      sets_structured:
+        source === "noshow" ? null : (cleanStructured(sets).length ? cleanStructured(sets) : null),
     };
     const clearForm = () => {
       setBody("");
       setRawText("");
       setUsedVoice(false);
+      setSets([]);
     };
     // 데모 가드 — DB 없이 낙관적 반영(복사는 위에서 이미 시도).
     if (!supabase) {
@@ -389,6 +405,14 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           placeholder="오늘 수업 내용·피드백 (저장하면 세션 1회 차감)"
           className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
         />
+        <details className="mb-3 mt-3 rounded-xl border border-line bg-elevate p-3" open={sets.length > 0}>
+          <summary className="cursor-pointer text-xs font-medium text-sub">
+            🏋 종목·세트 기록 (그래프용 · 선택)
+          </summary>
+          <div className="mt-3">
+            <SetsEditor value={sets} onChange={setSets} disabled={saving || loading} />
+          </div>
+        </details>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="primary" size="md" onClick={() => saveLog(usedVoice ? "voice" : "manual")} disabled={saving || loading || !body.trim()} className="flex-1 gap-2">
             <NotebookPen className="h-4 w-4" strokeWidth={2.5} />
@@ -437,6 +461,44 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           <AcuteBriefView brief={acuteBrief} />
         </div>
       </details>
+
+      {/* 종목별 무게 추이 (③ 작업3-2) — logs 클라 집계(추가 쿼리 0). 인바디 추이 패턴 재사용.
+          무게 데이터 있는 종목만. 진행 지표 = 세션별 최고중량(topSetWeight). */}
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Eyebrow icon={LineChart}>종목별 무게 추이</Eyebrow>
+        {exerciseSeries.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 표시됩니다.</p>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {exerciseSeries.map((s) => {
+              const wpts = s.points.map((p) => p.topWeight).filter((v) => v != null);
+              const latest = wpts.length ? wpts[wpts.length - 1] : null;
+              const prev = wpts.length > 1 ? wpts[wpts.length - 2] : null;
+              const d = latest != null && prev != null ? latest - prev : 0;
+              const tone = prev != null ? weightTone(d) : null;
+              const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
+              return (
+                <div key={s.exercise} className="rounded-xl border border-line bg-elevate p-3">
+                  <div className="truncate text-[11px] font-medium text-muted" title={s.exercise}>
+                    {s.exercise}
+                  </div>
+                  <div className="mt-1 font-mono text-xl font-bold text-ink">
+                    {latest == null ? "–" : latest}
+                    <span className="ml-1 text-xs font-normal text-muted">kg</span>
+                  </div>
+                  {tone && (
+                    <div className={`mt-0.5 flex items-center gap-1 text-[12px] font-semibold ${DELTA_TONE[tone]}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                      {(d > 0 ? "+" : "") + Math.round(d * 10) / 10}kg
+                    </div>
+                  )}
+                  <Sparkline values={wpts} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
@@ -487,6 +549,15 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                   </details>
                 ) : (
                   <p className="mt-1.5 text-sm text-muted">본문 없음</p>
+                )}
+                {Array.isArray(log.sets_structured) && log.sets_structured.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {log.sets_structured.map((ex, i) => (
+                      <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] text-sub">
+                        {ex.exercise} {ex.sets.map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </li>
             ))}

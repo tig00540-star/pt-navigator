@@ -38,14 +38,32 @@ const SUMMARY_SYSTEM = `당신은 PT 트레이너의 수업 종료 구두 요약
 - feedback: 오늘 수업 핵심을 따뜻하게 2~3문장.
 - homework: 집에서 참고할 종합 팁·주의사항(스트레칭·자세 습관 등 특정 머신에 안 묶인 것)이 있으면 넣고, 없으면 빈 배열.
 - 톤: 회원에게 보내는 따뜻하고 명료한 존댓말.
+- [구조화 수치 sets — 그래프용 · 트레이너 말만] 각 운동마다 트레이너가 **명시적으로 말한** 세트를 sets 배열에 숫자로 넣으세요. weight=중량(kg 숫자, 맨몸·중량 미언급이면 null), reps=반복 횟수(숫자, 미언급이면 null). 예: "20kg 12개 3세트" → [{"weight":20,"reps":12},{"weight":20,"reps":12},{"weight":20,"reps":12}]. "20·30·40 순으로 12개씩" → [{"weight":20,"reps":12},{"weight":30,"reps":12},{"weight":40,"reps":12}]. **말하지 않은 수치를 지어내지 마세요** — 애매하면 그 필드/세트는 null 또는 sets=[]. 범위("12~15개")는 대표값 1개 또는 null. detail(사람용 텍스트)은 종전대로 유지하세요 — sets와 별개(카톡·표시용).
+- [canonical 정규화 — 집계 키] canonical은 같은 운동이 날마다 같은 문자열로 모이게 하는 키입니다. 표기 흔들림(띄어쓰기·영한 혼용·약칭)을 제거하고 대표 한글 정식명으로. 예: "벤치/벤치 프레스/bench"→"벤치프레스", "랫풀/lat pull"→"랫풀다운". 아래 표준 종목을 우선 사용하되, 목록 밖이면 같은 원칙으로 명명하세요. name(트레이너 표현)은 그대로 두고 canonical만 통일합니다.
+  표준 종목: 벤치프레스, 인클라인벤치프레스, 레그프레스, 스쿼트, 데드리프트, 랫풀다운, 시티드로우, 숄더프레스, 힙어브덕션, 힙쓰러스트, 레그익스텐션, 레그컬, 케이블크로스오버, 체스트프레스, 풀업, 푸시업, 플랭크.
 - 반드시 아래 스키마의 JSON "만" 출력하세요. 코드펜스·설명·머리말 없이 순수 JSON 객체 하나만.
 
 스키마:
 {
-  "machines": [{ "name": "머신·운동명", "detail": "중량·세트 (트레이너가 말한 경우만, 없으면 빈 문자열)", "method": ["구체 실행 큐", "..."] }],
+  "machines": [{
+    "name": "머신·운동명(트레이너 표현 그대로 · STT 교정 반영)",
+    "canonical": "정규화 종목명(그래프 집계 키)",
+    "sets": [{ "weight": 20, "reps": 12 }],
+    "detail": "사람이 읽는 중량·세트 요약(기존 유지 · 예: 20kg 12회 3세트)",
+    "method": ["구체 실행 큐", "..."]
+  }],
   "feedback": "핵심 피드백 2~3문장",
   "homework": ["집에서 참고할 종합 팁·주의사항", "..."]
 }`;
+
+// 세트 배열 정규화 — 숫자만, null 허용, 둘 다 없으면 버림.
+function normSets(arr) {
+  if (!Array.isArray(arr)) return [];
+  const num = (v) => (v === "" || v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+  return arr
+    .map((s) => ({ weight: num(s?.weight), reps: num(s?.reps) }))
+    .filter((s) => s.weight != null || s.reps != null);
+}
 
 /** Claude 응답 텍스트에서 JSON 객체만 추출해 파싱 (코드펜스 방어). */
 function parseReport(text) {
@@ -56,7 +74,16 @@ function parseReport(text) {
   }
   const obj = JSON.parse(text.slice(start, end + 1));
   return {
-    machines: Array.isArray(obj.machines) ? obj.machines : [],
+    machines: (Array.isArray(obj.machines) ? obj.machines : []).map((m) => ({
+      name: typeof m?.name === "string" ? m.name : "",
+      canonical:
+        typeof m?.canonical === "string" && m.canonical.trim()
+          ? m.canonical.trim()
+          : (typeof m?.name === "string" ? m.name.trim() : ""),
+      sets: normSets(m?.sets),
+      detail: typeof m?.detail === "string" ? m.detail : "",
+      method: Array.isArray(m?.method) ? m.method : [],
+    })),
     feedback: typeof obj.feedback === "string" ? obj.feedback : "",
     homework: Array.isArray(obj.homework) ? obj.homework : [],
   };

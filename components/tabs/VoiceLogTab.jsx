@@ -21,6 +21,7 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
+import { machinesToStructured } from "@/lib/workout";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
 
@@ -30,6 +31,13 @@ function buildVoiceReport(member) {
     machines: [
       {
         name: "Gym80 아웃싸이 (힙 어브덕션)",
+        canonical: "힙어브덕션",
+        sets: [
+          { weight: 15, reps: 15 },
+          { weight: 15, reps: 15 },
+          { weight: 15, reps: 15 },
+          { weight: 15, reps: 15 },
+        ],
         detail: "15kg · 15회 · 4세트",
         method: [
           "의자 안쪽까지 엉덩이를 밀어넣고 손잡이를 강하게 당겨 가슴을 든 상태로",
@@ -41,6 +49,12 @@ function buildVoiceReport(member) {
       },
       {
         name: "이카리안 레그프레스",
+        canonical: "레그프레스",
+        sets: [
+          { weight: 60, reps: 12 },
+          { weight: 60, reps: 12 },
+          { weight: 60, reps: 12 },
+        ],
         detail: "60kg · 12회 · 3세트",
         method: [
           "발은 어깨너비·발끝 11자",
@@ -428,7 +442,7 @@ export default function VoiceLogTab({ member, onResult }) {
           </div>
 
           {/* 일지 채우기 — PTView textarea로 전달(저장·차감·복사는 PTView saveLog 한 곳) */}
-          <Button variant="primary" size="md" fullWidth onClick={() => onResult?.(rawText, buildText(report))} className="mt-4 gap-2">
+          <Button variant="primary" size="md" fullWidth onClick={() => onResult?.(rawText, buildText(report), machinesToStructured(report.machines))} className="mt-4 gap-2">
             <NotebookPen className="h-5 w-5" strokeWidth={2.5} />
             이 내용으로 일지 채우기
           </Button>
