@@ -152,11 +152,11 @@ function CardioSection({ me, cardio, onReload }) {
       {/* 입력 폼 */}
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
-          <label className="text-xs font-medium text-muted">
+          <label className="col-span-2 text-xs font-medium text-muted">
             날짜
             <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
-          <label className="text-xs font-medium text-muted">
+          <label className="col-span-2 text-xs font-medium text-muted">
             시간(분)
             <input type="number" inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value)} disabled={busy} placeholder="30" className={inputCls} />
           </label>
