@@ -65,6 +65,11 @@ export default function AuthGate({ children }) {
     setSession(data.session ?? null);
   };
 
+  // 회원 라우트(/m)는 자체 인증(끝4 → 세션) — 트레이너 게이트를 완전 우회.
+  // 훅 선언 뒤·ready 판정 앞(Rules of Hooks). 로딩·로그인폼·강제 비번변경과 무관하게 children만.
+  const isMemberRoute = pathname === "/m" || pathname.startsWith("/m/");
+  if (isMemberRoute) return <>{children}</>;
+
   // 초기 세션 조회 전 — 깜빡임 방지용 최소 화면
   if (!ready) {
     return (
