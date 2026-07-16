@@ -131,7 +131,7 @@ const GROUP_TAB = {
    신규 회원 사전 정보 등록 폼 (모달)
    ========================================================================= */
 
-function MemberForm({ machineOptions, onClose, onSaved }) {
+function MemberForm({ onClose, onSaved }) {
   const [form, setForm] = useState({
     name: "",
     age: "",
@@ -153,13 +153,10 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
     carrySessions: "", // 인계·외부(handover/external)만 — 이월 잔여 세션
     carryPrice: "", // 이월 회당단가(급여 원천이라 인계도 보존 · 매출 제외는 buildContract)
   });
-  const [picked, setPicked] = useState([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const toggleMachine = (label) =>
-    setPicked((p) => (p.includes(label) ? p.filter((x) => x !== label) : [...p, label]));
 
   const save = async () => {
     if (!form.name.trim()) {
@@ -197,7 +194,6 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
         availability: form.availability || null,
         activity_level: form.activity_level || null,
         member_note: form.member_note || null,
-        machines: picked,
         origin: form.origin,
         status: initialStatus(form.origin), // ot_funnel→ot_active, 그 외→pt_active(PT 직행 §1.5)
         status_changed_at: new Date().toISOString(),
@@ -329,30 +325,6 @@ function MemberForm({ machineOptions, onClose, onSaved }) {
           </div>
         )}
 
-        {/* 보유머신 */}
-        <div className="mt-3">
-          <label className="mb-1.5 block text-[11px] font-medium text-muted">
-            보유머신 {machineOptions.length === 0 && "(center_machine 시드 필요)"}
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {machineOptions.map((label) => {
-              const on = picked.includes(label);
-              return (
-                <button
-                  key={label}
-                  onClick={() => toggleMachine(label)}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-                    on
-                      ? "border-primary bg-primary-soft text-primary-strong"
-                      : "border-line bg-elevate text-muted hover:border-primary"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {err && (
           <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-600">
@@ -525,7 +497,6 @@ export default function OTNavigatorDashboard() {
   // --- Supabase 연동 상태 ---
   const [members, setMembers] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [machineOptions, setMachineOptions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [dbNote, setDbNote] = useState("");
   // 클로징 저장(1·2차) 성공 시 증가 → PtConfirmBanner가 ot_log 재조회(같은 회원 stale 방지).
@@ -557,16 +528,9 @@ export default function OTNavigatorDashboard() {
     setSelectedId((prev) => prev ?? (mapped[0] ? mapped[0].id : null));
   };
 
-  const loadMachines = async () => {
-    if (!supabase) return;
-    const { data } = await supabase.from("center_machine").select("*");
-    setMachineOptions((data || []).map((m) => [m.brand, m.name].filter(Boolean).join(" ")));
-  };
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMembers();
-    loadMachines();
   }, []);
 
   useEffect(() => {
@@ -836,7 +800,6 @@ export default function OTNavigatorDashboard() {
       {/* ================= 신규 회원 등록 모달 ================= */}
       {showForm && (
         <MemberForm
-          machineOptions={machineOptions}
           onClose={() => setShowForm(false)}
           onSaved={() => {
             setShowForm(false);
