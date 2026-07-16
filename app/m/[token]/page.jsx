@@ -8,15 +8,19 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, TrendingUp, TrendingDown, Minus, LogOut } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
+import { buildExerciseSeries } from "@/lib/workout";
 import Eyebrow from "@/components/ui/Eyebrow";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
+import Sparkline from "@/components/ui/Sparkline";
 
 // purge-safe delta 색 맵(PtInbodyTab 재사용 패턴 · 동적 조립 금지).
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
+// 무게 변화 톤 — 증가=good, 감소=bad, 동일=flat(인바디 deltaTone과 달리 무게는 항상 증가=good).
+const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 
 // 변화 방향 → 좋음/나쁨/중립. before·cur 하나라도 null이면 null(표시 안 함).
 function deltaTone(field, cur, before) {
@@ -25,27 +29,6 @@ function deltaTone(field, cur, before) {
   if (d === 0 || !field.goodDir) return "flat";
   if ((d > 0 && field.goodDir === "up") || (d < 0 && field.goodDir === "down")) return "good";
   return "bad";
-}
-
-// 미니 스파크라인(오래된→최신 · 값 2개 미만이면 안 그림).
-function Sparkline({ values }) {
-  const w = 100, h = 28, pad = 3;
-  const pts = values.filter((v) => v != null);
-  if (pts.length < 2) return null;
-  const min = Math.min(...pts), max = Math.max(...pts), span = max - min || 1;
-  const stepX = w / (pts.length - 1);
-  const d = pts
-    .map((v, i) => {
-      const x = i * stepX;
-      const y = h - pad - ((v - min) / span) * (h - pad * 2);
-      return `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="mt-1 text-primary/70">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
 }
 
 // 날짜 표기(브라우저=KST 전제). arg 있는 new Date라 purity 규칙 무관.
@@ -115,6 +98,11 @@ function HomeView({ me, logs, inbody, onSignOut }) {
 
   const latest = inbody.length ? inbody[inbody.length - 1] : null;
   const prev = inbody.length > 1 ? inbody[inbody.length - 2] : null;
+
+  // 종목별 무게 추이 — 무게 point가 하나라도 있는 종목만(맨몸만 있는 종목 제외). 추가 쿼리 0(logs 재사용).
+  const exerciseSeries = buildExerciseSeries(logs).filter((s) =>
+    s.points.some((p) => p.topWeight != null)
+  );
 
   return (
     <div className="min-h-screen bg-bg pb-16 text-ink antialiased">
@@ -190,6 +178,50 @@ function HomeView({ me, logs, inbody, onSignOut }) {
             </>
           )}
         </section>
+
+        {/* 종목별 무게 변화 (③ Phase 2) — 무게 데이터 있는 종목만. 0이면 섹션 자체 미렌더(빈 카드 없음).
+            공용 buildExerciseSeries·Sparkline 재사용(트레이너 화면과 동일 집계·최근 활동순). */}
+        {exerciseSeries.length > 0 && (
+          <section className="mb-8">
+            <Eyebrow icon={Dumbbell}>종목별 무게 변화</Eyebrow>
+            <ul className="space-y-3">
+              {exerciseSeries.map((ex) => {
+                const wpts = ex.points.filter((p) => p.topWeight != null); // 무게 있는 point만
+                const first = wpts[0]?.topWeight ?? null;
+                const cur = wpts[wpts.length - 1]?.topWeight ?? null;
+                const before = wpts.length > 1 ? wpts[wpts.length - 2].topWeight : null;
+                const d = before != null && cur != null ? cur - before : 0; // 직전 대비
+                const tone = weightTone(d);
+                const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
+                // 격려 문구(성과만 · 의료/처방 없음): 첫→지금 상승이면 강조, 유지면 담백, 그 외 없음.
+                const cheer =
+                  first != null && cur != null && wpts.length > 1 && cur > first
+                    ? `처음 ${first}kg에서 지금 ${cur}kg까지 올라왔어요.`
+                    : wpts.length > 1 && cur != null && first != null && cur === first
+                    ? `${cur}kg 꾸준히 유지하고 있어요.`
+                    : null;
+                return (
+                  <li key={ex.exercise} className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <div className="text-lg font-bold text-ink">{ex.exercise}</div>
+                      <div className="font-mono text-2xl font-bold text-ink">
+                        {cur == null ? "–" : cur}
+                        <span className="ml-1 text-xs font-normal text-muted">kg</span>
+                      </div>
+                    </div>
+                    {before != null && cur != null && (
+                      <div className={`mt-1 flex items-center justify-end gap-1 text-[13px] font-semibold ${DELTA_TONE[tone]}`}>
+                        <Icon className="h-3.5 w-3.5" /> 직전 대비 {fmtDelta(d)}kg
+                      </div>
+                    )}
+                    <Sparkline values={ex.points.map((p) => p.topWeight)} />
+                    {cheer && <p className="mt-2 text-sm text-primary-strong">{cheer}</p>}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         {/* 로그아웃 */}
         <div className="text-center">
