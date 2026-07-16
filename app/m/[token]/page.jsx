@@ -103,6 +103,37 @@ function HomeView({ me, logs, inbody, onSignOut }) {
   const exerciseSeries = buildExerciseSeries(logs).filter((s) =>
     s.points.some((p) => p.topWeight != null)
   );
+  const EX_TOP = 5; // 기본 펼침 개수(최근 활동순)
+  const exImproved = exerciseSeries.filter((s) => {
+    const w = s.points.filter((p) => p.topWeight != null);
+    return w.length > 1 && w[w.length - 1].topWeight > w[0].topWeight;
+  }).length;
+
+  // 종목 1개 = 컴팩트 한 행(종목명 · Sparkline · 최신무게·직전대비 delta).
+  const renderExerciseRow = (ex) => {
+    const wpts = ex.points.filter((p) => p.topWeight != null);
+    const cur = wpts[wpts.length - 1]?.topWeight ?? null;
+    const before = wpts.length > 1 ? wpts[wpts.length - 2].topWeight : null;
+    const d = before != null && cur != null ? cur - before : 0;
+    const tone = weightTone(d);
+    const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
+    return (
+      <li key={ex.exercise} className="flex items-center gap-3 rounded-xl border border-line bg-card px-3 py-2 shadow-sm">
+        <span className="w-24 shrink-0 truncate text-sm font-semibold text-ink">{ex.exercise}</span>
+        <div className="min-w-0 flex-1"><Sparkline values={ex.points.map((p) => p.topWeight)} /></div>
+        <div className="shrink-0 text-right">
+          <div className="font-mono text-base font-bold leading-none text-ink">
+            {cur == null ? "–" : cur}<span className="ml-0.5 text-[10px] font-normal text-muted">kg</span>
+          </div>
+          {before != null && cur != null && (
+            <div className={`mt-0.5 flex items-center justify-end gap-0.5 text-[11px] font-semibold ${DELTA_TONE[tone]}`}>
+              <Icon className="h-3 w-3" />{fmtDelta(d)}
+            </div>
+          )}
+        </div>
+      </li>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-bg pb-16 text-ink antialiased">
@@ -195,47 +226,24 @@ function HomeView({ me, logs, inbody, onSignOut }) {
           )}
         </section>
 
-        {/* 종목별 무게 변화 (③ Phase 2) — 무게 데이터 있는 종목만. 0이면 섹션 자체 미렌더(빈 카드 없음).
-            공용 buildExerciseSeries·Sparkline 재사용(트레이너 화면과 동일 집계·최근 활동순). */}
+        {/* 종목별 무게 변화 (③ Phase 2) — 컴팩트 행. 상위 EX_TOP개만 펼치고 나머지는 '더 보기'.
+            0이면 섹션 미렌더. 공용 buildExerciseSeries·Sparkline 재사용. */}
         {exerciseSeries.length > 0 && (
           <section className="mb-8">
             <Eyebrow icon={Dumbbell}>종목별 무게 변화</Eyebrow>
-            <ul className="space-y-3">
-              {exerciseSeries.map((ex) => {
-                const wpts = ex.points.filter((p) => p.topWeight != null); // 무게 있는 point만
-                const first = wpts[0]?.topWeight ?? null;
-                const cur = wpts[wpts.length - 1]?.topWeight ?? null;
-                const before = wpts.length > 1 ? wpts[wpts.length - 2].topWeight : null;
-                const d = before != null && cur != null ? cur - before : 0; // 직전 대비
-                const tone = weightTone(d);
-                const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
-                // 격려 문구(성과만 · 의료/처방 없음): 첫→지금 상승이면 강조, 유지면 담백, 그 외 없음.
-                const cheer =
-                  first != null && cur != null && wpts.length > 1 && cur > first
-                    ? `처음 ${first}kg에서 지금 ${cur}kg까지 올라왔어요.`
-                    : wpts.length > 1 && cur != null && first != null && cur === first
-                    ? `${cur}kg 꾸준히 유지하고 있어요.`
-                    : null;
-                return (
-                  <li key={ex.exercise} className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <div className="text-lg font-bold text-ink">{ex.exercise}</div>
-                      <div className="font-mono text-2xl font-bold text-ink">
-                        {cur == null ? "–" : cur}
-                        <span className="ml-1 text-xs font-normal text-muted">kg</span>
-                      </div>
-                    </div>
-                    {before != null && cur != null && (
-                      <div className={`mt-1 flex items-center justify-end gap-1 text-[13px] font-semibold ${DELTA_TONE[tone]}`}>
-                        <Icon className="h-3.5 w-3.5" /> 직전 대비 {fmtDelta(d)}kg
-                      </div>
-                    )}
-                    <Sparkline values={ex.points.map((p) => p.topWeight)} />
-                    {cheer && <p className="mt-2 text-sm text-primary-strong">{cheer}</p>}
-                  </li>
-                );
-              })}
-            </ul>
+            {exImproved > 0 && (
+              <p className="mb-2 text-sm text-primary-strong">무게가 오른 종목이 {exImproved}개예요. 잘하고 있어요!</p>
+            )}
+            <ul className="space-y-2">{exerciseSeries.slice(0, EX_TOP).map(renderExerciseRow)}</ul>
+            {exerciseSeries.length > EX_TOP && (
+              <details className="group mt-2">
+                <summary className="flex cursor-pointer list-none items-center justify-center gap-1 py-1 text-xs font-medium text-muted [&::-webkit-details-marker]:hidden">
+                  나머지 {exerciseSeries.length - EX_TOP}개 더 보기
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+                </summary>
+                <ul className="mt-2 space-y-2">{exerciseSeries.slice(EX_TOP).map(renderExerciseRow)}</ul>
+              </details>
+            )}
           </section>
         )}
 
