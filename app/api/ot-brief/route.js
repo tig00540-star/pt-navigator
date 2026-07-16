@@ -283,68 +283,61 @@ ${caseInputBlock}
 function reregisterPrompt(member, ctx) {
   const m = member || {};
   const c = ctx || {};
+  const g3 = (v) => (v == null || v === "" ? "없음" : v);
   const recent = Array.isArray(c.recent_logs) ? c.recent_logs.filter(Boolean) : [];
-  return `[상황] PT 재등록 대화 준비. 아래는 이 회원의 'PT 관리 데이터'다(1차 관찰이 아님 — 인계·외부 회원은 관찰 자체가 없다).
-[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, mbti=${g(m.mbti)}, pain=${g(m.pain)}, goal=${g(m.goal)}
-[현재 PT 방향/목표] ${g(m.pt_direction)}
-[관리 이력] 계약 회차=${g(c.contract_count)}, 잔여 유료=${g(c.remaining?.paid)}, 서비스=${g(c.remaining?.service)}
-[최근 수업 기록]
+  return `[상황·대전제] PT 재등록 대화 준비(재등록은 보통 '오늘 PT 수업 중'에 이뤄진다). 유일한 목적 =
+이 회원의 재등록 확률 극대화. 근거는 관찰(1차)이 아니라 '그동안의 PT 관리 데이터(운동 빈도·수업 일지)'다.
+재등록은 '새로 파는 것'이 아니라 '그동안 쌓은 만족·변화를 이어가는 것'. 트레이너가 30초에 훑어 외우고 오늘
+수업을 재등록으로 자연히 잇는 컨닝페이퍼 — 바로 말할 완성 대사로.
+
+[이 국면 특칙 — 대본 수위] 세일즈·운동 모두 '그대로 말할 실제 대사'까지. 숫자 처방(세트·횟수·각도·중량·
+템포)·의료 단정 금지. 없는 성과·에피소드 창작 금지(관리 데이터에 있는 것만).
+
+[회원 기본정보] name=${g3(m.name)}, age=${g3(m.age)}, job=${g3(m.job)}, mbti=${g3(m.mbti)}, pain=${g3(m.pain)}, goal=${g3(m.goal)}
+[현재 PT 방향/목표] ${g3(m.pt_direction)}
+[PT 관리 데이터 — 유일 근거]
+ 계약 회차=${g3(c.contract_count)}, 잔여 유료=${g3(c.remaining?.paid)}, 서비스=${g3(c.remaining?.service)},
+ 완료 수업수=${g3(c.sessions_done)}, 운동 빈도(주당 추정)=${g3(c.weekly_frequency)}
+[최근 수업 일지]
 ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
 
-이 'PT 관리 데이터'를 유일한 근거로 재등록 대화를 설계하라. 없는 성과·에피소드를 지어내지 마라.
-재등록은 '관리로 쌓은 만족을 이어가는 것'이지 '새로 파는 것'이 아니다 — 압박·공포가 아니라 그동안의 근거와 앞으로의 방향으로.
+[컨닝페이퍼 — 재등록은 '그동안의 근거 → 오늘 수업으로 잇기 → 클로징']
+① why_now(왜 지금 재등록 — 그동안의 근거): 운동 빈도·수업 일지에서 확인되는 것으로.
+   - proven: 그동안 PT로 확인·개선된 것. 빈도가 꾸준하면 근거로("주 N회씩 ○개월 하시면서 ○○ 좋아지셨어요"). 없으면 지어내지 말 것.
+   - risk_if_stop: 지금 멈추면 잃는 것(사실 기반 손실 — "쌓은 감각·리듬이 흩어진다"). 없는 위기 창작 금지.
+   - next_roadmap: 재등록해야 갈 수 있는 다음 지점(현재 PT 방향에서 출발).
 
-1) briefing(재등록 당위성 논리):
-   · proven_in_pt: 그동안 PT로 확인·개선된 것(관리 이력·최근 기록 근거. 없으면 지어내지 말 것).
-   · risk_if_stop: 지금 멈추면 잃는 것(사실 기반 손실 — "쌓은 감각이 흩어진다" 류. 없는 위기 창작 금지).
-   · next_roadmap: 앞으로의 방향(현재 PT 방향/목표에서 출발해 재등록해야 갈 수 있는 다음 지점).
-   · closing_logic: 재등록 당위성 논리(낭독 대본 아님 — 근거의 연결).
-2) arc(재등록 대화 흐름): 도입→중반→후반→마무리. 관리 이력을 소환해 '함께 만든 변화'를 근거로.
-3) objections(이유별 대처): 아래 재등록 보류/거절 이유 카테고리별로, 반박이 아니라 '걱정 해소 방향'을 미리 준비하라
-   (회원이 어떤 이유를 대든 트레이너가 방향을 갖고 있도록). 각 이유:
-   · money(금전 부담) · time(시간 부족) · schedule(스케줄 안 맞음)
-   · sessions_left(수업 남아 나중에) · low_effect(효과 체감 부족) · personal(개인 사정)
-   각 항목: customer_says(그 이유의 회원이 흔히 하는 말) / reframe_direction(공감으로 걱정 푸는 방향, 반박 아님) /
-   sales_move(공감 뒤 바로 잇는 세일즈 무브 — 무엇을 보여주고 어떤 제안으로 다시 재등록으로 끌어오나, 물러서지 말 것) /
-   example(그 자리에서 회원에게 바로 말할 '실제 대사' 한 줄, 발판·흐림 아님 · 완성 문장 "○○님, …").
-   ⚠️ "지금 안 하시면 손해예요" 류 압박·공포 대본 금지. 사실 기반 + 회원 이익 방향으로만.
-   특히 low_effect(효과 체감 부족)는 방어가 아니라 '왜 아직인지 + 앞으로 어떻게'의 정직한 방향으로.
-4) closing(재등록 클로징 4단계): 진입→그림→착지→침묵.
+② session_flow(오늘 수업 흐름/방향 — 재등록으로 잇기): 오늘 PT 수업을 재등록으로 자연히 잇는 진행법.
+   압박이 아니라 회원이 스스로 '더 해야겠다'를 느끼게.
+   - gap_awareness: 수업 중 '아직 남은/부족한 부분'을 자연스럽게 인지시키는 구체 포인트 + 그 순간 말할 대사
+     ("여기 아직 좌우 차이 나시죠? 이게 다음 단계예요"). 회원 상태 근거로, 없는 결함 창작 금지.
+   - goal_raise: 수업 중간중간 목표를 한 단계 올려 동기를 계속 부여하는 포인트 + 대사
+     ("이제 이건 되시니까, 다음은 ○○ 가봅시다").
+   - timing: 오늘 수업 중 재등록 얘기를 꺼내기 가장 좋은 타이밍 한 줄.
 
-[클로징 4단계 골격]
-  ★enter·paint·land의 값은 트레이너가 회원에게 그대로 말할 '실제 대사'로 써라(설명·지시문 아님,
-   "○○님, …" 1인칭). 확신 있게, 흐릿한 예시로 물러서지 말 것. hold만 트레이너용 지시(멈춤)다.
-  enter(진입): "재등록" 단어로 시작 금지. 그동안 회원 몸/생활 변화를 짚고 "그래서 무슨 의미인지(So what?)"로 연다.
-  paint(그림): 추상 설명 금지. 회원 세계(직업·일상·목표)의 '일상 비유 하나'로 그린다.
-  land(착지): 재등록 제안을 '왜 필요한가 + 왜 지금인가'로. '재등록하세요'(판매 동사) 금지 → 가정 종결("다음 달도 이렇게 이어가시죠"). 긴급성은 '사실 기반 손실'만.
-  hold(침묵): "여기서 말 멈추고 회원 답을 기다리세요" 문구를 담는다.
+③ sales_metaphor: 회원 직업·일상·목표에서 끌어온 비유 하나(운동·기계 클리셰 금지). metaphor + bridge(재등록 필요성으로).
 
-[화법 원리 — 모든 문장에 적용]
-  - 그림 그리기: 추상어 대신 비유·오감. "설득"이 아니라 "설명".
-  - So what?: 사실 나열 금지, "그래서 회원에게 무슨 의미인지"까지 연결.
-  - 담백하게: 화려한 설득어 금지, 쉬운 말로.
-  - 위협 소구 금지 → 사실 기반 손실 프레이밍으로 대체(공포는 재등록 관계를 무너뜨린다).
+④ closing_line: 재등록 가정 종결 한마디. '재등록하세요'(판매 동사) 금지 → "다음 달도 이렇게 이어가시죠" 결. 긴급성은 사실 기반 손실만.
 
-[data_gaps = 성장 프레임]
-- 관리 기록이 얇아도 있는 것만으로 briefing·arc·closing을 반드시 생성한다("데이터 부족" 반환 금지).
-- data_gaps는 '결핍'이 아니라 '더하면 좋아지는 것'. 긍정 코칭 문구로. 이미 충실하면 빈 배열 또는 1개 이하.
+⑤ objection_defense(재등록 거절 선제 방어 5종): reason 키 고정 — money(금전) · sessions_left(수업 남아 나중에) ·
+   low_effect(효과 체감 부족) · time(시간) · schedule(스케줄). 각: trigger(나올 신호) / defense(공감+세일즈 무브,
+   반박 아님) / line(그대로 말할 대사). ⚠️low_effect는 방어가 아니라 '왜 아직인지 + 앞으로 어떻게'의 정직한 방향.
+   ⚠️허위 긴급성·공포·죄책감 금지.
 
-[출력 언어 규칙]
-- 모든 출력은 자연스러운 한국어. 입력 영문 코드값을 출력 텍스트에 노출 금지 — 한글로 풀어 쓴다.
-  단 objections[].reason 필드값은 위 영문 카테고리 키(money 등) 그대로 둔다(화면 매칭용).
-- 필드명 자체를 출력 문장에 쓰지 말 것.
-
-[비유 개인화 규칙]
-- paint 비유는 이 회원의 직업·일상·목표에서 끌어와라. 운동/기계 클리셰에 기대지 말 것. 소재 없을 때만 일반 비유.
-
-아래 JSON 스키마만 출력(설명·코드펜스 금지):
+[member_read] 이 회원 그동안 어땠고 지금 재등록 국면을 한 줄로(앵커).
+[data_gaps] 관리 기록이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
+[출력 언어] 자연스러운 한국어. 영문 코드값·필드명 값 텍스트 노출 금지. 단 objection_defense.reason은 위 영문
+키 그대로 둔다(화면 매칭용). 아래 JSON만 출력(설명·마크다운·코드펜스 금지).
 {
-  "data_gaps": ["..."],
-  "briefing": { "proven_in_pt": "...", "risk_if_stop": "...", "next_roadmap": "...", "closing_logic": "..." },
-  "arc": [ { "when": "도입|중반|후반|마무리", "intent": "...", "direction": "...", "example": "...", "tone": "..." } ],
-  "objections": [ { "reason": "money|time|schedule|sessions_left|low_effect|personal", "customer_says": "...", "reframe_direction": "공감으로 걱정 푸는 방향(반박 아님)", "sales_move": "...", "example": "..." } ],
-  "closing": { "enter": "진입(재등록 단어 금지, So what?)", "paint": "일상 비유 하나", "land": "착지(왜+지금, 가정 종결)", "hold": "여기서 멈추고 회원 답을 기다리세요" }
-}`;
+  "member_read": "그동안 + 지금 재등록 국면 한 줄",
+  "why_now": { "proven": "...", "risk_if_stop": "...", "next_roadmap": "..." },
+  "session_flow": { "gap_awareness": "...", "goal_raise": "...", "timing": "..." },
+  "sales_metaphor": { "metaphor": "...", "bridge": "..." },
+  "closing_line": "재등록 가정 종결 한마디",
+  "objection_defense": [ { "reason": "money|sessions_left|low_effect|time|schedule", "trigger": "...", "defense": "...", "line": "..." } ],
+  "data_gaps": ["..."]
+}
+※ objection_defense 5개 각 1개.`;
 }
 
 // ⑤ phase="acute" user 프롬프트 — 회원 급변 대처(수업 전 준비). ⑤ 치트키/급한불.
@@ -453,6 +446,12 @@ const FIELD_TERMS = [
   ["proof", "증명 동작"],
   ["if_weak", "반응 약할 때"],
   ["session_plan", "수업 구성"],
+  ["why_now", "재등록 근거"],
+  ["session_flow", "수업 흐름"],
+  ["gap_awareness", "부족분 인지"],
+  ["goal_raise", "목표 상향"],
+  ["risk_if_stop", "멈추면"],
+  ["next_roadmap", "다음 단계"],
   ["closing", "클로징"],
 ];
 
@@ -632,7 +631,8 @@ export async function POST(request) {
     // second는 별도 스키마라 키 미지정(1순위 단일 파싱 — 기존 동작 유지, 회귀 없음).
     const REQUIRED_FIRST = ["member_read", "opening", "session_plan", "target_exercise", "sales_metaphor", "closing_line", "objection_defense"];
     const REQUIRED_SECOND = ["member_read", "recall", "session_plan", "proof", "sales_metaphor", "closing_line", "objection_defense"];
-    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : [];
+    const REQUIRED_REREG = ["member_read", "why_now", "session_flow", "sales_metaphor", "closing_line", "objection_defense"];
+    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : [];
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
     return Response.json(brief);
   } catch (e) {

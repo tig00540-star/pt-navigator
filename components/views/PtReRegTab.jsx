@@ -94,9 +94,18 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     setRegGenerating(true);
     setRegAiError("");
     try {
+      const doneLogs = timeline.filter((l) => !l.voided);
+      const dts = doneLogs.map((l) => new Date(l.session_at ?? l.created_at)).filter((d) => !isNaN(+d));
+      let weekly = null;
+      if (dts.length >= 2) {
+        const spanWeeks = (Math.max(...dts) - Math.min(...dts)) / (1000 * 60 * 60 * 24 * 7);
+        if (spanWeeks > 0) weekly = (doneLogs.length / spanWeeks).toFixed(1);
+      }
       const ptContext = {
         contract_count: contracts.length,
         remaining: { paid: rem.paid, service: rem.service },
+        sessions_done: doneLogs.length,
+        weekly_frequency: weekly,
         recent_logs: timeline.filter((l) => !l.voided && l.ai_summary).slice(0, 5).map((l) => l.ai_summary),
       };
       const res = await fetch("/api/ot-brief", {
