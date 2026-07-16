@@ -6,9 +6,9 @@
    트레이너 앱과 같은 토큰(bg·card·ink·line·primary)이되 회원용이라 글씨 크게·정보 밀도 낮게.
    ========================================================================= */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { buildExerciseSeries } from "@/lib/workout";
@@ -27,6 +27,31 @@ const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 const PHOTO_LABELS = { before: "비포", progress: "진행", after: "애프터" };
 // 스케줄 구분 — 값→한글. 정적 문자열이라 purge 무관.
 const SCHEDULE_KINDS = { personal: "개인운동", pt: "PT" };
+
+// 활동 마커 스타일 — 값→{라벨, 점 색}. 정적 문자열 맵(퍼지 안전 · 동적 조립 금지).
+const ACTIVITY_MARKS = {
+  pt:       { label: "PT",       dot: "bg-primary" },   // 브랜드 레드
+  personal: { label: "개인운동", dot: "bg-amber-500" },
+  cardio:   { label: "유산소",   dot: "bg-sky-500" },
+};
+const MARK_ORDER = ["pt", "personal", "cardio"]; // 점 표시 순서 고정
+
+// 로컬 'YYYY-MM-DD'
+function ymd(d) {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+// logs/cardio/schedule → { 'YYYY-MM-DD': Set('pt'|'personal'|'cardio') }
+function buildActivityMap(logs, cardio, schedule) {
+  const map = {};
+  const add = (key, type) => { (map[key] ||= new Set()).add(type); };
+  (logs || []).forEach((l) => { const iso = l.session_at ?? l.created_at; if (iso) add(ymd(new Date(iso)), "pt"); });
+  (schedule || []).forEach((s) => { if (s.on_date) add(s.on_date, s.kind === "pt" ? "pt" : "personal"); });
+  (cardio || []).forEach((c) => { if (c.performed_on) add(c.performed_on, "cardio"); });
+  return map;
+}
 
 // 변화 방향 → 좋음/나쁨/중립. before·cur 하나라도 null이면 null(표시 안 함).
 function deltaTone(field, cur, before) {
@@ -503,6 +528,124 @@ function ScheduleSection({ me, schedule, onReload }) {
   );
 }
 
+// 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 0). 날짜별 마커 점(겹치면 다 표시).
+function MemberActivityCalendar({ logs, cardio, schedule }) {
+  const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const [selected, setSelected] = useState(null); // 선택한 날짜 키 · null이면 상세 없음
+  const activityMap = useMemo(() => buildActivityMap(logs, cardio, schedule), [logs, cardio, schedule]);
+
+  const first = new Date(cursor.y, cursor.m, 1);
+  const startWeekday = first.getDay();                 // 0=일
+  const daysInMonth = new Date(cursor.y, cursor.m + 1, 0).getDate();
+  const cells = [
+    ...Array(startWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  const prevMonth = () => setCursor((c) => { const d = new Date(c.y, c.m - 1, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const nextMonth = () => setCursor((c) => { const d = new Date(c.y, c.m + 1, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const todayKey = ymd(new Date());
+  const keyFor = (day) => `${cursor.y}-${String(cursor.m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  // 선택일 상세 파생(그 날짜 매칭).
+  const detail = selected
+    ? {
+        pt: (logs || []).some((l) => { const iso = l.session_at ?? l.created_at; return iso && ymd(new Date(iso)) === selected; })
+          || (schedule || []).some((s) => s.on_date === selected && s.kind === "pt"),
+        personals: (schedule || []).filter((s) => s.on_date === selected && s.kind === "personal"),
+        cardios: (cardio || []).filter((c) => c.performed_on === selected),
+      }
+    : null;
+  const detailEmpty = detail && !detail.pt && !detail.personals.length && !detail.cardios.length;
+
+  const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+  return (
+    <section className="mb-8">
+      <Eyebrow icon={CalendarDays}>운동 달력</Eyebrow>
+      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+        {/* 헤더 */}
+        <div className="mb-3 flex items-center justify-between">
+          <button onClick={prevMonth} aria-label="이전 달" className="rounded-lg p-2 text-muted transition hover:text-ink">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className="text-base font-bold text-ink">{cursor.y}년 {cursor.m + 1}월</div>
+          <button onClick={nextMonth} aria-label="다음 달" className="rounded-lg p-2 text-muted transition hover:text-ink">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+        {/* 요일 */}
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted">
+          {WEEKDAYS.map((w) => <div key={w} className="py-1">{w}</div>)}
+        </div>
+        {/* 날짜 그리드 */}
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((day, i) => {
+            if (day == null) return <div key={`e${i}`} />;
+            const key = keyFor(day);
+            const set = activityMap[key];
+            const active = Boolean(set);
+            const isToday = key === todayKey;
+            return (
+              <button
+                key={key}
+                onClick={() => active && setSelected(key === selected ? null : key)}
+                disabled={!active}
+                className={`flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg text-sm ${active ? "cursor-pointer bg-elevate" : ""} ${key === selected ? "ring-2 ring-primary" : isToday ? "ring-1 ring-primary" : ""}`}
+              >
+                <span className={isToday ? "font-bold text-primary-strong" : "text-ink"}>{day}</span>
+                <span className="flex h-1.5 items-center gap-0.5">
+                  {set && MARK_ORDER.filter((t) => set.has(t)).map((t) => (
+                    <span key={t} className={`h-1.5 w-1.5 rounded-full ${ACTIVITY_MARKS[t].dot}`} />
+                  ))}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {/* 범례 */}
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted">
+          {MARK_ORDER.map((t) => (
+            <span key={t} className="flex items-center gap-1">
+              <span className={`h-2 w-2 rounded-full ${ACTIVITY_MARKS[t].dot}`} /> {ACTIVITY_MARKS[t].label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* 선택일 상세 */}
+      {selected && (
+        <div className="mt-2 rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <div className="mb-2 text-sm font-semibold text-primary-strong">{fmtDay(selected)}</div>
+          {detailEmpty ? (
+            <p className="text-sm text-muted">기록 없음</p>
+          ) : (
+            <ul className="space-y-1.5 text-sm">
+              {detail.pt && (
+                <li className="flex items-center gap-2">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${ACTIVITY_MARKS.pt.dot}`} />
+                  <span className="text-ink">PT 수업</span>
+                </li>
+              )}
+              {detail.personals.map((s) => (
+                <li key={s.id} className="flex items-center gap-2">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${ACTIVITY_MARKS.personal.dot}`} />
+                  <span className="text-ink">개인운동{s.note ? <span className="text-muted"> · {s.note}</span> : null}</span>
+                </li>
+              ))}
+              {detail.cardios.map((c) => (
+                <li key={c.id} className="flex items-center gap-2">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${ACTIVITY_MARKS.cardio.dot}`} />
+                  <span className="text-ink">{c.kind || "유산소"}{c.minutes != null ? <span className="text-muted"> · {c.minutes}분</span> : null}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut }) {
   if (!me) {
     return (
@@ -570,6 +713,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
             {me.trainer_name && <span className="rounded-full bg-elevate px-3 py-1">담당 · {me.trainer_name}</span>}
           </div>
         </header>
+
+        {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음). 한눈 개요 먼저. */}
+        <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
 
         {/* 수업일지 타임라인 */}
         <section className="mb-8">
