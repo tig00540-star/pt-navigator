@@ -560,7 +560,7 @@ export default function OTNavigatorDashboard() {
   const loadMachines = async () => {
     if (!supabase) return;
     const { data } = await supabase.from("center_machine").select("*");
-    setMachineOptions((data || []).map((m) => `${m.brand} ${m.name}`));
+    setMachineOptions((data || []).map((m) => [m.brand, m.name].filter(Boolean).join(" ")));
   };
 
   useEffect(() => {
