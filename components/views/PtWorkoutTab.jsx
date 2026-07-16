@@ -23,6 +23,7 @@ import { hasVal } from "@/lib/format";
 import SetsEditor from "@/components/views/SetsEditor";
 import Sparkline from "@/components/ui/Sparkline";
 import { cleanStructured, buildExerciseSeries } from "@/lib/workout";
+import MemberCardioSummary from "@/components/views/MemberCardioSummary";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
 function fmtDT(iso) {
@@ -499,6 +500,9 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           </div>
         )}
       </section>
+
+      {/* 유산소 기록(M1) — 회원 자가입력을 트레이너가 읽기만. 기록 0건·데모면 컴포넌트가 자체 숨김. */}
+      <MemberCardioSummary member={member} />
 
       {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">

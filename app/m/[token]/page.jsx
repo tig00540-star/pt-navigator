@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2 } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { buildExerciseSeries } from "@/lib/workout";
@@ -38,6 +38,14 @@ function fmtDay(iso) {
   return isNaN(+d) ? String(iso) : d.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "short" });
 }
 const fmtDelta = (d) => (d > 0 ? "+" : "") + (Math.round(d * 10) / 10);
+
+// 오늘(로컬) YYYY-MM-DD — date input 기본값. 클라 마운트 후 계산(lazy init)이라 hydration 무관.
+function todayStr() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
 
 function ScreenMsg({ children }) {
   return (
@@ -81,7 +89,130 @@ function LoginCard({ last4, setLast4, onSubmit, busy, err }) {
   );
 }
 
-function HomeView({ me, logs, inbody, onSignOut }) {
+// 유산소 자가입력(M1) — 회원이 자기 cardio_log를 CRUD(트레이너는 읽기만). 회원용 큰 글씨·입력 최소.
+function CardioSection({ me, cardio, onReload }) {
+  const [on, setOn] = useState(() => todayStr());
+  const [kind, setKind] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const inputCls =
+    "mt-1 w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+
+  const add = async () => {
+    if (busy) return;
+    if (!memberSupabase) { setErr("데모 모드 — 실제 기록은 불가해요."); return; }
+    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도하세요."); return; }
+    if (!on) { setErr("날짜를 선택하세요."); return; }
+    setBusy(true); setErr("");
+    // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). user_id는 me.id만(RLS with check가 스푸핑 차단).
+    const { data, error } = await memberSupabase
+      .from("cardio_log")
+      .insert({
+        user_id: me.id,
+        performed_on: on,
+        kind: kind.trim() || null,
+        minutes: Number(minutes) || null,
+        note: note.trim() || null,
+      })
+      .select();
+    if (error || !data || data.length === 0) {
+      setBusy(false);
+      setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      return;
+    }
+    setKind(""); setMinutes(""); setNote(""); // 날짜는 유지(연속 입력 편의)
+    await onReload();
+    setBusy(false);
+  };
+
+  const remove = async (id) => {
+    if (busy) return;
+    if (!memberSupabase) return;
+    setBusy(true); setErr("");
+    const { data, error } = await memberSupabase
+      .from("cardio_log")
+      .delete()
+      .eq("id", id)
+      .select(); // 하드닝: 0행이면 실패
+    if (error || !data || data.length === 0) {
+      setBusy(false);
+      setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      return;
+    }
+    await onReload();
+    setBusy(false);
+  };
+
+  return (
+    <section className="mb-8">
+      <Eyebrow icon={Activity}>유산소 기록</Eyebrow>
+      {/* 입력 폼 */}
+      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs font-medium text-muted">
+            날짜
+            <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
+          </label>
+          <label className="text-xs font-medium text-muted">
+            시간(분)
+            <input type="number" inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value)} disabled={busy} placeholder="30" className={inputCls} />
+          </label>
+          <label className="col-span-2 text-xs font-medium text-muted">
+            종류
+            <input type="text" value={kind} onChange={(e) => setKind(e.target.value)} disabled={busy} placeholder="러닝 / 사이클 / 걷기…" className={inputCls} />
+          </label>
+          <label className="col-span-2 text-xs font-medium text-muted">
+            메모(선택)
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={busy} placeholder="가볍게 조깅" className={inputCls} />
+          </label>
+        </div>
+        {err && <p className="mt-2 text-sm text-rose-600">{err}</p>}
+        <div className="mt-3">
+          <Button variant="primary" size="md" fullWidth onClick={add} disabled={busy}>
+            <Plus className="h-4 w-4" /> {busy ? "저장 중…" : "기록"}
+          </Button>
+        </div>
+      </div>
+
+      {/* 목록 */}
+      {cardio.length === 0 ? (
+        <EmptyState className="mt-3 rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
+          아직 유산소 기록이 없어요. 오늘 운동을 남겨보세요.
+        </EmptyState>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {cardio.map((c) => (
+            <li key={c.id} className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-primary-strong">{fmtDay(c.performed_on)}</span>
+                  {c.minutes != null && <span className="text-sm font-bold text-ink">{c.minutes}분</span>}
+                </div>
+                <div className="mt-0.5 text-base text-ink">
+                  {c.kind || "유산소"}
+                  {c.note ? <span className="text-muted"> · {c.note}</span> : null}
+                </div>
+              </div>
+              <button
+                onClick={() => remove(c.id)}
+                disabled={busy}
+                className="shrink-0 rounded-lg p-2 text-muted transition hover:text-rose-600 disabled:opacity-50"
+                aria-label="삭제"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function HomeView({ me, logs, inbody, cardio, onReloadCardio, onSignOut }) {
   if (!me) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg px-6">
@@ -247,6 +378,9 @@ function HomeView({ me, logs, inbody, onSignOut }) {
           </section>
         )}
 
+        {/* 유산소 기록(M1) — 회원 자가입력. me 로드 후에만 폼 활성. */}
+        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} />
+
         {/* 로그아웃 */}
         <div className="text-center">
           <button onClick={onSignOut} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted transition hover:text-ink">
@@ -264,20 +398,34 @@ export default function MemberHome() {
   const [me, setMe] = useState(null);
   const [logs, setLogs] = useState([]);
   const [inbody, setInbody] = useState([]);
+  const [cardio, setCardio] = useState([]);
   const [last4, setLast4] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
+  // 유산소만 재조회(insert/delete 후 목록 갱신용).
+  const loadCardio = useCallback(async () => {
+    if (!memberSupabase) return;
+    const { data } = await memberSupabase
+      .from("cardio_log")
+      .select("*")
+      .order("performed_on", { ascending: false })
+      .limit(30);
+    setCardio(data ?? []);
+  }, []);
+
   const loadHome = useCallback(async () => {
     if (!memberSupabase) return;
-    const [meRes, logRes, inbodyRes] = await Promise.all([
+    const [meRes, logRes, inbodyRes, cardioRes] = await Promise.all([
       memberSupabase.from("member_me").select("*").maybeSingle(),
       memberSupabase.from("member_workout_log").select("*").order("created_at", { ascending: false }),
       memberSupabase.from("member_inbody").select("*").order("measured_at", { ascending: true }),
+      memberSupabase.from("cardio_log").select("*").order("performed_on", { ascending: false }).limit(30),
     ]);
     setMe(meRes.data ?? null);
     setLogs(logRes.data ?? []);
     setInbody(inbodyRes.data ?? []);
+    setCardio(cardioRes.data ?? []);
     setPhase("home");
   }, []);
 
@@ -320,11 +468,11 @@ export default function MemberHome() {
 
   const signOut = async () => {
     if (memberSupabase) await memberSupabase.auth.signOut();
-    setMe(null); setLogs([]); setInbody([]); setLast4(""); setPhase("login");
+    setMe(null); setLogs([]); setInbody([]); setCardio([]); setLast4(""); setPhase("login");
   };
 
   if (phase === "checking") return <ScreenMsg>불러오는 중…</ScreenMsg>;
   if (phase === "login")
     return <LoginCard last4={last4} setLast4={setLast4} onSubmit={submit} busy={busy} err={err} />;
-  return <HomeView me={me} logs={logs} inbody={inbody} onSignOut={signOut} />;
+  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} onSignOut={signOut} />;
 }
