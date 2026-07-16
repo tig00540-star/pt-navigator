@@ -261,6 +261,21 @@ export default function FirstOTAssist({ member }) {
             </div>
           )}
 
+          {/* 오늘 수업 운동 구성 */}
+          {Array.isArray(data.session_plan) && data.session_plan.length > 0 && (
+            <div className="rounded-xl border border-line bg-card p-4">
+              <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 수업 운동 구성</span></div>
+              <ol className="mt-2 space-y-1.5">
+                {data.session_plan.map((s, i) => (
+                  <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-ink">
+                    <span className="mt-0.5 shrink-0 rounded bg-elevate px-1.5 py-0.5 text-[10px] font-bold text-sub">{i + 1}</span>
+                    <span><span className="font-semibold">{s.exercise}</span>{s.point && <span className="text-sub"> — {s.point}</span>}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           {/* ② 타겟 운동 & 리액션 — 증거 동작 2개 (구 단일캐시 폴백) */}
           {(() => {
             const moves = Array.isArray(te.moves)

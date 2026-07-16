@@ -103,8 +103,15 @@ ${pkgBlock}
    완성 대사 1개. 날씨 같은 무난한 소재도 좋다. 세일즈 냄새 0, 사람 대 사람의 라포.
    - line: 그대로 말할 첫 대사("○○님, …") 1~2문장.  - why: 이게 여는 것(긴장 완화·신뢰) 1문장.
 
-② target_exercise(타겟 운동 & 리액션 — 세일즈의 '증거' 만들기): 목적은 운동 처방이 아니라, 회원이
-   '어? 되네/편해지네'를 그 자리에서 부인할 수 없이 체감해 'PT가 필요하구나'를 스스로 느끼게 하는 것.
+② session_plan(오늘 수업 운동 구성 — '무엇을 시킬지' 구체적으로): 오늘 1차 OT에서 이 회원에게 실제로
+   시킬 운동을 순서대로 3~5개 구성하라. 회원 goal·pain·기본정보(관찰 전이라 가설)에서 도출하고, 아래 '타겟
+   운동(증거)'이 잘 터지도록 빌드업되게 짜라(가벼운 활성·준비 → 핵심 → 증거로 자연히 이어짐). 이게 트레이너가
+   '오늘 뭘 시킬지'를 바로 아는 실전 구성이다.
+   ★각 운동은 '이름 있는 구체 동작 + 한 줄 큐/세팅'으로. 고정 구성 반복 금지, goal·pain으로 개인화(직업
+   없어도). 숫자 처방(세트·횟수·각도·중량·템포) 금지 — 무엇을·어떤 방향으로·왜인지까지만.
+   각 항목: exercise(구체 동작 + 한 줄 세팅) / point(왜 시키나 or 핵심 큐 1문장).
+
+③ target_exercise(타겟 운동 & 리액션 — 세일즈의 '증거' 만들기): 위 수업 구성 중/직후 터뜨릴 결정적 체감 순간이다. 목적은 운동 처방이 아니라, 회원이 '어? 되네/편해지네'를 그 자리에서 부인할 수 없이 체감해 'PT가 필요하구나'를 스스로 느끼게 하는 것.
    ★증거 동작 2개(moves 배열). 각 동작 필수 — (a)이름 있는 구체 동작으로 콕 집을 것 (b)차이가 확 느껴질 것.
    - ★★동작은 반드시 '이 회원의 goal·pain·injury_history·exercise_level'에서 도출하라. 회원마다 목적·
      불편이 다르면 동작도 달라야 한다. 특정 고정 동작을 습관적으로 반복하지 마라 —
@@ -126,14 +133,14 @@ ${pkgBlock}
    그리고 so_what(moves 밖 · 2개 공통): 두 체감을 묶어 'PT를 받는 게 낫겠다'는 회원 스스로의 결론으로
    잇는 한 줄(압박 아님·사실 기반).
 
-③ sales_metaphor(세일즈 비유 — 회원 세계 언어): 회원의 직업·일상·목표에서 끌어온 비유 하나로 '지금
+④ sales_metaphor(세일즈 비유 — 회원 세계 언어): 회원의 직업·일상·목표에서 끌어온 비유 하나로 '지금
    안 하면/함께 하면'을 그림처럼. 운동·기계 클리셰("브레이크-액셀") 금지.
    - metaphor: 그대로 말할 비유 대사 1~2문장.  - bridge: 비유→등록 필요성으로 잇는 한 줄.
 
-④ closing_line(클로징 한마디): 오늘 체감을 근거로 한 '가정 종결' 한 문장. '등록하세요'(판매 동사) 금지 →
+⑤ closing_line(클로징 한마디): 오늘 체감을 근거로 한 '가정 종결' 한 문장. '등록하세요'(판매 동사) 금지 →
    "다음 주부터 이렇게 가시죠" 결. 긴급성은 사실 기반 손실만.
 
-⑤ objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
+⑥ objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
    세일즈로 다시 끌기'. reason 키 고정(5개 전부 · 각 1개):
      price(가격 부담) · hesitation(생각해볼게요·망설임) · doubt(효과·필요성 의심) ·
      time(시간 부족·바빠서) · compare(타 센터 비교 — "가격 비교하고 올게요/다른 데서도 OT 받아볼게요").
@@ -168,6 +175,7 @@ ${pkgBlock}
 {
   "member_read": "이 회원 한 줄 — 누구고/뭘 원하고/뭐가 걸리나 (3분전 각인 앵커)",
   "opening": { "line": "...", "why": "..." },
+  "session_plan": [ { "exercise": "...", "point": "..." } ],
   "target_exercise": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   "closing_line": "가정 종결 한마디('등록' 단어 없이)",
@@ -622,7 +630,7 @@ export async function POST(request) {
       .join("");
     // first는 필수 키를 넘겨 스키마 완전성까지 파서가 보장(부분객체·다중블록 방어).
     // second는 별도 스키마라 키 미지정(1순위 단일 파싱 — 기존 동작 유지, 회귀 없음).
-    const REQUIRED_FIRST = ["member_read", "opening", "target_exercise", "sales_metaphor", "closing_line", "objection_defense"];
+    const REQUIRED_FIRST = ["member_read", "opening", "session_plan", "target_exercise", "sales_metaphor", "closing_line", "objection_defense"];
     const REQUIRED_SECOND = ["member_read", "recall", "session_plan", "proof", "sales_metaphor", "closing_line", "objection_defense"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : [];
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
