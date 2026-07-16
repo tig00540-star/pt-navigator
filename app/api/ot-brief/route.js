@@ -8,6 +8,7 @@
 // -----------------------------------------------------------------------------
 import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // ③ Sonnet 생성이 최대 ~1분 → Vercel 함수 타임아웃 상향
@@ -588,6 +589,36 @@ function parseBrief(text, requiredKeys = []) {
   throw new Error("AI 응답에서 완전한 JSON 객체를 찾지 못했습니다.");
 }
 
+// 트레이너 JWT로 그 계정 보유 장비 조회(RLS account 스코프). 실패·데모면 [].
+async function fetchCenterMachines(request) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const authz = request.headers.get("authorization") || "";
+  const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
+  if (!url || !anon || !token) return [];
+  const sb = createClient(url, anon, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data } = await sb.from("center_machine").select("name, kind, brand, spec");
+  return Array.isArray(data) ? data : [];
+}
+
+// 프롬프트용 장비 블록(소프트). 종류별 그룹 · 규격 병기 · 상한 120. 비면 ""(POST에서 이미 걸러 미호출).
+function equipmentBlock(machines) {
+  const list = (Array.isArray(machines) ? machines : []).slice(0, 120);
+  if (!list.length) return "";
+  const label = (k) => (k === "free_weight" ? "프리웨이트" : k === "bodyweight" ? "맨몸/도구" : "머신");
+  const groups = {};
+  for (const m of list) {
+    if (!m || !m.name) continue;
+    const g = label(m.kind);
+    (groups[g] ||= []).push([m.brand, m.name].filter(Boolean).join(" ") + (m.spec ? `(${m.spec})` : ""));
+  }
+  const lines = Object.entries(groups).map(([k, arr]) => `- ${k}: ${arr.join(", ")}`).join("\n");
+  return `[보유 장비 — 이 센터에 있는 장비] (아래를 최대한 활용해 구성. 목록이 아직 추가 중일 수 있으니, 목표에 더 맞으면 목록에 없는 머신·기구도 함께 제안 가능.)\n${lines}`;
+}
+
 export async function POST(request) {
   const auth = await requireTrainer(request);
   if (!auth.ok) return auth.res;
@@ -613,11 +644,17 @@ export async function POST(request) {
   }
 
   const model = MODEL_SECOND; // 전 phase Sonnet(1차도 승급).
-  const prompt =
+  const basePrompt =
     phase === "first" ? firstPrompt(member, packages)
     : phase === "second" ? secondPrompt(member, report, closingCases, caseTier)
     : phase === "reregister" ? reregisterPrompt(member, ptContext)
     : acutePrompt(member, acuteContext);
+  // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute 제외.
+  const centerMachines = phase === "acute" ? [] : await fetchCenterMachines(request);
+  const prompt =
+    (phase === "acute" || centerMachines.length === 0)
+      ? basePrompt
+      : `${equipmentBlock(centerMachines)}\n[기구 활용] 운동 구성은 위 [보유 장비]를 우선 활용하되, 목표에 더 맞는 장비가 목록에 없으면 그것도 함께 알려줘라(목록은 아직 추가 중일 수 있음). 규격의 중량 범위는 참고만 — 숫자 처방(세트·횟수·중량)은 여전히 금지, 방향까지만.\n\n${basePrompt}`;
   // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120,
   // 단 D-3 케이스 동봉 시 case_feedback ~300~500토큰 더 → 6144(잘림 방지).
   const maxTokens = phase === "first" ? 8192 : (phase === "second" && closingCases?.length ? 6144 : 5120);

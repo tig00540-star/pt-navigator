@@ -28,6 +28,7 @@ export default function CenterMachineSettings() {
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
   const [kind, setKind] = useState("machine");
+  const [spec, setSpec] = useState("");
   const { toast, showToast } = useToast();
 
   useEffect(() => {
@@ -43,12 +44,12 @@ export default function CenterMachineSettings() {
     return () => { cancelled = true; };
   }, []);
 
-  const resetForm = () => { setName(""); setBrand(""); setKind("machine"); setEditingId(null); };
+  const resetForm = () => { setName(""); setBrand(""); setKind("machine"); setSpec(""); setEditingId(null); };
 
   const save = async () => {
     if (saving) return;
     if (!name.trim()) return showToast("장비 이름을 입력하세요");
-    const payload = { name: name.trim(), brand: brand.trim() || null, kind };
+    const payload = { name: name.trim(), brand: brand.trim() || null, kind, spec: spec.trim() || null };
     setSaving(true);
     if (!supabase) {
       if (editingId) setRows((p) => p.map((r) => (r.id === editingId ? { ...r, ...payload } : r)));
@@ -69,7 +70,7 @@ export default function CenterMachineSettings() {
     resetForm(); setSaving(false);
   };
 
-  const startEdit = (r) => { setEditingId(r.id); setName(r.name ?? ""); setBrand(r.brand ?? ""); setKind(r.kind ?? "machine"); setConfirmId(null); };
+  const startEdit = (r) => { setEditingId(r.id); setName(r.name ?? ""); setBrand(r.brand ?? ""); setKind(r.kind ?? "machine"); setSpec(r.spec ?? ""); setConfirmId(null); };
 
   const remove = async (id) => {
     if (confirmId !== id) { setConfirmId(id); return; }
@@ -109,6 +110,10 @@ export default function CenterMachineSettings() {
                 <input type="text" value={brand} onChange={(e) => setBrand(e.target.value)} disabled={saving} placeholder="테크노짐 …" className={inputCls} />
               </label>
             </div>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium text-muted">규격·중량 <span className="text-muted">(선택)</span></span>
+              <input type="text" value={spec} onChange={(e) => setSpec(e.target.value)} disabled={saving} placeholder="예: 덤벨 2.5~40kg (덤벨은 한 항목으로)" className={inputCls} />
+            </label>
             <div className="flex gap-2">
               <Button variant="primary" size="md" onClick={save} disabled={saving} className="flex-1 gap-2">
                 {editingId ? <Pencil className="h-4 w-4" strokeWidth={2.5} /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
@@ -142,7 +147,7 @@ export default function CenterMachineSettings() {
                 <ul className="mt-1.5 flex flex-wrap gap-2">
                   {groups[cat].map((r) => (
                     <li key={r.id} className="flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5">
-                      <span className="text-sm text-ink">{[r.brand, r.name].filter(Boolean).join(" ")}</span>
+                      <span className="text-sm text-ink">{[r.brand, r.name].filter(Boolean).join(" ")}{r.spec ? ` · ${r.spec}` : ""}</span>
                       {isOwner && (confirmId === r.id ? (
                         <span className="flex items-center gap-1">
                           <button onClick={() => remove(r.id)} className="rounded border border-rose-500/40 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">삭제?</button>
