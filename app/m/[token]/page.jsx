@@ -130,7 +130,7 @@ function CardioSection({ me, cardio, onReload }) {
   const [err, setErr] = useState("");
 
   const inputCls =
-    "mt-1 w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+    "mt-1 w-full min-w-0 rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
   const add = async () => {
     if (busy) return;
@@ -183,19 +183,19 @@ function CardioSection({ me, cardio, onReload }) {
       {/* 입력 폼 */}
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
-          <label className="col-span-2 text-xs font-medium text-muted">
+          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             날짜
             <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
-          <label className="col-span-2 text-xs font-medium text-muted">
+          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             시간(분)
             <input type="number" inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value)} disabled={busy} placeholder="30" className={inputCls} />
           </label>
-          <label className="col-span-2 text-xs font-medium text-muted">
+          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             종류
             <input type="text" value={kind} onChange={(e) => setKind(e.target.value)} disabled={busy} placeholder="러닝 / 사이클 / 걷기…" className={inputCls} />
           </label>
-          <label className="col-span-2 text-xs font-medium text-muted">
+          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             메모(선택)
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={busy} placeholder="가볍게 조깅" className={inputCls} />
           </label>
@@ -330,7 +330,7 @@ function PhotoSection({ me, photos, onReload }) {
   };
 
   const inputCls =
-    "mt-1 w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+    "mt-1 w-full min-w-0 rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
   return (
     <>
@@ -339,7 +339,7 @@ function PhotoSection({ me, photos, onReload }) {
       {/* 업로드 폼 */}
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
-          <label className="col-span-1 text-xs font-medium text-muted">
+          <label className="col-span-1 min-w-0 text-xs font-medium text-muted">
             분류
             <select value={label} onChange={(e) => setLabel(e.target.value)} disabled={busy} className={inputCls}>
               <option value="before">비포</option>
@@ -347,7 +347,7 @@ function PhotoSection({ me, photos, onReload }) {
               <option value="after">애프터</option>
             </select>
           </label>
-          <label className="col-span-1 text-xs font-medium text-muted">
+          <label className="col-span-1 min-w-0 text-xs font-medium text-muted">
             날짜
             <input type="date" value={takenOn} onChange={(e) => setTakenOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
@@ -417,7 +417,7 @@ function ScheduleSection({ me, schedule, onReload }) {
   const [err, setErr] = useState("");
 
   const inputCls =
-    "mt-1 w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+    "mt-1 w-full min-w-0 rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
   const add = async () => {
     if (busy) return;
@@ -464,18 +464,18 @@ function ScheduleSection({ me, schedule, onReload }) {
       {/* 입력 폼 */}
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
-          <label className="col-span-2 text-xs font-medium text-muted">
+          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             날짜
             <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
-          <label className="col-span-2 text-xs font-medium text-muted">
+          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             구분
             <select value={kind} onChange={(e) => setKind(e.target.value)} disabled={busy} className={inputCls}>
               <option value="personal">개인운동</option>
               <option value="pt">PT 받은 날</option>
             </select>
           </label>
-          <label className="col-span-2 text-xs font-medium text-muted">
+          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             메모(선택)
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={busy} placeholder="가슴·등 / 컨디션 좋았음" className={inputCls} />
           </label>
