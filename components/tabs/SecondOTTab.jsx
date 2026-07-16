@@ -549,6 +549,19 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             {rc.why && <p className="mt-1 text-[11px] leading-relaxed text-muted">{rc.why}</p>}
           </div>
         )}
+        {Array.isArray(b.session_plan) && b.session_plan.length > 0 && (
+          <div className="rounded-xl border border-line bg-card p-4">
+            <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 수업 운동 구성</span></div>
+            <ol className="mt-2 space-y-1.5">
+              {b.session_plan.map((s, i) => (
+                <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-ink">
+                  <span className="mt-0.5 shrink-0 rounded bg-elevate px-1.5 py-0.5 text-[10px] font-bold text-sub">{i + 1}</span>
+                  <span><span className="font-semibold">{s.exercise}</span>{s.point && <span className="text-sub"> — {s.point}</span>}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
         {moves.length > 0 && (
           <div className="rounded-xl border border-line bg-card p-4">
             <div className="flex items-center gap-2"><span className="text-base">🎯</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 증명할 동작</span></div>

@@ -226,7 +226,15 @@ ${caseInputBlock}
 ① recall(지난 시간 소환): 1차의 체감·회원 한마디(memberQuote)를 되살려 문을 여는 완성 대사. "지난번
    ○○ 느끼셨던 거 기억나세요?" 결. - line: 그대로 말할 대사 1~2문장. - why: 이걸 여는 이유 1문장.
 
-② proof(오늘 '증명'할 동작 2개): 1차 관찰에서 드러난 문제를 오늘 몸으로 증명하는 구체 동작 2개.
+② session_plan(오늘 수업 운동 구성 — '무엇을 시킬지' 구체적으로): 오늘 2차 수업에서 이 회원에게 실제로
+   시킬 운동을 순서대로 3~5개 구성하라. 1차 관찰(movements/reaction)·goal·pain에서 도출하고, 아래 '증명
+   포인트'가 잘 터지도록 빌드업되게 짜라(가벼운 활성·준비 → 핵심 → 증명으로 자연히 이어짐). 이게 트레이너가
+   '오늘 뭘 시킬지'를 바로 아는 실전 구성이다.
+   ★각 운동은 '이름 있는 구체 동작 + 한 줄 큐/세팅'으로. 고정 구성 반복 금지, 회원 goal·pain으로 개인화.
+   숫자 처방(세트·횟수·각도·중량·템포) 금지 — 무엇을·어떤 방향으로·왜인지까지만.
+   각 항목: exercise(구체 동작 + 한 줄 세팅) / point(왜 시키나 or 핵심 큐 1문장).
+
+③ proof(증명 포인트 2개): 위 수업 구성 중/직후, 회원이 '어? 되네'를 부인 못 하게 터뜨릴 결정적 순간 2개.
    ★동작은 이 회원의 goal·pain·1차 관찰(movements/reaction)에서 도출하라 — 고정 동작 습관 반복 금지,
    직업 비어도 goal·pain으로 개인화, 숫자 처방 금지. 각 동작 before→after 체감 실험으로(먼저 시켜→큐 하나
    잡아줌→확 달라짐, 그 큐가 혼자선 못 잡는 지점).
@@ -235,12 +243,12 @@ ${caseInputBlock}
    so_what: 두 증명을 묶어 'PT를 받아야 한다'는 회원 스스로의 결론으로 잇는 한 줄.
    if_weak: 증거 반응이 약하게 올 때 살릴 큐·조정 한 줄(숫자 없이·방향만).
 
-③ sales_metaphor: 회원 직업·일상·목표에서 끌어온 비유 하나(운동·기계 클리셰 금지). metaphor + bridge(등록 필요성으로).
+④ sales_metaphor: 회원 직업·일상·목표에서 끌어온 비유 하나(운동·기계 클리셰 금지). metaphor + bridge(등록 필요성으로).
 
-④ closing_line: '마지막 OT'급 강한 가정 종결 한마디. '등록하세요'(판매 동사) 금지 → "다음 주부터 이렇게
+⑤ closing_line: '마지막 OT'급 강한 가정 종결 한마디. '등록하세요'(판매 동사) 금지 → "다음 주부터 이렇게
    가시죠" 결. 긴급성은 사실 기반 손실만("지금 멈추면 오늘 이 감각 흩어져요"). 1차보다 확신 있게.
 
-⑤ objection_defense(거절 선제 방어 5종): price·hesitation·doubt·time·compare 각 1개. 1차 관찰·(있으면)
+⑥ objection_defense(거절 선제 방어 5종): price·hesitation·doubt·time·compare 각 1개. 1차 관찰·(있으면)
    회원 quit_reason을 근거로 더 날카롭게. 각: trigger(나올 신호) / defense(공감+세일즈 무브) /
    line(그대로 말할 대사). ⚠️compare는 경쟁사 비방 금지→'오늘 이미 당신 몸에서 확인' 데이터 선점 우위.
    ⚠️허위 긴급성·공포·죄책감 금지.
@@ -252,6 +260,7 @@ ${caseInputBlock}
 {
   "member_read": "1차 확인된 것 + 지금 클로징 국면 한 줄",
   "recall": { "line": "...", "why": "..." },
+  "session_plan": [ { "exercise": "...", "point": "..." } ],
   "proof": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   "closing_line": "마지막 OT급 강한 가정 종결 한마디",
@@ -435,6 +444,7 @@ const FIELD_TERMS = [
   ["recall", "지난 소환"],
   ["proof", "증명 동작"],
   ["if_weak", "반응 약할 때"],
+  ["session_plan", "수업 구성"],
   ["closing", "클로징"],
 ];
 
@@ -613,7 +623,7 @@ export async function POST(request) {
     // first는 필수 키를 넘겨 스키마 완전성까지 파서가 보장(부분객체·다중블록 방어).
     // second는 별도 스키마라 키 미지정(1순위 단일 파싱 — 기존 동작 유지, 회귀 없음).
     const REQUIRED_FIRST = ["member_read", "opening", "target_exercise", "sales_metaphor", "closing_line", "objection_defense"];
-    const REQUIRED_SECOND = ["member_read", "recall", "proof", "sales_metaphor", "closing_line", "objection_defense"];
+    const REQUIRED_SECOND = ["member_read", "recall", "session_plan", "proof", "sales_metaphor", "closing_line", "objection_defense"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : [];
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
     return Response.json(brief);
