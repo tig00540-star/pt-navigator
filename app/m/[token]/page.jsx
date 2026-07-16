@@ -8,10 +8,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2 } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { buildExerciseSeries } from "@/lib/workout";
+import { compressImage } from "@/lib/image";
 import Eyebrow from "@/components/ui/Eyebrow";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
@@ -21,6 +22,8 @@ import Sparkline from "@/components/ui/Sparkline";
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
 // 무게 변화 톤 — 증가=good, 감소=bad, 동일=flat(인바디 deltaTone과 달리 무게는 항상 증가=good).
 const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
+// 사진 라벨(자가 분류) — 값→한글. 정적 문자열이라 purge 무관.
+const PHOTO_LABELS = { before: "비포", progress: "진행", after: "애프터" };
 
 // 변화 방향 → 좋음/나쁨/중립. before·cur 하나라도 null이면 null(표시 안 함).
 function deltaTone(field, cur, before) {
@@ -212,7 +215,167 @@ function CardioSection({ me, cardio, onReload }) {
   );
 }
 
-function HomeView({ me, logs, inbody, cardio, onReloadCardio, onSignOut }) {
+// 비포애프터 사진 자가입력(M2) — 압축→비공개버킷 업로드→member_photo insert. 열람은 서명 URL(1h).
+// 회원은 본인 폴더만(스토리지 RLS). 업로드 전 반드시 compressImage(원본 금지).
+function PhotoSection({ me, photos, onReload }) {
+  const [label, setLabel] = useState("progress");
+  const [takenOn, setTakenOn] = useState(() => todayStr());
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [urls, setUrls] = useState({}); // storage_path -> signed url (1h)
+
+  // photos 변경 시 서명 URL 일괄 재생성(만료 1h · 재조회마다 갱신).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!memberSupabase || photos.length === 0) { if (!cancelled) setUrls({}); return; }
+      const { data } = await memberSupabase.storage
+        .from("member-photos")
+        .createSignedUrls(photos.map((p) => p.storage_path), 3600);
+      if (cancelled) return;
+      const map = {};
+      (data || []).forEach((d) => { if (d.signedUrl) map[d.path] = d.signedUrl; });
+      setUrls(map);
+    })();
+    return () => { cancelled = true; };
+  }, [photos]);
+
+  const onPick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일 재선택 허용
+    if (!file || busy) return;
+    if (!memberSupabase) { setErr("데모 모드 — 실제 업로드는 불가해요."); return; }
+    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도하세요."); return; }
+    setBusy(true); setErr("");
+    // 1) 업로드 전 압축(필수) — 원본 그대로 올리지 않음.
+    let blob;
+    try {
+      blob = await compressImage(file);
+    } catch {
+      setBusy(false);
+      setErr("이 사진을 읽지 못했어요. 다른 사진으로 시도해 주세요.");
+      return;
+    }
+    // 2) 비공개 버킷 업로드({me.id}/{uuid}.jpg — 첫 폴더가 RLS 스코프 키).
+    const path = `${me.id}/${crypto.randomUUID()}.jpg`;
+    const { error: upErr } = await memberSupabase.storage
+      .from("member-photos")
+      .upload(path, blob, { contentType: "image/jpeg" });
+    if (upErr) {
+      setBusy(false);
+      setErr("업로드에 실패했어요: " + upErr.message);
+      return;
+    }
+    // 3) DB insert(하드닝) — 실패 시 방금 올린 파일 롤백(고아 방지).
+    const { data, error } = await memberSupabase
+      .from("member_photo")
+      .insert({ user_id: me.id, storage_path: path, label, taken_on: takenOn })
+      .select();
+    if (error || !data || data.length === 0) {
+      await memberSupabase.storage.from("member-photos").remove([path]);
+      setBusy(false);
+      setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      return;
+    }
+    await onReload();
+    setBusy(false);
+  };
+
+  const remove = async (photo) => {
+    if (busy) return;
+    if (!memberSupabase) return;
+    setBusy(true); setErr("");
+    const { data, error } = await memberSupabase
+      .from("member_photo")
+      .delete()
+      .eq("id", photo.id)
+      .select(); // 하드닝: 0행이면 실패
+    if (error || !data || data.length === 0) {
+      setBusy(false);
+      setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      return;
+    }
+    await memberSupabase.storage.from("member-photos").remove([photo.storage_path]); // 스토리지 파일도 정리
+    await onReload();
+    setBusy(false);
+  };
+
+  const inputCls =
+    "mt-1 w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+
+  return (
+    <section className="mb-8">
+      <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
+      {/* 업로드 폼 */}
+      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <label className="col-span-1 text-xs font-medium text-muted">
+            분류
+            <select value={label} onChange={(e) => setLabel(e.target.value)} disabled={busy} className={inputCls}>
+              <option value="before">비포</option>
+              <option value="progress">진행</option>
+              <option value="after">애프터</option>
+            </select>
+          </label>
+          <label className="col-span-1 text-xs font-medium text-muted">
+            날짜
+            <input type="date" value={takenOn} onChange={(e) => setTakenOn(e.target.value)} disabled={busy} className={inputCls} />
+          </label>
+        </div>
+        {err && <p className="mt-2 text-sm text-rose-600">{err}</p>}
+        <label className={`mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 px-4 py-3 text-base font-semibold text-white ${busy ? "opacity-60" : ""}`}>
+          <ImagePlus className="h-5 w-5" /> {busy ? "올리는 중…" : "사진 올리기"}
+          <input type="file" accept="image/*" onChange={onPick} disabled={busy} className="hidden" />
+        </label>
+      </div>
+
+      {/* 갤러리 */}
+      {photos.length === 0 ? (
+        <EmptyState className="mt-3 rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
+          아직 사진이 없어요. 비포 사진부터 남겨보세요.
+        </EmptyState>
+      ) : (
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {photos.map((p) => (
+            <div key={p.id} className="relative overflow-hidden rounded-2xl border border-line bg-elevate shadow-sm">
+              <div className="aspect-square">
+                {urls[p.storage_path] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    loading="lazy"
+                    src={urls[p.storage_path]}
+                    alt={PHOTO_LABELS[p.label] || "사진"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xs text-muted">불러오는 중…</div>
+                )}
+              </div>
+              {p.label && (
+                <span className="absolute left-2 top-2 rounded-md bg-card/85 px-2 py-0.5 text-[11px] font-semibold text-sub">
+                  {PHOTO_LABELS[p.label] || p.label}
+                </span>
+              )}
+              <span className="absolute bottom-2 left-2 rounded-md bg-card/85 px-2 py-0.5 text-[11px] text-sub">
+                {fmtDay(p.taken_on)}
+              </span>
+              <button
+                onClick={() => remove(p)}
+                disabled={busy}
+                className="absolute right-2 top-2 rounded-lg bg-card/85 p-1.5 text-muted transition hover:text-rose-600 disabled:opacity-50"
+                aria-label="삭제"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, onSignOut }) {
   if (!me) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg px-6">
@@ -381,6 +544,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, onSignOut }) {
         {/* 유산소 기록(M1) — 회원 자가입력. me 로드 후에만 폼 활성. */}
         <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} />
 
+        {/* 비포애프터 사진(M2) — 압축→비공개버킷 업로드→서명URL 갤러리. */}
+        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} />
+
         {/* 로그아웃 */}
         <div className="text-center">
           <button onClick={onSignOut} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted transition hover:text-ink">
@@ -399,6 +565,7 @@ export default function MemberHome() {
   const [logs, setLogs] = useState([]);
   const [inbody, setInbody] = useState([]);
   const [cardio, setCardio] = useState([]);
+  const [photos, setPhotos] = useState([]);
   const [last4, setLast4] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -414,18 +581,31 @@ export default function MemberHome() {
     setCardio(data ?? []);
   }, []);
 
+  // 사진만 재조회(업로드/삭제 후 갱신용).
+  const loadPhotos = useCallback(async () => {
+    if (!memberSupabase) return;
+    const { data } = await memberSupabase
+      .from("member_photo")
+      .select("*")
+      .order("taken_on", { ascending: false })
+      .limit(60);
+    setPhotos(data ?? []);
+  }, []);
+
   const loadHome = useCallback(async () => {
     if (!memberSupabase) return;
-    const [meRes, logRes, inbodyRes, cardioRes] = await Promise.all([
+    const [meRes, logRes, inbodyRes, cardioRes, photoRes] = await Promise.all([
       memberSupabase.from("member_me").select("*").maybeSingle(),
       memberSupabase.from("member_workout_log").select("*").order("created_at", { ascending: false }),
       memberSupabase.from("member_inbody").select("*").order("measured_at", { ascending: true }),
       memberSupabase.from("cardio_log").select("*").order("performed_on", { ascending: false }).limit(30),
+      memberSupabase.from("member_photo").select("*").order("taken_on", { ascending: false }).limit(60),
     ]);
     setMe(meRes.data ?? null);
     setLogs(logRes.data ?? []);
     setInbody(inbodyRes.data ?? []);
     setCardio(cardioRes.data ?? []);
+    setPhotos(photoRes.data ?? []);
     setPhase("home");
   }, []);
 
@@ -468,11 +648,11 @@ export default function MemberHome() {
 
   const signOut = async () => {
     if (memberSupabase) await memberSupabase.auth.signOut();
-    setMe(null); setLogs([]); setInbody([]); setCardio([]); setLast4(""); setPhase("login");
+    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setLast4(""); setPhase("login");
   };
 
   if (phase === "checking") return <ScreenMsg>불러오는 중…</ScreenMsg>;
   if (phase === "login")
     return <LoginCard last4={last4} setLast4={setLast4} onSubmit={submit} busy={busy} err={err} />;
-  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} onSignOut={signOut} />;
+  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} onSignOut={signOut} />;
 }
