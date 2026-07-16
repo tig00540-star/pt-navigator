@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 
 const PHOTO_LABELS = { before: "비포", progress: "진행", after: "애프터" };
 
@@ -19,6 +20,7 @@ export default function MemberPhotoSummary({ member }) {
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({}); // storage_path -> signed url (1h)
   const [loading, setLoading] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
 
   // 회원 변경 시 조회 + 서명 URL 생성. setState는 async IIFE 안에서만(set-state-in-effect 회피).
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function MemberPhotoSummary({ member }) {
   if (!loading && rows.length === 0) return null; // 0장이면 섹션 숨김
 
   return (
+    <>
     <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
       <Eyebrow icon={Camera}>비포애프터 사진 (회원 입력)</Eyebrow>
       {loading ? (
@@ -73,7 +76,8 @@ export default function MemberPhotoSummary({ member }) {
                     loading="lazy"
                     src={urls[p.storage_path]}
                     alt={PHOTO_LABELS[p.label] || "사진"}
-                    className="h-full w-full object-cover"
+                    onClick={() => setLightbox(urls[p.storage_path])}
+                    className="h-full w-full cursor-pointer object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[10px] text-muted">…</div>
@@ -94,5 +98,7 @@ export default function MemberPhotoSummary({ member }) {
         </div>
       )}
     </section>
+    <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
+    </>
   );
 }

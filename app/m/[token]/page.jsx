@@ -17,6 +17,7 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Sparkline from "@/components/ui/Sparkline";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 
 // purge-safe delta 색 맵(PtInbodyTab 재사용 패턴 · 동적 조립 금지).
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
@@ -223,6 +224,7 @@ function PhotoSection({ me, photos, onReload }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [urls, setUrls] = useState({}); // storage_path -> signed url (1h)
+  const [lightbox, setLightbox] = useState(null);
 
   // photos 변경 시 서명 URL 일괄 재생성(만료 1h · 재조회마다 갱신).
   useEffect(() => {
@@ -304,6 +306,7 @@ function PhotoSection({ me, photos, onReload }) {
     "mt-1 w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
   return (
+    <>
     <section className="mb-8">
       <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
       {/* 업로드 폼 */}
@@ -345,7 +348,8 @@ function PhotoSection({ me, photos, onReload }) {
                     loading="lazy"
                     src={urls[p.storage_path]}
                     alt={PHOTO_LABELS[p.label] || "사진"}
-                    className="h-full w-full object-cover"
+                    onClick={() => setLightbox(urls[p.storage_path])}
+                    className="h-full w-full cursor-pointer object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-xs text-muted">불러오는 중…</div>
@@ -372,6 +376,8 @@ function PhotoSection({ me, photos, onReload }) {
         </div>
       )}
     </section>
+    <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
+    </>
   );
 }
 
