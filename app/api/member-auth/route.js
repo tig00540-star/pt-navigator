@@ -44,7 +44,7 @@ export async function POST(req) {
   // 1) 토큰으로 회원 조회(service_role = RLS 우회)
   const { data: member } = await svc
     .from("user_table")
-    .select("id, name, phone_number, member_auth_id")
+    .select("id, name, phone_number, member_auth_id, account_id")
     .eq("member_token", token)
     .maybeSingle();
   if (!member) return FAIL();
@@ -52,6 +52,25 @@ export async function POST(req) {
   // 2) 휴대 끝4 대조(숫자만 추출)
   const digits = String(member.phone_number || "").replace(/\D/g, "");
   if (digits.length < 4 || digits.slice(-4) !== last4) return FAIL();
+
+  // 2.5) 소속 계정이 premium·활성·미만료인지 (층2 게이트). 아니면 회원앱 로그인 거절.
+  //   basic 다운그레이드/구독 만료/해지 시 회원 재로그인 차단(이미 발급된 링크도 그날부터 안 열림).
+  const { data: acct } = await svc
+    .from("account")
+    .select("plan, subscription_status, current_period_end")
+    .eq("id", member.account_id)
+    .maybeSingle();
+  const premiumActive =
+    acct &&
+    acct.plan === "premium" &&
+    acct.subscription_status === "active" &&
+    (!acct.current_period_end || new Date(acct.current_period_end) > new Date());
+  if (!premiumActive) {
+    return Response.json(
+      { error: "회원앱 이용이 일시 중단되었어요. 담당 트레이너에게 문의해 주세요." },
+      { status: 403 }
+    );
+  }
 
   // 3) 회원 auth 유저 확보(최초=생성·연결 / 재방문=비번 회전). account_type 미설정 → 가입트리거 no-op.
   const email = `m-${member.id}@member.pt-navigator.app`;

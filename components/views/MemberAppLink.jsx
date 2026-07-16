@@ -21,8 +21,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
   const linkFor = (t) =>
     (typeof window !== "undefined" ? window.location.origin : "") + "/m/" + t;
 
-  // 링크 생성 = user_table.member_token에 새 토큰 UPDATE(.select() 하드닝) → 복사. (클라 직접)
-  // ★B2(프리미엄 게이트) 때 이 supabase.update 한 곳을 서버 RPC(issue_member_token, plan 확인)로 교체 = 유일 교체점.
+  // 링크 생성 = issue_member_token() RPC(서버측 plan 확인·발급). B2 층2 게이트 — premium 아니면 서버가 거절.
   const issue = async () => {
     if (busy) return;
     if (!supabase) {
@@ -30,15 +29,16 @@ export default function MemberAppLink({ member, onMemberPatch }) {
       return;
     }
     setBusy(true);
-    const newToken = crypto.randomUUID();
-    const { data, error } = await supabase
-      .from("user_table")
-      .update({ member_token: newToken })
-      .eq("id", member.id)
-      .select("id, member_token"); // 하드닝: 0행이면 조용한 실패(UPDATE 정책 부재 등)
-    if (error || !data || data.length === 0) {
+    const { data: newToken, error } = await supabase.rpc("issue_member_token", {
+      p_member_id: member.id,
+    });
+    if (error || !newToken) {
       setBusy(false);
-      showToast("발급 실패 — 정책/0행" + (error ? ": " + error.message : ""));
+      if (error?.message === "premium_required") {
+        showToast("회원앱은 프리미엄 전용이에요 — 업그레이드가 필요해요.");
+      } else {
+        showToast("발급 실패" + (error ? ": " + error.message : ""));
+      }
       return;
     }
     onMemberPatch?.(member.id, { member_token: newToken }); // 로컬 낙관 갱신(배지·버튼 즉시 반영)
