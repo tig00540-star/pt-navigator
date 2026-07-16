@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { buildExerciseSeries } from "@/lib/workout";
@@ -126,17 +126,33 @@ function HomeView({ me, logs, inbody, onSignOut }) {
               아직 기록된 수업일지가 없어요.
             </EmptyState>
           ) : (
-            <ul className="space-y-3">
-              {logs.map((l) => (
-                <li key={l.id} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
-                  <div className="text-xs font-semibold text-primary-strong">{fmtDay(l.created_at)}</div>
-                  {l.ai_summary ? (
-                    <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">{l.ai_summary}</p>
-                  ) : (
-                    <p className="mt-2 text-sm text-muted">이 수업은 상세 내용이 없어요.</p>
-                  )}
-                </li>
-              ))}
+            <ul className="space-y-2">
+              {logs.map((l, i) => {
+                const round = logs.length - i; // 최신순 배열 → 오래된 게 1회차(누적)
+                return (
+                  <li key={l.id}>
+                    <details className="group rounded-2xl border border-line bg-card p-4 shadow-sm">
+                      <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.created_at)}</span>
+                          <span className="rounded-full bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub">{round}회차</span>
+                          {l.ai_summary && (
+                            <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+                          )}
+                        </div>
+                        {l.ai_summary ? (
+                          <p className="mt-1.5 text-sm text-sub line-clamp-1 group-open:hidden">{l.ai_summary}</p>
+                        ) : (
+                          <p className="mt-1.5 text-sm text-muted">상세 내용이 없어요.</p>
+                        )}
+                      </summary>
+                      {l.ai_summary && (
+                        <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">{l.ai_summary}</p>
+                      )}
+                    </details>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
