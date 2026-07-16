@@ -1,7 +1,10 @@
 -- =============================================================================
--- 보유 장비 관리(②) — kind 컬럼 + account_id 기본값/인덱스 + owner 쓰기 정책(update/delete 추가)
+-- 보유 장비 관리(②) — brand nullable + kind 컬럼 + account_id 기본값/인덱스 + owner 쓰기 정책(update/delete 추가)
 -- 실행: Supabase SQL Editor(수동) · 이 파일 = git 기록본. 멱등. 데이터 무변경(정책·컬럼만).
 -- =============================================================================
+
+-- 0) brand NOT NULL 해제 — 덤벨·프리웨이트는 브랜드가 없어 옵션이어야 함(원래 NOT NULL이라 빈 브랜드 저장 실패했음).
+alter table center_machine alter column brand drop not null;
 
 -- 1) 장비 종류 컬럼(머신/프리웨이트/맨몸 · null=미분류)
 alter table center_machine add column if not exists kind text;
