@@ -81,6 +81,8 @@ function mapMemberRow(r) {
     member_note: r.member_note ?? null,
     machines: r.machines ?? [],
     trainer_id: r.trainer_id ?? null,   // 내 회원 판별(원장 스코프)
+    member_token: r.member_token ?? null,     // 회원앱 링크 토큰(S3 발급 UI)
+    member_auth_id: r.member_auth_id ?? null, // 회원 auth 연결(있으면 '연결됨' = 1회+ 로그인)
     // ② member_status — 컬럼 미반영(마이그레이션 전)·demo 행에서도 기본값으로 안전.
     status: r.status ?? "ot_active",
     origin: r.origin ?? "ot_funnel",

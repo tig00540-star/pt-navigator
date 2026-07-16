@@ -13,6 +13,7 @@ import PtWorkoutTab from "@/components/views/PtWorkoutTab";
 import PtReRegTab from "@/components/views/PtReRegTab";
 import PtInbodyTab from "@/components/views/PtInbodyTab";
 import RefundMember from "@/components/views/RefundMember";
+import MemberAppLink from "@/components/views/MemberAppLink";
 
 export default function PTView({ member, tab, onGoList, onMemberPatch, onMembersChanged }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
@@ -56,6 +57,9 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
           <ChevronLeft className="h-4 w-4" /> 회원 목록
         </button>
       )}
+
+      <MemberAppLink key={member.id} member={member} onMemberPatch={onMemberPatch} />
+
       <div key={tab} className="tab-anim">
         {tab === 11 ? (
           <PtReRegTab key={member.id} member={member} contracts={contracts} setContracts={setContracts} logs={logs} />
