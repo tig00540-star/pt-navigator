@@ -10,6 +10,7 @@ export default function RegBriefView({ brief, highlightReason }) {
   const sf = b.session_flow || {};
   const sm = b.sales_metaphor || {};
   const cline = b.closing_line || "";
+  const sw = b.sweetener || "";
   const obj = Array.isArray(b.objection_defense) ? b.objection_defense : [];
   const gaps = Array.isArray(b.data_gaps) ? b.data_gaps : [];
   const legacy = !wn.proven && !sf.gap_awareness && obj.length === 0;
@@ -58,6 +59,7 @@ export default function RegBriefView({ brief, highlightReason }) {
         <div className="rounded-xl border border-primary/40 bg-primary-soft p-3.5">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-primary-strong">클로징 한마디</div>
           <p className="mt-1 font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
+          {sw && <p className="mt-2 rounded-md bg-card px-2 py-1 text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">혜택(덤) · </span>{sw}</p>}
         </div>
       )}
       {obj.length > 0 && (

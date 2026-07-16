@@ -317,9 +317,18 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
 
 ③ sales_metaphor: 회원 직업·일상·목표에서 끌어온 비유 하나(운동·기계 클리셰 금지). metaphor + bridge(재등록 필요성으로).
 
-④ closing_line: 재등록 가정 종결 한마디. '재등록하세요'(판매 동사) 금지 → "다음 달도 이렇게 이어가시죠" 결. 긴급성은 사실 기반 손실만.
+④ closing_line: 재등록을 '지금 결정'하게 만드는 클로징 한마디. ★단순히 "다음에도 이어가시죠"류(수업만
+   계속하자는 뜻)가 아니라, why_now의 근거를 짚고 '그러니 지금 재등록하는 게 맞다'로 착지해야 한다. 회원이
+   "아, 지금 재등록해야겠다"를 납득하게. '재등록하세요'(명령·판매 동사)는 피하되 대상은 분명히 재등록/연장
+   결제여야 한다(애매한 '이어가자' 금지). 가정 종결 톤 예: "그동안 ○○ 좋아지셨고 다음이 △△니까, 여기서
+   멈추지 말고 딱 이어서(재등록) 가시죠 — 지금이 흐름 안 끊고 갈 타이밍이에요." 긴급성은 사실 기반 손실만.
 
-⑤ objection_defense(재등록 거절 선제 방어 5종): reason 키 고정 — money(금전) · sessions_left(수업 남아 나중에) ·
+⑤ sweetener(재등록 혜택 — '덤'으로만): 위 이유를 납득시킨 뒤 마지막에 얹을 가격/혜택 한 줄. PT 재등록은
+   보통 가격 혜택이 있으니 활용하되, ★이게 재등록의 '이유'를 대체하면 안 된다(이유가 메인, 혜택은 덤).
+   ⚠️구체 할인율·금액은 만들어내지 마라(트레이너가 현장에서 채움) — "회당 단가도 좀 더 챙겨드릴 수 있어요"
+   수준의 프레이밍까지만. 혜택 얹는 게 부자연스러우면 빈 문자열.
+
+⑥ objection_defense(재등록 거절 선제 방어 5종): reason 키 고정 — money(금전) · sessions_left(수업 남아 나중에) ·
    low_effect(효과 체감 부족) · time(시간) · schedule(스케줄). 각: trigger(나올 신호) / defense(공감+세일즈 무브,
    반박 아님) / line(그대로 말할 대사). ⚠️low_effect는 방어가 아니라 '왜 아직인지 + 앞으로 어떻게'의 정직한 방향.
    ⚠️허위 긴급성·공포·죄책감 금지.
@@ -334,6 +343,7 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
   "session_flow": { "gap_awareness": "...", "goal_raise": "...", "timing": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   "closing_line": "재등록 가정 종결 한마디",
+  "sweetener": "재등록 혜택 한 줄(덤 · 구체 금액 없이) 또는 빈 문자열",
   "objection_defense": [ { "reason": "money|sessions_left|low_effect|time|schedule", "trigger": "...", "defense": "...", "line": "..." } ],
   "data_gaps": ["..."]
 }
@@ -452,6 +462,7 @@ const FIELD_TERMS = [
   ["goal_raise", "목표 상향"],
   ["risk_if_stop", "멈추면"],
   ["next_roadmap", "다음 단계"],
+  ["sweetener", "혜택"],
   ["closing", "클로징"],
 ];
 
