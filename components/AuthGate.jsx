@@ -10,6 +10,9 @@ import Button from "@/components/ui/Button";
 export default function AuthGate({ children }) {
   const [ready, setReady] = useState(false);   // 초기 세션 조회 완료 여부
   const [session, setSession] = useState(null);
+  // 층1 구독 게이트 — my_account_status() 결과(null=조회 전/중). acctReady=조회 완료 여부.
+  const [acct, setAcct] = useState(null);
+  const [acctReady, setAcctReady] = useState(false);
 
   // 로그인 폼 로컬 상태
   const [email, setEmail] = useState("");
@@ -39,6 +42,21 @@ export default function AuthGate({ children }) {
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // 로그인되면 구독 상태 조회(층1 잠금 분기). 데모/미로그인은 스킵. setState는 async 안에서(set-state-in-effect 회피).
+  useEffect(() => {
+    if (!supabase || !session) return;
+    let alive = true;
+    (async () => {
+      setAcctReady(false);
+      const { data, error } = await supabase.rpc("my_account_status");
+      if (!alive) return;
+      // 에러/0행 → 계정 미확인으로 보고 잠금(접근 차단이 안전측). 정상 행이면 그 상태 사용.
+      setAcct(error ? { has_account: false, access: false } : (data?.[0] ?? { has_account: false, access: false }));
+      setAcctReady(true);
+    })();
+    return () => { alive = false; };
+  }, [session]);
 
   const signIn = async () => {
     if (!supabase || busy) return;
@@ -87,6 +105,25 @@ export default function AuthGate({ children }) {
   if (!supabase || session) {
     // 임시비번 최초 로그인 플래그면 강제 비번 변경(신규 트레이너만 — 기존은 플래그 없음).
     const mustChange = Boolean(supabase && session && session.user?.user_metadata?.must_change_pw === true);
+    // 층1 게이트는 실DB 로그인 + 비번변경 아님일 때만 판정(데모는 통과).
+    const gating = Boolean(supabase && session) && !mustChange;
+
+    let inner;
+    if (mustChange) {
+      inner = <PasswordChange forced onDone={refreshSession} />;
+    } else if (gating && !acctReady) {
+      // 구독 상태 조회 중 — 깜빡임 방지 스피너.
+      inner = (
+        <div className="min-h-screen flex items-center justify-center bg-bg text-muted text-sm">
+          불러오는 중…
+        </div>
+      );
+    } else if (gating && acct && acct.access === false) {
+      inner = <Paywall status={acct} onSignOut={signOut} />;
+    } else {
+      inner = children;
+    }
+
     return (
       <>
         {supabase && session && (
@@ -99,7 +136,7 @@ export default function AuthGate({ children }) {
             </button>
           </div>
         )}
-        {mustChange ? <PasswordChange forced onDone={refreshSession} /> : children}
+        {inner}
       </>
     );
   }
@@ -143,6 +180,35 @@ export default function AuthGate({ children }) {
           트레이너는 원장 초대로 참여합니다 ·{" "}
           <a href="/signup" className="font-semibold text-primary-strong hover:underline">새 계정 만들기</a>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// 층1 결제벽 — 미활성/만료/계정미확인 계정. 베타는 '문의' CTA(결제 버튼은 B4). 기존 토큰 재사용.
+function Paywall({ status, onSignOut }) {
+  const noAccount = status?.has_account === false;
+  const expired = status?.is_expired === true;
+  const title = noAccount ? "계정을 준비 중이에요" : expired ? "무료 체험이 종료됐어요" : "구독이 필요해요";
+  const desc = noAccount
+    ? "계정 정보를 불러오지 못했어요. 잠시 후 다시 로그인해 주세요."
+    : expired
+    ? "무료 체험 기간이 끝났어요. 계속 이용하려면 담당자에게 문의해 이용을 연장해 주세요."
+    : "아직 이용이 활성화되지 않았어요. 담당자에게 문의해 이용을 시작해 주세요.";
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
+      <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
+        <div className="mb-4 flex flex-col items-center">
+          <Image src="/icons/icon-192.png" alt="오직 트레이너" width={56} height={56} priority className="mb-3 h-14 w-14 rounded-2xl shadow-sm" />
+          <div className="text-lg font-semibold text-ink">{title}</div>
+        </div>
+        <p className="text-sm leading-relaxed text-muted">{desc}</p>
+        <div className="mt-5">
+          <Button variant="primary" size="md" fullWidth onClick={onSignOut}>다시 로그인</Button>
+        </div>
+        <p className="mt-4 text-[11px] leading-relaxed text-muted">
+          문의는 담당자에게 연락 주세요. 결제 연동은 준비 중입니다.
+        </p>
       </div>
     </div>
   );
