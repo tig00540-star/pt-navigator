@@ -42,3 +42,11 @@ body {
 /* 앱 느낌 — 탭 하이라이트 제거 + 관성/당겨서새로고침 차단 */
 html { -webkit-tap-highlight-color: transparent; }
 body { overscroll-behavior-y: none; }   /* 웹 특유의 고무줄·pull-to-refresh 제거 = 앱 시그널 큼 */
+
+/* iOS 네이티브 date 인풋 최소너비 제거 — 좁은 컨테이너(회원앱 폼) 밖으로 안 튀게. 피커는 그대로 열림. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
