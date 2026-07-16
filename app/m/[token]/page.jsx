@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { buildExerciseSeries } from "@/lib/workout";
@@ -25,6 +25,8 @@ const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "t
 const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 // 사진 라벨(자가 분류) — 값→한글. 정적 문자열이라 purge 무관.
 const PHOTO_LABELS = { before: "비포", progress: "진행", after: "애프터" };
+// 스케줄 구분 — 값→한글. 정적 문자열이라 purge 무관.
+const SCHEDULE_KINDS = { personal: "개인운동", pt: "PT" };
 
 // 변화 방향 → 좋음/나쁨/중립. before·cur 하나라도 null이면 null(표시 안 함).
 function deltaTone(field, cur, before) {
@@ -381,7 +383,127 @@ function PhotoSection({ me, photos, onReload }) {
   );
 }
 
-function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, onSignOut }) {
+// 운동 스케줄 자가입력(M3) — 개인운동/PT 체크. M1 CardioSection 구조 복제(스토리지·AI 없음).
+function ScheduleSection({ me, schedule, onReload }) {
+  const [on, setOn] = useState(() => todayStr());
+  const [kind, setKind] = useState("personal");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const inputCls =
+    "mt-1 w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+
+  const add = async () => {
+    if (busy) return;
+    if (!memberSupabase) { setErr("데모 모드 — 실제 기록은 불가해요."); return; }
+    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도하세요."); return; }
+    if (!on) { setErr("날짜를 선택하세요."); return; }
+    setBusy(true); setErr("");
+    // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). user_id는 me.id만(RLS with check가 스푸핑 차단).
+    const { data, error } = await memberSupabase
+      .from("schedule_check")
+      .insert({ user_id: me.id, on_date: on, kind, note: note.trim() || null })
+      .select();
+    if (error || !data || data.length === 0) {
+      setBusy(false);
+      setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      return;
+    }
+    setNote(""); // 날짜·구분은 유지(연속 입력 편의)
+    await onReload();
+    setBusy(false);
+  };
+
+  const remove = async (id) => {
+    if (busy) return;
+    if (!memberSupabase) return;
+    setBusy(true); setErr("");
+    const { data, error } = await memberSupabase
+      .from("schedule_check")
+      .delete()
+      .eq("id", id)
+      .select(); // 하드닝: 0행이면 실패
+    if (error || !data || data.length === 0) {
+      setBusy(false);
+      setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      return;
+    }
+    await onReload();
+    setBusy(false);
+  };
+
+  return (
+    <section className="mb-8">
+      <Eyebrow icon={CalendarCheck}>운동 스케줄</Eyebrow>
+      {/* 입력 폼 */}
+      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <label className="col-span-2 text-xs font-medium text-muted">
+            날짜
+            <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
+          </label>
+          <label className="col-span-2 text-xs font-medium text-muted">
+            구분
+            <select value={kind} onChange={(e) => setKind(e.target.value)} disabled={busy} className={inputCls}>
+              <option value="personal">개인운동</option>
+              <option value="pt">PT 받은 날</option>
+            </select>
+          </label>
+          <label className="col-span-2 text-xs font-medium text-muted">
+            메모(선택)
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={busy} placeholder="가슴·등 / 컨디션 좋았음" className={inputCls} />
+          </label>
+        </div>
+        {err && <p className="mt-2 text-sm text-rose-600">{err}</p>}
+        <div className="mt-3">
+          <Button variant="primary" size="md" fullWidth onClick={add} disabled={busy}>
+            <Plus className="h-4 w-4" /> {busy ? "저장 중…" : "추가"}
+          </Button>
+        </div>
+      </div>
+
+      {/* 목록 */}
+      {schedule.length === 0 ? (
+        <EmptyState className="mt-3 rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
+          아직 스케줄 기록이 없어요. 오늘 운동을 체크해보세요.
+        </EmptyState>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {schedule.map((s) => (
+            <li key={s.id} className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-primary-strong">{fmtDay(s.on_date)}</span>
+                  <span
+                    className={
+                      s.kind === "personal"
+                        ? "rounded-md bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary-strong"
+                        : "rounded-md bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub"
+                    }
+                  >
+                    {SCHEDULE_KINDS[s.kind] || s.kind}
+                  </span>
+                </div>
+                {s.note && <div className="mt-0.5 text-base text-ink">{s.note}</div>}
+              </div>
+              <button
+                onClick={() => remove(s.id)}
+                disabled={busy}
+                className="shrink-0 rounded-lg p-2 text-muted transition hover:text-rose-600 disabled:opacity-50"
+                aria-label="삭제"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut }) {
   if (!me) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg px-6">
@@ -553,6 +675,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {/* 비포애프터 사진(M2) — 압축→비공개버킷 업로드→서명URL 갤러리. */}
         <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} />
 
+        {/* 운동 스케줄(M3) — 개인운동/PT 체크. me 로드 후에만 폼 활성. */}
+        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} />
+
         {/* 로그아웃 */}
         <div className="text-center">
           <button onClick={onSignOut} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted transition hover:text-ink">
@@ -572,6 +697,7 @@ export default function MemberHome() {
   const [inbody, setInbody] = useState([]);
   const [cardio, setCardio] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [schedule, setSchedule] = useState([]);
   const [last4, setLast4] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -598,20 +724,33 @@ export default function MemberHome() {
     setPhotos(data ?? []);
   }, []);
 
+  // 스케줄만 재조회(추가/삭제 후 갱신용).
+  const loadSchedule = useCallback(async () => {
+    if (!memberSupabase) return;
+    const { data } = await memberSupabase
+      .from("schedule_check")
+      .select("*")
+      .order("on_date", { ascending: false })
+      .limit(60);
+    setSchedule(data ?? []);
+  }, []);
+
   const loadHome = useCallback(async () => {
     if (!memberSupabase) return;
-    const [meRes, logRes, inbodyRes, cardioRes, photoRes] = await Promise.all([
+    const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes] = await Promise.all([
       memberSupabase.from("member_me").select("*").maybeSingle(),
       memberSupabase.from("member_workout_log").select("*").order("created_at", { ascending: false }),
       memberSupabase.from("member_inbody").select("*").order("measured_at", { ascending: true }),
       memberSupabase.from("cardio_log").select("*").order("performed_on", { ascending: false }).limit(30),
       memberSupabase.from("member_photo").select("*").order("taken_on", { ascending: false }).limit(60),
+      memberSupabase.from("schedule_check").select("*").order("on_date", { ascending: false }).limit(60),
     ]);
     setMe(meRes.data ?? null);
     setLogs(logRes.data ?? []);
     setInbody(inbodyRes.data ?? []);
     setCardio(cardioRes.data ?? []);
     setPhotos(photoRes.data ?? []);
+    setSchedule(schedRes.data ?? []);
     setPhase("home");
   }, []);
 
@@ -654,11 +793,11 @@ export default function MemberHome() {
 
   const signOut = async () => {
     if (memberSupabase) await memberSupabase.auth.signOut();
-    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setLast4(""); setPhase("login");
+    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setLast4(""); setPhase("login");
   };
 
   if (phase === "checking") return <ScreenMsg>불러오는 중…</ScreenMsg>;
   if (phase === "login")
     return <LoginCard last4={last4} setLast4={setLast4} onSubmit={submit} busy={busy} err={err} />;
-  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} onSignOut={signOut} />;
+  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} />;
 }
