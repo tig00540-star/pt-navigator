@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import {
   CheckCircle2,
+  CreditCard,
   Flame,
   Footprints,
   Gauge,
@@ -33,6 +34,7 @@ import { useToast } from "@/hooks/useToast";
 import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
 import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
+import { won } from "@/lib/format";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
 const RAW_FEEDBACK =
@@ -157,9 +159,26 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   // D-3 — 내 과거 클로징 케이스(게이트·재료). 게이트 OFF/미전송이면 프롬프트·출력·캐시가 지금과 동일(additive).
   const [caseData, setCaseData] = useState([]);
   const [caseGate, setCaseGate] = useState({ on: false, tier: "off" });
+  const [packages, setPackages] = useState([]); // 내 active PT 패키지(recommended_program 실가격 재료)
   const { toast, showToast } = useToast();
 
   const canAI = Boolean(supabase && member?.id);
+
+  // 본인 active 패키지 로드(마운트 1회) — recommended_program pick_ref로 실가격 조회.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const { data: au } = await supabase.auth.getUser();
+      const uid = au?.user?.id ?? null;
+      const { data } = await supabase
+        .from("pt_package").select("*")
+        .eq("trainer_id", uid).eq("active", true)
+        .order("sort", { ascending: true }).order("created_at", { ascending: true });
+      if (!cancelled) setPackages(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // ③ 생성 + round-2 report에 캐시 저장. report만 갱신 → 같은 행의 closing_* 컬럼 보존.
   const generateBrief = async (obsReport, row2Id) => {
@@ -175,6 +194,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           phase: "second",
           member,
           report: obsReport,
+          packages,
           ...(useCases ? { closingCases: caseData, caseTier: caseGate.tier } : {}),
         }),
       });
@@ -500,6 +520,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     const sm = b.sales_metaphor || {};
     const cline = b.closing_line || "";
     const obj = Array.isArray(b.objection_defense) ? b.objection_defense : [];
+    const rp = b.recommended_program || {};
+    const pick = Number.isInteger(rp.pick_ref) ? (packages[rp.pick_ref] || null) : null;
+    const alt = Number.isInteger(rp.alt_ref) ? (packages[rp.alt_ref] || null) : null;
+    const perSession = (p) => (p && p.sessions ? won(Math.round(p.price / p.sessions)) : null);
     // 저장된 관찰 해시 vs 현재 관찰 해시 → 다르면 스테일(관찰 수정됨).
     const stale = Boolean(meta?.obsHash && obs && meta.obsHash !== otObsHash(obs));
     const legacyCache = Boolean(b) && !rc.line && moves.length === 0 && obj.length === 0;
@@ -585,6 +609,37 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
           </div>
         )}
+        {pick ? (
+          <div className="rounded-xl border border-primary/30 bg-card p-4">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-3.5 w-3.5 text-primary-strong" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
+            </div>
+            <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm text-ink">
+              <span className="font-bold">{pick.name}</span>
+              <span className="font-mono font-semibold">{won(pick.price)}</span>
+              {pick.sessions != null && <span className="text-[11px] text-muted">· {pick.sessions}회</span>}
+              {perSession(pick) && <span className="text-[11px] text-muted">· {perSession(pick)}/회</span>}
+            </p>
+            {rp.why_fit && <p className="mt-1 text-[12px] leading-relaxed text-sub">{rp.why_fit}</p>}
+            {(rp.frequency || rp.duration || rp.session_logic) && (
+              <div className="mt-2 space-y-1 rounded-lg bg-elevate px-3 py-2">
+                {rp.frequency && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">빈도 · </span>{rp.frequency}</p>}
+                {rp.duration && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">기간 · </span>{rp.duration}</p>}
+                {rp.session_logic && <p className="text-[12px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">그래서 · </span>{rp.session_logic}</p>}
+              </div>
+            )}
+            {alt && (
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                <span className="rounded bg-elevate px-1.5 py-0.5 font-semibold">대안</span> {alt.name} · {won(alt.price)}{rp.alt_why ? ` — ${rp.alt_why}` : ""}
+              </p>
+            )}
+          </div>
+        ) : packages.length === 0 ? (
+          <div className="rounded-xl border border-line bg-card p-4 text-[12px] leading-relaxed text-muted">
+            가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
+          </div>
+        ) : null}
         {cline && (
           <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
             <div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary-strong" /><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">클로징 한마디</span></div>

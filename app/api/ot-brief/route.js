@@ -190,10 +190,17 @@ ${pkgBlock}
 // ③ phase="second" user 프롬프트
 // D-3: cases(내 과거 클로징 케이스)가 있을 때만 case 입력블록·case_feedback 스키마를 additive로 삽입.
 //      cases 없거나 빈 배열이면 지금과 바이트 동일한 프롬프트(회귀 안전 제1원칙).
-function secondPrompt(member, report, cases = [], caseTier = "tentative") {
+function secondPrompt(member, report, cases = [], caseTier = "tentative", packages = []) {
   const m = member || {};
   const r = report || {};
   const g2 = (v) => (v == null || v === "" ? "없음" : v);
+  const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
+  const pkgBlock = pkgs.length
+    ? pkgs.map((p, i) => {
+        const per = p.sessions ? Math.round(p.price / p.sessions) : null;
+        return `[${i}] name=${g2(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g2(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
+      }).join("\n")
+    : "등록된 패키지 없음";
   const validCases = Array.isArray(cases) ? cases.filter(Boolean) : [];
   const hasCases = validCases.length > 0;
   const tierLabel = caseTier === "confident" ? "뚜렷" : "잠정(케이스 아직 적음)";
@@ -228,6 +235,10 @@ ${JSON.stringify({
   }, null, 2)}
 ${caseInputBlock}
 이 1차 관찰을 유일 근거로 2차를 설계하라. 없는 관찰·수치·에피소드 창작 금지.
+
+[내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
+${pkgBlock}
+
 [세일즈 강도] sales_intensity는 근거의 '선명도'다(압박·설득의 세기 아님). strong=사실 기반 손실·긴급성을
 더 또렷이 / soft=오늘 밀지 말고 다음 접점의 씨앗 톤(closing_line을 부드러운 가정으로) / standard=담백하게.
 
@@ -262,6 +273,21 @@ ${caseInputBlock}
    line(그대로 말할 대사). ⚠️compare는 경쟁사 비방 금지→'오늘 이미 당신 몸에서 확인' 데이터 선점 우위.
    ⚠️허위 긴급성·공포·죄책감 금지.
 
+[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 가장 맞는
+   1개(pick_ref)를 확신 있게 골라라. 2차는 1차 관찰로 '증명'까지 끝낸 국면이라, 세션수·기간을 회원 상황에서
+   역산해 '왜 이 횟수가 맞는지' 반박 안 되는 근거를 만든다.
+   - why_fit: 이 패키지가 이 회원에게 맞는 이유(목적·불편·1차 관찰). 2문장 이내.
+   - frequency: 권장 주간 빈도와 '왜 그 빈도인지' 근거. 1문장.
+   - duration: 권장 총 기간과 '왜 그 기간인지' 근거. 1문장.
+   - session_logic: frequency × duration으로 총 세션수를 역산해 pick_ref 패키지 회차가 왜 딱 맞는지 한 줄.
+     ★세션수는 pick_ref 패키지의 실제 sessions 값에 맞춰 역산(새 숫자 창작 금지). ★'가격(원)'은 값 텍스트에
+     절대 쓰지 마라 — 금액은 앱이 목록에서 채운다. ※기간제(세션수 없음)면 '왜 이 기간'으로 대체.
+   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내.
+   - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
+   ★가격 부담 신호(1차 관찰·quit_reason·trainer_note에 '비싸다/부담' 류)가 있으면 why_fit·session_logic에서
+     '왜 이 투자가 합리적인지'(혼자 하다 멈춘 손실 대비·목표 도달 시간 단축 등)를 먼저 짚어 부담을 눅인 뒤 회차를
+     제시하라. 무리한 최소량으로 미리 물러서지 말 것.
+
 [member_read] 1차에서 확인된 것 + 지금 클로징 국면을 한 줄로(앵커).
 [data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 [출력 언어] 자연스러운 한국어. 영문 코드값·필드명(memberQuote·point_it_out 등) 값 텍스트 노출 금지. ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
@@ -274,6 +300,7 @@ ${caseInputBlock}
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   "closing_line": "마지막 OT급 강한 가정 종결 한마디",
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
+  "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]${caseSchemaLine}
 }
 ※ objection_defense는 5개 각 1개. proof.moves는 2개.`;
@@ -646,7 +673,7 @@ export async function POST(request) {
   const model = MODEL_SECOND; // 전 phase Sonnet(1차도 승급).
   const basePrompt =
     phase === "first" ? firstPrompt(member, packages)
-    : phase === "second" ? secondPrompt(member, report, closingCases, caseTier)
+    : phase === "second" ? secondPrompt(member, report, closingCases, caseTier, packages)
     : phase === "reregister" ? reregisterPrompt(member, ptContext)
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute 제외.
