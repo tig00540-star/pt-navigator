@@ -23,6 +23,7 @@ import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import MemberEditForm from "@/components/views/MemberEditForm";
+import ChurnRiskToday from "@/components/views/ChurnRiskToday";
 import ScheduleBoard from "@/components/views/ScheduleBoard";
 import MyStats from "@/components/views/MyStats";
 import SettingsView from "@/components/views/SettingsView";
@@ -739,6 +740,7 @@ export default function OTNavigatorDashboard() {
               <ScheduleBoard members={members} />
             </div>
             <div className="border-t border-line" />
+            <ChurnRiskToday members={members} onSelect={(id, toTab) => { setSelectedId(id); setTab(toTab ?? 1); }} />
             <TodoTab
               members={members}
               uid={myUid}
