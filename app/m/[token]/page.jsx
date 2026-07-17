@@ -634,6 +634,7 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
 }
 
 function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut }) {
+  const [subTab, setSubTab] = useState("read"); // read=내 기록(첫 화면) · write=기록 남기기
   if (!me) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg px-6">
@@ -708,6 +709,14 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           </div>
         </header>
 
+        {/* 서브 탭 — 내 기록(열람) / 기록 남기기(입력). 내 기록이 첫 화면. */}
+        <div className="mb-6 flex gap-1.5">
+          <button onClick={() => setSubTab("read")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${subTab === "read" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted"}`}>내 기록</button>
+          <button onClick={() => setSubTab("write")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${subTab === "write" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted"}`}>기록 남기기</button>
+        </div>
+
+        {subTab === "read" && (
+          <>
         {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음). 한눈 개요 먼저. */}
         <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
 
@@ -808,15 +817,21 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
             )}
           </section>
         )}
+          </>
+        )}
 
-        {/* 유산소 기록(M1) — 회원 자가입력. me 로드 후에만 폼 활성. */}
+        {subTab === "write" && (
+          <>
+        {/* 개인운동 기록(M3) — 회원 자가입력. me 로드 후에만 폼 활성. */}
+        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} />
+
+        {/* 유산소 기록(M1) — 회원 자가입력. */}
         <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} />
 
         {/* 비포애프터 사진(M2) — 압축→비공개버킷 업로드→서명URL 갤러리. */}
         <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} />
-
-        {/* 운동 스케줄(M3) — 개인운동/PT 체크. me 로드 후에만 폼 활성. */}
-        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} />
+          </>
+        )}
 
         {/* 로그아웃 */}
         <div className="text-center">
