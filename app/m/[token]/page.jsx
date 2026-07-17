@@ -26,8 +26,6 @@ const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "t
 const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 // 사진 라벨(자가 분류) — 값→한글. 정적 문자열이라 purge 무관.
 const PHOTO_LABELS = { before: "비포", progress: "진행", after: "애프터" };
-// 스케줄 구분 — 값→한글. 정적 문자열이라 purge 무관.
-const SCHEDULE_KINDS = { personal: "개인운동", pt: "PT" };
 
 // 활동 마커 스타일 — 값→{라벨, 점 색}. 정적 문자열 맵(퍼지 안전 · 동적 조립 금지).
 const ACTIVITY_MARKS = {
@@ -217,16 +215,14 @@ function CardioSection({ me, cardio, onReload }) {
       ) : (
         <ul className="mt-3 space-y-2">
           {cardio.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+            <li key={c.id} className="flex items-start gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-primary-strong">{fmtDay(c.performed_on)}</span>
-                  {c.minutes != null && <span className="text-sm font-bold text-ink">{c.minutes}분</span>}
+                <div className="text-xs font-semibold text-primary-strong">{fmtDay(c.performed_on)}</div>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="text-base text-ink">{c.kind || "유산소"}</span>
+                  {c.minutes != null && <span className="font-mono text-sm font-bold text-ink">{c.minutes}분</span>}
                 </div>
-                <div className="mt-0.5 text-base text-ink">
-                  {c.kind || "유산소"}
-                  {c.note ? <span className="text-muted"> · {c.note}</span> : null}
-                </div>
+                {c.note && <div className="mt-0.5 text-sm text-muted">{c.note}</div>}
               </div>
               <button
                 onClick={() => remove(c.id)}
@@ -409,10 +405,10 @@ function PhotoSection({ me, photos, onReload }) {
   );
 }
 
-// 운동 스케줄 자가입력(M3) — 개인운동/PT 체크. M1 CardioSection 구조 복제(스토리지·AI 없음).
+// 개인운동 기록 자가입력(M3) — 회원은 개인운동만 기록(kind="personal" 고정).
+// PT 받은 날은 수업로그로 자동 체크되므로 회원 입력에서 PT 구분 제거.
 function ScheduleSection({ me, schedule, onReload }) {
   const [on, setOn] = useState(() => todayStr());
-  const [kind, setKind] = useState("personal");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -426,17 +422,17 @@ function ScheduleSection({ me, schedule, onReload }) {
     if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도하세요."); return; }
     if (!on) { setErr("날짜를 선택하세요."); return; }
     setBusy(true); setErr("");
-    // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). user_id는 me.id만(RLS with check가 스푸핑 차단).
+    // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). kind는 personal 고정.
     const { data, error } = await memberSupabase
       .from("schedule_check")
-      .insert({ user_id: me.id, on_date: on, kind, note: note.trim() || null })
+      .insert({ user_id: me.id, on_date: on, kind: "personal", note: note.trim() || null })
       .select();
     if (error || !data || data.length === 0) {
       setBusy(false);
       setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
       return;
     }
-    setNote(""); // 날짜·구분은 유지(연속 입력 편의)
+    setNote(""); // 날짜는 유지(연속 입력 편의)
     await onReload();
     setBusy(false);
   };
@@ -461,7 +457,7 @@ function ScheduleSection({ me, schedule, onReload }) {
 
   return (
     <section className="mb-8">
-      <Eyebrow icon={CalendarCheck}>운동 스케줄</Eyebrow>
+      <Eyebrow icon={CalendarCheck}>개인운동 기록</Eyebrow>
       {/* 입력 폼 */}
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
@@ -470,48 +466,30 @@ function ScheduleSection({ me, schedule, onReload }) {
             <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
-            구분
-            <select value={kind} onChange={(e) => setKind(e.target.value)} disabled={busy} className={inputCls}>
-              <option value="personal">개인운동</option>
-              <option value="pt">PT 받은 날</option>
-            </select>
-          </label>
-          <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
-            메모(선택)
-            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={busy} placeholder="가슴·등 / 컨디션 좋았음" className={inputCls} />
+            오늘 한 운동
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} disabled={busy} rows={3} placeholder="예: 가슴·등 / 벤치프레스 40kg 5×5 / 컨디션 좋았음" className={`${inputCls} resize-none`} />
           </label>
         </div>
         {err && <p className="mt-2 text-sm text-rose-600">{err}</p>}
         <div className="mt-3">
           <Button variant="primary" size="md" fullWidth onClick={add} disabled={busy}>
-            <Plus className="h-4 w-4" /> {busy ? "저장 중…" : "추가"}
+            <Plus className="h-4 w-4" /> {busy ? "저장 중…" : "기록"}
           </Button>
         </div>
       </div>
 
-      {/* 목록 */}
+      {/* 목록 — 날짜 한 줄 · 내용 아래(정돈) */}
       {schedule.length === 0 ? (
         <EmptyState className="mt-3 rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
-          아직 스케줄 기록이 없어요. 오늘 운동을 체크해보세요.
+          아직 개인운동 기록이 없어요. 오늘 한 운동을 남겨보세요.
         </EmptyState>
       ) : (
         <ul className="mt-3 space-y-2">
           {schedule.map((s) => (
-            <li key={s.id} className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+            <li key={s.id} className="flex items-start gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-primary-strong">{fmtDay(s.on_date)}</span>
-                  <span
-                    className={
-                      s.kind === "personal"
-                        ? "rounded-md bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary-strong"
-                        : "rounded-md bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub"
-                    }
-                  >
-                    {SCHEDULE_KINDS[s.kind] || s.kind}
-                  </span>
-                </div>
-                {s.note && <div className="mt-0.5 text-base text-ink">{s.note}</div>}
+                <div className="text-xs font-semibold text-primary-strong">{fmtDay(s.on_date)}</div>
+                {s.note && <div className="mt-1 whitespace-pre-wrap text-base text-ink">{s.note}</div>}
               </div>
               <button
                 onClick={() => remove(s.id)}
