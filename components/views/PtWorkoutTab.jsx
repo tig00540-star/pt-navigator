@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useState } from "react";
-import { Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX } from "lucide-react";
+import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
@@ -362,7 +362,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               </span>
               {due && (
                 <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                  재등록 타이밍
+                  재등록 타이밍 · 유료 {rem.paid}회 남음
                 </span>
               )}
               {pendingTotal > 0 && (
@@ -503,14 +503,19 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
         )}
       </section>
 
-      {/* 유산소 기록(M1) — 회원 자가입력을 트레이너가 읽기만. 기록 0건·데모면 컴포넌트가 자체 숨김. */}
-      <MemberCardioSummary member={member} />
-
-      {/* 비포애프터 사진(M2) — 회원 자가입력을 트레이너가 읽기만(썸네일·서명URL). 0장·데모면 자체 숨김. */}
-      <MemberPhotoSummary member={member} />
-
-      {/* 운동 스케줄(M3) — 회원 자가입력을 트레이너가 읽기만(이번 달 요약·목록). 0건·데모면 자체 숨김. */}
-      <MemberScheduleSummary member={member} />
+      {/* 회원 자가입력 기록(M1·M2·M3) — 트레이너 읽기 전용. 기본 접힘(운동일지 밀도↓).
+          각 요약은 0건·데모면 자체 숨김. summary는 헤더 바(카드), 내부는 기존 섹션 카드 3개. */}
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-card px-5 py-4 shadow-sm [&::-webkit-details-marker]:hidden">
+          <Eyebrow icon={ClipboardList}>회원 자가입력 · 유산소 · 사진 · 스케줄</Eyebrow>
+          <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-4 space-y-6">
+          <MemberCardioSummary member={member} />
+          <MemberPhotoSummary member={member} />
+          <MemberScheduleSummary member={member} />
+        </div>
+      </details>
 
       {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
@@ -545,7 +550,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                   )}
                 </div>
                 {log.source === "noshow" ? (
-                  <p className="mt-1.5 text-sm text-muted">노쇼 (본문 없음)</p>
+                  <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼 🚫</p>
                 ) : log.ai_summary ? (
                   <details className="group mt-1.5">
                     {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
