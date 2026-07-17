@@ -108,8 +108,8 @@ const TABS = [
   { id: 1,  label: "1차 지원", ot: true, group: "ot" },      // FirstOTTab
   { id: 5,  label: "관찰 기록", ot: true, group: "ot" },      // ObservationTab (옛 '1차 피드백')
   { id: 2,  label: "2차 브리핑", ot: true, group: "ot" },     // SecondOTTab
-  { id: 10, label: "운동일지", pt: true, group: "pt" },
-  { id: 12, label: "인바디",   pt: true, group: "pt" },
+  { id: 10, label: "회원자료", pt: true, group: "pt" },
+  { id: 12, label: "자료남기기", pt: true, group: "pt" },
   { id: 11, label: "재등록 준비", pt: true, group: "pt" },
 ];
 

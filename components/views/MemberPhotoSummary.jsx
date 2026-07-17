@@ -26,7 +26,7 @@ function todayStr() {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-export default function MemberPhotoSummary({ member }) {
+export default function MemberPhotoSummary({ member, mode }) {
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({}); // storage_path -> signed url (1h)
   const [loading, setLoading] = useState(false);
@@ -125,6 +125,7 @@ export default function MemberPhotoSummary({ member }) {
       <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
 
       {/* 트레이너 업로드 폼 */}
+      {mode !== "list" && (
       <div className="mt-2 rounded-xl border border-line bg-elevate p-3">
         <div className="grid grid-cols-2 gap-2">
           <label className="text-[11px] font-medium text-muted">
@@ -146,9 +147,10 @@ export default function MemberPhotoSummary({ member }) {
           <input type="file" accept="image/*" onChange={onPick} disabled={busy} className="hidden" />
         </label>
       </div>
+      )}
 
       {/* 갤러리 */}
-      {loading ? (
+      {mode !== "form" && (loading ? (
         <p className="mt-2 text-sm text-muted">불러오는 중…</p>
       ) : rows.length === 0 ? (
         <p className="mt-3 text-sm text-muted">아직 사진이 없어요.</p>
@@ -193,7 +195,7 @@ export default function MemberPhotoSummary({ member }) {
             </div>
           ))}
         </div>
-      )}
+      ))}
     </section>
     <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
     </>

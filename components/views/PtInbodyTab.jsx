@@ -59,7 +59,7 @@ function deltaTone(field, cur, before) {
   return "bad";
 }
 
-export default function PtInbodyTab({ member }) {
+export default function PtInbodyTab({ member, mode }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -154,6 +154,7 @@ export default function PtInbodyTab({ member }) {
   return (
     <div className="space-y-6">
       {/* 입력 카드 */}
+      {mode !== "view" && (
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <Eyebrow icon={Scale}>인바디 기록</Eyebrow>
         <div className="mt-3 space-y-3">
@@ -186,9 +187,10 @@ export default function PtInbodyTab({ member }) {
           </Button>
         </div>
       </section>
+      )}
 
       {/* 최근 요약 (직전 대비 delta) */}
-      {latest && (
+      {mode !== "record" && latest && (
         <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <Eyebrow icon={Scale}>최근 측정</Eyebrow>
@@ -222,6 +224,7 @@ export default function PtInbodyTab({ member }) {
       )}
 
       {/* 이력 리스트 */}
+      {mode !== "record" && (
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <Eyebrow icon={Scale}>지난 측정</Eyebrow>
         {loading ? (
@@ -261,6 +264,7 @@ export default function PtInbodyTab({ member }) {
           </ul>
         )}
       </section>
+      )}
 
       <Toast message={toast} />
     </div>

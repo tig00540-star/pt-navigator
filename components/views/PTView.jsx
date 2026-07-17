@@ -14,6 +14,7 @@ import PtReRegTab from "@/components/views/PtReRegTab";
 import PtInbodyTab from "@/components/views/PtInbodyTab";
 import RefundMember from "@/components/views/RefundMember";
 import MemberAppLink from "@/components/views/MemberAppLink";
+import MemberPhotoSummary from "@/components/views/MemberPhotoSummary";
 
 export default function PTView({ member, tab, onGoList, onMemberPatch, onMembersChanged }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
@@ -47,7 +48,7 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
     };
   }, [member?.id]);
 
-  const isWorkout = tab !== 11 && tab !== 12; // 회원앱링크·환불은 운동일지 탭에서만
+  const isRecord = tab === 12; // 자료남기기 — 회원앱링크·환불 여기(맨 끝)
 
   return (
     <div className="space-y-6">
@@ -60,14 +61,11 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
         </button>
       )}
 
-      {isWorkout && <MemberAppLink key={member.id} member={member} onMemberPatch={onMemberPatch} />}
-
       <div key={tab} className="tab-anim">
         {tab === 11 ? (
           <PtReRegTab key={member.id} member={member} contracts={contracts} setContracts={setContracts} logs={logs} />
         ) : tab === 12 ? (
-          <PtInbodyTab key={member.id} member={member} />
-        ) : (
+          /* 자료남기기 — 기록 섹션 + (children) 인바디 입력·사진 업로드 */
           <PtWorkoutTab
             key={member.id}
             member={member}
@@ -77,12 +75,32 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
             logs={logs}
             setLogs={setLogs}
             loading={loading}
-          />
+            mode="record"
+          >
+            <PtInbodyTab member={member} mode="record" />
+            <MemberPhotoSummary member={member} mode="form" />
+          </PtWorkoutTab>
+        ) : (
+          /* 회원자료 — 열람 섹션 + (children) 인바디 추이 */
+          <PtWorkoutTab
+            key={member.id}
+            member={member}
+            onMemberPatch={onMemberPatch}
+            contracts={contracts}
+            setContracts={setContracts}
+            logs={logs}
+            setLogs={setLogs}
+            loading={loading}
+            mode="view"
+          >
+            <PtInbodyTab member={member} mode="view" />
+          </PtWorkoutTab>
         )}
       </div>
 
-      {/* P3b — 환불·회원 삭제(소프트). 운동일지 탭에서만(전 탭 따라오던 것 수정). */}
-      {isWorkout && (
+      {/* 회원앱 링크 발급 · 환불 — 자료남기기 탭 끝에만 */}
+      {isRecord && <MemberAppLink key={member.id} member={member} onMemberPatch={onMemberPatch} />}
+      {isRecord && (
         <RefundMember
           member={member}
           contracts={contracts}

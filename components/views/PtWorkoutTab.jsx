@@ -44,7 +44,7 @@ const SOURCE_TONE = {
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
 const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 
-export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, loading }) {
+export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, loading, mode, children }) {
   const [body, setBody] = useState(""); // 손입력 수업 내용/피드백
   const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
@@ -286,7 +286,10 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
 
   return (
     <div className="space-y-6">
+      {/* ═══ 회원자료(열람) ═══ */}
+
       {/* 회원 기본정보 (간단) */}
+      {mode !== "record" && (
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <span className="inline-block rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary-strong">
           PT 회원
@@ -307,8 +310,154 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           {hasVal(member.pain) && <span className="rounded-md bg-elevate px-2 py-1">불편 {member.pain}</span>}
         </div>
       </section>
+      )}
+
+      {/* 잔여 현황(읽기 전용) — 신규 */}
+      {mode !== "record" && (
+        <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+          <Eyebrow icon={Dumbbell}>잔여 현황</Eyebrow>
+          {active ? (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="text-sm text-sub">잔여 유료 <b className="text-primary-strong">{rem.paid}</b> · 서비스 <b className="text-ink">{rem.service}</b></span>
+              {due && <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">재등록 타이밍</span>}
+              {pendingTotal > 0 && <span className="rounded-md border border-line bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">다음 계약 {pendingTotal}회 대기</span>}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-muted">활성 계약 없음 — &lsquo;자료남기기&rsquo;에서 등록하세요.</p>
+          )}
+        </section>
+      )}
+
+      {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
+      {mode !== "record" && (
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Eyebrow icon={History}>지난 수업</Eyebrow>
+        {loading ? (
+          <p className="text-sm text-muted">불러오는 중…</p>
+        ) : timeline.length === 0 ? (
+          <p className="text-sm text-muted">아직 기록된 수업이 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {timeline.map((log) => (
+              <li
+                key={log.id}
+                className={`rounded-xl border border-line bg-elevate p-3 ${log.voided ? "opacity-50" : ""}`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-xs text-sub">{fmtDT(log.session_at ?? log.created_at)}</span>
+                  {log.source && (
+                    <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
+                      {labelOf(SOURCE_OPTS, log.source)}
+                    </span>
+                  )}
+                  {log.sent_at && (
+                    <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-strong">
+                      카톡 전송
+                    </span>
+                  )}
+                  {log.voided && (
+                    <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                      취소됨
+                    </span>
+                  )}
+                </div>
+                {log.source === "noshow" ? (
+                  <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼 🚫</p>
+                ) : log.ai_summary ? (
+                  <details className="group mt-1.5">
+                    {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
+                    <summary className={`cursor-pointer list-none group-open:hidden ${log.voided ? "line-through" : ""}`}>
+                      <span className="text-sm text-sub line-clamp-3">
+                        {log.ai_summary}
+                      </span>
+                      <span className="mt-1 block text-[10px] font-medium text-muted">더 보기</span>
+                    </summary>
+                    <p className={`hidden whitespace-pre-wrap text-sm text-sub group-open:block ${log.voided ? "line-through" : ""}`}>
+                      {log.ai_summary}
+                    </p>
+                  </details>
+                ) : (
+                  <p className="mt-1.5 text-sm text-muted">본문 없음</p>
+                )}
+                {Array.isArray(log.sets_structured) && log.sets_structured.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {log.sets_structured.map((ex, i) => (
+                      <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] text-sub">
+                        {ex.exercise} {ex.sets.map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      )}
+
+      {/* 종목별 무게 추이 (③ 작업3-2) — logs 클라 집계(추가 쿼리 0). 인바디 추이 패턴 재사용.
+          무게 데이터 있는 종목만. 진행 지표 = 세션별 최고중량(topSetWeight). */}
+      {mode !== "record" && (
+      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Eyebrow icon={LineChart}>종목별 무게 추이</Eyebrow>
+        {exerciseSeries.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 표시됩니다.</p>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {exerciseSeries.map((s) => {
+              const wpts = s.points.map((p) => p.topWeight).filter((v) => v != null);
+              const latest = wpts.length ? wpts[wpts.length - 1] : null;
+              const prev = wpts.length > 1 ? wpts[wpts.length - 2] : null;
+              const d = latest != null && prev != null ? latest - prev : 0;
+              const tone = prev != null ? weightTone(d) : null;
+              const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
+              return (
+                <div key={s.exercise} className="rounded-xl border border-line bg-elevate p-3">
+                  <div className="truncate text-[11px] font-medium text-muted" title={s.exercise}>
+                    {s.exercise}
+                  </div>
+                  <div className="mt-1 font-mono text-xl font-bold text-ink">
+                    {latest == null ? "–" : latest}
+                    <span className="ml-1 text-xs font-normal text-muted">kg</span>
+                  </div>
+                  {tone && (
+                    <div className={`mt-0.5 flex items-center gap-1 text-[12px] font-semibold ${DELTA_TONE[tone]}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                      {(d > 0 ? "+" : "") + Math.round(d * 10) / 10}kg
+                    </div>
+                  )}
+                  <Sparkline values={wpts} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+      )}
+
+      {/* 인바디 추이(children · 열람) */}
+      {mode === "view" && children}
+
+      {/* 회원 자가입력 기록(M1·M2·M3) — 트레이너 읽기 전용. 기본 접힘(운동일지 밀도↓).
+          각 요약은 0건·데모면 자체 숨김. summary는 헤더 바(카드), 내부는 기존 섹션 카드 3개. */}
+      {mode !== "record" && (
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-card px-5 py-4 shadow-sm [&::-webkit-details-marker]:hidden">
+          <Eyebrow icon={ClipboardList}>회원님 기록일지 · 개인운동 · 유산소 · 비포애프터</Eyebrow>
+          <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-4 space-y-6">
+          <MemberScheduleSummary member={member} />
+          <MemberCardioSummary member={member} />
+          <MemberPhotoSummary member={member} mode="list" />
+        </div>
+      </details>
+      )}
+
+      {/* ═══ 자료남기기(기록) ═══ */}
 
       {/* 현재 방향/목표 — PT 살아있는 상태축(③ 작업3-2). goal(OT 스냅샷)과 별개. */}
+      {mode !== "view" && (
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <Eyebrow icon={Compass}>현재 방향 · 목표</Eyebrow>
@@ -346,8 +495,10 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           </p>
         )}
       </section>
+      )}
 
       {/* 수업 확인서 겸 운동일지 — 손입력 저장 = 차감 (③ step3-1a) */}
+      {mode !== "view" && (
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <Eyebrow icon={NotebookPen}>수업 확인서 · 운동일지</Eyebrow>
 
@@ -426,8 +577,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           </Button>
         </div>
       </section>
+      )}
+
+      {/* 인바디 입력 + 사진 업로드(children · 기록) */}
+      {mode === "record" && children}
 
       {/* 급한불(⑤) — 회원 급변 대처(수업 전 준비). 세션 전용·DB 무관. 상시 의료 배너. */}
+      {mode !== "view" && (
       <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <summary className="flex cursor-pointer list-none items-center gap-2">
           <Eyebrow icon={Flame}>급한불 — 회원 급변 대처</Eyebrow>
@@ -464,123 +620,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           <AcuteBriefView brief={acuteBrief} />
         </div>
       </details>
-
-      {/* 종목별 무게 추이 (③ 작업3-2) — logs 클라 집계(추가 쿼리 0). 인바디 추이 패턴 재사용.
-          무게 데이터 있는 종목만. 진행 지표 = 세션별 최고중량(topSetWeight). */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <Eyebrow icon={LineChart}>종목별 무게 추이</Eyebrow>
-        {exerciseSeries.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 표시됩니다.</p>
-        ) : (
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {exerciseSeries.map((s) => {
-              const wpts = s.points.map((p) => p.topWeight).filter((v) => v != null);
-              const latest = wpts.length ? wpts[wpts.length - 1] : null;
-              const prev = wpts.length > 1 ? wpts[wpts.length - 2] : null;
-              const d = latest != null && prev != null ? latest - prev : 0;
-              const tone = prev != null ? weightTone(d) : null;
-              const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
-              return (
-                <div key={s.exercise} className="rounded-xl border border-line bg-elevate p-3">
-                  <div className="truncate text-[11px] font-medium text-muted" title={s.exercise}>
-                    {s.exercise}
-                  </div>
-                  <div className="mt-1 font-mono text-xl font-bold text-ink">
-                    {latest == null ? "–" : latest}
-                    <span className="ml-1 text-xs font-normal text-muted">kg</span>
-                  </div>
-                  {tone && (
-                    <div className={`mt-0.5 flex items-center gap-1 text-[12px] font-semibold ${DELTA_TONE[tone]}`}>
-                      <Icon className="h-3.5 w-3.5" />
-                      {(d > 0 ? "+" : "") + Math.round(d * 10) / 10}kg
-                    </div>
-                  )}
-                  <Sparkline values={wpts} />
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* 회원 자가입력 기록(M1·M2·M3) — 트레이너 읽기 전용. 기본 접힘(운동일지 밀도↓).
-          각 요약은 0건·데모면 자체 숨김. summary는 헤더 바(카드), 내부는 기존 섹션 카드 3개. */}
-      <details className="group">
-        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-card px-5 py-4 shadow-sm [&::-webkit-details-marker]:hidden">
-          <Eyebrow icon={ClipboardList}>회원님 기록일지 · 개인운동 · 유산소 · 비포애프터</Eyebrow>
-          <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="mt-4 space-y-6">
-          <MemberScheduleSummary member={member} />
-          <MemberCardioSummary member={member} />
-          <MemberPhotoSummary member={member} />
-        </div>
-      </details>
-
-      {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <Eyebrow icon={History}>지난 수업</Eyebrow>
-        {loading ? (
-          <p className="text-sm text-muted">불러오는 중…</p>
-        ) : timeline.length === 0 ? (
-          <p className="text-sm text-muted">아직 기록된 수업이 없습니다.</p>
-        ) : (
-          <ul className="space-y-2">
-            {timeline.map((log) => (
-              <li
-                key={log.id}
-                className={`rounded-xl border border-line bg-elevate p-3 ${log.voided ? "opacity-50" : ""}`}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs text-sub">{fmtDT(log.session_at ?? log.created_at)}</span>
-                  {log.source && (
-                    <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
-                      {labelOf(SOURCE_OPTS, log.source)}
-                    </span>
-                  )}
-                  {log.sent_at && (
-                    <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-strong">
-                      카톡 전송
-                    </span>
-                  )}
-                  {log.voided && (
-                    <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-                      취소됨
-                    </span>
-                  )}
-                </div>
-                {log.source === "noshow" ? (
-                  <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼 🚫</p>
-                ) : log.ai_summary ? (
-                  <details className="group mt-1.5">
-                    {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
-                    <summary className={`cursor-pointer list-none group-open:hidden ${log.voided ? "line-through" : ""}`}>
-                      <span className="text-sm text-sub line-clamp-3">
-                        {log.ai_summary}
-                      </span>
-                      <span className="mt-1 block text-[10px] font-medium text-muted">더 보기</span>
-                    </summary>
-                    <p className={`hidden whitespace-pre-wrap text-sm text-sub group-open:block ${log.voided ? "line-through" : ""}`}>
-                      {log.ai_summary}
-                    </p>
-                  </details>
-                ) : (
-                  <p className="mt-1.5 text-sm text-muted">본문 없음</p>
-                )}
-                {Array.isArray(log.sets_structured) && log.sets_structured.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {log.sets_structured.map((ex, i) => (
-                      <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] text-sub">
-                        {ex.exercise} {ex.sets.map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      )}
 
       {/* 계약 등록 모달 — PtConfirmBanner 확인모달과 동일 톤. buildContract·ContractAmountFields 재사용. */}
       {showContract && (
