@@ -62,7 +62,7 @@ export default function MemberScheduleSummary({ member }) {
 
   return (
     <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-      <Eyebrow icon={CalendarCheck}>운동 스케줄 (회원 입력)</Eyebrow>
+      <Eyebrow icon={CalendarCheck}>운동 스케줄</Eyebrow>
       {(mc.personal > 0 || mc.pt > 0) && (
         <div className="mt-1 text-xs font-semibold text-primary-strong">
           이번 달 개인운동 {mc.personal}회 · PT {mc.pt}회

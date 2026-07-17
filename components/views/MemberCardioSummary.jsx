@@ -58,7 +58,7 @@ export default function MemberCardioSummary({ member }) {
 
   return (
     <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-      <Eyebrow icon={Activity}>유산소 기록 (회원 입력)</Eyebrow>
+      <Eyebrow icon={Activity}>유산소 기록</Eyebrow>
       {wk > 0 && <div className="mt-1 text-xs font-semibold text-primary-strong">이번 주 합계 {wk}분</div>}
       {loading ? (
         <p className="mt-2 text-sm text-muted">불러오는 중…</p>

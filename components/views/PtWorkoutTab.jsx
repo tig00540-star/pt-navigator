@@ -507,13 +507,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           각 요약은 0건·데모면 자체 숨김. summary는 헤더 바(카드), 내부는 기존 섹션 카드 3개. */}
       <details className="group">
         <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-card px-5 py-4 shadow-sm [&::-webkit-details-marker]:hidden">
-          <Eyebrow icon={ClipboardList}>회원 자가입력 · 유산소 · 사진 · 스케줄</Eyebrow>
+          <Eyebrow icon={ClipboardList}>회원님 기록일지 · 개인운동 · 유산소 · 비포애프터</Eyebrow>
           <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" />
         </summary>
         <div className="mt-4 space-y-6">
+          <MemberScheduleSummary member={member} />
           <MemberCardioSummary member={member} />
           <MemberPhotoSummary member={member} />
-          <MemberScheduleSummary member={member} />
         </div>
       </details>
 

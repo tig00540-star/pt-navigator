@@ -62,7 +62,7 @@ export default function MemberPhotoSummary({ member }) {
   return (
     <>
     <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-      <Eyebrow icon={Camera}>비포애프터 사진 (회원 입력)</Eyebrow>
+      <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
       {loading ? (
         <p className="mt-2 text-sm text-muted">불러오는 중…</p>
       ) : (
