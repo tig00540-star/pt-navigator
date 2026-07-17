@@ -7,6 +7,7 @@ import {
   Bell,
   CalendarDays,
   ChevronRight,
+  Pencil,
   Search,
   ShieldCheck,
   User,
@@ -21,6 +22,7 @@ import ObservationTab from "@/components/tabs/ObservationTab";
 import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
+import MemberEditForm from "@/components/views/MemberEditForm";
 import ScheduleBoard from "@/components/views/ScheduleBoard";
 import MyStats from "@/components/views/MyStats";
 import SettingsView from "@/components/views/SettingsView";
@@ -502,6 +504,7 @@ export default function OTNavigatorDashboard() {
   const [members, setMembers] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [dbNote, setDbNote] = useState("");
   // 클로징 저장(1·2차) 성공 시 증가 → PtConfirmBanner가 ot_log 재조회(같은 회원 stale 방지).
   // ⚠️ ③에서 클로징 저장 지점(재등록·이탈 UI 등)이 늘면 그 성공 지점에도 onClosingSaved를 물려야 함.
@@ -756,6 +759,16 @@ export default function OTNavigatorDashboard() {
             closingVersion={closingVersion}
           />
         )}
+        {member && tab !== 0 && (
+          <div className="mb-3 flex justify-end">
+            <button
+              onClick={() => setShowEdit(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-1.5 text-xs font-medium text-sub transition hover:text-primary-strong"
+            >
+              <Pencil className="h-3.5 w-3.5" /> 정보 수정
+            </button>
+          </div>
+        )}
         {/* viewFor(member)로 뷰 스위치. 'ot'면 아래 6탭 그대로, 그 외는 PT/inactive 뷰. */}
         <MemberViewShell member={member} tab={tab} onGoList={() => setTab(0)} showList={tab === 0} onMemberPatch={onMemberPatch} onMembersChanged={loadMembers}>
           {tab === 0 && (
@@ -809,6 +822,13 @@ export default function OTNavigatorDashboard() {
             setShowForm(false);
             loadMembers();
           }}
+        />
+      )}
+      {showEdit && member && (
+        <MemberEditForm
+          member={member}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => { setShowEdit(false); loadMembers(); }}
         />
       )}
 
