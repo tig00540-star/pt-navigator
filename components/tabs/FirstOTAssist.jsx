@@ -138,7 +138,25 @@ export default function FirstOTAssist({ member }) {
           setRow1Report(merged);
         }
       } else if (supabase && member?.id && !row1Id) {
-        setNotice("지금은 이 화면에서만 보여요 — 관찰 기록을 저장하고 다시 생성하면 계속 남습니다.");
+        // 관찰 저장 전이라도 1차 브리핑을 항상 남긴다 — 빈 1차 행(ot_round=1)을 만들어 붙임(관찰은 나중에 채움).
+        const { data: ins } = await supabase
+          .from("ot_log")
+          .insert({
+            user_id: member.id,
+            ot_round: 1,
+            goal_type: "appearance",
+            goal_identified: false,
+            closing_result: "none",
+            closing_approach: "other",
+            report: { first_assist: { data: result, meta: newMeta } },
+          })
+          .select("id, report");
+        if (ins && ins.length) {
+          setRow1Id(ins[0].id);
+          setRow1Report(ins[0].report || null);
+        } else {
+          setNotice("저장에 실패했어요 — 지금은 이 화면에서만 보이고, 다음에 오면 사라질 수 있어요. (권한/정책 확인)");
+        }
       }
     } catch (e) {
       setNotice("네트워크 오류: " + (e?.message || "unknown"));
@@ -413,7 +431,7 @@ export default function FirstOTAssist({ member }) {
           )}
 
           <p className="text-[10px] leading-relaxed text-muted">
-            ※ 관찰 전 &lsquo;가설&rsquo;이에요 — 현장에서 회원 반응 보며 조정하세요. 관찰 기록을 저장한 회원은 이 브리핑이 남습니다.
+            ※ 관찰 전 &lsquo;가설&rsquo;이에요 — 현장에서 회원 반응 보며 조정하세요. 생성하면 저장돼 다시 와도 남습니다.
           </p>
         </div>
       )}

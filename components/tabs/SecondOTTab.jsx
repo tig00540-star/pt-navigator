@@ -30,7 +30,7 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
-import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS_2ND } from "@/lib/labels";
+import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
 import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
 
@@ -638,7 +638,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                 onChange={(e) => setClosingResult(e.target.value)}
                 className={inputCls}
               >
-                {CLOSING_RESULT_OPTS_2ND.map((o) => (
+                {CLOSING_RESULT_OPTS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
