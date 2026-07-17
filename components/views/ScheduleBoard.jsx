@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/useToast";
 import Button from "@/components/ui/Button";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
+import { holidayName } from "@/lib/holidays";
 
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -294,10 +295,16 @@ export default function ScheduleBoard({ members = [] }) {
                 <div className="sticky left-0 z-20 w-12 shrink-0 border-r border-line bg-elevate" />
                 {DAY_LABELS.map((d, i) => {
                   const day = addDays(weekStart, i);
+                  const key = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+                  const hol = holidayName(key);
+                  const isRed = hol || i === 6;        // 공휴일·일요일
+                  const labelTone = isRed ? "text-rose-600" : i === 5 ? "text-sky-500" : "text-sub";
+                  const dateTone  = isRed ? "text-rose-600" : i === 5 ? "text-sky-500" : "text-muted";
                   return (
                     <div key={i} className="flex-1 border-l border-line px-2 py-2 text-center">
-                      <div className="text-xs font-semibold text-sub">{d}</div>
-                      <div className="font-mono text-[10px] text-muted">{day.getMonth() + 1}/{day.getDate()}</div>
+                      <div className={`text-xs font-semibold ${labelTone}`}>{d}</div>
+                      <div className={`font-mono text-[10px] ${dateTone}`}>{day.getMonth() + 1}/{day.getDate()}</div>
+                      {hol && <div className="mt-0.5 truncate text-[9px] font-medium text-rose-600" title={hol}>{hol}</div>}
                     </div>
                   );
                 })}
@@ -398,6 +405,7 @@ export default function ScheduleBoard({ members = [] }) {
                 <p className="py-4 text-center text-xs text-muted">회원이 없습니다.</p>
               ) : filtered.map((m) => (
                 <button key={m.id} onClick={() => book(m)} disabled={saving} className="flex w-full items-center gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-left transition hover:border-primary disabled:opacity-50">
+                  <MemberBadge view={viewFor(m)} />
                   <span className="text-sm font-medium text-ink">{m.name}</span>
                   <span className="text-xs text-muted">{m.job}</span>
                 </button>
