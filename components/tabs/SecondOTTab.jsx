@@ -30,7 +30,7 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
-import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS } from "@/lib/labels";
+import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS_2ND } from "@/lib/labels";
 import { otObsHash } from "@/lib/otHash";
 import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
 
@@ -638,7 +638,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                 onChange={(e) => setClosingResult(e.target.value)}
                 className={inputCls}
               >
-                {CLOSING_RESULT_OPTS.map((o) => (
+                {CLOSING_RESULT_OPTS_2ND.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -732,7 +732,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   const renderGenerating = () => (
     <div className="rounded-2xl border border-line bg-card shadow-sm p-6">
       <div className="mb-3 flex items-center gap-2 text-xs text-muted">
-        <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 1차 관찰을 근거로 2차 브리핑을 생성하는 중… 최대 1분 걸릴 수 있어요 (최초 1회, 이후 캐시)
+        <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 1차 피드백을 근거로 2차 OT를 준비하는 중… 최대 1분 걸려요 (처음 한 번만 만들고, 다음부터는 저장된 걸 바로 보여드려요)
       </div>
       <div className="space-y-2.5">
         <div className="h-4 w-1/3 animate-pulse rounded bg-elevate" />
@@ -749,11 +749,11 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     <div className="rounded-2xl border border-line bg-card shadow-sm p-6 text-center">
       <Sparkles className="mx-auto h-8 w-8 text-primary-strong" />
       <p className="mt-3 text-sm text-sub">
-        <span className="font-semibold text-ink">{member.name}</span> 회원의 1차 관찰을 근거로 2차 AI 지원(등록 당위성·클로징·거절 대처)을 준비합니다.
+        <span className="font-semibold text-ink">{member.name}</span> 회원님의 1차 피드백을 근거로 2차 OT를 준비합니다.
       </p>
-      <p className="mt-1 text-xs text-muted">수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.</p>
+      <p className="mt-1 text-xs text-muted">수업 전에 한 번 만들면, 다음부터는 저장된 걸 바로 보여드려요.</p>
       <Button variant="primary" size="md" onClick={() => generateBrief(obs, existingRow2Id)} disabled={generating} className="mt-4 gap-2">
-        <Sparkles className="h-4 w-4" strokeWidth={2.5} /> AI 지원 준비 생성하기
+        <Sparkles className="h-4 w-4" strokeWidth={2.5} /> 2차 OT 준비하기
       </Button>
     </div>
   );

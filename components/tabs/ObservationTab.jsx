@@ -431,7 +431,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
 
           <div>
             <label className="mb-1 block text-[11px] font-medium text-muted">
-              회원 한마디 <span className="text-muted">(2차 &lsquo;1차 소환&rsquo; 비트에 쓰임)</span>
+              회원 한마디 <span className="text-muted">(2차 OT 때 다시 꺼내 쓸 회원의 말)</span>
             </label>
             <input
               type="text"
@@ -506,7 +506,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
             className={inputCls}
           />
           <p className="mt-2 text-[10px] leading-relaxed text-muted">
-            2차 AI 지원의 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게. (②의 메모=회원 반응 국소 / 여기=관찰 전체 종합)
+            2차 OT 준비 시 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게. (②의 메모=회원 반응 국소 / 여기=관찰 전체 종합)
           </p>
 
           <div className="mt-4">
@@ -523,7 +523,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
               ))}
             </select>
             <p className="mt-1 text-[10px] leading-relaxed text-muted">
-              강도 = &lsquo;근거·긴급성을 얼마나 또렷이 짚나&rsquo;지 압박의 세기가 아닙니다. &lsquo;강하게&rsquo;는 사실 기반 손실(예: 자세 무너짐→통증 악화 위험)을 더 분명히 — 없는 위기 창작·공포몰이는 금지. 신뢰가 덜 쌓였으면 &lsquo;부드럽게&rsquo;로 오늘은 라포·다음 접점.
+              근거를 얼마나 또렷이 짚을지 정도예요(압박 세기 아님). &lsquo;강하게&rsquo;=사실 기반 필요성을 분명히, &lsquo;부드럽게&rsquo;=오늘은 라포 위주. 없는 위기 창작·공포몰이는 금지.
             </p>
           </div>
         </div>

@@ -180,7 +180,7 @@ export default function FirstOTAssist({ member }) {
           title={sameInput ? "회원 정보가 바뀌면 다시 생성하세요 (지금은 같은 입력)" : undefined}
           className="gap-2"
         >
-          <Sparkles className="h-4 w-4" strokeWidth={2.5} /> {loading ? "생성 중…" : data ? "다시 생성" : "AI 지원 생성"}
+          <Sparkles className="h-4 w-4" strokeWidth={2.5} /> {loading ? "준비 중…" : data ? "다시 준비" : "1차 OT 준비하기"}
         </Button>
       </div>
 

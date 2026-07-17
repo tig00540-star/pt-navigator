@@ -105,9 +105,9 @@ const TABS = [
   { id: 0,  label: "회원",     always: true },
   { id: 8,  label: "내 실적",  always: true },
   { id: 7,  label: "설정",     always: true },              // 트레이너 설정 모음(목표·프로필·라이브러리·가격·계정)
-  { id: 1,  label: "1차 지원", ot: true, group: "ot" },      // FirstOTTab
-  { id: 5,  label: "관찰 기록", ot: true, group: "ot" },      // ObservationTab (옛 '1차 피드백')
-  { id: 2,  label: "2차 브리핑", ot: true, group: "ot" },     // SecondOTTab
+  { id: 1,  label: "1차 OT 준비", ot: true, group: "ot" },    // FirstOTTab
+  { id: 5,  label: "1차 피드백", ot: true, group: "ot" },      // ObservationTab
+  { id: 2,  label: "2차 OT 준비", ot: true, group: "ot" },     // SecondOTTab
   { id: 10, label: "회원자료", pt: true, group: "pt" },
   { id: 12, label: "자료남기기", pt: true, group: "pt" },
   { id: 11, label: "재등록 준비", pt: true, group: "pt" },
