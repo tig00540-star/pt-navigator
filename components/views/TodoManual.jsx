@@ -95,7 +95,7 @@ export default function TodoManual() {
           type="date"
           value={due}
           onChange={(e) => setDue(e.target.value)}
-          className="rounded-lg border border-line bg-elevate px-2 py-2 text-xs text-sub outline-none focus:border-primary"
+          className="min-w-[140px] flex-1 rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
           aria-label="마감일(선택)"
         />
         <Button variant="primary" size="md" onClick={add} disabled={saving || !body.trim()}>

@@ -362,7 +362,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               </span>
               {due && (
                 <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                  재등록 타이밍 · 유료 {rem.paid}회 남음
+                  재등록 타이밍
                 </span>
               )}
               {pendingTotal > 0 && (

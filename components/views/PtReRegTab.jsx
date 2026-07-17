@@ -172,13 +172,17 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               </p>
               <p className="mt-1 text-xs text-muted">수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.</p>
               {due && (
-                <div className="mt-3 inline-flex rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                  재등록 타이밍 · 유료 {rem.paid}회 남음
+                <div className="mt-3">
+                  <span className="inline-flex rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    재등록 타이밍
+                  </span>
                 </div>
               )}
-              <Button variant="primary" size="md" onClick={generateReReg} disabled={regGenerating} className="mt-4 gap-2">
-                <Sparkles className="h-4 w-4" strokeWidth={2.5} /> AI 지원 준비 생성하기
-              </Button>
+              <div className="mt-4">
+                <Button variant="primary" size="md" onClick={generateReReg} disabled={regGenerating} className="gap-2">
+                  <Sparkles className="h-4 w-4" strokeWidth={2.5} /> AI 지원 준비 생성하기
+                </Button>
+              </div>
               {regAiError && <p className="mt-3 text-[11px] text-amber-700">{regAiError}</p>}
             </div>
           ) : (
@@ -191,7 +195,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
                 )}
                 {due && (
                   <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                    재등록 타이밍 · 유료 {rem.paid}회 남음
+                    재등록 타이밍
                   </span>
                 )}
                 <Button variant="ghost" size="sm" onClick={generateReReg} disabled={regGenerating} className="ml-auto">
