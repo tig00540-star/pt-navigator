@@ -110,7 +110,7 @@ const TABS = [
   { id: 2,  label: "2차 브리핑", ot: true, group: "ot" },     // SecondOTTab
   { id: 10, label: "운동일지", pt: true, group: "pt" },
   { id: 12, label: "인바디",   pt: true, group: "pt" },
-  { id: 11, label: "재등록",   pt: true, group: "pt" },
+  { id: 11, label: "재등록 준비", pt: true, group: "pt" },
 ];
 
 /* 회원 워크플로우 탭 그룹 색(purge-safe · 정적) — OT=amber, PT=sky */

@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useState, useEffect } from "react";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { ChevronDown, RefreshCw, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, latestContract } from "@/lib/memberStatus";
@@ -139,67 +139,25 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   return (
     <div className="space-y-6">
       {latest ? (
-        /* 재등록 결과 기록 (④ 작업4-1) — 최신 계약 행 reg_* UPDATE. 계약 있을 때만 노출. */
-        <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
-            <Eyebrow icon={RefreshCw}>재등록 결과 기록</Eyebrow>
-            {due && (
-              <span className="rounded-md border border-primary/40 bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
-                재등록 타이밍
-              </span>
-            )}
-          </summary>
-          <div className="mt-4 space-y-3">
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">결과</span>
-              <select
-                value={regResult}
-                onChange={(e) => setRegResult(e.target.value)}
-                disabled={regSaving}
-                className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary disabled:opacity-50"
-              >
-                {REG_RESULT_OPTS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </label>
-            {(regResult === "hold" || regResult === "fail") && (
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-muted">이유</span>
-                <select
-                  value={regReason}
-                  onChange={(e) => setRegReason(e.target.value)}
-                  disabled={regSaving}
-                  className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary disabled:opacity-50"
-                >
-                  <option value="">선택 안 함</option>
-                  {REG_REASON_OPTS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {regResult === "hold" && (
-              <ReapproachDateField value={regReapproachAt} onChange={setRegReapproachAt} />
-            )}
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] leading-relaxed text-muted">
-                성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 잔여 카드의 &lsquo;재등록&rsquo;으로.
-              </p>
-              <Button variant="primary" size="sm" onClick={saveReg} disabled={regSaving} className="shrink-0">
-                {regSaving ? "저장 중…" : "저장"}
-              </Button>
+        <>
+          {/* AI 지원 — 재등록 브리핑(주·상단). 1·2차 OT처럼 먼저 노출. reg_reason 기록분 강조. */}
+          <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Eyebrow icon={Sparkles}>재등록 준비 · AI 브리핑</Eyebrow>
+              {due && (
+                <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                  재등록 타이밍 · 유료 {rem.paid}회 남음
+                </span>
+              )}
             </div>
-
-            {/* AI 지원 — 재등록 브리핑(생성·캐시). reg_reason 기록분을 강조. */}
-            <div className="mt-1 border-t border-line pt-4">
+            <div className="mt-3">
               {!regBrief ? (
                 <button
                   onClick={generateReReg}
                   disabled={regGenerating}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary-soft px-3 py-1.5 text-xs font-bold text-primary-strong transition hover:bg-primary-soft active:scale-95 disabled:opacity-50"
                 >
-                  <Sparkles className="h-3.5 w-3.5" /> {regGenerating ? "생성 중…" : "AI 지원 — 재등록 브리핑"}
+                  <Sparkles className="h-3.5 w-3.5" /> {regGenerating ? "생성 중…" : "AI 브리핑 생성"}
                 </button>
               ) : (
                 <div className="flex items-center justify-between gap-2">
@@ -209,11 +167,66 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
                   </Button>
                 </div>
               )}
+              {!regBrief && !regGenerating && (
+                <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                  최근 수업·잔여를 근거로 재등록 브리핑을 만들어요. 수업 직전 3분 각인용.
+                </p>
+              )}
               {regAiError && <p className="mt-2 text-[11px] text-amber-700">{regAiError}</p>}
               <RegBriefView brief={regBrief} highlightReason={regReason} />
             </div>
-          </div>
-        </details>
+          </section>
+
+          {/* 재등록 결과 기록(아래·접이식) — 최신 계약 행 reg_* UPDATE. */}
+          <details className="group rounded-2xl border border-line bg-card p-5 shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+              <Eyebrow icon={RefreshCw}>재등록 결과 기록</Eyebrow>
+              <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-4 space-y-3">
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-muted">결과</span>
+                <select
+                  value={regResult}
+                  onChange={(e) => setRegResult(e.target.value)}
+                  disabled={regSaving}
+                  className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary disabled:opacity-50"
+                >
+                  {REG_RESULT_OPTS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </label>
+              {(regResult === "hold" || regResult === "fail") && (
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium text-muted">이유</span>
+                  <select
+                    value={regReason}
+                    onChange={(e) => setRegReason(e.target.value)}
+                    disabled={regSaving}
+                    className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary disabled:opacity-50"
+                  >
+                    <option value="">선택 안 함</option>
+                    {REG_REASON_OPTS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {regResult === "hold" && (
+                <ReapproachDateField value={regReapproachAt} onChange={setRegReapproachAt} />
+              )}
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] leading-relaxed text-muted">
+                  성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 잔여 카드의 &lsquo;재등록&rsquo;으로.
+                </p>
+                <Button variant="primary" size="sm" onClick={saveReg} disabled={regSaving} className="shrink-0">
+                  {regSaving ? "저장 중…" : "저장"}
+                </Button>
+              </div>
+            </div>
+          </details>
+        </>
       ) : (
         <div className="rounded-2xl border border-dashed border-line bg-card p-10 shadow-sm text-center">
           <RefreshCw className="mx-auto h-8 w-8 text-muted" />

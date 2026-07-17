@@ -47,6 +47,8 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
     };
   }, [member?.id]);
 
+  const isWorkout = tab !== 11 && tab !== 12; // 회원앱링크·환불은 운동일지 탭에서만
+
   return (
     <div className="space-y-6">
       {onGoList && (
@@ -58,7 +60,7 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
         </button>
       )}
 
-      <MemberAppLink key={member.id} member={member} onMemberPatch={onMemberPatch} />
+      {isWorkout && <MemberAppLink key={member.id} member={member} onMemberPatch={onMemberPatch} />}
 
       <div key={tab} className="tab-anim">
         {tab === 11 ? (
@@ -79,12 +81,14 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
         )}
       </div>
 
-      {/* P3b — 환불 처리 · 회원 삭제(소프트). PT 뷰에서만 마운트 = 'PT 회원만' 자동 충족. */}
-      <RefundMember
-        member={member}
-        contracts={contracts}
-        onDone={() => { onMembersChanged?.(); onGoList?.(); }}
-      />
+      {/* P3b — 환불·회원 삭제(소프트). 운동일지 탭에서만(전 탭 따라오던 것 수정). */}
+      {isWorkout && (
+        <RefundMember
+          member={member}
+          contracts={contracts}
+          onDone={() => { onMembersChanged?.(); onGoList?.(); }}
+        />
+      )}
     </div>
   );
 }
