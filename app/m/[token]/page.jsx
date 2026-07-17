@@ -120,7 +120,7 @@ function LoginCard({ last4, setLast4, onSubmit, busy, err }) {
 }
 
 // 유산소 자가입력(M1) — 회원이 자기 cardio_log를 CRUD(트레이너는 읽기만). 회원용 큰 글씨·입력 최소.
-function CardioSection({ me, cardio, onReload }) {
+function CardioSection({ me, cardio, onReload, mode }) {
   const [on, setOn] = useState(() => todayStr());
   const [kind, setKind] = useState("");
   const [minutes, setMinutes] = useState("");
@@ -179,7 +179,7 @@ function CardioSection({ me, cardio, onReload }) {
   return (
     <section className="mb-8">
       <Eyebrow icon={Activity}>유산소 기록</Eyebrow>
-      {/* 입력 폼 */}
+      {mode !== "list" && (
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
@@ -206,9 +206,10 @@ function CardioSection({ me, cardio, onReload }) {
           </Button>
         </div>
       </div>
+      )}
 
-      {/* 목록 */}
-      {cardio.length === 0 ? (
+      {/* 목록 — 내 기록 탭에서만(mode=list) */}
+      {mode !== "form" && (cardio.length === 0 ? (
         <EmptyState className="mt-3 rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
           아직 유산소 기록이 없어요. 오늘 운동을 남겨보세요.
         </EmptyState>
@@ -235,14 +236,14 @@ function CardioSection({ me, cardio, onReload }) {
             </li>
           ))}
         </ul>
-      )}
+      ))}
     </section>
   );
 }
 
 // 비포애프터 사진 자가입력(M2) — 압축→비공개버킷 업로드→member_photo insert. 열람은 서명 URL(1h).
 // 회원은 본인 폴더만(스토리지 RLS). 업로드 전 반드시 compressImage(원본 금지).
-function PhotoSection({ me, photos, onReload }) {
+function PhotoSection({ me, photos, onReload, mode }) {
   const [label, setLabel] = useState("progress");
   const [takenOn, setTakenOn] = useState(() => todayStr());
   const [busy, setBusy] = useState(false);
@@ -333,7 +334,7 @@ function PhotoSection({ me, photos, onReload }) {
     <>
     <section className="mb-8">
       <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
-      {/* 업로드 폼 */}
+      {mode !== "list" && (
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-1 min-w-0 text-xs font-medium text-muted">
@@ -355,9 +356,10 @@ function PhotoSection({ me, photos, onReload }) {
           <input type="file" accept="image/*" onChange={onPick} disabled={busy} className="hidden" />
         </label>
       </div>
+      )}
 
-      {/* 갤러리 */}
-      {photos.length === 0 ? (
+      {/* 갤러리 — 내 기록 탭에서만(mode=list) */}
+      {mode !== "form" && (photos.length === 0 ? (
         <EmptyState className="mt-3 rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
           아직 사진이 없어요. 비포 사진부터 남겨보세요.
         </EmptyState>
@@ -398,7 +400,7 @@ function PhotoSection({ me, photos, onReload }) {
             </div>
           ))}
         </div>
-      )}
+      ))}
     </section>
     <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
     </>
@@ -407,7 +409,7 @@ function PhotoSection({ me, photos, onReload }) {
 
 // 개인운동 기록 자가입력(M3) — 회원은 개인운동만 기록(kind="personal" 고정).
 // PT 받은 날은 수업로그로 자동 체크되므로 회원 입력에서 PT 구분 제거.
-function ScheduleSection({ me, schedule, onReload }) {
+function ScheduleSection({ me, schedule, onReload, mode }) {
   const [on, setOn] = useState(() => todayStr());
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -458,7 +460,7 @@ function ScheduleSection({ me, schedule, onReload }) {
   return (
     <section className="mb-8">
       <Eyebrow icon={CalendarCheck}>개인운동 기록</Eyebrow>
-      {/* 입력 폼 */}
+      {mode !== "list" && (
       <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
@@ -477,9 +479,10 @@ function ScheduleSection({ me, schedule, onReload }) {
           </Button>
         </div>
       </div>
+      )}
 
-      {/* 목록 — 날짜 한 줄 · 내용 아래(정돈) */}
-      {schedule.length === 0 ? (
+      {/* 목록 — 내 기록 탭에서만(mode=list) */}
+      {mode !== "form" && (schedule.length === 0 ? (
         <EmptyState className="mt-3 rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
           아직 개인운동 기록이 없어요. 오늘 한 운동을 남겨보세요.
         </EmptyState>
@@ -502,7 +505,7 @@ function ScheduleSection({ me, schedule, onReload }) {
             </li>
           ))}
         </ul>
-      )}
+      ))}
     </section>
   );
 }
@@ -817,19 +820,24 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
             )}
           </section>
         )}
+
+        {/* 회원 입력 기록 열람 — 기록 남기기에 저장한 것도 여기 모아 보기(목록만). */}
+        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="list" />
+        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} mode="list" />
+        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="list" />
           </>
         )}
 
         {subTab === "write" && (
           <>
-        {/* 개인운동 기록(M3) — 회원 자가입력. me 로드 후에만 폼 활성. */}
-        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} />
+        {/* 개인운동 기록(M3) — 폼만(목록은 내 기록 탭). */}
+        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="form" />
 
-        {/* 유산소 기록(M1) — 회원 자가입력. */}
-        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} />
+        {/* 유산소 기록(M1) — 폼만. */}
+        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} mode="form" />
 
-        {/* 비포애프터 사진(M2) — 압축→비공개버킷 업로드→서명URL 갤러리. */}
-        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} />
+        {/* 비포애프터 사진(M2) — 폼만. */}
+        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="form" />
           </>
         )}
 
