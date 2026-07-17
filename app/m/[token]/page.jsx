@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
+import { holidayName } from "@/lib/holidays";
 import { buildExerciseSeries } from "@/lib/workout";
 import { compressImage } from "@/lib/image";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -573,9 +574,9 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>
-        {/* 요일 */}
+        {/* 요일 — 일(빨강)·토(파랑) */}
         <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted">
-          {WEEKDAYS.map((w) => <div key={w} className="py-1">{w}</div>)}
+          {WEEKDAYS.map((w, i) => <div key={w} className={`py-1 ${i === 0 ? "text-rose-600" : i === 6 ? "text-sky-500" : ""}`}>{w}</div>)}
         </div>
         {/* 날짜 그리드 */}
         <div className="grid grid-cols-7 gap-1">
@@ -585,14 +586,22 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
             const set = activityMap[key];
             const active = Boolean(set);
             const isToday = key === todayKey;
+            const col = i % 7;                 // 0=일 · 6=토
+            const hol = holidayName(key);
+            const dayTone = isToday
+              ? "font-bold text-primary-strong"
+              : (col === 0 || hol) ? "text-rose-600"
+              : col === 6 ? "text-sky-500"
+              : "text-ink";
             return (
               <button
                 key={key}
                 onClick={() => active && setSelected(key === selected ? null : key)}
                 disabled={!active}
+                title={hol || undefined}
                 className={`flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg text-sm ${active ? "cursor-pointer bg-elevate" : ""} ${key === selected ? "ring-2 ring-primary" : isToday ? "ring-1 ring-primary" : ""}`}
               >
-                <span className={isToday ? "font-bold text-primary-strong" : "text-ink"}>{day}</span>
+                <span className={dayTone}>{day}</span>
                 <span className="flex h-1.5 items-center gap-0.5">
                   {set && MARK_ORDER.filter((t) => set.has(t)).map((t) => (
                     <span key={t} className={`h-1.5 w-1.5 rounded-full ${ACTIVITY_MARKS[t].dot}`} />
@@ -705,12 +714,19 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
       <div className="mx-auto max-w-xl px-4 py-6 sm:px-6">
         {/* 프로필 헤더 */}
         <header className="mb-6">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-strong">MY RECORD</div>
-          <h1 className="mt-1 text-3xl font-extrabold text-ink">{me.name}</h1>
+          {/* 브랜드 바 — 로고 + 오직 트레이너 */}
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/icon-192.png" alt="오직 트레이너" className="h-7 w-7 rounded-lg" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-strong">오직 트레이너</span>
+          </div>
+          <h1 className="mt-2 text-3xl font-extrabold text-ink">
+            {me.name} <span className="text-lg font-semibold text-muted">회원님 공간</span>
+          </h1>
           <div className="mt-2 flex flex-wrap gap-2 text-sm text-sub">
             {me.goal && <span className="rounded-full bg-elevate px-3 py-1">목표 · {me.goal}</span>}
             {me.goal_deadline && <span className="rounded-full bg-elevate px-3 py-1">시점 · {me.goal_deadline}</span>}
-            {me.trainer_name && <span className="rounded-full bg-elevate px-3 py-1">담당 · {me.trainer_name}</span>}
+            {me.trainer_name && <span className="rounded-full bg-elevate px-3 py-1">담당 · {me.trainer_name} 트레이너</span>}
           </div>
         </header>
 
