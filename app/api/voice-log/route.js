@@ -12,6 +12,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
 
 export const runtime = "nodejs"; // SDK는 Node 런타임 필요 (Edge 불가)
+export const maxDuration = 60;  // STT + Claude 2연속 호출 → Vercel 함수 타임아웃 상향(기본 10~15s면 중도 종료)
 
 const STT_MODEL = "gpt-4o-mini-transcribe";
 const SUMMARY_MODEL = "claude-sonnet-5"; // 운동방법 깊이 위해 Sonnet(ot-brief 2차와 동일). Haiku 테스트 시 이 줄만 원복.

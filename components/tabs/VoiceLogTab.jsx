@@ -131,6 +131,7 @@ export default function VoiceLogTab({ member, onResult }) {
   const [notice, setNotice] = useState(""); // 폴백/권한 안내
   const [sessionNo, setSessionNo] = useState(null); // 카톡 헤더 회차(노쇼 포함 누적 · voided 제외)
   const [machineCues, setMachineCues] = useState([]); // 등록 머신 큐(B) — method 생성 재료로 서버에 실어 보냄
+  const [isDemo, setIsDemo] = useState(false); // 데모 리포트 표시 중 — 카톡 문구에 워터마크 박음(허위 일지 방지)
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -190,8 +191,12 @@ export default function VoiceLogTab({ member, onResult }) {
   const runDemo = () => {
     setRawText("");
     setReport(buildVoiceReport(member));
+    setIsDemo(true);
     setPhase("done");
   };
+
+  // 실패는 실패로 — 가짜 리포트 안 채움(회원 허위 일지 방지). '다시 녹음'으로 재시도.
+  const failReal = (msg) => { setReport(null); setIsDemo(false); setNotice(msg); setPhase("done"); };
 
   const start = async () => {
     setReport(null);
@@ -256,8 +261,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
     const blob = new Blob(chunksRef.current, { type });
     if (blob.size === 0) {
-      setNotice("녹음된 오디오가 없습니다. 데모 리포트로 대체합니다.");
-      runDemo();
+      failReal("녹음된 오디오가 없습니다. 다시 녹음해 주세요.");
       return;
     }
 
@@ -269,22 +273,24 @@ export default function VoiceLogTab({ member, onResult }) {
     try {
       const res = await fetch("/api/voice-log", { method: "POST", headers: { ...(await authHeader()) }, body: fd });
       if (!res.ok) {
+        // 503 = AI 키 미설정(데모 환경) → 미리보기용 데모 유지. 그 외 실패는 가짜 리포트 안 채움.
+        if (res.status === 503) { setNotice("AI 미설정 — 데모 리포트로 표시합니다."); runDemo(); return; }
         const data = await res.json().catch(() => ({}));
-        setNotice((data.error || "AI 처리에 실패했습니다.") + " 데모 리포트로 대체합니다.");
-        runDemo();
+        failReal((data.error || "AI 처리에 실패했습니다.") + " 잠시 후 다시 시도해 주세요.");
         return;
       }
       const data = await res.json();
       setRawText(data.raw_text || "");
       setReport(data.report);
+      setIsDemo(false);
       setPhase("done");
     } catch {
-      setNotice("네트워크 오류로 AI 처리를 하지 못했습니다. 데모 리포트로 대체합니다.");
-      runDemo();
+      failReal("네트워크 오류로 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   };
 
   const buildText = (r) =>
+    (isDemo ? "⚠️ 데모 예시 · 실제 기록 아님\n\n" : "") +
     `[${todayLabel()}${sessionNo ? ` · ${sessionNo}회차` : ""}, ${member.name} 회원님 운동일지 입니다!]\n\n` +
     `1. 오늘 진행한 운동\n` +
     r.machines

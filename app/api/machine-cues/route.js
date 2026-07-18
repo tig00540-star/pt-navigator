@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
 
 export const runtime = "nodejs";
+export const maxDuration = 60; // Sonnet 호출 → Vercel 함수 타임아웃 상향(기본값이면 여유 없음)
 const CUE_MODEL = "claude-sonnet-5"; // voice-log SUMMARY_MODEL과 동일 id 사용
 const KIND_LABEL = { machine: "머신", free_weight: "프리웨이트", bodyweight: "맨몸/도구" };
 
