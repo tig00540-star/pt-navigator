@@ -2,10 +2,67 @@
 /* 세트 그리드(제어 컴포넌트) — 저장 전 보정·손입력 공용. value/onChange만, 순수 UI(데모·키 무관).
    입력은 문자열 그대로 보관(빈칸 허용) — 숫자화·정리는 저장 시 부모가 cleanStructured로.
    음성은 부모가 자동채움, 손입력은 빈 상태로 시작. 편집은 불변 업데이트로 onChange(next). */
-import { Dumbbell, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Dumbbell, Plus, Trash2, X } from "lucide-react";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-card px-2 py-1.5 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+
+function ExerciseNameInput({ value, options, onChange, disabled }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const q = (value || "").trim().toLowerCase();
+  const filtered = q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+
+  return (
+    <div ref={wrapRef} className="relative flex-1">
+      <input
+        type="text"
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setOpen(true)}
+        disabled={disabled}
+        placeholder="종목명 (예: 벤치프레스)"
+        className="w-full rounded-lg border border-line bg-card px-2 py-1.5 pr-7 text-sm font-semibold text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
+      />
+      {options.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          disabled={disabled}
+          className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted transition hover:text-primary-strong disabled:opacity-50"
+          aria-label="센터 머신 목록"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      )}
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-line bg-card py-1 shadow-lg">
+          {filtered.map((o) => (
+            <li key={o}>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { onChange(o); setOpen(false); }}
+                className="block w-full px-3 py-1.5 text-left text-sm text-ink transition hover:bg-elevate"
+              >
+                {o}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function SetsEditor({ value, onChange, disabled, machineOptions = [] }) {
   const list = Array.isArray(value) ? value : [];
@@ -34,11 +91,6 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
 
   return (
     <div className="space-y-3">
-      {machineOptions.length > 0 && (
-        <datalist id="sets-machine-options">
-          {machineOptions.map((name) => <option key={name} value={name} />)}
-        </datalist>
-      )}
       {list.length === 0 && (
         <p className="text-[11px] leading-relaxed text-muted">
           종목·세트를 입력하면 종목별 무게 그래프에 반영됩니다.
@@ -49,14 +101,11 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
         <div key={exIdx} className="rounded-xl border border-line bg-elevate p-3">
           <div className="flex items-center gap-2">
             <Dumbbell className="h-3.5 w-3.5 shrink-0 text-primary-strong" />
-            <input
-              type="text"
-              list="sets-machine-options"
-              value={ex.exercise ?? ""}
-              onChange={(e) => setExName(exIdx, e.target.value)}
+            <ExerciseNameInput
+              value={ex.exercise}
+              options={machineOptions}
+              onChange={(name) => setExName(exIdx, name)}
               disabled={disabled}
-              placeholder="종목명 (예: 벤치프레스)"
-              className="flex-1 rounded-lg border border-line bg-card px-2 py-1.5 text-sm font-semibold text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
             />
             <button
               onClick={() => removeExercise(exIdx)}
