@@ -35,6 +35,7 @@ const SUMMARY_SYSTEM = `당신은 PT 트레이너의 수업 종료 구두 요약
   이 깊이·구체성을 모든 운동에 적용하세요. 트레이너가 짚은 포인트가 있으면 반드시 반영하고, 없는 부분은 그 운동의 표준 정석 큐로 채웁니다(표준 지식이라 '지어내기' 아님). 비우거나 한 줄로 줄이지 마세요. method 큐는 트레이너가 말한 그 종목(name) 자체의 자세·궤적·타깃에 맞춰 쓰세요 — canonical(집계용 표준명)로 뭉뚱그리지 마세요. 예: "로우로우"·"하이로우"·"시티드로우"는 당기는 각도·궤적·자극 부위가 다른 별개 종목이니 각자 다른 큐를 쓰고, 한 종목의 큐를 다른 종목에 그대로 복사하지 마세요.
   ⚠️ 의료·치료·진단 표현 금지 — 통증·부상·질환을 '치료/완치/교정'한다고 단정하지 마세요.
   ⚠️ 통증·부상·불편이 언급되면 "무리하지 말고 전문가(트레이너/병원)와 상의" 방향으로만, 통증을 특정 각도·세트·중량으로 다루라는 처방으로 가지 마세요.
+- [등록 머신 큐 우선] 사용자 메시지에 [등록 머신 큐] 목록이 오면, 트레이너가 말한 종목이 그 목록의 머신과 명백히 같을 때 그 종목의 method를 등록 큐로 채우세요(트레이너가 그날 말한 포인트가 있으면 자연스럽게 반영·보완, 없으면 등록 큐 그대로). 등록 큐가 있는 종목은 그 큐를 우선하고 임의로 다시 쓰지 마세요. 목록에 없거나 매칭 안 되는 종목만 기존 규칙대로 생성하세요.
 - feedback: 오늘 수업 핵심을 따뜻하게 2~3문장.
 - homework: 집에서 참고할 종합 팁·주의사항(스트레칭·자세 습관 등 특정 머신에 안 묶인 것)이 있으면 넣고, 없으면 빈 배열.
 - 톤: 회원에게 보내는 따뜻하고 명료한 존댓말.
@@ -106,10 +107,18 @@ export async function POST(request) {
 
   let audio;
   let machines = "";
+  let machineCues = [];
   try {
     const form = await request.formData();
     audio = form.get("audio");
     machines = (form.get("machines") || "").toString().trim();
+    try {
+      const rawCues = form.get("machine_cues");
+      if (rawCues) {
+        const parsed = JSON.parse(rawCues.toString());
+        if (Array.isArray(parsed)) machineCues = parsed.filter((m) => m?.name && Array.isArray(m?.cues) && m.cues.length);
+      }
+    } catch { /* 큐 주입은 선택 — 파싱 실패 무시 */ }
   } catch {
     return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
   }
@@ -147,6 +156,8 @@ export async function POST(request) {
   let report;
   try {
     const anthropic = new Anthropic({ apiKey: anthropicKey });
+    // 등록 머신 큐(B) — 있으면 user 메시지 끝에 붙여 method 생성 재료로. 없으면 종전 프롬프트 그대로.
+    const cuesBlock = machineCues.map((m) => `- ${m.name}: ${m.cues.join(" / ")}`).join("\n");
     const msg = await anthropic.messages.create({
       model: SUMMARY_MODEL,
       max_tokens: 4096, // 운동별 method 다건 → 여유
@@ -155,7 +166,9 @@ export async function POST(request) {
       messages: [
         {
           role: "user",
-          content: `다음은 트레이너가 수업 종료 시 구두로 남긴 요약(STT 원본)입니다. 규칙에 맞춰 JSON으로 정제하세요.\n\n---\n${rawText}\n---` + (machines ? `\n\n[참고 · 이 회원 주 사용 머신: ${machines}] (오인식 표기 교정 시 이 목록을 우선 참고. 단, 목록에 없는 운동을 지어내지는 말 것.)` : ""),
+          content: `다음은 트레이너가 수업 종료 시 구두로 남긴 요약(STT 원본)입니다. 규칙에 맞춰 JSON으로 정제하세요.\n\n---\n${rawText}\n---`
+            + (machines ? `\n\n[참고 · 이 회원 주 사용 머신: ${machines}] (오인식 표기 교정 시 이 목록을 우선 참고. 단, 목록에 없는 운동을 지어내지는 말 것.)` : "")
+            + (cuesBlock ? `\n\n[등록 머신 큐 · 이 큐가 있는 종목은 method를 이 큐로 채울 것]\n${cuesBlock}` : ""),
         },
       ],
     });

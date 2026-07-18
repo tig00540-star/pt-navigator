@@ -130,6 +130,7 @@ export default function VoiceLogTab({ member, onResult }) {
   const [rawText, setRawText] = useState(""); // STT 원본 (onResult로 PTView에 전달)
   const [notice, setNotice] = useState(""); // 폴백/권한 안내
   const [sessionNo, setSessionNo] = useState(null); // 카톡 헤더 회차(노쇼 포함 누적 · voided 제외)
+  const [machineCues, setMachineCues] = useState([]); // 등록 머신 큐(B) — method 생성 재료로 서버에 실어 보냄
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -149,6 +150,21 @@ export default function VoiceLogTab({ member, onResult }) {
       clearTimeout(maxTimerRef.current);
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
     };
+  }, []);
+
+  // 등록 머신 큐 로드(B) — cues 있는 장비만. 없으면 빈 배열 = 종전 동작(프롬프트 미주입).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const { data } = await supabase.from("center_machine").select("name, cues");
+      if (cancelled) return;
+      const list = (data || [])
+        .filter((r) => r?.name && Array.isArray(r.cues) && r.cues.length)
+        .map((r) => ({ name: r.name.trim(), cues: r.cues }));
+      setMachineCues(list);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // 회원별 누적 수업 수 → 다음 회차. 노쇼 포함(voided만 제외) · user_id 전체(재등록 누적).
@@ -248,6 +264,7 @@ export default function VoiceLogTab({ member, onResult }) {
     const fd = new FormData();
     fd.append("audio", blob, `recording.${extForMime(type)}`);
     fd.append("machines", (member.machines || []).join(", "));
+    if (machineCues.length) fd.append("machine_cues", JSON.stringify(machineCues));
 
     try {
       const res = await fetch("/api/voice-log", { method: "POST", headers: { ...(await authHeader()) }, body: fd });
