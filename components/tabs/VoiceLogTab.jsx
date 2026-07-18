@@ -279,7 +279,7 @@ export default function VoiceLogTab({ member, onResult }) {
       .join("\n\n") +
     `\n\n2. 트레이너 핵심 피드백\n${r.feedback}` +
     (r.homework?.length
-      ? `\n\n3. 집에서 참고하세요\n` + r.homework.map((h) => `- ${h}`).join("\n")
+      ? `\n\n3. 개인운동시 주의사항\n` + r.homework.map((h) => `- ${h}`).join("\n")
       : "") +
     `\n\n${closingMessage()}`;
 
@@ -427,10 +427,10 @@ export default function VoiceLogTab({ member, onResult }) {
             <p className="text-sm leading-relaxed text-ink">{report.feedback}</p>
           </div>
 
-          {/* 3. 홈트 */}
+          {/* 3. 개인운동시 주의사항 */}
           <div className="mt-3 rounded-xl border border-line bg-card shadow-sm p-4">
             <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
-              <Target className="h-3.5 w-3.5" /> 3. 홈트레이닝 및 주의사항
+              <Target className="h-3.5 w-3.5" /> 3. 개인운동시 주의사항
             </div>
             <ul className="space-y-1.5">
               {report.homework.map((h, i) => (
