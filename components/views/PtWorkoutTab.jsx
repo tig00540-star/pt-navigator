@@ -6,7 +6,7 @@
    회원전환 리셋은 부모가 key로 리마운트(자동). 재등록 결과·브리핑은 PtReRegTab 소관.
    ========================================================================= */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
@@ -69,6 +69,20 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [acuteGenerating, setAcuteGenerating] = useState(false);
   const [acuteError, setAcuteError] = useState("");
   const { toast, showToast } = useToast();
+  // 센터 보유 머신 이름(세트 그리드 자동완성용). 데모면 빈 목록 = 기존처럼 자유 타이핑.
+  const [machineOptions, setMachineOptions] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return; // 데모면 빈 목록 = 자유 타이핑
+      const { data } = await supabase.from("center_machine").select("name").order("name", { ascending: true });
+      if (cancelled) return;
+      const names = [...new Set((data || []).map((r) => (r.name || "").trim()).filter(Boolean))];
+      setMachineOptions(names);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // 파생 — 렌더마다 계산(순수함수, 훅 불필요). active null이면 rem {0,0,0}·due false.
   const active = activeContract(contracts, logs);
@@ -564,7 +578,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             🏋 종목·세트 기록 (그래프용 · 선택)
           </summary>
           <div className="mt-3">
-            <SetsEditor value={sets} onChange={setSets} disabled={saving || loading} />
+            <SetsEditor value={sets} onChange={setSets} disabled={saving || loading} machineOptions={machineOptions} />
           </div>
         </details>
         <div className="mt-3 flex flex-wrap gap-2">

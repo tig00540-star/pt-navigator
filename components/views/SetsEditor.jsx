@@ -7,7 +7,7 @@ import { Dumbbell, Plus, Trash2, X } from "lucide-react";
 const inputCls =
   "w-full rounded-lg border border-line bg-card px-2 py-1.5 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
-export default function SetsEditor({ value, onChange, disabled }) {
+export default function SetsEditor({ value, onChange, disabled, machineOptions = [] }) {
   const list = Array.isArray(value) ? value : [];
 
   const patch = (exIdx, updater) =>
@@ -34,6 +34,11 @@ export default function SetsEditor({ value, onChange, disabled }) {
 
   return (
     <div className="space-y-3">
+      {machineOptions.length > 0 && (
+        <datalist id="sets-machine-options">
+          {machineOptions.map((name) => <option key={name} value={name} />)}
+        </datalist>
+      )}
       {list.length === 0 && (
         <p className="text-[11px] leading-relaxed text-muted">
           종목·세트를 입력하면 종목별 무게 그래프에 반영됩니다.
@@ -46,6 +51,7 @@ export default function SetsEditor({ value, onChange, disabled }) {
             <Dumbbell className="h-3.5 w-3.5 shrink-0 text-primary-strong" />
             <input
               type="text"
+              list="sets-machine-options"
               value={ex.exercise ?? ""}
               onChange={(e) => setExName(exIdx, e.target.value)}
               disabled={disabled}
