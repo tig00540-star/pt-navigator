@@ -26,7 +26,7 @@ import MemberEditForm from "@/components/views/MemberEditForm";
 import ChurnRiskToday from "@/components/views/ChurnRiskToday";
 import ScheduleBoard from "@/components/views/ScheduleBoard";
 import MyStats from "@/components/views/MyStats";
-import SettingsView from "@/components/views/SettingsView";
+import SettingsView, { SETTINGS_SUBTABS } from "@/components/views/SettingsView";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import TodoTab from "@/components/views/TodoTab";
 import AnnouncementGate from "@/components/AnnouncementGate";
@@ -120,6 +120,7 @@ const TABS = [
 const GROUP_TAB = {
   ot: { active: "text-amber-600", idle: "text-amber-700/60 hover:text-amber-700", bar: "bg-amber-500" },
   pt: { active: "text-sky-600",   idle: "text-sky-700/60 hover:text-sky-700",     bar: "bg-sky-500" },
+  settings: { active: "text-primary-strong", idle: "text-primary-strong/60 hover:text-primary-strong", bar: "bg-primary" },
 };
 
 /* =========================================================================
@@ -500,6 +501,7 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
 
 export default function OTNavigatorDashboard() {
   const [tab, setTab] = useState(9);
+  const [settingsSub, setSettingsSub] = useState("me");
 
   // --- Supabase 연동 상태 ---
   const [members, setMembers] = useState([]);
@@ -712,6 +714,26 @@ export default function OTNavigatorDashboard() {
                 })}
             </nav>
           )}
+
+          {/* 설정 서브탭 — OT/PT와 같은 레시피(활성=진한 텍스트+언더바), 브랜드 레드. */}
+          {tab === 7 && (
+            <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
+              {SETTINGS_SUBTABS.map((t) => {
+                const on = settingsSub === t.id;
+                const g = GROUP_TAB.settings;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setSettingsSub(t.id)}
+                    className={`relative px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${on ? g.active : g.idle}`}
+                  >
+                    {t.label}
+                    {on && <span className={`absolute inset-x-2 bottom-0 h-0.5 rounded-full ${g.bar}`} />}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
         </div>
       </header>
 
@@ -748,7 +770,7 @@ export default function OTNavigatorDashboard() {
             />
           </div>
         ) : tab === 7 ? (
-          <div><SettingsView isSolo={isSolo} /></div>
+          <div><SettingsView isSolo={isSolo} sub={settingsSub} /></div>
         ) : tab === 8 ? (
           <div><MyStats members={members} isSolo={isSolo} /></div>
         ) : (
