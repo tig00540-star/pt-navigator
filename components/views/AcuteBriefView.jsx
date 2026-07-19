@@ -12,7 +12,7 @@ export default function AcuteBriefView({ brief }) {
   if (!brief) return null;
   const avoid = Array.isArray(brief.avoid) ? brief.avoid.filter(Boolean) : [];
   const alts = Array.isArray(brief.alternatives) ? brief.alternatives.filter(Boolean) : [];
-  const gaps = Array.isArray(brief.data_gaps) ? brief.data_gaps.filter(Boolean) : [];
+  const gaps = Array.isArray(brief.data_gaps) ? brief.data_gaps.filter((g) => typeof g === "string" && g.trim()) : [];
 
   return (
     <div className="mt-3 space-y-3">

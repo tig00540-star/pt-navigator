@@ -12,8 +12,8 @@ export default function RegBriefView({ brief, highlightReason }) {
   const sm = b.sales_metaphor || {};
   const cline = b.closing_line || "";
   const sw = b.sweetener || "";
-  const obj = Array.isArray(b.objection_defense) ? b.objection_defense : [];
-  const gaps = Array.isArray(b.data_gaps) ? b.data_gaps : [];
+  const obj = Array.isArray(b.objection_defense) ? b.objection_defense.filter(Boolean) : [];
+  const gaps = Array.isArray(b.data_gaps) ? b.data_gaps.filter((g) => typeof g === "string" && g.trim()) : [];
   const legacy = !wn.proven && !sf.gap_awareness && obj.length === 0;
 
   return (

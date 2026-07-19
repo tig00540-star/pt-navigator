@@ -513,13 +513,13 @@ export default function SecondOTTab({ member, onClosingSaved }) {
 
   /* ---- 실 AI 브리핑 렌더 ---- */
   const renderBrief = (b, meta) => {
-    const gaps = Array.isArray(b.data_gaps) ? b.data_gaps : [];
+    const gaps = Array.isArray(b.data_gaps) ? b.data_gaps.filter((g) => typeof g === "string" && g.trim()) : [];
     const rc = b.recall || {};
     const pf = b.proof || {};
-    const moves = Array.isArray(pf.moves) ? pf.moves : [];
+    const moves = Array.isArray(pf.moves) ? pf.moves.filter(Boolean) : [];
     const sm = b.sales_metaphor || {};
     const cline = b.closing_line || "";
-    const obj = Array.isArray(b.objection_defense) ? b.objection_defense : [];
+    const obj = Array.isArray(b.objection_defense) ? b.objection_defense.filter(Boolean) : [];
     const rp = b.recommended_program || {};
     const pick = Number.isInteger(rp.pick_ref) ? (packages[rp.pick_ref] || null) : null;
     const alt = Number.isInteger(rp.alt_ref) ? (packages[rp.alt_ref] || null) : null;
@@ -577,7 +577,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           <div className="rounded-xl border border-line bg-card p-4">
             <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 수업 운동 구성</span></div>
             <ol className="mt-2 space-y-1.5">
-              {b.session_plan.map((s, i) => (
+              {b.session_plan.filter(Boolean).map((s, i) => (
                 <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-ink">
                   <span className="mt-0.5 shrink-0 rounded bg-elevate px-1.5 py-0.5 text-[10px] font-bold text-sub">{i + 1}</span>
                   <span><span className="font-semibold">{s.exercise}</span>{s.point && <span className="text-sub"> — {s.point}</span>}</span>

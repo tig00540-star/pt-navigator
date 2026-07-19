@@ -177,12 +177,12 @@ export default function FirstOTAssist({ member }) {
   const te = data?.target_exercise || {};
   const sm = data?.sales_metaphor || {};
   const cline = data?.closing_line || "";
-  const obj = Array.isArray(data?.objection_defense) ? data.objection_defense : [];
+  const obj = Array.isArray(data?.objection_defense) ? data.objection_defense.filter(Boolean) : [];
   const rp = data?.recommended_program || {};
   const pick = Number.isInteger(rp.pick_ref) ? (packages[rp.pick_ref] || null) : null;
   const alt = Number.isInteger(rp.alt_ref) ? (packages[rp.alt_ref] || null) : null;
   const perSession = (p) => (p && p.sessions ? won(Math.round(p.price / p.sessions)) : null);
-  const gaps = Array.isArray(data?.data_gaps) ? data.data_gaps : [];
+  const gaps = Array.isArray(data?.data_gaps) ? data.data_gaps.filter((g) => typeof g === "string" && g.trim()) : [];
   // 구캐시(구 스키마) 감지 — 신필드 전무면 '이전 형식' 안내 후 재생성 유도.
   const legacyCache = Boolean(data) && !op.line && !te.exercise && obj.length === 0;
 
@@ -284,7 +284,7 @@ export default function FirstOTAssist({ member }) {
             <div className="rounded-xl border border-line bg-card p-4">
               <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 수업 운동 구성</span></div>
               <ol className="mt-2 space-y-1.5">
-                {data.session_plan.map((s, i) => (
+                {data.session_plan.filter(Boolean).map((s, i) => (
                   <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-ink">
                     <span className="mt-0.5 shrink-0 rounded bg-elevate px-1.5 py-0.5 text-[10px] font-bold text-sub">{i + 1}</span>
                     <span><span className="font-semibold">{s.exercise}</span>{s.point && <span className="text-sub"> — {s.point}</span>}</span>
@@ -297,7 +297,7 @@ export default function FirstOTAssist({ member }) {
           {/* ② 타겟 운동 & 리액션 — 증거 동작 2개 (구 단일캐시 폴백) */}
           {(() => {
             const moves = Array.isArray(te.moves)
-              ? te.moves
+              ? te.moves.filter(Boolean)
               : (te.exercise ? [{ exercise: te.exercise, target_reaction: te.target_reaction, point_it_out: te.point_it_out }] : []);
             if (moves.length === 0) return null;
             return (
