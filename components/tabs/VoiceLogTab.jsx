@@ -22,6 +22,7 @@ import Button from "@/components/ui/Button";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { machinesToStructured } from "@/lib/workout";
+import { loadCenterMachines } from "@/lib/centerMachines";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
 
@@ -157,8 +158,7 @@ export default function VoiceLogTab({ member, onResult }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!supabase) return;
-      const { data } = await supabase.from("center_machine").select("name, cues");
+      const data = await loadCenterMachines();
       if (cancelled) return;
       const list = (data || [])
         .filter((r) => r?.name && Array.isArray(r.cues) && r.cues.length)

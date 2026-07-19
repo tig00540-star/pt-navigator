@@ -23,6 +23,7 @@ import { hasVal } from "@/lib/format";
 import SetsEditor from "@/components/views/SetsEditor";
 import Sparkline from "@/components/ui/Sparkline";
 import { cleanStructured, buildExerciseSeries } from "@/lib/workout";
+import { loadCenterMachines } from "@/lib/centerMachines";
 import MemberCardioSummary from "@/components/views/MemberCardioSummary";
 import MemberPhotoSummary from "@/components/views/MemberPhotoSummary";
 import MemberScheduleSummary from "@/components/views/MemberScheduleSummary";
@@ -75,10 +76,10 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!supabase) return; // 데모면 빈 목록 = 자유 타이핑
-      const { data } = await supabase.from("center_machine").select("name").order("name", { ascending: true });
+      const data = await loadCenterMachines();
       if (cancelled) return;
-      const names = [...new Set((data || []).map((r) => (r.name || "").trim()).filter(Boolean))];
+      const names = [...new Set((data || []).map((r) => (r.name || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "ko"));
       setMachineOptions(names);
     })();
     return () => { cancelled = true; };

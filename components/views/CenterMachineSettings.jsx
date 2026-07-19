@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { Dumbbell, Plus, Trash2, Pencil, X, Sparkles } from "lucide-react";
 import { authHeader } from "@/lib/authHeader";
+import { invalidateCenterMachines } from "@/lib/centerMachines";
 import { supabase } from "@/lib/supabaseClient";
 import { useAccount } from "@/lib/useAccount";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -83,11 +84,13 @@ export default function CenterMachineSettings() {
       const { data, error } = await supabase.from("center_machine").update(payload).eq("id", editingId).select();
       if (error || !data || data.length === 0) { showToast("저장 실패 — 권한(대표만)·정책 확인"); setSaving(false); return; }
       setRows((p) => p.map((r) => (r.id === data[0].id ? data[0] : r)));
+      invalidateCenterMachines(); // 읽기 캐시 무효화 — 다음 VoiceLog/PtWorkout 마운트 시 새 목록
       showToast("수정됨");
     } else {
       const { data, error } = await supabase.from("center_machine").insert(payload).select();
       if (error || !data || data.length === 0) { showToast("저장 실패 — 권한(대표만)·정책 확인"); setSaving(false); return; }
       setRows((p) => [...p, data[0]]);
+      invalidateCenterMachines();
       showToast("추가됨");
     }
     resetForm(); setSaving(false);
@@ -106,6 +109,7 @@ export default function CenterMachineSettings() {
     const { data, error } = await supabase.from("center_machine").delete().eq("id", id).select();
     if (error || !data || data.length === 0) { showToast("삭제 실패 — 권한/정책 확인"); setConfirmId(null); return; }
     setRows((p) => p.filter((r) => r.id !== id));
+    invalidateCenterMachines(); // 읽기 캐시 무효화
     if (editingId === id) resetForm();
     setConfirmId(null); showToast("삭제됨");
   };
