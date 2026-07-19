@@ -101,6 +101,8 @@ console.log("\n--- layout.js appleWebApp.startupImage 용 ---");
 for (const [cw, ch, ratio] of DEVICES) {
   const w = cw * ratio, h = ch * ratio;
   console.log(
-    `      { url: "/splash/splash-${w}x${h}.png", media: "(device-width: ${cw}px) and (device-height: ${ch}px) and (-webkit-device-pixel-ratio: ${ratio}) and (orientation: portrait)" },`
+    // ⚠️ 'screen and' 접두 필수 — 생략하면(=all) CSS 규격상 매칭돼야 하지만 WebKit 스플래시 매칭이 무시한다.
+    //    애플 문서·정상동작 사례 모두 이 형식이다. 뺐다가 iOS에서 스플래시가 안 떠서 되돌린 이력 있음.
+    `      { url: "/splash/splash-${w}x${h}.png", media: "screen and (device-width: ${cw}px) and (device-height: ${ch}px) and (-webkit-device-pixel-ratio: ${ratio}) and (orientation: portrait)" },`
   );
 }
