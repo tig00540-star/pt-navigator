@@ -7,7 +7,7 @@ const BACKDROP = {
   sheet:  "fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4",
 };
 const CARD = {
-  center: "w-full max-w-md rounded-2xl border border-line bg-card p-5 shadow-xl",
+  center: "max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-line bg-card p-5 shadow-xl",
   sheet:  "max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-line bg-card p-5 shadow-xl sm:rounded-2xl",
 };
 export default function Modal({ variant = "center", dismissable = true, onClose, className = "", children }) {

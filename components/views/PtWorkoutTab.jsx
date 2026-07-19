@@ -662,7 +662,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           onClick={() => !cSaving && setShowContract(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-line bg-elevate p-5 shadow-2xl"
+            className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-elevate p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center gap-2">

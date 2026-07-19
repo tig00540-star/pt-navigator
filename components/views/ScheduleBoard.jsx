@@ -413,7 +413,7 @@ export default function ScheduleBoard({ members = [] }) {
       {/* 회원 픽커 모달 (배치) */}
       {pick && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onClick={() => !saving && setPick(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-card p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-bold text-ink">
                 {addDays(weekStart, pick.dayIdx).getMonth() + 1}/{addDays(weekStart, pick.dayIdx).getDate()} {DAY_LABELS[pick.dayIdx]} {pick.hour}시 — 회원 배치
@@ -442,7 +442,7 @@ export default function ScheduleBoard({ members = [] }) {
       {/* 액션 모달 (완료·일지·카톡 / 취소) */}
       {action && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onClick={() => !acting && setAction(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-1 flex items-center justify-between">
               <h3 className="text-base font-bold text-ink">{memberName(action.user_id)}</h3>
               <button onClick={() => setAction(null)} className="text-muted hover:text-ink"><X className="h-4 w-4" /></button>
