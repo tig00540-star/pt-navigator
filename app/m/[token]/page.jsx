@@ -14,6 +14,7 @@ import { INBODY_FIELDS } from "@/lib/labels";
 import { holidayName } from "@/lib/holidays";
 import { buildExerciseSeries } from "@/lib/workout";
 import { compressImage } from "@/lib/image";
+import Wordmark from "@/components/ui/Wordmark";
 import Eyebrow from "@/components/ui/Eyebrow";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
@@ -700,7 +701,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/icon-192.png" alt="오직 트레이너" className="h-7 w-7 rounded-lg" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-strong">오직 트레이너</span>
+            <Wordmark className="text-[11px] font-bold tracking-[0.18em]" />
           </div>
           <h1 className="mt-2 text-3xl font-extrabold text-ink">
             {me.name} <span className="text-lg font-semibold text-muted">회원님 공간</span>

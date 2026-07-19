@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import PasswordChange from "@/components/views/PasswordChange";
 import Button from "@/components/ui/Button";
+import Wordmark, { Slogan } from "@/components/ui/Wordmark";
 
 export default function AuthGate({ children }) {
   const [ready, setReady] = useState(false);   // 초기 세션 조회 완료 여부
@@ -152,8 +153,8 @@ export default function AuthGate({ children }) {
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
         <div className="mb-6 flex flex-col items-center text-center">
           <Image src="/icons/icon-192.png" alt="오직 트레이너" width={56} height={56} priority className="mb-3 h-14 w-14 rounded-2xl shadow-sm" />
-          <div className="text-lg font-semibold text-ink">오직 트레이너</div>
-          <div className="mt-1 text-xs uppercase tracking-widest text-muted">Only for Trainer</div>
+          <Wordmark className="text-xl font-extrabold" />
+          <Slogan className="mt-1.5 text-[10px] font-semibold" />
         </div>
         <div className="space-y-3">
           <input

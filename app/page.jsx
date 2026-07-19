@@ -34,6 +34,7 @@ import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import Modal from "@/components/ui/Modal";
 import BottomNav from "@/components/ui/BottomNav";
+import Wordmark from "@/components/ui/Wordmark";
 import NumberInput from "@/components/ui/NumberInput";
 import { viewFor, initialStatus, toPtActive, buildContract } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
@@ -646,9 +647,7 @@ export default function OTNavigatorDashboard() {
             <div className="flex items-center gap-3">
               <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 rounded-lg" />
               <div className="leading-tight">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-strong">
-                  오직 트레이너
-                </div>
+                <Wordmark className="text-[10px] font-bold tracking-[0.18em]" />
                 <div className="text-sm font-semibold text-ink">
                   {trainerName || "트레이너"}
                 </div>
