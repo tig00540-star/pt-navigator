@@ -519,7 +519,7 @@ export default function OTNavigatorDashboard() {
   // ⚠️ ③에서 클로징 저장 지점(재등록·이탈 UI 등)이 늘면 그 성공 지점에도 onClosingSaved를 물려야 함.
   const [closingVersion, setClosingVersion] = useState(0);
   const [myUid, setMyUid] = useState(null); // 현재 로그인 uid — 내 회원 판별(원장 스코프)
-  const { isSolo, trainerName } = useAccount(); // solo(1인 SaaS)면 admin 분기 숨김·설정에 셀프 페이롤. center면 false=기존 동작.
+  const { isSolo, isCenter, trainerName } = useAccount(); // solo=admin 숨김. isCenter=확정 center일 때만 admin 노출(fail-closed).
   const [bellOpen, setBellOpen] = useState(false);   // 공지 재열람(벨) 모달
   const [unreadCount, setUnreadCount] = useState(0); // 공지 안읽음 배지 수
   const scheduleRef = useRef(null); // '오늘' 스택 내 스케줄 섹션 — 미처리예약 클릭 시 스크롤 타겟(같은 탭이라 setTab no-op 회귀 방지)
@@ -695,7 +695,7 @@ export default function OTNavigatorDashboard() {
                 )}
               </button>
 
-              {!isSolo && (
+              {isCenter && (
                 <a
                   href="/admin"
                   className="flex items-center gap-1.5 rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-700 transition hover:border-fuchsia-500/60 active:scale-95"
