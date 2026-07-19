@@ -38,6 +38,10 @@ body { overscroll-behavior-y: none; }   /* 웹 특유의 고무줄·pull-to-refr
    레이어 밖 규칙이라 Tailwind의 .text-sm(레이어 안)보다 우선한다(위 input[type=date]와 동일 원리). */
 @media (max-width: 639px) {
   input, select, textarea { font-size: 16px; }
+  /* 예시(placeholder)만 원래 크기로 되돌린다 — 16px이면 긴 예시 문구가 잘렸다.
+     iOS의 확대 판정은 '입력 요소의 font-size'로만 하므로, ::placeholder를 줄여도 확대는 안 돌아온다.
+     실제 입력값은 16px 그대로라 확대 차단 효과는 유지. */
+  input::placeholder, textarea::placeholder { font-size: 14px; }
 }
 
 /* iOS 네이티브 date 인풋 최소너비 제거 — 좁은 컨테이너(회원앱 폼) 밖으로 안 튀게. 피커는 그대로 열림. */
