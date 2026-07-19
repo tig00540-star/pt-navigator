@@ -8,15 +8,17 @@ import { ChevronDown, Dumbbell, Plus, Trash2, X } from "lucide-react";
 const inputCls =
   "w-full rounded-lg border border-line bg-card px-2 py-1.5 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
-function ExerciseNameInput({ value, options, onChange, disabled }) {
-  const [open, setOpen] = useState(false);
+function ExerciseNameInput({ value, options, onChange, disabled, open, onOpenChange }) {
   const wrapRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) onOpenChange(false); };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
+    // onOpenChange는 항상 false로만 호출 → 부모의 (v)=>setOpenIdx(v?exIdx:null)가 exIdx와 무관하게
+    // setOpenIdx(null)이 되므로 stale 클로저여도 결과 동일. open 변화에만 리스너 재바인딩.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const q = (value || "").trim().toLowerCase();
@@ -28,7 +30,7 @@ function ExerciseNameInput({ value, options, onChange, disabled }) {
         type="text"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setOpen(true)}
+        onFocus={() => onOpenChange(true)}
         disabled={disabled}
         placeholder="종목명 (예: 벤치프레스)"
         className="w-full rounded-lg border border-line bg-card px-2 py-1.5 pr-7 text-sm font-semibold text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
@@ -36,7 +38,7 @@ function ExerciseNameInput({ value, options, onChange, disabled }) {
       {options.length > 0 && (
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => onOpenChange(!open)}
           disabled={disabled}
           className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted transition hover:text-primary-strong disabled:opacity-50"
           aria-label="센터 머신 목록"
@@ -51,7 +53,7 @@ function ExerciseNameInput({ value, options, onChange, disabled }) {
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { onChange(o); setOpen(false); }}
+                onClick={() => { onChange(o); onOpenChange(false); }}
                 className="block w-full px-3 py-1.5 text-left text-sm text-ink transition hover:bg-elevate"
               >
                 {o}
@@ -66,6 +68,7 @@ function ExerciseNameInput({ value, options, onChange, disabled }) {
 
 export default function SetsEditor({ value, onChange, disabled, machineOptions = [] }) {
   const list = Array.isArray(value) ? value : [];
+  const [openIdx, setOpenIdx] = useState(null); // 열린 종목 드롭다운(위치 아닌 부모 소유). 한 번에 하나.
 
   const patch = (exIdx, updater) =>
     onChange(list.map((ex, i) => (i === exIdx ? updater(ex) : ex)));
@@ -84,7 +87,7 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
   const removeSet = (exIdx, setIdx) =>
     patch(exIdx, (ex) => ({ ...ex, sets: (ex.sets || []).filter((_, j) => j !== setIdx) }));
 
-  const removeExercise = (exIdx) => onChange(list.filter((_, i) => i !== exIdx));
+  const removeExercise = (exIdx) => { setOpenIdx(null); onChange(list.filter((_, i) => i !== exIdx)); };
 
   const addExercise = () =>
     onChange([...list, { exercise: "", sets: [{ weight: "", reps: "" }] }]);
@@ -106,6 +109,8 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
               options={machineOptions}
               onChange={(name) => setExName(exIdx, name)}
               disabled={disabled}
+              open={openIdx === exIdx}
+              onOpenChange={(v) => setOpenIdx(v ? exIdx : null)}
             />
             <button
               onClick={() => removeExercise(exIdx)}
