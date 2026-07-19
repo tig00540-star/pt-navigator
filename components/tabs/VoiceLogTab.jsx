@@ -24,7 +24,9 @@ import { authHeader } from "@/lib/authHeader";
 import { machinesToStructured } from "@/lib/workout";
 import { loadCenterMachines } from "@/lib/centerMachines";
 
-const MAX_RECORD_SEC = 10 * 60; // 10분 상한(25MB 방어)
+const MAX_RECORD_SEC = 10 * 60; // 10분 상한
+const AUDIO_BPS = 48000; // 48kbps opus/aac — 음성 STT 충분 · 10분≈3.6MB (Vercel 함수 body 4.5MB 한도 방어)
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024; // 4MB — Vercel 4.5MB 한도 아래 안전마진. 초과분은 업로드 전 차단.
 
 /* AI 실패/미설정/미지원 시 보여줄 데모 리포트. */
 function buildVoiceReport(member) {
@@ -222,9 +224,10 @@ export default function VoiceLogTab({ member, onResult }) {
     streamRef.current = stream;
     chunksRef.current = [];
     const mime = pickMimeType();
-    const rec = mime
-      ? new MediaRecorder(stream, { mimeType: mime })
-      : new MediaRecorder(stream);
+    const recOpts = mime
+      ? { mimeType: mime, audioBitsPerSecond: AUDIO_BPS }
+      : { audioBitsPerSecond: AUDIO_BPS };
+    const rec = new MediaRecorder(stream, recOpts);
     recorderRef.current = rec;
 
     rec.ondataavailable = (e) => {
@@ -264,6 +267,12 @@ export default function VoiceLogTab({ member, onResult }) {
       failReal("녹음된 오디오가 없습니다. 다시 녹음해 주세요.");
       return;
     }
+    // 업로드 전 크기 가드 — Vercel 함수 body 4.5MB 한도(초과 시 함수 실행 전 413·서버로그 0).
+    // 브라우저가 bitrate를 무시/미지원해도 여기서 doomed 업로드를 막아 소실을 차단.
+    if (blob.size > MAX_UPLOAD_BYTES) {
+      failReal(`녹음 용량이 커서 전송할 수 없어요 (${(blob.size / 1024 / 1024).toFixed(1)}MB). 조금 더 짧게(약 5분 이내) 나눠 다시 녹음해 주세요.`);
+      return;
+    }
 
     const fd = new FormData();
     fd.append("audio", blob, `recording.${extForMime(type)}`);
@@ -276,6 +285,8 @@ export default function VoiceLogTab({ member, onResult }) {
         // 503 = AI 키 미설정(데모 환경) → 미리보기용 데모 유지. 그 외 실패는 가짜 리포트 안 채움.
         if (res.status === 503) { setNotice("AI 미설정 — 데모 리포트로 표시합니다."); runDemo(); return; }
         const data = await res.json().catch(() => ({}));
+        // 413 = 용량 초과: 같은 녹음 재전송은 무의미 → 재시도 문구 없이 크기 안내만.
+        if (res.status === 413) { failReal(data.error || "녹음 파일이 너무 큽니다. 더 짧게 나눠 다시 녹음해 주세요."); return; }
         failReal((data.error || "AI 처리에 실패했습니다.") + " 잠시 후 다시 시도해 주세요.");
         return;
       }

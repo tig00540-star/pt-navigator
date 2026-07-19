@@ -16,6 +16,7 @@ export const maxDuration = 60;  // STT + Claude 2연속 호출 → Vercel 함수
 
 const STT_MODEL = "gpt-4o-mini-transcribe";
 const SUMMARY_MODEL = "claude-sonnet-5"; // 운동방법 깊이 위해 Sonnet(ot-brief 2차와 동일). Haiku 테스트 시 이 줄만 원복.
+const MAX_AUDIO_BYTES = 4 * 1024 * 1024; // 4MB — 클라 업로드 가드와 동일. Vercel 4.5MB 한도 아래 서버 백스톱.
 
 // STT 어휘 힌트 — 헬스 PT 도메인 용어를 prompt로 흘려 오인식 저감(gpt-4o-*-transcribe의 prompt 파라미터).
 const STT_PROMPT_BASE = "헬스 PT 수업 구두 요약. 운동·머신명과 중량·횟수·세트가 나옵니다. 예: 벤치프레스, 인클라인벤치프레스, 레그프레스, 스쿼트, 데드리프트, 랫풀다운, 시티드로우, 숄더프레스, 힙어브덕션, 힙쓰러스트, 레그익스텐션, 레그컬, 케이블, 덤벨, 바벨, 스미스머신, kg, 회, 세트.";
@@ -125,6 +126,15 @@ export async function POST(request) {
   }
   if (!audio || typeof audio === "string") {
     return Response.json({ error: "audio 파일이 없습니다." }, { status: 400 });
+  }
+  // 서버측 크기 백스톱 — 클라 가드를 우회(구버전 캐시 JS 등)한 4~4.5MB 구간을 STT 호출 전에 차단 + 로깅.
+  // (4.5MB 초과는 Vercel이 함수 실행 전 413으로 끊어 여기 도달 못 함 — 그건 클라 가드가 담당.)
+  if (typeof audio.size === "number" && audio.size > MAX_AUDIO_BYTES) {
+    console.error(`[voice-log] 오디오 초과: ${audio.size} bytes (한도 ${MAX_AUDIO_BYTES})`);
+    return Response.json(
+      { error: "녹음 파일이 너무 큽니다. 더 짧게 나눠 다시 녹음해 주세요." },
+      { status: 413 }
+    );
   }
 
   // 1) STT — 오디오 파일을 그대로 multipart 전달 (포맷/확장자는 클라이언트가 맞춤).
