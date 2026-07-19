@@ -29,15 +29,23 @@ export async function POST(req) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !svcKey || !anon) return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+  if (!url || !svcKey || !anon) {
+    console.error("[member-auth] 503 서버키 미설정");
+    return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const token = String(body.token || "").trim().toLowerCase();
   const last4 = String(body.phoneLast4 || "").trim();
-  if (!UUID_RE.test(token) || !/^\d{4}$/.test(last4)) return FAIL();
+  if (!UUID_RE.test(token) || !/^\d{4}$/.test(last4)) {
+    console.warn("[member-auth] 401 형식오류 — 토큰/끝4 형식 불일치"); // 값 미로깅
+    return FAIL();
+  }
 
-  if (!throttle(token))
+  if (!throttle(token)) {
+    console.warn("[member-auth] 429 스로틀 — 끝4 브루트포스 의심(토큰 미로깅)");
     return Response.json({ error: "시도가 많습니다. 잠시 후 다시 시도하세요." }, { status: 429 });
+  }
 
   const svc = createClient(url, svcKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
@@ -47,11 +55,17 @@ export async function POST(req) {
     .select("id, name, phone_number, member_auth_id, account_id")
     .eq("member_token", token)
     .maybeSingle();
-  if (!member) return FAIL();
+  if (!member) {
+    console.warn("[member-auth] 401 인증실패 — 토큰 매칭 회원 없음"); // 토큰 값 미로깅
+    return FAIL();
+  }
 
   // 2) 휴대 끝4 대조(숫자만 추출)
   const digits = String(member.phone_number || "").replace(/\D/g, "");
-  if (digits.length < 4 || digits.slice(-4) !== last4) return FAIL();
+  if (digits.length < 4 || digits.slice(-4) !== last4) {
+    console.warn(`[member-auth] 401 인증실패 — 끝4 불일치 member_id=${member.id}`); // 끝4 값 미로깅
+    return FAIL();
+  }
 
   // 2.5) 소속 계정이 premium·활성·미만료인지 (층2 게이트). 아니면 회원앱 로그인 거절.
   //   basic 다운그레이드/구독 만료/해지 시 회원 재로그인 차단(이미 발급된 링크도 그날부터 안 열림).
@@ -66,6 +80,7 @@ export async function POST(req) {
     acct.subscription_status === "active" &&
     (!acct.current_period_end || new Date(acct.current_period_end) > new Date());
   if (!premiumActive) {
+    console.warn(`[member-auth] 403 회원앱 중단 — 계정 premium/활성 아님 member_id=${member.id}`);
     return Response.json(
       { error: "회원앱 이용이 일시 중단되었어요. 담당 트레이너에게 문의해 주세요." },
       { status: 403 }
@@ -89,11 +104,13 @@ export async function POST(req) {
       user_metadata: { role: "member", member_id: member.id }, // account_type 없음(중요)
     });
     if (ce || !created?.user?.id) {
+      console.error(`[member-auth] 회원 auth 생성 실패 member_id=${member.id}:`, ce?.message || "unknown");
       return Response.json({ error: "회원 세션 생성 실패." }, { status: 500 });
     }
     authId = created.user.id;
     const { error: le } = await svc.from("user_table").update({ member_auth_id: authId }).eq("id", member.id);
     if (le) {
+      console.error(`[member-auth] member_auth_id 연결 실패 — auth 롤백 member_id=${member.id}:`, le.message);
       await svc.auth.admin.deleteUser(authId); // 정합성: 연결 실패 시 방금 만든 유저 롤백
       return Response.json({ error: "회원 연결 실패." }, { status: 500 });
     }
@@ -102,7 +119,10 @@ export async function POST(req) {
   // 4) 세션 발급 = anon 클라로 서버측 로그인 → 토큰 반환
   const pub = createClient(url, anon, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: sess, error: se } = await pub.auth.signInWithPassword({ email, password });
-  if (se || !sess?.session) return Response.json({ error: "세션 발급 실패." }, { status: 500 });
+  if (se || !sess?.session) {
+    console.error(`[member-auth] 세션 발급 실패 member_id=${member.id}:`, se?.message || "no session");
+    return Response.json({ error: "세션 발급 실패." }, { status: 500 });
+  }
 
   return Response.json({
     ok: true,

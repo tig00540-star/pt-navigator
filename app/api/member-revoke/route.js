@@ -11,11 +11,17 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export async function POST(req) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+  if (!url || !key) {
+    console.error("[member-revoke] 503 서버키 미설정");
+    return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+  }
 
   const authz = req.headers.get("authorization") || "";
   const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
-  if (!token) return Response.json({ error: "인증 필요" }, { status: 401 });
+  if (!token) {
+    console.warn("[member-revoke] 401 인증필요 — 토큰 없음");
+    return Response.json({ error: "인증 필요" }, { status: 401 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const memberId = String(body.memberId || "").trim();
@@ -25,9 +31,13 @@ export async function POST(req) {
 
   // ① 호출자 = 활성 트레이너 검증(service 키라 RLS 우회하여 조회)
   const { data: u, error: ue } = await sb.auth.getUser(token);
-  if (ue || !u?.user?.id) return Response.json({ error: "세션 무효" }, { status: 401 });
+  if (ue || !u?.user?.id) {
+    console.warn("[member-revoke] 401 세션무효:", ue?.message || "no uid");
+    return Response.json({ error: "세션 무효" }, { status: 401 });
+  }
   const { data: me } = await sb.from("trainer").select("account_id, active").eq("id", u.user.id).maybeSingle();
   if (!me || me.active !== true) {
+    console.warn(`[member-revoke] 403 비활성/미등록 트레이너 uid=${u.user.id}`);
     return Response.json({ error: "권한 없음(비활성/미등록 트레이너)" }, { status: 403 });
   }
 
@@ -38,6 +48,7 @@ export async function POST(req) {
     .eq("id", memberId)
     .maybeSingle();
   if (!member || member.account_id !== me.account_id) {
+    console.warn(`[member-revoke] 404 대상없음/타계정 revoke 시도 uid=${u.user.id} memberId=${memberId}`);
     return Response.json({ error: "대상 회원을 찾을 수 없습니다." }, { status: 404 });
   }
 
@@ -45,6 +56,7 @@ export async function POST(req) {
   if (member.member_auth_id) {
     const { error: de } = await sb.auth.admin.deleteUser(member.member_auth_id);
     if (de && !/not.*found/i.test(de.message || "")) {
+      console.error(`[member-revoke] auth 유저 삭제 실패 memberId=${memberId}:`, de.message);
       return Response.json({ error: "세션 차단 실패: " + de.message }, { status: 500 });
     }
   }
@@ -56,6 +68,7 @@ export async function POST(req) {
     .eq("id", memberId)
     .select("id");
   if (upe || !upd || upd.length === 0) {
+    console.error(`[member-revoke] 링크 폐기 실패 memberId=${memberId}:`, upe?.message || "0행");
     return Response.json({ error: "링크 폐기 실패: " + (upe?.message || "0행") }, { status: 500 });
   }
 
