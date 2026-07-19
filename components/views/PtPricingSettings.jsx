@@ -162,11 +162,10 @@ export default function PtPricingSettings() {
 
   return (
     <div className="space-y-4">
-      <Eyebrow icon={Tag}>내 PT 가격 설정</Eyebrow>
-
       {/* 입력 카드 (신규/수정 겸용) */}
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <div className="space-y-3">
+        <Eyebrow icon={Tag}>내 PT 가격 설정</Eyebrow>
+        <div className="mt-3 space-y-3">
           <label className="block">
             <span className="mb-1 block text-[11px] font-medium text-muted">패키지명 *</span>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={saving} placeholder="3개월 집중" className={inputCls} />

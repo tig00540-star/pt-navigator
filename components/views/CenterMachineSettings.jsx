@@ -126,11 +126,10 @@ export default function CenterMachineSettings() {
 
   return (
     <div className="space-y-4">
-      <Eyebrow icon={Dumbbell}>보유 장비</Eyebrow>
-
       {isOwner ? (
         <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-          <div className="space-y-3">
+          <Eyebrow icon={Dumbbell}>보유 장비</Eyebrow>
+          <div className="mt-3 space-y-3">
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">장비 이름 *</span>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={saving} placeholder="레그프레스 · 덤벨 세트 …" className={inputCls} />
@@ -175,7 +174,11 @@ export default function CenterMachineSettings() {
           </div>
         </section>
       ) : (
-        <p className="text-[11px] text-muted">장비는 대표가 관리합니다. (열람 전용)</p>
+        /* 비owner도 카드로 — 제목이 카드 안이라는 규칙을 두 분기 모두 지키게. */
+        <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+          <Eyebrow icon={Dumbbell}>보유 장비</Eyebrow>
+          <p className="mt-2 text-[11px] text-muted">장비는 대표가 관리합니다. (열람 전용)</p>
+        </section>
       )}
 
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">

@@ -63,9 +63,9 @@ export default function TrainerGoalSetter() {
   const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
   return (
     <div className="space-y-4">
-      <Eyebrow icon={Target}>이달 목표매출</Eyebrow>
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <div className="text-[11px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
+        <Eyebrow icon={Target}>이달 목표매출</Eyebrow>
+        <div className="mt-2 text-[11px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
         <div className="mt-3 flex gap-2">
           <NumberInput value={value} onValueChange={setValue} disabled={saving} placeholder="목표 순매출(원)" className={inputCls} />
           <Button variant="primary" size="md" onClick={save} disabled={saving} className="shrink-0">

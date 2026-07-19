@@ -129,10 +129,10 @@ export default function TrainerLibrary() {
 
   return (
     <div className="space-y-4">
-      <Eyebrow icon={BookMarked}>내 라이브러리</Eyebrow>
       {/* 입력(신규/수정 겸용) */}
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <div className="space-y-3">
+        <Eyebrow icon={BookMarked}>내 라이브러리</Eyebrow>
+        <div className="mt-3 space-y-3">
           <label className="block">
             <span className="mb-1 block text-[11px] font-medium text-muted">카테고리 <span className="text-muted">(선택)</span></span>
             <input list="lib-cats" type="text" value={category} onChange={(e) => setCategory(e.target.value)} disabled={saving} placeholder="거북목 · 라운드숄더 …" className={inputCls} />
