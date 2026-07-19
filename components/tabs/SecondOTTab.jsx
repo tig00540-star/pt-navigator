@@ -330,6 +330,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         return;
       }
       setLoading(true);
+      try {
       setBrief(null); // 회원 전환 시 이전 브리핑 즉시 클리어
       setBriefMeta(null);
       setAiError("");
@@ -399,6 +400,11 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         setCaseGate({ on: false, tier: "off" });
         setCaseData([]);
       }
+    } catch {
+      // 조회 실패 — finally에서 로딩 해제. 부분(케이스) 실패는 해당 섹션 빈 채로 degrade.
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
     })();
     return () => {
       cancelled = true;

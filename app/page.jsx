@@ -530,19 +530,23 @@ export default function OTNavigatorDashboard() {
       setDbNote("데모 모드 — Supabase 키를 설정하면 실데이터가 연결됩니다.");
       return;
     }
-    const { data, error } = await supabase
-      .from("user_table")
-      .select("*")
-      .eq("hidden", false)                       // 소프트 삭제(환불) 회원 제외
-      .order("created_at", { ascending: false });
-    if (error) {
-      setDbNote("불러오기 실패: " + error.message);
-      return;
+    try {
+      const { data, error } = await supabase
+        .from("user_table")
+        .select("*")
+        .eq("hidden", false)                       // 소프트 삭제(환불) 회원 제외
+        .order("created_at", { ascending: false });
+      if (error) {
+        setDbNote("불러오기 실패: " + error.message);
+        return;
+      }
+      const mapped = (data || []).map(mapMemberRow);
+      setMembers(mapped);
+      setDbNote("");
+      setSelectedId((prev) => prev ?? (mapped[0] ? mapped[0].id : null));
+    } catch {
+      setDbNote("회원 목록을 불러오지 못했어요 — 잠시 후 새로고침 해주세요.");
     }
-    const mapped = (data || []).map(mapMemberRow);
-    setMembers(mapped);
-    setDbNote("");
-    setSelectedId((prev) => prev ?? (mapped[0] ? mapped[0].id : null));
   };
 
   useEffect(() => {

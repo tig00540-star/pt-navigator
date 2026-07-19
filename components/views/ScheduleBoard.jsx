@@ -87,15 +87,21 @@ export default function ScheduleBoard({ members = [] }) {
     (async () => {
       if (!supabase) { if (!cancelled) setAppts([]); return; }
       setLoading(true);
-      const { data } = await supabase
-        .from("appointment")
-        .select("*")
-        .gte("start_at", weekStart.toISOString())
-        .lt("start_at", weekEnd.toISOString())
-        .neq("status", "canceled");
-      if (cancelled) return;
-      setAppts(data || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from("appointment")
+          .select("*")
+          .gte("start_at", weekStart.toISOString())
+          .lt("start_at", weekEnd.toISOString())
+          .neq("status", "canceled");
+        if (cancelled) return;
+        setAppts(data || []);
+        setLoading(false);
+      } catch {
+        // 조회 실패 — finally에서 로딩 해제(무한 스피너 방지).
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [weekStart, weekEnd]);

@@ -35,6 +35,7 @@ export default function MyStats({ members = [], isSolo = false }) {
     let cancelled = false;
     (async () => {
       if (!supabase) { setLoading(false); return; }
+      try {
       const { data: au } = await supabase.auth.getUser();
       const myId = au?.user?.id ?? null;
       const [c, l, o, ps, pr, tr, tg] = await Promise.all([
@@ -68,6 +69,11 @@ export default function MyStats({ members = [], isSolo = false }) {
       setRuns(pr.data || []);
       setContractNames(names);
       setLoading(false);
+    } catch {
+      // 조회 실패 — finally에서 로딩 해제(무한 스피너 방지). MyStats는 별도 에러 표시 없음(빈 통계로 degrade).
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
     })();
     return () => { cancelled = true; };
   }, []);

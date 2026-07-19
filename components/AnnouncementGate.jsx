@@ -31,13 +31,17 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
     if (!supabase || !uid) return;
     let cancelled = false;
     (async () => {
-      const [a, r] = await Promise.all([
-        supabase.from("announcement").select("*"),
-        supabase.from("announcement_read").select("announcement_id"),
-      ]);
-      if (cancelled) return;
-      setAnns(a.data || []);
-      setReadIds(new Set((r.data || []).map((x) => x.announcement_id)));
+      try {
+        const [a, r] = await Promise.all([
+          supabase.from("announcement").select("*"),
+          supabase.from("announcement_read").select("announcement_id"),
+        ]);
+        if (cancelled) return;
+        setAnns(a.data || []);
+        setReadIds(new Set((r.data || []).map((x) => x.announcement_id)));
+      } catch {
+        if (!cancelled) setErr("공지를 불러오지 못했어요 — 새로고침 해주세요.");
+      }
     })();
     return () => { cancelled = true; };
   }, [uid]);
@@ -77,13 +81,17 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
       const unread = unreadAnnouncements(anns, readIds, uid).filter((a) => !a.must_ack);
       if (!unread.length) return;
       const rows = unread.map((a) => ({ announcement_id: a.id })); // account_id·trainer_id는 DB DEFAULT
-      const { error } = await supabase
-        .from("announcement_read")
-        .upsert(rows, { onConflict: "announcement_id,trainer_id", ignoreDuplicates: true })
-        .select();
-      if (cancelled) return;
-      if (error) { setErr("확인 반영 실패 — 정책 확인"); return; }
-      setReadIds((prev) => { const n = new Set(prev); for (const a of unread) n.add(a.id); return n; });
+      try {
+        const { error } = await supabase
+          .from("announcement_read")
+          .upsert(rows, { onConflict: "announcement_id,trainer_id", ignoreDuplicates: true })
+          .select();
+        if (cancelled) return;
+        if (error) { setErr("확인 반영 실패 — 정책 확인"); return; }
+        setReadIds((prev) => { const n = new Set(prev); for (const a of unread) n.add(a.id); return n; });
+      } catch {
+        if (!cancelled) setErr("확인 반영 실패 — 정책 확인");
+      }
     })();
     return () => { cancelled = true; };
     // reviewOpen 상승 엣지에서만. anns/readIds는 의도적 제외(재열람 중 재ack 방지).

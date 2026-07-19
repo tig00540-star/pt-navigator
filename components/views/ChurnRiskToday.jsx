@@ -25,14 +25,20 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
     (async () => {
       if (!supabase) return;
       setLoading(true);
-      const [{ data: cs }, { data: ls }] = await Promise.all([
-        supabase.from("session_log").select("*"),
-        supabase.from("daily_workout_log").select("user_id, session_at, created_at, voided, source"),
-      ]);
-      if (cancelled) return;
-      setContracts(cs || []);
-      setLogs(ls || []);
-      setLoading(false);
+      try {
+        const [{ data: cs }, { data: ls }] = await Promise.all([
+          supabase.from("session_log").select("*"),
+          supabase.from("daily_workout_log").select("user_id, session_at, created_at, voided, source"),
+        ]);
+        if (cancelled) return;
+        setContracts(cs || []);
+        setLogs(ls || []);
+        setLoading(false);
+      } catch {
+        // 조회 실패 — finally에서 로딩 해제(위젯은 빈 채로 숨김 degrade).
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);

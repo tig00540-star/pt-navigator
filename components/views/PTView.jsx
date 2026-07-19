@@ -34,14 +34,20 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
         return;
       }
       setLoading(true);
-      const [{ data: cs }, { data: ls }] = await Promise.all([
-        supabase.from("session_log").select("*").eq("user_id", member.id),
-        supabase.from("daily_workout_log").select("*").eq("user_id", member.id),
-      ]);
-      if (cancelled) return;
-      setContracts(cs || []);
-      setLogs(ls || []);
-      setLoading(false);
+      try {
+        const [{ data: cs }, { data: ls }] = await Promise.all([
+          supabase.from("session_log").select("*").eq("user_id", member.id),
+          supabase.from("daily_workout_log").select("*").eq("user_id", member.id),
+        ]);
+        if (cancelled) return;
+        setContracts(cs || []);
+        setLogs(ls || []);
+        setLoading(false);
+      } catch {
+        // 조회 실패 — finally에서 로딩 해제.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;

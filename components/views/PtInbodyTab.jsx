@@ -75,14 +75,20 @@ export default function PtInbodyTab({ member, mode }) {
         return;
       }
       setLoading(true);
-      const { data } = await supabase
-        .from("inbody_log")
-        .select("*")
-        .eq("user_id", member.id)
-        .order("measured_at", { ascending: false });
-      if (cancelled) return;
-      setRows(data || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from("inbody_log")
+          .select("*")
+          .eq("user_id", member.id)
+          .order("measured_at", { ascending: false });
+        if (cancelled) return;
+        setRows(data || []);
+        setLoading(false);
+      } catch {
+        // 조회 실패 — finally에서 로딩 해제.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [member?.id]);
