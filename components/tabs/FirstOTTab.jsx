@@ -132,23 +132,24 @@ export default function FirstOTTab({ member }) {
             ))}
           </div>
         )}
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line/80 bg-card/85 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:px-6">
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addNote()}
-              placeholder="현장 메모 빠르게 남기기…"
-              className="flex-1 rounded-xl border border-line bg-elevate px-4 py-2.5 text-sm text-ink placeholder-muted outline-none transition focus:border-primary"
-            />
-            <button
-              onClick={addNote}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30 transition active:scale-95"
-              aria-label="메모 저장"
-            >
-              <Send className="h-4 w-4" strokeWidth={2.5} />
-            </button>
-          </div>
+        {/* 인플로우 카드 — 예전엔 `fixed inset-x-0 bottom-0 z-30`이었는데 전역 BottomNav도 bottom-0 z-40이라
+            메모바가 탭바 뒤로 눌렸다(하단탭바 도입 때 안 올린 회귀). 바닥 고정 요소는 탭바 하나로 정리.
+            루트의 pb-28(탭바 여백)은 유지 — 인플로우라 탭바에 가리지 않음. */}
+        <div className="mt-6 flex items-center gap-2 rounded-2xl border border-line bg-card p-3 shadow-sm">
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addNote()}
+            placeholder="현장 메모 빠르게 남기기…"
+            className="flex-1 rounded-xl border border-line bg-elevate px-4 py-2.5 text-sm text-ink placeholder-muted outline-none transition focus:border-primary"
+          />
+          <button
+            onClick={addNote}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30 transition active:scale-95"
+            aria-label="메모 저장"
+          >
+            <Send className="h-4 w-4" strokeWidth={2.5} />
+          </button>
         </div>
     </>
   );
