@@ -11,7 +11,7 @@ import { requireTrainer } from "@/lib/requireTrainer";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
-export const maxDuration = 60; // ③ Sonnet 생성이 최대 ~1분 → Vercel 함수 타임아웃 상향
+export const maxDuration = 180; // Hobby+fluid compute 기본 300s. 실측 ~45s의 4배 마진 + 업스트림 무응답 폭주 상한(선언제거=300s는 비권장).
 
 const MODEL_SECOND = "claude-sonnet-5";
 
