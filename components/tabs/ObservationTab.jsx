@@ -309,10 +309,13 @@ export default function ObservationTab({ member, onClosingSaved }) {
       )}
 
       {/* ① 움직임 관찰 */}
-      <section>
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
-            <Footprints className="h-3.5 w-3.5" /> ① 움직임 관찰
+      <section className="rounded-xl border border-line bg-card shadow-sm p-4">
+        <div className="mb-3 flex items-center justify-between">
+          {/* Eyebrow와 동일 조판을 인라인으로 — 옆에 '추가' 버튼이 붙어야 해서 Eyebrow(mb-4 내장)를 그대로 못 쓴다.
+              기존엔 아이콘에 text-primary-strong이 빠져 이 제목만 회색이었다(형제 ②③④는 레드). 함께 교정. */}
+          <div className="flex items-center gap-2">
+            <Footprints className="h-4 w-4 text-primary-strong" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-sub">① 움직임 관찰</span>
           </div>
           <Button variant="ghost" size="sm" onClick={addMovement} disabled={form.movements.length >= 3}>
             <Plus className="h-3.5 w-3.5" /> 추가
@@ -323,7 +326,8 @@ export default function ObservationTab({ member, onClosingSaved }) {
           {form.movements.map((m, i) => (
             <div
               key={i}
-              className="rounded-xl border border-line bg-card shadow-sm p-3.5"
+              /* 카드 안 카드가 되지 않게 elevate 패널로(= globals.css의 '카드 안 눌린 패널' 용도). */
+              className="rounded-xl border border-line bg-elevate p-3.5"
             >
               <div className="mb-2 flex items-center justify-between">
                 <span className="font-mono text-[11px] font-bold text-primary-strong">
@@ -377,9 +381,9 @@ export default function ObservationTab({ member, onClosingSaved }) {
       </section>
 
       {/* ② 회원 반응·성향 */}
-      <section>
+      <section className="rounded-xl border border-line bg-card shadow-sm p-4">
         <Eyebrow icon={Smile}>② 회원 반응·성향</Eyebrow>
-        <div className="space-y-3 rounded-xl border border-line bg-card shadow-sm p-4">
+        <div className="space-y-3">
           <div>
             <label className="mb-1 block text-[11px] font-medium text-muted">
               자극 인지도
@@ -450,9 +454,9 @@ export default function ObservationTab({ member, onClosingSaved }) {
       </section>
 
       {/* ③ 진짜 목적 */}
-      <section>
+      <section className="rounded-xl border border-line bg-card shadow-sm p-4">
         <Eyebrow icon={Target}>③ 진짜 목적</Eyebrow>
-        <div className="grid gap-3 rounded-xl border border-line bg-card shadow-sm p-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-[11px] font-medium text-muted">
               파악 여부
@@ -500,9 +504,9 @@ export default function ObservationTab({ member, onClosingSaved }) {
       </section>
 
       {/* ④ 트레이너 종합 소견 (report.trainer_note — 2차 AI 재료. B2-b에서 프롬프트 연동) */}
-      <section>
+      <section className="rounded-xl border border-line bg-card shadow-sm p-4">
         <Eyebrow icon={FileText}>④ 트레이너 종합 소견</Eyebrow>
-        <div className="rounded-xl border border-line bg-card shadow-sm p-4">
+        <div>
           <textarea
             value={form.trainerNote}
             onChange={(e) => setTop("trainerNote", e.target.value)}
@@ -535,9 +539,9 @@ export default function ObservationTab({ member, onClosingSaved }) {
       </section>
 
       {/* ㉠ 1차 클로징 결과 */}
-      <section>
+      <section className="rounded-xl border border-line bg-card shadow-sm p-4">
         <Eyebrow icon={Handshake}>㉠ 1차 클로징 결과</Eyebrow>
-        <div className="grid gap-3 rounded-xl border border-line bg-card shadow-sm p-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-[11px] font-medium text-muted">
               클로징 결과

@@ -422,10 +422,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       )}
 
       {/* 피드백 분석 카드 */}
-      <section>
+      <section className="rounded-2xl border border-line bg-card shadow-sm p-5 sm:p-6">
         <Eyebrow icon={Microscope}>회원 피드백 AI 분석</Eyebrow>
 
-        <div className="rounded-2xl border border-line bg-card shadow-sm p-5 sm:p-6">
+        <div>
           <div className="rounded-xl border border-line bg-card shadow-sm p-4">
             <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
               <MessageSquareQuote className="h-3.5 w-3.5" /> 1차 OT 직후 · 회원의 말
@@ -689,9 +689,9 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           클로징 결과 기록 · 수업 후
         </div>
         {/* ㉠ 2차 클로징 결과 기록 (round-2 closing_* 컬럼 — 브리핑 캐시와 공존) */}
-        <section>
+        <section className="rounded-xl border border-line bg-card shadow-sm p-4">
           <Eyebrow icon={Handshake}>㉠ 2차 클로징 결과 기록</Eyebrow>
-          <div className="grid gap-3 rounded-xl border border-line bg-card shadow-sm p-4 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-[11px] font-medium text-muted">결과</label>
               <select
