@@ -46,5 +46,10 @@ input[type="date"] {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.tab-anim { animation: tabIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* ⚠️ fill-mode는 반드시 backwards — both(=forwards 포함)면 애니메이션이 끝난 뒤에도
+   `transform: translateY(0)`이 남는다. transform이 none이 아닌 요소는 position:fixed 자손의
+   containing block이 되므로, 이 div 안의 모달(PtConfirmBanner·PtWorkoutTab 계약·ScheduleBoard)이
+   뷰포트가 아니라 이 div 기준으로 앵커돼 위쪽이 잘리고 도달 불가가 된다(90vh도 이 div 기준이 됨).
+   backwards는 시작 전 from 상태 보호만 유지 → 진입 깜빡임 방지는 그대로, 끝 상태는 natural과 동일. */
+.tab-anim { animation: tabIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 @media (prefers-reduced-motion: reduce) { .tab-anim { animation: none; } }
