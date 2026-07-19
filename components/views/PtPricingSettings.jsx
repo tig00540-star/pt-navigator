@@ -171,7 +171,7 @@ export default function PtPricingSettings() {
             <span className="mb-1 block text-[11px] font-medium text-muted">패키지명 *</span>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={saving} placeholder="3개월 집중" className={inputCls} />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">세션수</span>
               <NumberInput value={sessions} onValueChange={setSessions} disabled={saving} placeholder="회 (비우면 기간제)" className={inputCls} />
@@ -193,7 +193,7 @@ export default function PtPricingSettings() {
             <span className="mb-1 block text-[11px] font-medium text-muted">설명 <span className="text-muted">(선택)</span></span>
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="대상·특징" className={inputCls} />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex items-center gap-2 text-xs text-sub">
               <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} disabled={saving} className="h-4 w-4 accent-primary" />
               노출 (끄면 숨김)

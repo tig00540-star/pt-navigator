@@ -102,12 +102,11 @@ export default function TrainerProfileSettings() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-muted">MBTI <span className="text-muted">(선택)</span></span>
-                <input type="text" value={mbti} onChange={(e) => setMbti(e.target.value)} disabled={saving} placeholder="ENFP" maxLength={4} className={inputCls} />
-              </label>
-            </div>
+            {/* 단일 항목이라 2열 grid로 감쌀 이유가 없었다(오른쪽 절반이 늘 빈칸). 4자 입력이라 폭도 제한. */}
+            <label className="block sm:max-w-[12rem]">
+              <span className="mb-1 block text-[11px] font-medium text-muted">MBTI <span className="text-muted">(선택)</span></span>
+              <input type="text" value={mbti} onChange={(e) => setMbti(e.target.value)} disabled={saving} placeholder="ENFP" maxLength={4} className={inputCls} />
+            </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">성향·한줄 소개 <span className="text-muted">(선택)</span></span>
               <textarea value={bio} onChange={(e) => setBio(e.target.value)} disabled={saving} rows={3} placeholder="예: 통증개선 특화, 공감형 상담, 초보자 편하게" className={inputCls} />
