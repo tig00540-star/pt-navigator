@@ -1,7 +1,7 @@
 "use client";
 /* 오늘 할일 — 이탈 위험 조기경보. 활성 계약(잔여>0)인데 최근 N일 수업이 없는 PT 회원.
    자기완결: session_log·daily_workout_log 계정 전체 조회 → 회원별 마지막 수업일 계산. 데모/0건 숨김. */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor, activeContract, remainingSessions } from "@/lib/memberStatus";
@@ -27,7 +27,7 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
       setLoading(true);
       try {
         const [{ data: cs }, { data: ls }] = await Promise.all([
-          supabase.from("session_log").select("*"),
+          supabase.from("session_log").select("id, user_id, started_at, created_at, sessions_total, service_sessions"),
           supabase.from("daily_workout_log").select("user_id, session_at, created_at, voided, source"),
         ]);
         if (cancelled) return;
@@ -43,27 +43,31 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
     return () => { cancelled = true; };
   }, []);
 
-  if (!supabase) return null; // 데모: 집계 데이터 없음
+  // 회원×로그 O(n²) 집계 — 데이터 변경 시에만 재계산(모든 훅은 early return 앞에).
+  const risky = useMemo(() =>
+    members
+      .filter((m) => viewFor(m) === "pt")
+      .map((m) => {
+        const mlogs = logs.filter((l) => l.user_id === m.id);
+        const mcontracts = contracts.filter((c) => c.user_id === m.id);
+        const active = activeContract(mcontracts, mlogs);
+        if (!active) return null;
+        const rem = remainingSessions(active, mlogs);
+        if (rem.total <= 0) return null; // 잔여 없으면 재등록 대상(이탈 아님)
+        // 마지막 '실제' 수업(노쇼·취소 제외) 기준. 한 번도 안 왔으면 계약 시작일 기준.
+        const done = mlogs.filter((l) => !l.voided && l.source !== "noshow");
+        const last = done.map((l) => l.session_at ?? l.created_at).filter(Boolean).sort().slice(-1)[0] ?? null;
+        const ref = last ?? active.started_at ?? active.created_at ?? null;
+        const gap = ref ? daysSince(ref) : null;
+        if (gap == null || gap < STALE_DAYS) return null;
+        return { m, gap, rem, everCame: Boolean(last) };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.gap - a.gap),
+    [members, contracts, logs]
+  );
 
-  const risky = members
-    .filter((m) => viewFor(m) === "pt")
-    .map((m) => {
-      const mlogs = logs.filter((l) => l.user_id === m.id);
-      const mcontracts = contracts.filter((c) => c.user_id === m.id);
-      const active = activeContract(mcontracts, mlogs);
-      if (!active) return null;
-      const rem = remainingSessions(active, mlogs);
-      if (rem.total <= 0) return null; // 잔여 없으면 재등록 대상(이탈 아님)
-      // 마지막 '실제' 수업(노쇼·취소 제외) 기준. 한 번도 안 왔으면 계약 시작일 기준.
-      const done = mlogs.filter((l) => !l.voided && l.source !== "noshow");
-      const last = done.map((l) => l.session_at ?? l.created_at).filter(Boolean).sort().slice(-1)[0] ?? null;
-      const ref = last ?? active.started_at ?? active.created_at ?? null;
-      const gap = ref ? daysSince(ref) : null;
-      if (gap == null || gap < STALE_DAYS) return null;
-      return { m, gap, rem, everCame: Boolean(last) };
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.gap - a.gap);
+  if (!supabase) return null; // 데모: 집계 데이터 없음
 
   if (loading || risky.length === 0) return null;
 
