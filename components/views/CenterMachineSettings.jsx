@@ -39,11 +39,16 @@ export default function CenterMachineSettings() {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setLoading(false); return; }
-      const { data } = await supabase.from("center_machine").select("*")
-        .order("kind", { ascending: true }).order("name", { ascending: true });
-      if (cancelled) return;
-      setRows(data || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase.from("center_machine").select("*")
+          .order("kind", { ascending: true }).order("name", { ascending: true });
+        if (cancelled) return;
+        setRows(data || []);
+      } catch {
+        /* 조회 실패 → 빈 목록 유지, 스피너만 해제 */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);

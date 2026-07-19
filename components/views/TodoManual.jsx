@@ -63,17 +63,25 @@ export default function TodoManual() {
       return;
     }
     const patch = { done: nextDone, done_at: nextDone ? new Date().toISOString() : null };
-    const { data, error } = await supabase.from("trainer_todo").update(patch).eq("id", todo.id).select();
-    if (error || !data || data.length === 0) { setErr("반영 실패 — 정책 확인"); return; }
-    setTodos((t) => t.map((x) => (x.id === todo.id ? data[0] : x)));
+    try {
+      const { data, error } = await supabase.from("trainer_todo").update(patch).eq("id", todo.id).select();
+      if (error || !data || data.length === 0) { setErr("반영 실패 — 정책 확인"); return; }
+      setTodos((t) => t.map((x) => (x.id === todo.id ? data[0] : x)));
+    } catch {
+      setErr("반영 실패 — 네트워크 확인");
+    }
   };
 
   const remove = async (todo) => {
     setConfirmId(null);
     if (!supabase) { setTodos((t) => t.filter((x) => x.id !== todo.id)); return; }
-    const { data, error } = await supabase.from("trainer_todo").delete().eq("id", todo.id).select();
-    if (error || !data || data.length === 0) { setErr("삭제 실패 — 정책 확인"); return; }
-    setTodos((t) => t.filter((x) => x.id !== todo.id));
+    try {
+      const { data, error } = await supabase.from("trainer_todo").delete().eq("id", todo.id).select();
+      if (error || !data || data.length === 0) { setErr("삭제 실패 — 정책 확인"); return; }
+      setTodos((t) => t.filter((x) => x.id !== todo.id));
+    } catch {
+      setErr("삭제 실패 — 네트워크 확인");
+    }
   };
 
   const sorted = [...todos].sort((a, b) =>

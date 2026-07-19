@@ -24,14 +24,19 @@ export default function TrainerGoalSetter() {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setLoading(false); return; }
-      const { data: au } = await supabase.auth.getUser();
-      const id = au?.user?.id ?? null;
-      const { data } = await supabase.from("trainer_goal").select("target_revenue")
-        .eq("trainer_id", id).eq("ym", ym).maybeSingle();
-      if (cancelled) return;
-      setUid(id);
-      if (data?.target_revenue != null) { setCurrent(data.target_revenue); setValue(String(data.target_revenue)); }
-      setLoading(false);
+      try {
+        const { data: au } = await supabase.auth.getUser();
+        const id = au?.user?.id ?? null;
+        const { data } = await supabase.from("trainer_goal").select("target_revenue")
+          .eq("trainer_id", id).eq("ym", ym).maybeSingle();
+        if (cancelled) return;
+        setUid(id);
+        if (data?.target_revenue != null) { setCurrent(data.target_revenue); setValue(String(data.target_revenue)); }
+      } catch {
+        /* 조회 실패 → 빈 상태 유지, 스피너만 해제 */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [ym]);

@@ -25,18 +25,23 @@ export default function TrainerProfileSettings() {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setLoading(false); return; }
-      const { data: au } = await supabase.auth.getUser();
-      const id = au?.user?.id ?? null;
-      const { data } = await supabase.from("trainer_profile").select("*").eq("trainer_id", id).maybeSingle();
-      if (cancelled) return;
-      setUid(id);
-      if (data) {
-        setApproaches(Array.isArray(data.strong_approaches) ? data.strong_approaches : []);
-        setSalesStyle(data.sales_style ?? "");
-        setMbti(data.mbti ?? "");
-        setBio(data.bio ?? "");
+      try {
+        const { data: au } = await supabase.auth.getUser();
+        const id = au?.user?.id ?? null;
+        const { data } = await supabase.from("trainer_profile").select("*").eq("trainer_id", id).maybeSingle();
+        if (cancelled) return;
+        setUid(id);
+        if (data) {
+          setApproaches(Array.isArray(data.strong_approaches) ? data.strong_approaches : []);
+          setSalesStyle(data.sales_style ?? "");
+          setMbti(data.mbti ?? "");
+          setBio(data.bio ?? "");
+        }
+      } catch {
+        /* 조회 실패 → 빈 폼 유지, 스피너만 해제 */
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
     return () => { cancelled = true; };
   }, []);

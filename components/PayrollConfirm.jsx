@@ -36,17 +36,22 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
     }; // account_id는 DB DEFAULT
     setSaving(true);
     if (!supabase) { onSaved?.({ ...(run || {}), ...payload, id: run?.id || `demo-${Date.now()}` }); showToast("확정됨(데모)"); setSaving(false); return; }
-    if (run?.id) {
-      const { data, error } = await supabase.from("payroll_run").update(payload).eq("id", run.id).select();
-      if (error || !data || data.length === 0) { showToast("확정 실패 — 다시 시도하세요"); setSaving(false); return; }
-      onSaved?.(data[0]);
-    } else {
-      const { data, error } = await supabase.from("payroll_run").insert(payload).select();
-      if (error || !data || data.length === 0) { showToast("확정 실패 — 다시 시도하세요"); setSaving(false); return; }
-      onSaved?.(data[0]);
+    try {
+      if (run?.id) {
+        const { data, error } = await supabase.from("payroll_run").update(payload).eq("id", run.id).select();
+        if (error || !data || data.length === 0) { showToast("확정 실패 — 다시 시도하세요"); return; }
+        onSaved?.(data[0]);
+      } else {
+        const { data, error } = await supabase.from("payroll_run").insert(payload).select();
+        if (error || !data || data.length === 0) { showToast("확정 실패 — 다시 시도하세요"); return; }
+        onSaved?.(data[0]);
+      }
+      showToast("급여 확정됨");
+    } catch {
+      showToast("확정 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
     }
-    showToast("급여 확정됨");
-    setSaving(false);
   };
 
   const inputCls = "w-28 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-right font-mono text-sm text-ink outline-none focus:border-primary disabled:opacity-50";

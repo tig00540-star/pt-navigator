@@ -111,30 +111,35 @@ export default function ObservationTab({ member, onClosingSaved }) {
         return;
       }
       setLoading(true);
-      const { data, error } = await supabase
-        .from("ot_log")
-        .select("*")
-        .eq("user_id", member.id)
-        .eq("ot_round", 1)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      if (cancelled) return;
-      setLoading(false);
-      if (error) {
-        setForm(emptyForm());
-        setExistingRowId(null);
-        showToast("불러오기 실패: " + error.message);
-        return;
-      }
-      const row = data?.[0];
-      if (row) {
-        setForm(rowToForm(row));
-        setExistingRowId(row.id);
-        setExistingFirstAssist(row.report?.first_assist ?? null); // ① 캐시 보존용
-      } else {
-        setForm(emptyForm());
-        setExistingRowId(null);
-        setExistingFirstAssist(null);
+      try {
+        const { data, error } = await supabase
+          .from("ot_log")
+          .select("*")
+          .eq("user_id", member.id)
+          .eq("ot_round", 1)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (cancelled) return;
+        if (error) {
+          setForm(emptyForm());
+          setExistingRowId(null);
+          showToast("불러오기 실패: " + error.message);
+          return;
+        }
+        const row = data?.[0];
+        if (row) {
+          setForm(rowToForm(row));
+          setExistingRowId(row.id);
+          setExistingFirstAssist(row.report?.first_assist ?? null); // ① 캐시 보존용
+        } else {
+          setForm(emptyForm());
+          setExistingRowId(null);
+          setExistingFirstAssist(null);
+        }
+      } catch {
+        if (!cancelled) { setForm(emptyForm()); setExistingRowId(null); showToast("불러오기 실패 — 네트워크 확인"); }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {

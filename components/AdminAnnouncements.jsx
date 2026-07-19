@@ -33,16 +33,21 @@ export default function AdminAnnouncements({ trainers = [] }) {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setLoading(false); return; } // 데모: 로컬만
-      const [a, r] = await Promise.all([
-        supabase.from("announcement").select("*").order("pinned", { ascending: false }).order("created_at", { ascending: false }),
-        supabase.from("announcement_read").select("announcement_id"),
-      ]);
-      if (cancelled) return;
-      setAnns(a.data || []);
-      const m = new Map();
-      for (const row of r.data || []) m.set(row.announcement_id, (m.get(row.announcement_id) || 0) + 1);
-      setReadCount(m);
-      setLoading(false);
+      try {
+        const [a, r] = await Promise.all([
+          supabase.from("announcement").select("*").order("pinned", { ascending: false }).order("created_at", { ascending: false }),
+          supabase.from("announcement_read").select("announcement_id"),
+        ]);
+        if (cancelled) return;
+        setAnns(a.data || []);
+        const m = new Map();
+        for (const row of r.data || []) m.set(row.announcement_id, (m.get(row.announcement_id) || 0) + 1);
+        setReadCount(m);
+      } catch {
+        /* 조회 실패 → 빈 목록 유지, 스피너만 해제 */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -80,16 +85,22 @@ export default function AdminAnnouncements({ trainers = [] }) {
       else setAnns((p) => [{ ...payload, id: `demo-${Date.now()}`, created_at: new Date().toISOString() }, ...p]);
       resetForm(); setPosting(false); return;
     }
-    if (editingId) {
-      const { data, error } = await supabase.from("announcement").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", editingId).select();
-      if (error || !data || data.length === 0) { setErr("게시 실패 — 권한/정책 확인"); setPosting(false); return; }
-      setAnns((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
-    } else {
-      const { data, error } = await supabase.from("announcement").insert(payload).select();
-      if (error || !data || data.length === 0) { setErr("게시 실패 — 원장 아님/정책"); setPosting(false); return; }
-      setAnns((p) => [data[0], ...p]);
+    try {
+      if (editingId) {
+        const { data, error } = await supabase.from("announcement").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", editingId).select();
+        if (error || !data || data.length === 0) { setErr("게시 실패 — 권한/정책 확인"); return; }
+        setAnns((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
+      } else {
+        const { data, error } = await supabase.from("announcement").insert(payload).select();
+        if (error || !data || data.length === 0) { setErr("게시 실패 — 원장 아님/정책"); return; }
+        setAnns((p) => [data[0], ...p]);
+      }
+      resetForm();
+    } catch {
+      setErr("게시 실패 — 네트워크 확인");
+    } finally {
+      setPosting(false);
     }
-    resetForm(); setPosting(false);
   };
 
   const startEdit = (a) => {
@@ -107,18 +118,26 @@ export default function AdminAnnouncements({ trainers = [] }) {
   const togglePin = async (a) => {
     const nextPinned = !a.pinned;
     if (!supabase) { setAnns((p) => p.map((x) => (x.id === a.id ? { ...x, pinned: nextPinned } : x))); return; }
-    const { data, error } = await supabase.from("announcement").update({ pinned: nextPinned, updated_at: new Date().toISOString() }).eq("id", a.id).select();
-    if (error || !data || data.length === 0) { setErr("핀 변경 실패 — 정책 확인"); return; }
-    setAnns((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
+    try {
+      const { data, error } = await supabase.from("announcement").update({ pinned: nextPinned, updated_at: new Date().toISOString() }).eq("id", a.id).select();
+      if (error || !data || data.length === 0) { setErr("핀 변경 실패 — 정책 확인"); return; }
+      setAnns((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
+    } catch {
+      setErr("핀 변경 실패 — 네트워크 확인");
+    }
   };
 
   const remove = async (a) => {
     setConfirmId(null);
     if (!supabase) { setAnns((p) => p.filter((x) => x.id !== a.id)); return; }
-    const { data, error } = await supabase.from("announcement").delete().eq("id", a.id).select();
-    if (error || !data || data.length === 0) { setErr("삭제 실패 — 정책 확인"); return; }
-    setAnns((p) => p.filter((x) => x.id !== a.id));
-    if (editingId === a.id) resetForm();
+    try {
+      const { data, error } = await supabase.from("announcement").delete().eq("id", a.id).select();
+      if (error || !data || data.length === 0) { setErr("삭제 실패 — 정책 확인"); return; }
+      setAnns((p) => p.filter((x) => x.id !== a.id));
+      if (editingId === a.id) resetForm();
+    } catch {
+      setErr("삭제 실패 — 네트워크 확인");
+    }
   };
 
   return (

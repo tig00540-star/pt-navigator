@@ -39,17 +39,22 @@ export default function PtPricingSettings() {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setLoading(false); return; }
-      const { data: au } = await supabase.auth.getUser();
-      const uid = au?.user?.id ?? null;
-      const { data } = await supabase
-        .from("pt_package")
-        .select("*")
-        .eq("trainer_id", uid) // ★ RLS는 owner에게 전체 노출 → 내 것만 명시 필터
-        .order("sort", { ascending: true })
-        .order("created_at", { ascending: true });
-      if (cancelled) return;
-      setRows(data || []);
-      setLoading(false);
+      try {
+        const { data: au } = await supabase.auth.getUser();
+        const uid = au?.user?.id ?? null;
+        const { data } = await supabase
+          .from("pt_package")
+          .select("*")
+          .eq("trainer_id", uid) // ★ RLS는 owner에게 전체 노출 → 내 것만 명시 필터
+          .order("sort", { ascending: true })
+          .order("created_at", { ascending: true });
+        if (cancelled) return;
+        setRows(data || []);
+      } catch {
+        /* 조회 실패 → 빈 목록 유지, 스피너만 해제 */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
