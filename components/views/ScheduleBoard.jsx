@@ -180,6 +180,7 @@ export default function ScheduleBoard({ members = [] }) {
       setAppts((p) => p.map((a) => (a.id === appt.id ? { ...a, status: "done" } : a)));
       doneMsg(); setAction(null); setActing(false); return;
     }
+    try {
     let contractId = null;
     if (deduct) {
       const [{ data: cs }, { data: ls }] = await Promise.all([
@@ -201,6 +202,11 @@ export default function ScheduleBoard({ members = [] }) {
     if (upErr || !up || up.length === 0) { showToast("완료 저장 실패 — 다시 시도하세요"); setActing(false); return; }
     setAppts((p) => p.map((a) => (a.id === appt.id ? up[0] : a)));
     doneMsg(); setAction(null); setActing(false);
+    } catch {
+      showToast("완료 실패 — 다시 시도하세요");
+    } finally {
+      setActing(false);
+    }
   };
 
   // 취소 — status=canceled(보드에서 제거).

@@ -84,18 +84,27 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
       service_sessions: svc === "" ? 0 : Number(svc) || 0,
     };
     setBusy(true);
-    const ok = await onConfirm(contractInput);
-    if (!ok) {
+    try {
+      const ok = await onConfirm(contractInput);
+      if (!ok) {
+        if (mounted.current) {
+          setBusy(false);
+          setErr("저장 실패 — 다시 시도하세요");
+        }
+        return; // 모달 유지·입력 보존
+      }
+      // ok면 부모가 pt_active로 flip → 언마운트(현행). 도달 시엔 busy 정리만.
+      if (mounted.current) {
+        setBusy(false);
+        setConfirming(false);
+      }
+    } catch {
       if (mounted.current) {
         setBusy(false);
         setErr("저장 실패 — 다시 시도하세요");
       }
-      return; // 모달 유지·입력 보존
-    }
-    // ok면 부모가 pt_active로 flip → 언마운트(현행). 도달 시엔 busy 정리만.
-    if (mounted.current) {
-      setBusy(false);
-      setConfirming(false);
+    } finally {
+      if (mounted.current) setBusy(false);
     }
   };
 

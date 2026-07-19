@@ -181,6 +181,7 @@ function MemberForm({ onClose, onSaved }) {
     }
     setSaving(true);
     setErr("");
+    try {
     const { data: u, error } = await supabase
       .from("user_table")
       .insert({
@@ -231,7 +232,13 @@ function MemberForm({ onClose, onSaved }) {
         return;
       }
     }
-    setSaving(false);
+      setSaving(false);
+    } catch {
+      setErr("등록 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      return;
+    } finally {
+      setSaving(false);
+    }
     onSaved();
   };
 
@@ -576,6 +583,7 @@ export default function OTNavigatorDashboard() {
       setMemberStatus(member.id, "pt_active"); // 데모: 로컬만
       return true;
     }
+    try {
     // 1) 멱등 가드 — 이미 계약 있으면(재시도) INSERT 스킵.
     const { data: existing } = await supabase
       .from("session_log")
@@ -611,6 +619,10 @@ export default function OTNavigatorDashboard() {
     }
     setMemberStatus(member.id, "pt_active"); // 확정 성공 후에만 뷰 전환(깜빡임 방지)
     return true;
+    } catch {
+      setDbNote("PT 등록 확정 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      return false;
+    }
   };
 
 

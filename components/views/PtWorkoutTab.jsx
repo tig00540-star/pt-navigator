@@ -178,6 +178,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       return;
     }
     // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패. .select() length>0로 성공 확정.
+    try {
     const { data, error } = await supabase
       .from("daily_workout_log")
       .insert(payload)
@@ -196,7 +197,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
         ? "저장됨 · 차감 · 카톡 복사됨"
         : "저장됨 · 차감됨 (복사 실패 — 길게 눌러 복사)"
     );
-    setSaving(false);
+      setSaving(false);
+    } catch {
+      showToast("저장 실패 — 차감 안 됨. 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // 계약 등록 — buildContract INSERT + .select() 하드닝. 성공 시 contracts 낙관적 추가(잔여 즉시 반영).
