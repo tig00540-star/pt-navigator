@@ -43,11 +43,17 @@ export default function TodoManual() {
     setSaving(true);
     const payload = { body: b };
     if (due) payload.due_date = due;
-    const { data, error } = await supabase.from("trainer_todo").insert(payload).select();
-    setSaving(false);
-    if (error || !data || data.length === 0) { setErr("추가 실패 — 저장 안 됨"); return; }
-    setTodos((t) => [data[0], ...t]);
-    setBody(""); setDue("");
+    try {
+      const { data, error } = await supabase.from("trainer_todo").insert(payload).select();
+      setSaving(false);
+      if (error || !data || data.length === 0) { setErr("추가 실패 — 저장 안 됨"); return; }
+      setTodos((t) => [data[0], ...t]);
+      setBody(""); setDue("");
+    } catch {
+      setErr("추가 실패 — 저장 안 됨");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggle = async (todo) => {

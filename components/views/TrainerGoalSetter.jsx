@@ -42,11 +42,17 @@ export default function TrainerGoalSetter() {
     const payload = { trainer_id: uid, ym, target_revenue: Number(value), updated_at: new Date().toISOString() };
     setSaving(true);
     if (!supabase) { setCurrent(Number(value)); showToast("저장됨(데모)"); setSaving(false); return; }
-    const { data, error } = await supabase.from("trainer_goal").upsert(payload, { onConflict: "trainer_id,ym" }).select();
-    if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
-    setCurrent(data[0].target_revenue);
-    showToast("이달 목표 저장됨");
-    setSaving(false);
+    try {
+      const { data, error } = await supabase.from("trainer_goal").upsert(payload, { onConflict: "trainer_id,ym" }).select();
+      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      setCurrent(data[0].target_revenue);
+      showToast("이달 목표 저장됨");
+      setSaving(false);
+    } catch {
+      showToast("저장 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";

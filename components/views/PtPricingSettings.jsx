@@ -98,6 +98,7 @@ export default function PtPricingSettings() {
       return;
     }
 
+    try {
     if (editingId) {
       // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패. .select() length>0로 확정.
       const { data, error } = await supabase.from("pt_package").update(payload).eq("id", editingId).select();
@@ -112,6 +113,11 @@ export default function PtPricingSettings() {
     }
     resetForm();
     setSaving(false);
+    } catch {
+      showToast("저장 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // 수정 진입 — 행 값을 폼에 로드.

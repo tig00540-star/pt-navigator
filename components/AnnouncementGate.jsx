@@ -51,15 +51,21 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
   const ackAll = async (list) => {
     if (!supabase || acking || !list.length) return;
     setAcking(true);
-    const rows = list.map((a) => ({ announcement_id: a.id })); // account_id·trainer_id는 DB DEFAULT
-    const { error } = await supabase
-      .from("announcement_read")
-      .upsert(rows, { onConflict: "announcement_id,trainer_id", ignoreDuplicates: true })
-      .select();
-    if (error) { setErr("확인 반영 실패 — 정책 확인"); setAcking(false); return; }
-    setReadIds((prev) => { const n = new Set(prev); for (const a of list) n.add(a.id); return n; });
-    setErr("");
-    setAcking(false);
+    try {
+      const rows = list.map((a) => ({ announcement_id: a.id })); // account_id·trainer_id는 DB DEFAULT
+      const { error } = await supabase
+        .from("announcement_read")
+        .upsert(rows, { onConflict: "announcement_id,trainer_id", ignoreDuplicates: true })
+        .select();
+      if (error) { setErr("확인 반영 실패 — 정책 확인"); setAcking(false); return; }
+      setReadIds((prev) => { const n = new Set(prev); for (const a of list) n.add(a.id); return n; });
+      setErr("");
+      setAcking(false);
+    } catch {
+      setErr("확인 반영 실패 — 정책 확인");
+    } finally {
+      setAcking(false);
+    }
   };
 
   // 벨(재열람) 열리는 순간 — 안읽음 표시분을 읽음 처리(일반 공지는 여기서 읽힘 = 스펙 §1/테스트5).

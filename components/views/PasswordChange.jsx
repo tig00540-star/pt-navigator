@@ -29,11 +29,18 @@ export default function PasswordChange({ forced = false, onDone }) {
     if (pw !== pw2) return showToast("확인이 일치하지 않아요");
     setSaving(true);
     // 비번 교체 + 강제 플래그 해제를 한 번에(자율 변경 때도 무해 — 이미 false면 그대로).
-    const { error } = await supabase.auth.updateUser({ password: pw, data: { must_change_pw: false } });
-    if (error) { showToast("변경 실패 — " + (error.message || "다시 시도")); setSaving(false); return; }
-    setPw(""); setPw2("");
-    showToast("비밀번호가 변경되었어요");
-    setSaving(false);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pw, data: { must_change_pw: false } });
+      if (error) { showToast("변경 실패 — " + (error.message || "다시 시도")); setSaving(false); return; }
+      setPw(""); setPw2("");
+      showToast("비밀번호가 변경되었어요");
+      setSaving(false);
+    } catch {
+      showToast("변경 실패 — 다시 시도하세요");
+      return;
+    } finally {
+      setSaving(false);
+    }
     if (onDone) onDone(); // forced 게이트 → AuthGate가 세션 재조회해 앱 오픈
   };
 

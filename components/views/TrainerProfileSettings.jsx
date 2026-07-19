@@ -55,12 +55,18 @@ export default function TrainerProfileSettings() {
     };
     setSaving(true);
     if (!supabase) { showToast("저장됨(데모)"); setSaving(false); return; }
-    // account_id는 DEFAULT auth_account_id() — 생략(with_check 통과). onConflict=trainer_id → upsert.
-    const { data, error } = await supabase.from("trainer_profile")
-      .upsert(payload, { onConflict: "trainer_id" }).select();
-    if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
-    showToast("프로필 저장됨");
-    setSaving(false);
+    try {
+      // account_id는 DEFAULT auth_account_id() — 생략(with_check 통과). onConflict=trainer_id → upsert.
+      const { data, error } = await supabase.from("trainer_profile")
+        .upsert(payload, { onConflict: "trainer_id" }).select();
+      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      showToast("프로필 저장됨");
+      setSaving(false);
+    } catch {
+      showToast("저장 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";

@@ -136,6 +136,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
       setSaving(false);
       return;
     }
+    try {
     if (existing?.id) {
       // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패. .select() length>0로 확정.
       const { data, error } = await supabase.from("pay_scheme").update(payload).eq("id", existing.id).select();
@@ -148,6 +149,11 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
     }
     showToast("급여 스킴이 저장되었어요");
     setSaving(false);
+    } catch {
+      showToast("저장 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // override 삭제 — 이 트레이너 전용 정책을 지워 계정 기본을 따르게. 계정 기본(null)엔 없음.
@@ -163,12 +169,18 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
       setSaving(false);
       return;
     }
-    const { data, error } = await supabase.from("pay_scheme").delete().eq("id", row.id).select();
-    if (error || !data || data.length === 0) { showToast("삭제 실패 — 권한/정책을 확인하세요"); setSaving(false); return; }
-    setSchemes((p) => p.filter((s) => s.id !== row.id));
-    selectScope(null);
-    showToast("이 트레이너 정책 삭제 — 계정 기본을 따릅니다");
-    setSaving(false);
+    try {
+      const { data, error } = await supabase.from("pay_scheme").delete().eq("id", row.id).select();
+      if (error || !data || data.length === 0) { showToast("삭제 실패 — 권한/정책을 확인하세요"); setSaving(false); return; }
+      setSchemes((p) => p.filter((s) => s.id !== row.id));
+      selectScope(null);
+      showToast("이 트레이너 정책 삭제 — 계정 기본을 따릅니다");
+      setSaving(false);
+    } catch {
+      showToast("삭제 실패 — 권한/정책을 확인하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

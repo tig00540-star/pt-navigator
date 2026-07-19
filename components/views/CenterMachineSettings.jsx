@@ -78,6 +78,7 @@ export default function CenterMachineSettings() {
       else setRows((p) => [...p, { ...payload, id: `demo-${Date.now()}` }]);
       resetForm(); showToast("저장됨(데모)"); setSaving(false); return;
     }
+    try {
     if (editingId) {
       const { data, error } = await supabase.from("center_machine").update(payload).eq("id", editingId).select();
       if (error || !data || data.length === 0) { showToast("저장 실패 — 권한(대표만)·정책 확인"); setSaving(false); return; }
@@ -90,6 +91,11 @@ export default function CenterMachineSettings() {
       showToast("추가됨");
     }
     resetForm(); setSaving(false);
+    } catch {
+      showToast("저장 실패 — 권한(대표만)·정책 확인");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startEdit = (r) => { setEditingId(r.id); setName(r.name ?? ""); setBrand(r.brand ?? ""); setKind(r.kind ?? "machine"); setSpec(r.spec ?? ""); setCues(Array.isArray(r.cues) ? r.cues.join("\n") : ""); setConfirmId(null); };

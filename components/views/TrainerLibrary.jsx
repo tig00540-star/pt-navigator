@@ -70,6 +70,7 @@ export default function TrainerLibrary() {
       else setRows((p) => [...p, { ...payload, id: `demo-${Date.now()}`, created_at: new Date().toISOString() }]);
       resetForm(); showToast("저장됨(데모)"); setSaving(false); return;
     }
+    try {
     if (editingId) {
       const { data, error } = await supabase.from("library_item").update(payload).eq("id", editingId).select();
       if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
@@ -82,6 +83,11 @@ export default function TrainerLibrary() {
       showToast("추가됨");
     }
     resetForm(); setSaving(false);
+    } catch {
+      showToast("저장 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startEdit = (r) => {
