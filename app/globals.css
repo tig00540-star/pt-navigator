@@ -50,3 +50,12 @@ input[type="date"] {
   min-width: 0;
   max-width: 100%;
 }
+
+/* 탭 전환 진입 애니메이션 — motion(framer) 대체(번들 ~120KB 제거). app/page.jsx·PTView 공용.
+   key 변경 시 요소가 재마운트되며 1회 재생. exit 애니메이션은 없음(enter-only). */
+@keyframes tabIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tab-anim { animation: tabIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .tab-anim { animation: none; } }

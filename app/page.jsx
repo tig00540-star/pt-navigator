@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import {
   Bell,
@@ -762,14 +761,7 @@ export default function OTNavigatorDashboard() {
       )}
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.8 }}
-          >
+        <div key={tab} className="tab-anim">
         {tab === 9 ? (
           <div className="space-y-8">
             {/* 스케줄 보드는 자체 최상단 제목이 없어 Eyebrow로 섹션 헤더를 얹음(TodoTab은 자체 '오늘 할일' 제목 보유). */}
@@ -849,8 +841,7 @@ export default function OTNavigatorDashboard() {
         </MemberViewShell>
           </>
         )}
-          </motion.div>
-        </AnimatePresence>
+        </div>
       </main>
 
 
