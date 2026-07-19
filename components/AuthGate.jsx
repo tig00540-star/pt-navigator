@@ -132,16 +132,8 @@ export default function AuthGate({ children }) {
 
     return (
       <>
-        {supabase && session && (
-          <div className="fixed right-4 z-40 bottom-[calc(5rem+env(safe-area-inset-bottom))]">
-            <button
-              onClick={signOut}
-              className="rounded-md border border-line bg-card px-2.5 py-1 text-[11px] font-medium text-sub shadow-sm hover:text-ink"
-            >
-              로그아웃
-            </button>
-          </div>
-        )}
+        {/* 로그아웃은 설정 → 내 정보로 이관(SettingsView). 전 화면 우하단 플로팅은 스케줄 그리드·할일 카드 등을
+            상시 가려서 제거함. signOut은 Paywall이 계속 쓰므로 정의는 유지. */}
         {inner}
       </>
     );
