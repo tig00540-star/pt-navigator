@@ -900,21 +900,25 @@ export default function MemberHome() {
 
   const loadHome = useCallback(async () => {
     if (!memberSupabase) return;
-    const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes] = await Promise.all([
-      memberSupabase.from("member_me").select("*").maybeSingle(),
-      memberSupabase.from("member_workout_log").select("*").order("created_at", { ascending: false }),
-      memberSupabase.from("member_inbody").select("*").order("measured_at", { ascending: true }),
-      memberSupabase.from("cardio_log").select("*").order("performed_on", { ascending: false }).limit(30),
-      memberSupabase.from("member_photo").select("*").order("taken_on", { ascending: false }).limit(60),
-      memberSupabase.from("schedule_check").select("*").order("on_date", { ascending: false }).limit(60),
-    ]);
-    setMe(meRes.data ?? null);
-    setLogs(logRes.data ?? []);
-    setInbody(inbodyRes.data ?? []);
-    setCardio(cardioRes.data ?? []);
-    setPhotos(photoRes.data ?? []);
-    setSchedule(schedRes.data ?? []);
-    setPhase("home");
+    try {
+      const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes] = await Promise.all([
+        memberSupabase.from("member_me").select("*").maybeSingle(),
+        memberSupabase.from("member_workout_log").select("*").order("created_at", { ascending: false }),
+        memberSupabase.from("member_inbody").select("*").order("measured_at", { ascending: true }),
+        memberSupabase.from("cardio_log").select("*").order("performed_on", { ascending: false }).limit(30),
+        memberSupabase.from("member_photo").select("*").order("taken_on", { ascending: false }).limit(60),
+        memberSupabase.from("schedule_check").select("*").order("on_date", { ascending: false }).limit(60),
+      ]);
+      setMe(meRes.data ?? null);
+      setLogs(logRes.data ?? []);
+      setInbody(inbodyRes.data ?? []);
+      setCardio(cardioRes.data ?? []);
+      setPhotos(photoRes.data ?? []);
+      setSchedule(schedRes.data ?? []);
+      setPhase("home");
+    } catch {
+      setPhase("home"); // 부분 실패해도 빈 상태로 진입(me null → 재로그인 안내 카드) — 무한 스피너 방지
+    }
   }, []);
 
   // 기존 세션 있으면 바로 홈, 없으면 로그인. setState는 async IIFE 안에서(set-state-in-effect 회피).
@@ -922,10 +926,12 @@ export default function MemberHome() {
     let alive = true;
     (async () => {
       if (!memberSupabase) { if (alive) setPhase("login"); return; }
-      const { data } = await memberSupabase.auth.getSession();
-      if (!alive) return;
-      if (data.session) loadHome();
-      else setPhase("login");
+      try {
+        const { data } = await memberSupabase.auth.getSession();
+        if (!alive) return;
+        if (data.session) loadHome();
+        else setPhase("login");
+      } catch { if (alive) setPhase("login"); } // 세션 조회 실패 → 로그인 화면(무한 스피너 방지)
     })();
     return () => { alive = false; };
   }, [loadHome]);

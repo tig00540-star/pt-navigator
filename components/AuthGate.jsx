@@ -33,7 +33,7 @@ export default function AuthGate({ children }) {
       if (!alive) return;
       setSession(data.session ?? null);
       setReady(true);
-    });
+    }).catch(() => { if (alive) { setSession(null); setReady(true); } });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s ?? null);
     });
@@ -49,11 +49,16 @@ export default function AuthGate({ children }) {
     let alive = true;
     (async () => {
       setAcctReady(false);
-      const { data, error } = await supabase.rpc("my_account_status");
-      if (!alive) return;
-      // 에러/0행 → 계정 미확인으로 보고 잠금(접근 차단이 안전측). 정상 행이면 그 상태 사용.
-      setAcct(error ? { has_account: false, access: false } : (data?.[0] ?? { has_account: false, access: false }));
-      setAcctReady(true);
+      try {
+        const { data, error } = await supabase.rpc("my_account_status");
+        if (!alive) return;
+        // 에러/0행 → 계정 미확인으로 보고 잠금(접근 차단이 안전측). 정상 행이면 그 상태 사용.
+        setAcct(error ? { has_account: false, access: false } : (data?.[0] ?? { has_account: false, access: false }));
+      } catch {
+        if (alive) setAcct({ has_account: false, access: false }); // 에러 → 잠금(안전측)
+      } finally {
+        if (alive) setAcctReady(true); // 무한 스피너 방지
+      }
     })();
     return () => { alive = false; };
   }, [session]);

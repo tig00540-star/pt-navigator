@@ -54,6 +54,7 @@ export async function POST(request) {
     const cues = Array.isArray(obj.cues) ? obj.cues.filter((c) => typeof c === "string" && c.trim()).map((c) => c.trim()) : [];
     return Response.json({ cues });
   } catch (err) {
-    return Response.json({ error: "AI 초안 생성 실패: " + (err?.message || "unknown") }, { status: 502 });
+    console.error("[machine-cues] 생성 실패:", err?.message || err);
+    return Response.json({ error: "AI 초안 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }
 }

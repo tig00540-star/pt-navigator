@@ -201,45 +201,50 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     (async () => {
-      if (!supabase) {
-        setDbNote("데모 모드 — Supabase 키를 설정하면 실제 회원 데이터로 지표가 갱신됩니다.");
-        setRole("owner"); // 데모 모드 = 게이트 스킵(AuthGate 정책과 동일)
-        return;
+      try {
+        if (!supabase) {
+          setDbNote("데모 모드 — Supabase 키를 설정하면 실제 회원 데이터로 지표가 갱신됩니다.");
+          setRole("owner"); // 데모 모드 = 게이트 스킵(AuthGate 정책과 동일)
+          return;
+        }
+        const { data: au } = await supabase.auth.getUser();
+        const uid = au?.user?.id;
+        let myRole = "denied";
+        if (uid) {
+          const { data: t } = await supabase
+            .from("trainer").select("role, account:account_id(type, name)").eq("id", uid).maybeSingle();
+          if (t?.account?.type === "solo") { router.replace("/"); return; } // solo는 통합 화면만(admin 누수 차단)
+          setCenterName(t?.account?.name || "");
+          if (t?.role === "owner") myRole = "owner";
+        }
+        setRole(myRole);
+        if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
+        // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
+        const [u, o, c, l, tr, ps, pr] = await Promise.all([
+          supabase.from("user_table").select("*"),
+          supabase.from("ot_log").select("*"),
+          supabase.from("session_log").select("*"),
+          supabase.from("daily_workout_log").select("*"),
+          supabase.from("trainer").select("id, name"),
+          supabase.from("pay_scheme").select("*"),
+          supabase.from("payroll_run").select("*"),
+        ]);
+        const firstErr = u.error || o.error || c.error || l.error;
+        if (firstErr) {
+          setDbNote("불러오기 실패: " + firstErr.message);
+          return;
+        }
+        setRows(u.data || []);
+        setOtRows(o.data || []);
+        setContracts(c.data || []);
+        setLogs(l.data || []);
+        setTrainers(tr.data || []);
+        setSchemes(ps.data || []);
+        setRuns(pr.data || []);
+      } catch {
+        setDbNote("불러오기 실패 — 새로고침해 주세요.");
+        setRole((r) => r ?? "denied"); // role 고착 방지(에러=잠금, 안전측)
       }
-      const { data: au } = await supabase.auth.getUser();
-      const uid = au?.user?.id;
-      let myRole = "denied";
-      if (uid) {
-        const { data: t } = await supabase
-          .from("trainer").select("role, account:account_id(type, name)").eq("id", uid).maybeSingle();
-        if (t?.account?.type === "solo") { router.replace("/"); return; } // solo는 통합 화면만(admin 누수 차단)
-        setCenterName(t?.account?.name || "");
-        if (t?.role === "owner") myRole = "owner";
-      }
-      setRole(myRole);
-      if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
-      // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
-      const [u, o, c, l, tr, ps, pr] = await Promise.all([
-        supabase.from("user_table").select("*"),
-        supabase.from("ot_log").select("*"),
-        supabase.from("session_log").select("*"),
-        supabase.from("daily_workout_log").select("*"),
-        supabase.from("trainer").select("id, name"),
-        supabase.from("pay_scheme").select("*"),
-        supabase.from("payroll_run").select("*"),
-      ]);
-      const firstErr = u.error || o.error || c.error || l.error;
-      if (firstErr) {
-        setDbNote("불러오기 실패: " + firstErr.message);
-        return;
-      }
-      setRows(u.data || []);
-      setOtRows(o.data || []);
-      setContracts(c.data || []);
-      setLogs(l.data || []);
-      setTrainers(tr.data || []);
-      setSchemes(ps.data || []);
-      setRuns(pr.data || []);
     })();
     // router는 next/navigation에서 안정 참조 — 마운트 1회 게이트만. deps 불필요.
     // eslint-disable-next-line react-hooks/exhaustive-deps

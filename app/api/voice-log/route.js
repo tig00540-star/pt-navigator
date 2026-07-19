@@ -140,10 +140,8 @@ export async function POST(request) {
     });
     rawText = (tr.text || "").trim();
   } catch (e) {
-    return Response.json(
-      { error: "음성 인식(STT)에 실패했습니다: " + (e?.message || "unknown") },
-      { status: 502 }
-    );
+    console.error("[voice-log] STT 실패:", e?.message || e);
+    return Response.json({ error: "음성 인식에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }
 
   if (!rawText) {
@@ -179,10 +177,8 @@ export async function POST(request) {
       .join("");
     report = parseReport(textOut);
   } catch (e) {
-    return Response.json(
-      { error: "AI 요약에 실패했습니다: " + (e?.message || "unknown") },
-      { status: 502 }
-    );
+    console.error("[voice-log] 요약 실패:", e?.message || e);
+    return Response.json({ error: "AI 요약에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }
 
   return Response.json({ raw_text: rawText, report });

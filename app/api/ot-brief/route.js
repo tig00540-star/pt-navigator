@@ -711,9 +711,7 @@ export async function POST(request) {
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
     return Response.json(brief);
   } catch (e) {
-    return Response.json(
-      { error: "AI 생성에 실패했습니다: " + (e?.message || "unknown") },
-      { status: 502 }
-    );
+    console.error("[ot-brief] 생성 실패 · phase=" + phase + ":", e?.message || e);
+    return Response.json({ error: "AI 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }
 }
