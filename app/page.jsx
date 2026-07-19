@@ -263,7 +263,7 @@ function MemberForm({ onClose, onSaved }) {
   ];
 
   return (
-    <Modal variant="sheet" onClose={onClose}>
+    <Modal variant="center" onClose={onClose}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary-strong" />

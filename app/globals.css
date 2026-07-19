@@ -32,6 +32,14 @@ body {
 html { -webkit-tap-highlight-color: transparent; }
 body { overscroll-behavior-y: none; }   /* 웹 특유의 고무줄·pull-to-refresh 제거 = 앱 시그널 큼 */
 
+/* iOS 자동 확대 차단 — Safari는 글자가 16px 미만인 입력에 포커스하면 화면을 확대하고 되돌리지 않는다.
+   앱 입력칸은 전부 text-sm(14px)이라 매번 확대됐다. 폰 폭에서만 16px 하한을 줘 원천 차단.
+   ⚠️ viewport의 user-scalable=no로 막지 않는다 — 핀치줌까지 죽어 접근성이 훼손된다.
+   레이어 밖 규칙이라 Tailwind의 .text-sm(레이어 안)보다 우선한다(위 input[type=date]와 동일 원리). */
+@media (max-width: 639px) {
+  input, select, textarea { font-size: 16px; }
+}
+
 /* iOS 네이티브 date 인풋 최소너비 제거 — 좁은 컨테이너(회원앱 폼) 밖으로 안 튀게. 피커는 그대로 열림. */
 input[type="date"] {
   -webkit-appearance: none;

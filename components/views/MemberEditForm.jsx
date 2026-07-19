@@ -88,7 +88,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
   };
 
   return (
-    <Modal variant="sheet" onClose={onClose}>
+    <Modal variant="center" onClose={onClose}>
       {!ack ? (
         <div>
           <div className="mb-3 flex items-center gap-2">
