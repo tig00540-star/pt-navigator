@@ -158,10 +158,16 @@ export default function ScheduleBoard({ members = [] }) {
       setAppts((p) => [...p, { ...payload, id: `demo-${Date.now()}`, status: "booked" }]);
       setPick(null); setQ(""); setSaving(false); return;
     }
+    try {
     const { data, error } = await supabase.from("appointment").insert(payload).select();
     if (error || !data || data.length === 0) { setSaving(false); return; }
     setAppts((p) => [...p, data[0]]);
     setPick(null); setQ(""); setSaving(false);
+    } catch {
+      showToast("예약 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // 완료 — daily_workout_log 한 줄 + appointment done/log_id. 내용 있으면 카톡 복사·sent_at.
@@ -217,10 +223,16 @@ export default function ScheduleBoard({ members = [] }) {
       setAppts((p) => p.filter((a) => a.id !== appt.id));
       setAction(null); setActing(false); return;
     }
+    try {
     const { data, error } = await supabase.from("appointment").update({ status: "canceled" }).eq("id", appt.id).select();
     if (error || !data || data.length === 0) { showToast("취소 실패 — 다시 시도하세요"); setActing(false); return; }
     setAppts((p) => p.filter((a) => a.id !== appt.id));
     setAction(null); setActing(false);
+    } catch {
+      showToast("취소 실패 — 다시 시도하세요");
+    } finally {
+      setActing(false);
+    }
   };
 
   const hours = [];

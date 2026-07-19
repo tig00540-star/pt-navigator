@@ -74,9 +74,16 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
       else payload[f.k] = (v ?? "").trim() ? v : null;
     }
     // error 없이 0행 = 조용한 실패. .select()로 확정.
-    const { data, error } = await supabase.from("user_table").update(payload).eq("id", member.id).select();
-    setSaving(false);
-    if (error || !data || data.length === 0) { setErr(error ? error.message : "저장 실패 (0행 — 권한/정책 확인)"); return; }
+    try {
+      const { data, error } = await supabase.from("user_table").update(payload).eq("id", member.id).select();
+      setSaving(false);
+      if (error || !data || data.length === 0) { setErr(error ? error.message : "저장 실패 (0행 — 권한/정책 확인)"); return; }
+    } catch {
+      setErr("저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      return;
+    } finally {
+      setSaving(false);
+    }
     onSaved();
   };
 

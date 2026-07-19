@@ -14,11 +14,8 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { INBODY_FIELDS } from "@/lib/labels";
+import { kstToday } from "@/lib/date";
 
-// KST(UTC+9) 오늘 YYYY-MM-DD. new Date는 클라 컴포넌트라 허용(순수 모듈 아님).
-function kstToday() {
-  return new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-}
 // 입력 상태 초기값 — INBODY_FIELDS.key별 빈 문자열.
 function emptyVals() {
   const o = {};
@@ -115,6 +112,7 @@ export default function PtInbodyTab({ member, mode }) {
       return;
     }
     // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패. .select() length>0로 확정.
+    try {
     const { data, error } = await supabase.from("inbody_log").insert(payload).select();
     if (error || !data || data.length === 0) {
       showToast("저장 실패 — 다시 시도하세요");
@@ -124,7 +122,12 @@ export default function PtInbodyTab({ member, mode }) {
     setRows((p) => [data[0], ...p].sort((a, b) => (a.measured_at < b.measured_at ? 1 : -1))); // measured_at 내림차순 — back-date 대비 재정렬
     resetForm();
     showToast("인바디 저장됨");
-    setSaving(false);
+      setSaving(false);
+    } catch {
+      showToast("저장 실패 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // 삭제 — 1탭째 인라인 확인(오탭 방지), 확인 상태에서 재탭 시 실제 삭제.

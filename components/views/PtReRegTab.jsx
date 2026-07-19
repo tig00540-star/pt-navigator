@@ -71,6 +71,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       return;
     }
     // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패(UPDATE 정책 없으면). .select() length>0로 확정.
+    try {
     const { data, error } = await supabase
       .from("session_log")
       .update(payload)
@@ -81,9 +82,14 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       setRegSaving(false);
       return;
     }
-    setContracts((p) => p.map((c) => (c.id === data[0].id ? data[0] : c)));
-    showToast("재등록 결과 저장됨");
-    setRegSaving(false);
+      setContracts((p) => p.map((c) => (c.id === data[0].id ? data[0] : c)));
+      showToast("재등록 결과 저장됨");
+      setRegSaving(false);
+    } catch {
+      showToast("저장 실패 — 다시 시도하세요");
+    } finally {
+      setRegSaving(false);
+    }
   };
 
   // 재등록 AI 브리핑 생성 — /api/ot-brief phase:"reregister" 호출 + latest.report 캐시.

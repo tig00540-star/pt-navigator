@@ -230,6 +230,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       showToast(isReReg ? "재등록됨(데모) · 기존 잔여 소진 후 적용" : "계약 등록됨(데모)");
       return;
     }
+    try {
     const { data, error } = await supabase.from("session_log").insert(payload).select();
     if (error || !data || data.length === 0) {
       setCErr("저장 실패 — 다시 시도하세요");
@@ -240,6 +241,11 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     setShowContract(false);
     setCSaving(false);
     showToast(isReReg ? "재등록됨 · 기존 잔여 소진 후 적용" : "계약 등록됨 · 잔여 반영");
+    } catch {
+      setCErr("계약 저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setCSaving(false);
+    }
   };
 
   // 현재 방향/목표 저장 — user_table UPDATE + .select() 하드닝(교훈1). 성공 시 page.jsx 회원배열도 반영.
@@ -254,6 +260,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       showToast("방향 저장됨(데모)");
       return;
     }
+    try {
     const { data, error } = await supabase
       .from("user_table")
       .update({ pt_direction: next || null })
@@ -268,6 +275,11 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     setEditingDir(false);
     setDirSaving(false);
     showToast("현재 방향 저장됨");
+    } catch {
+      showToast("방향 저장 실패 — 다시 시도하세요");
+    } finally {
+      setDirSaving(false);
+    }
   };
 
   // 급한불(⑤) 생성 — /api/ot-brief phase:"acute". 세션 전용(캐시·DB write 없음).

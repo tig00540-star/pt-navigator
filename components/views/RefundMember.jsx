@@ -16,9 +16,8 @@ import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { won } from "@/lib/format";
+import { kstToday } from "@/lib/date";
 
-// KST 오늘 'YYYY-MM-DD'(처리월 판정은 P3a kstYm과 일관).
-const kstToday = () => new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 
 export default function RefundMember({ member, contracts, onDone }) {
   const [amount, setAmount] = useState("");
@@ -40,6 +39,7 @@ export default function RefundMember({ member, contracts, onDone }) {
     if (!(amt > 0)) return showToast("환불 금액을 입력하세요");
     if (!confirming) { setConfirming(true); return; } // 1탭: 확인 대기
     setSaving(true);
+    try {
     // 1) 계약에 환불 기록(처리월 = 오늘) — .select() 하드닝(0행 = 조용한 실패).
     const { data: up, error: ue } = await supabase.from("session_log")
       .update({ refund_amount: amt, refunded_at: kstToday() }).eq("id", target.id).select();
@@ -49,7 +49,13 @@ export default function RefundMember({ member, contracts, onDone }) {
       .update({ hidden: true }).eq("id", member.id).select();
     if (he || !hd || hd.length === 0) { showToast("회원 숨김 실패 — 환불은 기록됐어요(권한 확인)"); setSaving(false); return; }
     showToast("환불 처리 및 회원 정리 완료");
-    setSaving(false);
+      setSaving(false);
+    } catch {
+      showToast("환불 처리 중 오류 — 다시 시도하세요");
+      return; // 실패 시 onDone(목록복귀) 호출 금지 — 성공으로 오인 방지(3-a-1·3-b-2와 동일 규칙)
+    } finally {
+      setSaving(false);
+    }
     if (onDone) onDone(); // 목록 재로드 + 목록 복귀
   };
 
