@@ -1,15 +1,11 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Next 스타터 잔재였던 --background/--foreground는 제거(소비처 0건).
+   body 배경을 그쪽에 물려두면 다크모드에서 #0a0a0a로 깔려, 콘텐츠 페인트 전 구간이 '검은 화면'으로 보였다.
+   이 앱은 밝은테마 전용이므로 body는 아래 @theme의 실제 토큰(--color-bg/--color-ink)을 쓴다. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-mono); /* font-mono 유틸 47곳 사용 중 — 유지 */
 }
 
 /* 파일럿 밝은테마 색 토큰(린 셋 10개 · 정적 hex). 소비는 Phase 1부터 — 지금은 정의만. */
@@ -26,16 +22,9 @@
   --color-primary-soft: #fef2f2;  /* 레드 옅은 배경(절제 사용) */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-bg);
+  color: var(--color-ink);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
