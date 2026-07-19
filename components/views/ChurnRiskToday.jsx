@@ -28,7 +28,7 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
       try {
         const [{ data: cs }, { data: ls }] = await Promise.all([
           supabase.from("session_log").select("id, user_id, started_at, created_at, sessions_total, service_sessions"),
-          supabase.from("daily_workout_log").select("user_id, session_at, created_at, voided, source"),
+          supabase.from("daily_workout_log").select("user_id, contract_id, session_at, created_at, voided, source"),
         ]);
         if (cancelled) return;
         setContracts(cs || []);
