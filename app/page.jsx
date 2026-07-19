@@ -278,7 +278,9 @@ function MemberForm({ onClose, onSaved }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* 폰 1열 — 긴 한글 라벨("휴대폰 번호 (회원앱 로그인용)")이 2줄이 되면 옆 칸과 세로가 어긋나 계단처럼 밀렸다.
+            sm+에서만 2열(레포 참고 구현: MemberListTab·ObservationTab·admin의 sm:grid-cols-2). */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {fields.map((f) => (
             <div key={f.k} className={f.k === "name" ? "col-span-2" : ""}>
               <label className="mb-1 block text-[11px] font-medium text-muted">
@@ -315,7 +317,7 @@ function MemberForm({ onClose, onSaved }) {
 
         {/* 이월 계약 — handover/external만. ot_funnel은 계약을 ① PT 확정 때 생성. */}
         {form.origin !== "ot_funnel" && (
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">남은 세션수 *</span>
               <NumberInput

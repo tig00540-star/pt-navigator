@@ -11,7 +11,7 @@ export default function ContractAmountFields({
 }) {
   // onChange(key, value) — key: 'sessions'|'price'|'amountEdited'|'svc'
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="block">
         <span className="mb-1 block text-[11px] font-medium text-muted">세션수 *</span>
         <NumberInput value={sessions} onValueChange={(v) => onChange("sessions", v)} disabled={disabled} placeholder="24" className={inputCls} />

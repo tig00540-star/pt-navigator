@@ -121,7 +121,8 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
             <p className="py-8 text-center text-sm text-muted">불러오는 중…</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              {/* 폰 1열 — MemberForm과 동일 17필드. 긴 라벨 줄바꿈으로 인한 세로 어긋남 방지. */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {FIELDS.map((f) => (
                   <div key={f.k} className={f.k === "name" ? "col-span-2" : ""}>
                     <label className="mb-1 block text-[11px] font-medium text-muted">
