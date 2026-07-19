@@ -215,7 +215,19 @@ export default function VoiceLogTab({ member, onResult }) {
 
     let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 마이크 캡처 제약(전부 ideal — 미지원 브라우저는 무시, OverconstrainedError 안 남).
+      // noiseSuppression이 핵심: opus 인코딩 '전에' 헬스장 소음을 걷어내 48kbps로도 목소리가 깨끗하다.
+      // channelCount 1: 폰 마이크는 대개 이미 모노 — 스테레오로 잡는 기기에서 용량 2배를 막는 보험(4MB 가드와 짝).
+      // ⚠️ iOS는 echoCancellation을 켜면 voice-processing 모드(≈16kHz 모노)로 전환된다. STT가 어차피
+      //    16kHz로 리샘플링하므로 손실 없음 — 대신 iOS에선 AUDIO_BPS를 올려도 체감 차이가 거의 없다.
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
     } catch {
       setNotice("마이크 권한이 필요합니다. 브라우저에서 권한을 허용한 뒤 다시 시도하세요.");
       return;
