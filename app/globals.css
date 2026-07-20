@@ -43,6 +43,24 @@
      ⚠️ 카드가 아닌 나머지 7곳도 같이 깊어진다. DS 규율상 그림자는 카드 전용이므로
      그 7곳은 2단계에서 shadow 제거 대상으로 점검할 것. */
   --shadow-sm: 0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+
+  /* ── 역할 색 — 업무 흐름 구분용. 브랜드색이 아니다(로고·CTA 금지) ──
+     그동안 Tailwind 팔레트를 직접 써서(text-amber-700 32곳·text-rose-600 35곳…)
+     '이 amber가 OT라서인지 그냥 노랑인지'가 코드에 안 남았다. 토큰으로 뜻을 박는다.
+     ⚠️ 채움(-DEFAULT)은 아이콘·테두리·점에만. 밝은 배경 위 글자는 반드시 -text를 쓴다
+        (amber #f59e0b는 흰 배경에서 2.15로 본문 기준 미달). */
+  --color-ot: #f59e0b;          --color-ot-text: #b45309;    --color-ot-soft: #fffbeb;
+  --color-pt: #0ea5e9;          --color-pt-text: #0369a1;    --color-pt-soft: #f0f9ff;
+  --color-admin: #c026d3;       --color-admin-text: #a21caf; --color-admin-soft: #fdf4ff;
+  /* 위험(환불·손실) — 면을 채우지 않는다. 브랜드 레드 채움과 겹치면 뜻이 섞인다. */
+  --color-danger: #e11d48;      --color-danger-text: #be123c;
+  /* 경계선 한 단계 진하게 — 칩 hover·미선택 테두리용 */
+  --color-line-strong: #cbd2dd;
+
+  /* ── 한글 라벨 자간 예외 ──
+     라틴 라벨(TODAY·OT)은 +.16em uppercase가 맞지만, 한글은 uppercase가 무효이고
+     .16em이면 자소가 벌어져 단어로 안 읽힌다("내  프 로 필"). 한글 라벨은 이 값을 쓴다. */
+  --tracking-label-ko: 0.02em;
 }
 
 body {

@@ -32,6 +32,7 @@ import AnnouncementGate from "@/components/AnnouncementGate";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
+import FilterChip from "@/components/ui/FilterChip";
 import Modal from "@/components/ui/Modal";
 import BottomNav from "@/components/ui/BottomNav";
 import Wordmark from "@/components/ui/Wordmark";
@@ -410,17 +411,13 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
       {isOwner && (
         <div className="mb-3 flex gap-1.5">
           {[{ k: true, l: "내 회원" }, { k: false, l: "전체" }].map((t) => (
-            <button
+            <FilterChip
               key={String(t.k)}
+              selected={mineOnly === t.k}
               onClick={() => setMineOnly(t.k)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                mineOnly === t.k
-                  ? "border border-primary/30 bg-primary-soft text-primary-strong"
-                  : "border border-line bg-card text-muted hover:text-ink"
-              }`}
             >
               {t.l}
-            </button>
+            </FilterChip>
           ))}
         </div>
       )}
