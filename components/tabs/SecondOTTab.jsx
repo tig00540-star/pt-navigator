@@ -18,7 +18,6 @@ import {
   History,
   Microscope,
   MessageSquareQuote,
-  RefreshCw,
   Repeat,
   ShieldCheck,
   Sparkles,
@@ -27,6 +26,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import Eyebrow from "@/components/ui/Eyebrow";
+import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
@@ -541,25 +541,19 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         <div className="rounded-lg border border-primary/30 bg-primary-soft px-3 py-1.5 text-xs font-bold text-primary-strong">
           AI 지원 준비 · 수업 전
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary-strong">
-            실 AI
-          </span>
-          {meta?.generatedAt && (
-            <span className="text-[10px] text-muted">
-              생성: {new Date(meta.generatedAt).toLocaleString("ko-KR")}
-              {meta?.obsHash && !stale && " · 현재 관찰 기준"}
-            </span>
-          )}
-          {stale && (
-            <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-              관찰이 바뀌었습니다 — 재생성 권장
-            </span>
-          )}
-          <Button variant="ghost" size="sm" onClick={() => generateBrief(obs, existingRow2Id)} disabled={generating} className="ml-auto">
-            <RefreshCw className="h-3 w-3" /> 재생성
-          </Button>
-        </div>
+        <AIBriefBlock
+          status={stale ? "stale" : "ready"}
+          title="2차 등록 당위성 브리핑"
+          onRegenerate={() => generateBrief(obs, existingRow2Id)}
+          meta={
+            meta?.generatedAt && (
+              <span>
+                생성: {new Date(meta.generatedAt).toLocaleString("ko-KR")}
+                {meta?.obsHash && !stale && " · 현재 관찰 기준"}
+              </span>
+            )
+          }
+        >
 
         {legacyCache && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
@@ -684,7 +678,11 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           </details>
         )}
 
-        {/* ── 클로징 결과 기록 · 수업 후 ── */}
+        </AIBriefBlock>
+
+        {/* ── 클로징 결과 기록 · 수업 후 ──
+           ⚠️ AIBriefBlock 밖에 둔다. 브리핑(수업 전 읽는 것)과 결과 기록(수업 후 쓰는 것)은
+           시점도 성격도 다르다. 한 블록에 넣으면 '브리핑의 일부'로 읽힌다. */}
         <div className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-bold text-sub">
           클로징 결과 기록 · 수업 후
         </div>
@@ -789,34 +787,26 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     );
   };
 
-  // 생성 중 스켈레톤
+  /* 생성 중 — 45초 대기 UX는 AIBriefBlock이 강제한다(진행바 + waitingHint).
+     기존엔 pulse 스켈레톤이었는데, 스켈레톤은 "곧 나온다"는 신호라 45초에는 안 맞는다.
+     대기 중 할 일을 주는 쪽이 낫다. */
   const renderGenerating = () => (
-    <div className="rounded-2xl border border-line bg-card shadow-sm p-6">
-      <div className="mb-3 flex items-center gap-2 text-xs text-muted">
-        <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 1차 피드백을 근거로 2차 OT를 준비하는 중… 최대 1분 걸려요 (처음 한 번만 만들고, 다음부터는 저장된 걸 바로 보여드려요)
-      </div>
-      <div className="space-y-2.5">
-        <div className="h-4 w-1/3 animate-pulse rounded bg-elevate" />
-        <div className="h-3 w-full animate-pulse rounded bg-elevate" />
-        <div className="h-3 w-5/6 animate-pulse rounded bg-elevate" />
-        <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-elevate" />
-        <div className="h-3 w-full animate-pulse rounded bg-elevate" />
-      </div>
-    </div>
+    <AIBriefBlock
+      status="loading"
+      title="2차 등록 당위성 브리핑"
+      waitingHint="최대 1분 걸려요. 기다리는 동안 1차 관찰 기록을 다시 훑어보세요. (처음 한 번만 만들고, 다음부터는 저장된 걸 바로 보여드려요)"
+    />
   );
 
-  // 캐시 없음(첫 생성 전) — 자동 호출 대신 버튼 트리거(결정#2). 클릭 → generateBrief → 스켈레톤/실패 폴백 유지.
+  // 캐시 없음(첫 생성 전) — 자동 호출 대신 버튼 트리거(결정#2).
   const renderPreGenerate = () => (
-    <div className="rounded-2xl border border-line bg-card shadow-sm p-6 text-center">
-      <Sparkles className="mx-auto h-8 w-8 text-primary-strong" />
-      <p className="mt-3 text-sm text-sub">
-        <span className="font-semibold text-ink">{member.name}</span> 회원님의 1차 피드백을 근거로 2차 OT를 준비합니다.
-      </p>
-      <p className="mt-1 text-xs text-muted">수업 전에 한 번 만들면, 다음부터는 저장된 걸 바로 보여드려요.</p>
-      <Button variant="primary" size="md" onClick={() => generateBrief(obs, existingRow2Id)} disabled={generating} className="mt-4 gap-2">
-        <Sparkles className="h-4 w-4" strokeWidth={2.5} /> 2차 OT 준비하기
-      </Button>
-    </div>
+    <AIBriefBlock
+      status="idle"
+      title="2차 등록 당위성 브리핑"
+      generateLabel="2차 OT 준비하기"
+      idleDescription={`${member.name} 회원의 1차 피드백을 근거로 2차 OT를 준비합니다. 수업 전에 한 번 만들면, 다음부터는 저장된 걸 바로 보여드려요.`}
+      onGenerate={() => generateBrief(obs, existingRow2Id)}
+    />
   );
 
   // ---- 게이트 ----
