@@ -133,7 +133,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
 
       {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
       <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
+        <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
           <Wallet className="h-3.5 w-3.5" /> 이달 {isSolo ? "급여(자동계산)" : `${confirmed ? "확정" : "예상"} 급여`}
         </div>
         {confirmed ? (
@@ -174,7 +174,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       {target != null && (
         <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
           <div className="flex items-baseline justify-between text-sm">
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-label-ko text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
             <span className="tabular-nums font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
@@ -187,7 +187,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       {/* #1 — PT 수업 현황(내 활성 PT 회원 전체 합). 회원 없으면 숨김. */}
       {ptMemberIds.size > 0 && (
         <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
             <Dumbbell className="h-3.5 w-3.5" /> PT 수업 현황 · 활성 회원 {ptMemberIds.size}명
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -209,7 +209,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       {/* 이번달 수업 — 누르면 회원별 (P2) */}
       <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
-          <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <span className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
             <Dumbbell className="h-3.5 w-3.5" /> 이번달 수업
           </span>
           <span className="tabular-nums text-lg font-bold text-ink">{totalSessions}회</span>
@@ -231,7 +231,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       {/* 매출 내역 — 누구·얼마·언제 (P2) */}
       <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
-          <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <span className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
             <Wallet className="h-3.5 w-3.5" /> 매출 내역
           </span>
           <span className="tabular-nums text-lg font-bold text-ink">{won(rev.total)}</span>

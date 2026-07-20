@@ -160,7 +160,7 @@ function Eyebrow({ icon: Icon, children }) {
   return (
     <div className="mb-4 flex items-center gap-2">
       <Icon className="h-4 w-4 text-muted" />
-      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+      <span className="text-xs font-semibold tracking-label-ko text-muted">
         {children}
       </span>
     </div>
@@ -320,7 +320,7 @@ export default function AdminDashboard() {
               <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
             <div className="leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-700">
+              <div className="text-[10px] font-semibold tracking-label-ko text-indigo-700">
                 Admin · 총괄 경영
               </div>
               <div className="text-sm font-semibold text-ink">
@@ -391,7 +391,7 @@ export default function AdminDashboard() {
           <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
+              <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
                 <Wallet className="h-3.5 w-3.5" /> 이달 매출
               </div>
               <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">
@@ -400,7 +400,7 @@ export default function AdminDashboard() {
               <div className="mt-1 text-xs text-muted">{ym} · 인계·외부 제외</div>
             </div>
             <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
+              <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
                 <Target className="h-3.5 w-3.5" /> 클로징률
               </div>
               <div className="mt-2 font-mono text-4xl font-extrabold text-ink">
@@ -409,7 +409,7 @@ export default function AdminDashboard() {
               <div className="mt-1 text-xs text-muted">누적 · 시도 {closing.attempted}명 중 {closing.success}</div>
             </div>
             <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
+              <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
                 <Percent className="h-3.5 w-3.5" /> 재등록률
               </div>
               <div className="mt-2 font-mono text-4xl font-extrabold text-cyan-700">
@@ -439,13 +439,13 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-wider text-muted">이달 매출</div>
+                    <div className="text-[10px] tracking-label-ko text-muted">이달 매출</div>
                     <div className="font-mono text-2xl font-bold text-primary-strong">{won(t.rev.total)}</div>
                   </div>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-line bg-elevate p-3">
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted">
+                    <div className="flex items-center justify-between text-[10px] tracking-label-ko text-muted">
                       <span>신규</span>
                       <span>{t.rev.total > 0 ? Math.round((t.rev.newRev / t.rev.total) * 100) + "%" : "—"}</span>
                     </div>
@@ -453,7 +453,7 @@ export default function AdminDashboard() {
                     <div className="text-[11px] text-muted">{t.rev.cntNew}건</div>
                   </div>
                   <div className="rounded-xl border border-line bg-elevate p-3">
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted">
+                    <div className="flex items-center justify-between text-[10px] tracking-label-ko text-muted">
                       <span>재등록</span>
                       <span>{t.rev.total > 0 ? Math.round((t.rev.reRev / t.rev.total) * 100) + "%" : "—"}</span>
                     </div>
@@ -482,7 +482,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {/* 방향별 강점 */}
             <div className="rounded-2xl border border-line bg-card p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">클로징 방향별 강점</div>
+              <div className="text-[11px] font-semibold tracking-label-ko text-muted">클로징 방향별 강점</div>
               <div className="mt-1 text-xs text-muted">성공 클로징의 접근 방향 분포</div>
               <div className="mt-4 space-y-3">
                 {approachDist.length === 0 ? (
@@ -506,7 +506,7 @@ export default function AdminDashboard() {
 
             {/* 클로징 실패·보류 사유 분포 */}
             <div className="rounded-2xl border border-line bg-card p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">클로징 실패·보류 사유</div>
+              <div className="text-[11px] font-semibold tracking-label-ko text-muted">클로징 실패·보류 사유</div>
               <div className="mt-1 text-xs text-muted">OT 클로징 약점 진단 — 내가 주로 놓치는 이유</div>
               <div className="mt-4 space-y-3">
                 {closingReasonDist.length === 0 ? (
@@ -530,7 +530,7 @@ export default function AdminDashboard() {
 
             {/* 재등록 사유 분포 */}
             <div className="rounded-2xl border border-line bg-card p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">재등록 실패·보류 사유</div>
+              <div className="text-[11px] font-semibold tracking-label-ko text-muted">재등록 실패·보류 사유</div>
               <div className="mt-1 text-xs text-muted">거절을 데이터로 — 약점 진단</div>
               <div className="mt-4 space-y-3">
                 {reasonDist.length === 0 ? (
@@ -554,7 +554,7 @@ export default function AdminDashboard() {
 
             {/* 총 수업수 */}
             <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">총 수업수</div>
+              <div className="text-[11px] font-semibold tracking-label-ko text-muted">총 수업수</div>
               <div className="mt-2 flex items-baseline gap-1">
                 <span className="font-mono text-5xl font-extrabold tracking-tight text-ink">{totalSessions}</span>
                 <span className="text-xl font-bold text-muted">회</span>
@@ -595,7 +595,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-wider text-muted">
+                    <div className="text-[10px] tracking-label-ko text-muted">
                       수업 이행률
                     </div>
                     <div className="font-mono text-2xl font-bold text-primary-strong">

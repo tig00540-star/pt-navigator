@@ -436,7 +436,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
           {/* 1. 머신 */}
           <div className="rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-primary-strong">
               <Dumbbell className="h-3.5 w-3.5" /> 1. 오늘 진행한 머신 & 중량/세트
             </div>
             {report.machines.length > 0 ? (
@@ -467,7 +467,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
           {/* 2. 피드백 */}
           <div className="mt-3 rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-primary-strong">
               <MessageSquareQuote className="h-3.5 w-3.5" /> 2. 트레이너 핵심 피드백
             </div>
             <p className="text-sm leading-relaxed text-ink">{report.feedback}</p>
@@ -475,7 +475,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
           {/* 3. 개인운동시 주의사항 */}
           <div className="mt-3 rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-primary-strong">
               <Target className="h-3.5 w-3.5" /> 3. 개인운동시 주의사항
             </div>
             <ul className="space-y-1.5">

@@ -121,7 +121,7 @@ export default function MonthlyReport({ data, onClose }) {
         {/* 리포트 헤더 */}
         <div className="mb-5 flex items-center justify-between border-b border-line pb-4">
           <div>
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
+            <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
               <Award className="h-3.5 w-3.5" /> 월간 실적 보고서
             </div>
             <h2 className="mt-1 text-xl font-bold text-ink">{personName(trainerName)} 트레이너 · {ym}</h2>
@@ -130,7 +130,7 @@ export default function MonthlyReport({ data, onClose }) {
 
         {/* 급여 헤드라인(확정/예상) */}
         <Card tone="emerald">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted">
+          <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
             <Wallet className="h-3.5 w-3.5" /> {confirmed ? "확정" : "예상"} 급여
           </div>
           {confirmed ? (
@@ -182,7 +182,7 @@ export default function MonthlyReport({ data, onClose }) {
         {target != null && (
           <div className="mb-4 rounded-2xl border border-line bg-card p-4">
             <div className="flex items-baseline justify-between">
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-label-ko text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
               <span className="tabular-nums text-lg font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
@@ -201,15 +201,15 @@ export default function MonthlyReport({ data, onClose }) {
             <>
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wider text-muted">성공</div>
+                  <div className="text-[10px] tracking-label-ko text-muted">성공</div>
                   <div className="tabular-nums text-lg font-bold text-primary-strong">{closing.success}</div>
                 </div>
                 <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wider text-muted">보류</div>
+                  <div className="text-[10px] tracking-label-ko text-muted">보류</div>
                   <div className="tabular-nums text-lg font-bold text-amber-700">{closing.hold}</div>
                 </div>
                 <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wider text-muted">실패</div>
+                  <div className="text-[10px] tracking-label-ko text-muted">실패</div>
                   <div className="tabular-nums text-lg font-bold text-rose-700">{closing.fail}</div>
                 </div>
               </div>

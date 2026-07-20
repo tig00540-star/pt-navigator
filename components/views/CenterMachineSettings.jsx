@@ -192,7 +192,7 @@ export default function CenterMachineSettings() {
             {cats.map((cat) => (
               <div key={cat}>
                 <div className="flex items-center gap-1.5 py-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{cat}</span>
+                  <span className="text-[11px] font-semibold tracking-label-ko text-muted">{cat}</span>
                   <span className="rounded-full bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">{groups[cat].length}</span>
                 </div>
                 <ul className="mt-1.5 flex flex-wrap gap-2">

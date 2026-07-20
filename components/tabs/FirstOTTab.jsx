@@ -59,7 +59,7 @@ function Chip({ icon: Icon, label, value }) {
     <div className="flex items-center gap-2 rounded-lg border border-line bg-card px-3 py-2">
       <Icon className="h-4 w-4 shrink-0 text-muted" />
       <div className="leading-tight">
-        <div className="text-[10px] uppercase tracking-wider text-muted">{label}</div>
+        <div className="text-[10px] tracking-label-ko text-muted">{label}</div>
         <div className="text-sm font-medium text-ink">{value}</div>
       </div>
     </div>
@@ -90,7 +90,7 @@ export default function FirstOTTab({ member }) {
 
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className={`mb-2 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${STATUS_TONE[member.status] ?? "border-line bg-elevate text-sub"}`}>
+                <div className={`mb-2 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold tracking-label-ko ${STATUS_TONE[member.status] ?? "border-line bg-elevate text-sub"}`}>
                   {labelOf(STATUS_OPTS, member.status)}
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">

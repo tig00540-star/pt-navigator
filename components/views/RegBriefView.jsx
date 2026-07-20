@@ -25,13 +25,13 @@ export default function RegBriefView({ brief, highlightReason }) {
       )}
       {b.member_read && (
         <div className="rounded-xl border border-line bg-elevate p-4">
-          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted"><span className="text-base">✨</span> 3분 각인</div>
+          <div className="flex items-center gap-2 text-[10px] font-semibold tracking-label-ko text-muted"><span className="text-base">✨</span> 3분 각인</div>
           <p className="mt-1.5 leading-relaxed text-ink">{b.member_read}</p>
         </div>
       )}
       {(wn.proven || wn.risk_if_stop || wn.next_roadmap) && (
         <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
-          <div className="flex items-center gap-2"><span className="text-base">📈</span><span className="text-[11px] font-semibold uppercase tracking-wider text-sky-700">왜 지금 재등록 · 그동안의 근거</span></div>
+          <div className="flex items-center gap-2"><span className="text-base">📈</span><span className="text-[11px] font-semibold tracking-label-ko text-sky-700">왜 지금 재등록 · 그동안의 근거</span></div>
           <div className="mt-2 space-y-2">
             {wn.proven && (
               <div>
@@ -56,7 +56,7 @@ export default function RegBriefView({ brief, highlightReason }) {
       )}
       {(sf.gap_awareness || sf.goal_raise || sf.timing) && (
         <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
-          <div className="flex items-center gap-2"><span className="text-base">🔑</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 수업 흐름 · 재등록으로 잇기</span></div>
+          <div className="flex items-center gap-2"><span className="text-base">🔑</span><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">오늘 수업 흐름 · 재등록으로 잇기</span></div>
           <div className="mt-2 space-y-2">
             {sf.gap_awareness && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">부족분 인지 · </span>{sf.gap_awareness}</p>}
             {sf.goal_raise && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">목표 상향 · </span>{sf.goal_raise}</p>}
@@ -66,21 +66,21 @@ export default function RegBriefView({ brief, highlightReason }) {
       )}
       {sm.metaphor && (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
-          <div className="flex items-center gap-2"><span className="text-base">💬</span><span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">세일즈 비유</span></div>
+          <div className="flex items-center gap-2"><span className="text-base">💬</span><span className="text-[11px] font-semibold tracking-label-ko text-amber-700">세일즈 비유</span></div>
           <p className="mt-1.5 leading-relaxed text-ink">&ldquo;{sm.metaphor}&rdquo;</p>
           {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
         </div>
       )}
       {cline && (
         <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
-          <div className="flex items-center gap-2"><span className="text-base">🔥</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">클로징 한마디</span></div>
+          <div className="flex items-center gap-2"><span className="text-base">🔥</span><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">클로징 한마디</span></div>
           <p className="mt-1.5 font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
           {sw && <p className="mt-2 rounded-md bg-card px-2 py-1 text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">혜택(덤) · </span>{sw}</p>}
         </div>
       )}
       {obj.length > 0 && (
         <div>
-          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-sub"><span className="text-base">🛡</span> 거절 선제 방어 ({obj.length})</div>
+          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-sub"><span className="text-base">🛡</span> 거절 선제 방어 ({obj.length})</div>
           <div className="space-y-1.5">
             {obj.map((o, i) => {
               const on = highlightReason && o.reason === highlightReason;

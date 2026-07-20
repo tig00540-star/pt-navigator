@@ -646,7 +646,7 @@ export default function OTNavigatorDashboard() {
             <div className="flex items-center gap-3">
               <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 rounded-lg" />
               <div className="leading-tight">
-                <Wordmark className="text-[10px] font-bold tracking-[0.18em]" />
+                <Wordmark className="text-[13px] font-extrabold tracking-[-0.05em]" />
                 <div className="text-sm font-semibold text-ink">
                   {trainerName || "트레이너"}
                 </div>

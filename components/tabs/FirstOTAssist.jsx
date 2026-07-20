@@ -224,7 +224,7 @@ export default function FirstOTAssist({ member }) {
           {/* 앵커 — 3분 각인 */}
           {mr && (
             <div className="rounded-xl border border-line bg-elevate p-3.5">
-              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted">
+              <div className="flex items-center gap-2 text-[10px] font-semibold tracking-label-ko text-muted">
                 <Sparkles className="h-3.5 w-3.5" /> 3분 각인
               </div>
               <p className="mt-1 text-sm leading-relaxed text-ink">{mr}</p>
@@ -236,7 +236,7 @@ export default function FirstOTAssist({ member }) {
             <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
               <div className="flex items-center gap-2">
                 <span className="text-base">👋</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-sky-700">오프닝 · 긴장 풀기</span>
+                <span className="text-[11px] font-semibold tracking-label-ko text-sky-700">오프닝 · 긴장 풀기</span>
               </div>
               <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-ink">&ldquo;{op.line}&rdquo;</p>
               {op.why && <p className="mt-1 text-[11px] leading-relaxed text-muted">{op.why}</p>}
@@ -246,7 +246,7 @@ export default function FirstOTAssist({ member }) {
           {/* 오늘 수업 운동 구성 */}
           {Array.isArray(data.session_plan) && data.session_plan.length > 0 && (
             <div className="rounded-xl border border-line bg-card p-4">
-              <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 수업 운동 구성</span></div>
+              <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">오늘 수업 운동 구성</span></div>
               <ol className="mt-2 space-y-1.5">
                 {data.session_plan.filter(Boolean).map((s, i) => (
                   <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-ink">
@@ -268,7 +268,7 @@ export default function FirstOTAssist({ member }) {
               <div className="rounded-xl border border-line bg-card p-4">
                 <div className="flex items-center gap-2">
                   <span className="text-base">🎯</span>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">타겟 운동 · 증거 만들기</span>
+                  <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">타겟 운동 · 증거 만들기</span>
                 </div>
                 <div className="mt-2 space-y-3">
                   {moves.map((mv, i) => (
@@ -301,7 +301,7 @@ export default function FirstOTAssist({ member }) {
             <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
               <div className="flex items-center gap-2">
                 <span className="text-base">💬</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">세일즈 비유</span>
+                <span className="text-[11px] font-semibold tracking-label-ko text-amber-700">세일즈 비유</span>
               </div>
               <p className="mt-1.5 text-sm leading-relaxed text-ink">&ldquo;{sm.metaphor}&rdquo;</p>
               {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
@@ -313,7 +313,7 @@ export default function FirstOTAssist({ member }) {
             <div className="rounded-xl border border-primary/30 bg-card p-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-3.5 w-3.5 text-primary-strong" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
+                <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
               </div>
               <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm text-ink">
                 <span className="font-bold">{pick.name}</span>
@@ -346,7 +346,7 @@ export default function FirstOTAssist({ member }) {
             <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
               <div className="flex items-center gap-2">
                 <Flag className="h-4 w-4 text-primary-strong" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">클로징 한마디</span>
+                <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">클로징 한마디</span>
               </div>
               <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
             </div>
@@ -355,7 +355,7 @@ export default function FirstOTAssist({ member }) {
           {/* 거절 5방어 — 기본 펼침(현장 핵심) */}
           {obj.length > 0 && (
             <details open className="rounded-xl border border-line bg-card">
-              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub">
+              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold tracking-label-ko text-sub">
                 <ShieldCheck className="h-3.5 w-3.5 text-primary-strong" /> 거절 선제 방어 ({obj.length})
               </summary>
               <div className="space-y-2 px-3.5 pb-3.5">
@@ -383,7 +383,7 @@ export default function FirstOTAssist({ member }) {
           {/* data_gaps — 접힘 */}
           {gaps.length > 0 && (
             <details className="rounded-xl border border-primary/30 bg-primary-soft p-4">
-              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-primary-strong">
+              <summary className="cursor-pointer text-xs font-semibold tracking-label-ko text-primary-strong">
                 이렇게 하면 더 좋아져요 (선택 · {gaps.length})
               </summary>
               <ul className="mt-3 space-y-1.5">

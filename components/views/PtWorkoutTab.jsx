@@ -324,7 +324,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       {/* 회원 기본정보 (간단) */}
       {mode !== "record" && (
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <span className="inline-block rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary-strong">
+        <span className="inline-block rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[11px] font-semibold tracking-label-ko text-primary-strong">
           PT 회원
         </span>
         <h1 className="mt-2 text-2xl font-bold text-ink">

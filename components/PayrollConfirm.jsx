@@ -59,7 +59,7 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
   return (
     <div className="mt-3 rounded-xl border border-primary/30 bg-primary-soft p-3">
       <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">
+        <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">
           {isManual ? "자동계산 없음 · 최종액 입력" : "예상 급여"}
         </div>
         {!isManual && <div className="font-mono text-lg font-bold text-primary-strong">{won(pay.computed)}</div>}

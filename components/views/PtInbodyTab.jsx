@@ -214,7 +214,7 @@ export default function PtInbodyTab({ member, mode }) {
               const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
               return (
                 <div key={f.key} className="rounded-xl border border-line bg-elevate p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-muted">{f.label}</div>
+                  <div className="text-[10px] tracking-label-ko text-muted">{f.label}</div>
                   <div className="mt-1 font-mono text-lg font-bold text-ink">
                     {cur == null ? "–" : cur}
                     <span className="ml-1 text-xs font-normal text-muted">{f.unit}</span>

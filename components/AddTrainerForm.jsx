@@ -34,7 +34,7 @@ export default function AddTrainerForm() {
 
   return (
     <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+      <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
         <UserPlus className="h-3.5 w-3.5" /> 트레이너 추가
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">

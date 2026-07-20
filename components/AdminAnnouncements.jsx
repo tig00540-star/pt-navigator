@@ -142,7 +142,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-fuchsia-700">
+      <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-fuchsia-700">
         <Megaphone className="h-3.5 w-3.5" /> 공지 (원장 → 트레이너)
       </div>
 
@@ -228,7 +228,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
 
       {/* 목록 */}
       <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">게시한 공지</div>
+        <div className="mb-3 text-[11px] font-semibold tracking-label-ko text-muted">게시한 공지</div>
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : sorted.length === 0 ? (

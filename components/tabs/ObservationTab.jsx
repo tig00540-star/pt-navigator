@@ -315,7 +315,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
               기존엔 아이콘에 text-primary-strong이 빠져 이 제목만 회색이었다(형제 ②③④는 레드). 함께 교정. */}
           <div className="flex items-center gap-2">
             <Footprints className="h-4 w-4 text-primary-strong" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-sub">① 움직임 관찰</span>
+            <span className="text-xs font-semibold tracking-label-ko text-sub">① 움직임 관찰</span>
           </div>
           <Button variant="ghost" size="sm" onClick={addMovement} disabled={form.movements.length >= 3}>
             <Plus className="h-3.5 w-3.5" /> 추가

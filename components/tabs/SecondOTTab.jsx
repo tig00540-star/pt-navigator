@@ -427,7 +427,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
 
         <div>
           <div className="rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
               <MessageSquareQuote className="h-3.5 w-3.5" /> 1차 OT 직후 · 회원의 말
             </div>
             <p className="text-sm italic leading-relaxed text-ink">“{RAW_FEEDBACK}”</p>
@@ -465,7 +465,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
 
         <div className="grid gap-4 lg:grid-cols-5">
           <div className="rounded-2xl border border-line bg-card shadow-sm p-4 lg:col-span-2">
-            <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+            <div className="mb-3 text-xs font-semibold tracking-label-ko text-muted">
               Gym80 아웃싸이 · 대퇴사두 차단 세팅
             </div>
             <div className="space-y-2.5">
@@ -568,20 +568,20 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         )}
         {b.member_read && (
           <div className="rounded-xl border border-line bg-elevate p-3.5">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted"><Sparkles className="h-3.5 w-3.5" /> 3분 각인</div>
+            <div className="flex items-center gap-2 text-[10px] font-semibold tracking-label-ko text-muted"><Sparkles className="h-3.5 w-3.5" /> 3분 각인</div>
             <p className="mt-1 text-sm leading-relaxed text-ink">{b.member_read}</p>
           </div>
         )}
         {rc.line && (
           <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
-            <div className="flex items-center gap-2"><span className="text-base">↩️</span><span className="text-[11px] font-semibold uppercase tracking-wider text-sky-700">지난 시간 소환</span></div>
+            <div className="flex items-center gap-2"><span className="text-base">↩️</span><span className="text-[11px] font-semibold tracking-label-ko text-sky-700">지난 시간 소환</span></div>
             <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-ink">&ldquo;{rc.line}&rdquo;</p>
             {rc.why && <p className="mt-1 text-[11px] leading-relaxed text-muted">{rc.why}</p>}
           </div>
         )}
         {Array.isArray(b.session_plan) && b.session_plan.length > 0 && (
           <div className="rounded-xl border border-line bg-card p-4">
-            <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 수업 운동 구성</span></div>
+            <div className="flex items-center gap-2"><span className="text-base">💪</span><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">오늘 수업 운동 구성</span></div>
             <ol className="mt-2 space-y-1.5">
               {b.session_plan.filter(Boolean).map((s, i) => (
                 <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-ink">
@@ -594,7 +594,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         )}
         {moves.length > 0 && (
           <div className="rounded-xl border border-line bg-card p-4">
-            <div className="flex items-center gap-2"><span className="text-base">🎯</span><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">오늘 증명할 동작</span></div>
+            <div className="flex items-center gap-2"><span className="text-base">🎯</span><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">오늘 증명할 동작</span></div>
             <div className="mt-2 space-y-3">
               {moves.map((mv, i) => (
                 <div key={i} className={i > 0 ? "border-t border-line pt-3" : ""}>
@@ -610,7 +610,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         )}
         {sm.metaphor && (
           <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
-            <div className="flex items-center gap-2"><span className="text-base">💬</span><span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">세일즈 비유</span></div>
+            <div className="flex items-center gap-2"><span className="text-base">💬</span><span className="text-[11px] font-semibold tracking-label-ko text-amber-700">세일즈 비유</span></div>
             <p className="mt-1.5 text-sm leading-relaxed text-ink">&ldquo;{sm.metaphor}&rdquo;</p>
             {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
           </div>
@@ -619,7 +619,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           <div className="rounded-xl border border-primary/30 bg-card p-4">
             <div className="flex items-center gap-2">
               <CreditCard className="h-3.5 w-3.5 text-primary-strong" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
+              <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
             </div>
             <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm text-ink">
               <span className="font-bold">{pick.name}</span>
@@ -648,13 +648,13 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         ) : null}
         {cline && (
           <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
-            <div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary-strong" /><span className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">클로징 한마디</span></div>
+            <div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary-strong" /><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">클로징 한마디</span></div>
             <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
           </div>
         )}
         {obj.length > 0 && (
           <details open className="rounded-xl border border-line bg-card">
-            <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub"><ShieldCheck className="h-3.5 w-3.5 text-primary-strong" /> 거절 선제 방어 ({obj.length})</summary>
+            <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold tracking-label-ko text-sub"><ShieldCheck className="h-3.5 w-3.5 text-primary-strong" /> 거절 선제 방어 ({obj.length})</summary>
             <div className="space-y-2 px-3.5 pb-3.5">
               {obj.map((o, i) => (
                 <div key={i} className="rounded-lg border border-line bg-elevate p-3">
@@ -668,7 +668,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         )}
         {b.case_feedback && (
           <details className="rounded-xl border border-line bg-card">
-            <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold uppercase tracking-wider text-sub"><History className="h-3.5 w-3.5 text-primary-strong" /> 내 과거 케이스 거울 {meta?.caseTier === "confident" ? "· 뚜렷" : "· 잠정"}</summary>
+            <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold tracking-label-ko text-sub"><History className="h-3.5 w-3.5 text-primary-strong" /> 내 과거 케이스 거울 {meta?.caseTier === "confident" ? "· 뚜렷" : "· 잠정"}</summary>
             <div className="space-y-2 px-3.5 pb-3.5">
               {b.case_feedback.diagnosis && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-sub">진단 · </span>{b.case_feedback.diagnosis}</p>}
               {b.case_feedback.proven_lead && <p className="text-[13px] leading-relaxed text-sub"><span className="font-semibold text-sub">통한 접근 · </span>{b.case_feedback.proven_lead}</p>}
@@ -679,7 +679,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         )}
         {gaps.length > 0 && (
           <details className="rounded-xl border border-primary/30 bg-primary-soft p-4">
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-primary-strong">이렇게 하면 더 좋아져요 (선택 · {gaps.length})</summary>
+            <summary className="cursor-pointer text-xs font-semibold tracking-label-ko text-primary-strong">이렇게 하면 더 좋아져요 (선택 · {gaps.length})</summary>
             <ul className="mt-3 space-y-1.5">{gaps.map((gp, i) => <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-sub"><span className="mt-0.5 text-primary-strong">＋</span> {gp}</li>)}</ul>
           </details>
         )}

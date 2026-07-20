@@ -806,7 +806,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/icon-192.png" alt="오직 트레이너" className="h-7 w-7 rounded-lg" />
-            <Wordmark className="text-[11px] font-bold tracking-[0.18em]" />
+            <Wordmark className="text-[13px] font-extrabold tracking-[-0.05em]" />
           </div>
           <h1 className="mt-2 text-3xl font-extrabold text-ink">
             {me.name} <span className="text-lg font-semibold text-muted">회원님 공간</span>
@@ -896,7 +896,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                   const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
                   return (
                     <div key={f.key} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
-                      <div className="text-[11px] uppercase tracking-wider text-muted">{f.label}</div>
+                      <div className="text-[11px] tracking-label-ko text-muted">{f.label}</div>
                       <div className="mt-1 font-mono text-2xl font-bold text-ink">
                         {cur == null ? "–" : cur}
                         <span className="ml-1 text-xs font-normal text-muted">{f.unit}</span>

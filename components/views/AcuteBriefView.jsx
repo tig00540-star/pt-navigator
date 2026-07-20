@@ -18,7 +18,7 @@ export default function AcuteBriefView({ brief }) {
     <div className="mt-3 space-y-3">
       {brief.safety && (
         <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-700">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold tracking-label-ko text-red-700">
             <ShieldAlert className="h-3.5 w-3.5" /> 안전 먼저
           </div>
           <p className="text-sm leading-relaxed text-red-700">{brief.safety}</p>

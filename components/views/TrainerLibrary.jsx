@@ -187,7 +187,7 @@ export default function TrainerLibrary() {
                   <div key={cat}>
                     <button type="button" onClick={() => toggleCat(cat)} className="flex w-full items-center gap-1.5 py-1 text-left">
                       {isOpen(cat) ? <ChevronDown className="h-3.5 w-3.5 text-muted" /> : <ChevronRight className="h-3.5 w-3.5 text-muted" />}
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{cat}</span>
+                      <span className="text-[11px] font-semibold tracking-label-ko text-muted">{cat}</span>
                       <span className="rounded-full bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">{groups[cat].length}</span>
                     </button>
                     {isOpen(cat) && (

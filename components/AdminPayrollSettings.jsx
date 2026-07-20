@@ -316,7 +316,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
 
                 {/* 라이브 미리보기 */}
                 <div className="rounded-xl border border-primary/30 bg-primary-soft p-3.5">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-primary-strong">예상 급여 미리보기</div>
+                  <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">예상 급여 미리보기</div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 매출</span>
