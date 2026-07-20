@@ -4,28 +4,59 @@
    body 배경을 그쪽에 물려두면 다크모드에서 #0a0a0a로 깔려, 콘텐츠 페인트 전 구간이 '검은 화면'으로 보였다.
    이 앱은 밝은테마 전용이므로 body는 아래 @theme의 실제 토큰(--color-bg/--color-ink)을 쓴다. */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-pretendard);
   --font-mono: var(--font-geist-mono); /* font-mono 유틸 47곳 사용 중 — 유지 */
 }
 
-/* 파일럿 밝은테마 색 토큰(린 셋 10개 · 정적 hex). 소비는 Phase 1부터 — 지금은 정의만. */
+/* 밝은테마 색 토큰(린 셋 10개 · 정적 hex).
+   ⚠️ 값은 「오직 트레이너 Design System」 tokens/colors.css 기준(2026-07-21 적용).
+   토큰 '이름'은 앱 것을 유지하고 '값'만 DS로 교체한다 — 기존 유틸 사용 1,962곳
+   (muted 489·primary 390·line 291·ink 233·sub 187·card 180·elevate 177…)이
+   한 줄도 안 바뀌고 자동 반영되기 때문. DS 이름(--red 등)을 새로 만들면
+   같은 색에 이름이 둘이 되고, bg-red가 Tailwind 기본 bg-red-500과 혼동된다. */
 @theme {
-  --color-bg: #eef1f5;            /* 페이지 배경(연회색) */
+  --color-bg: #f1f2f6;            /* 페이지 배경(연회색) · DS paper */
   --color-card: #ffffff;          /* 카드 */
-  --color-elevate: #f4f6fa;       /* 카드 안 눌린 패널·입력칸 */
-  --color-line: #e6e9ef;          /* 테두리·구분선(옅게) */
-  --color-ink: #0f172a;           /* 본문(고대비) */
+  --color-elevate: #e8eaf0;       /* 카드 안 눌린 패널·입력칸 · DS sunken */
+  --color-line: #dfe2ea;          /* 테두리·구분선(옅게) · DS line */
+  --color-ink: #13151b;           /* 본문(고대비) · DS 값. 푸른기 뺀 중립 먹색 */
   --color-sub: #475569;           /* 보조 텍스트 */
-  --color-muted: #64748b;         /* 흐린 텍스트(부차 정보만) · AA 4.5:1 확보(흰 카드 위 4.77:1) */
+  /* 흐린 텍스트(부차 정보만) · AA 4.5:1을 '세 배경 모두'에서 확보.
+     ⚠️ 이전 값 #64748b는 흰 카드 위(4.76)만 재고 통과 판정한 값이라, 실제로는
+     bg(#eef1f5) 위 4.20 · elevate(#f4f6fa) 위 4.40으로 본문 기준 미달이었다.
+     카드 밖 로딩·에러 문구(AuthGate·admin·회원앱 ScreenMsg)와 placeholder 36곳이 여기 걸렸다.
+     현재 값 대비: card 5.83 / elevate 5.39 / bg 5.15 — sub(#475569, 7.58)보다 확실히 흐려 위계는 유지. */
+  --color-muted: #5b6675;
   --color-primary: #dc2626;       /* 레드 포인트(채움·점·버튼) */
   --color-primary-strong: #b91c1c;/* 레드 텍스트(흰 배경 가독) */
   --color-primary-soft: #fef2f2;  /* 레드 옅은 배경(절제 사용) */
+
+  /* ── 모서리 · 그림자 — 색과 같은 정책(이름 유지, 값만 DS로) ──
+     Tailwind 기본값을 덮어써서 기존 클래스가 그대로 새 규격을 따르게 한다.
+     새 이름(rounded-card 등)을 만들면 같은 뜻에 클래스가 둘이 되어 드리프트한다.
+     DS: 컨트롤 10px · 카드 14px · 그림자는 카드에만 한 종류. */
+  --radius-lg: 10px;              /* 버튼·입력칸·칩 (152곳) · 기본 8px → DS control */
+  --radius-2xl: 14px;             /* 카드 (108곳) · 기본 16px → DS card */
+  /* rounded-xl(12px, 84곳)·md·full은 유지 — DS에 대응 단계가 없다 */
+
+  /* 카드 그림자 — 얕은 1단 → DS 2단(근접+확산). shadow-sm 100곳 중 93곳이 bg-card 카드.
+     ⚠️ 카드가 아닌 나머지 7곳도 같이 깊어진다. DS 규율상 그림자는 카드 전용이므로
+     그 7곳은 2단계에서 shadow 제거 대상으로 점검할 것. */
+  --shadow-sm: 0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-ink);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Pretendard 한 벌 — 한글·라틴을 같은 서체로. DS tokens/typography.css 기준.
+     가변 축이라 450 같은 중간 굵기가 실제로 나온다. */
+  font-family: var(--font-pretendard), -apple-system, BlinkMacSystemFont,
+               "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-weight: 450;
+  letter-spacing: -0.011em;
+  /* ⚠️ DS는 본문 행간 1.7이지만 전역 적용하지 않는다 — Tailwind text-* 유틸이
+     이미 크기별 행간을 갖고 있고, 유틸이 없는 요소만 1.7이 되면 세로 크기가
+     예측 불가하게 늘어난다(뱃지·칩·버튼 등). 행간은 2단계에서 컴포넌트 단위로. */
 }
 
 /* 앱 느낌 — 탭 하이라이트 제거 + 관성/당겨서새로고침 차단 */

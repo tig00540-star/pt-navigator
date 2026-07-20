@@ -1,16 +1,30 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import AuthGate from "@/components/AuthGate";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+/* 본문 서체 — Pretendard Variable 한 벌(가변, 45~920).
+   ⚠️ Geist를 걷어낸 이유: Geist에는 한글 글리프가 없다. 스택이
+   `Geist, ui-sans-serif, system-ui`였기 때문에 라틴·숫자만 Geist로 그려지고
+   한글은 전부 기기 기본 폰트로 폴백됐다(캔버스 실측: 같은 한글 문장이
+   Geist 지정 154.22px vs 존재하지 않는 폰트 155.62px = 사실상 동일).
+   즉 한국어 앱인데 한글 조판이 기기마다 달랐다. Pretendard는 한글·라틴을
+   한 벌로 덮으므로 여기서 통제권을 되찾는다.
+   정적 9종(OTF 10~30MB) 대신 가변 woff2 1파일(2.0MB) — 헬스장 회선 고려. */
+const pretendard = localFont({
+  src: "../public/fonts/PretendardVariable.woff2",
+  variable: "--font-pretendard",
+  weight: "45 920",
+  style: "normal",
+  display: "swap",
+  preload: true,
+  fallback: ["-apple-system", "BlinkMacSystemFont", "Apple SD Gothic Neo", "Malgun Gothic", "system-ui", "sans-serif"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
+}); /* font-mono 유틸 47곳 유지 — 숫자·코드용이라 라틴 전용으로 충분 */
 
 export const metadata = {
   applicationName: "오직 트레이너",
@@ -42,7 +56,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${pretendard.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AuthGate>{children}</AuthGate>
