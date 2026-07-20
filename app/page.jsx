@@ -644,20 +644,22 @@ export default function OTNavigatorDashboard() {
       <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
-            {/* 폰 폭(390px)에서 오른쪽 그룹(회원 셀렉트 + 버튼 3개)이 자리를 많이 먹는다.
-                워드마크는 브랜드 이름이라 쪼개지면 안 되므로(Wordmark가 whitespace-nowrap),
-                공간이 모자라면 트레이너 이름이 줄어들게 한다 — min-w-0 + truncate. */}
-            <div className="flex min-w-0 items-center gap-3">
+            {/* 축소 우선순위 — 폰(390px)에서 헤더가 빡빡하다.
+                워드마크는 브랜드 이름이라 쪼개져도(줄바꿈) 잘려도(overflow) 안 된다.
+                min-w-0으로 왼쪽을 줄였더니 이번엔 워드마크가 오른쪽 그룹과 8px 겹쳤다.
+                → 왼쪽 그룹은 shrink-0으로 고정하고, 대신 오른쪽(회원 셀렉트)이 줄어든다.
+                셀렉트는 탭하면 전체 목록이 뜨므로 폭이 좁아도 기능을 잃지 않는다. */}
+            <div className="flex shrink-0 items-center gap-3">
               <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 shrink-0 rounded-lg" />
               <div className="min-w-0 leading-tight">
                 <Wordmark className="text-[13px] font-extrabold tracking-[-0.05em]" />
-                <div className="truncate text-sm font-semibold text-ink">
+                <div className="max-w-[110px] truncate text-sm font-semibold text-ink sm:max-w-none">
                   {trainerName || "트레이너"}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               {members.length > 0 && (
                 <label className="flex items-center gap-1 rounded-lg border border-line bg-elevate pl-2 pr-1 focus-within:border-primary">
                   <User className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
@@ -665,7 +667,7 @@ export default function OTNavigatorDashboard() {
                   <select
                     value={selectedId || ""}
                     onChange={(e) => setSelectedId(e.target.value)}
-                    className="max-w-[88px] bg-transparent py-1.5 pr-1 text-xs text-sub outline-none sm:max-w-[120px]"
+                    className="max-w-[68px] min-w-0 bg-transparent py-1.5 pr-1 text-xs text-sub outline-none sm:max-w-[120px]"
                     aria-label="회원 선택"
                   >
                     {members.map((m) => (

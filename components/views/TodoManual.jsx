@@ -97,22 +97,26 @@ export default function TodoManual() {
         <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">{openCount}</span>
       </div>
 
+      {/* 폰에서는 두 줄 — 할 일 입력이 한 줄을 다 쓰고, 날짜+추가가 아래로 내려간다.
+          셋을 한 줄에 두면 390px에서 날짜 칸이 짜부라져 "2026. 7." / "21."로 두 줄이 되고
+          할 일 예시 문구도 잘렸다. 날짜 입력은 OS가 그리는 컨트롤이라 폭이 모자라면
+          우리가 통제할 수 없는 방식으로 접힌다 — 애초에 넉넉한 폭을 줘야 한다. */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") add(); }}
           placeholder="할 일 적기 (예: 3시 회원 인바디 재측정)"
-          className="min-w-[180px] flex-1 rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
+          className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary sm:w-auto sm:min-w-[180px] sm:flex-1"
         />
         <input
           type="date"
           value={due}
           onChange={(e) => setDue(e.target.value)}
-          className="min-w-[140px] flex-1 rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary sm:min-w-[140px]"
           aria-label="마감일(선택)"
         />
-        <Button variant="primary" size="md" onClick={add} disabled={saving || !body.trim()}>
+        <Button variant="primary" size="md" onClick={add} disabled={saving || !body.trim()} className="shrink-0">
           <Plus className="h-4 w-4" /> 추가
         </Button>
       </div>
