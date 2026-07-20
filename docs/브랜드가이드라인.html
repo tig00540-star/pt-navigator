@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="오직 트레이너 브랜드 가이드라인 — 미션·철학·보이스·로고·컬러·타이포그래피">
+<title>오직 트레이너 — 브랜드 가이드라인 v1.2</title>
+
+<style>
+  :root{
+    --paper:#f1f2f6; --card:#ffffff; --sunken:#e8eaf0; --line:#dfe2ea;
+    --ink:#13151b; --sub:#4a4f5c; --muted:#5b6675;
+    --red:#dc2626; --red-strong:#b91c1c; --on-red:#ffffff;
+    --money:#10b981; --money-text:#047857;
+    --faint:rgba(19,21,27,.22);
+    --shadow:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#0e0f13; --card:#17191f; --sunken:#1e2028; --line:#282b34;
+      --ink:#f0f1f4; --sub:#b0b5c0; --muted:#8d94a1;
+      --red:#f2564a; --red-strong:#ff7b6e; --on-red:#180806;
+      --money:#31c79b; --money-text:#4fd8ae;
+      --faint:rgba(240,241,244,.24);
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0e0f13; --card:#17191f; --sunken:#1e2028; --line:#282b34;
+    --ink:#f0f1f4; --sub:#b0b5c0; --muted:#8d94a1;
+    --red:#f2564a; --red-strong:#ff7b6e; --on-red:#180806;
+    --money:#31c79b; --money-text:#4fd8ae; --faint:rgba(240,241,244,.24);
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.9);
+  }
+  :root[data-theme="light"]{
+    --paper:#f1f2f6; --card:#ffffff; --sunken:#e8eaf0; --line:#dfe2ea;
+    --ink:#13151b; --sub:#4a4f5c; --muted:#5b6675;
+    --red:#dc2626; --red-strong:#b91c1c; --on-red:#ffffff;
+    --money:#10b981; --money-text:#047857; --faint:rgba(19,21,27,.22);
+    --shadow:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+  }
+
+  html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Pretendard Variable", Pretendard, "Pretendard JP", -apple-system,
+      BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    font-weight:450; line-height:1.7; letter-spacing:-.011em;
+  }
+  ::selection{ background:var(--red); color:var(--on-red); }
+  :focus-visible{ outline:2px solid var(--red); outline-offset:3px; border-radius:4px; }
+  p{ margin:0 0 12px; }
+  strong{ font-weight:700; }
+  code{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9em;
+    background:var(--sunken); padding:1px 5px; border-radius:4px; letter-spacing:0; }
+
+  /* ── 셸 ───────────────────────────────── */
+  .shell{ max-width:1180px; margin:0 auto; padding:0 24px;
+    display:grid; grid-template-columns:196px 1fr; gap:48px; align-items:start; }
+  @media (max-width:900px){ .shell{ grid-template-columns:1fr; gap:0; } }
+
+  .toc{ position:sticky; top:0; padding:40px 0; align-self:start; }
+  @media (max-width:900px){ .toc{ position:static; padding:24px 0 0; } }
+  .toc-lab{ font-size:10.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--muted); margin:0 0 14px; }
+  .toc ol{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  @media (max-width:900px){ .toc ol{ flex-direction:row; flex-wrap:wrap; gap:6px; } }
+  .toc a{ display:block; text-decoration:none; color:var(--sub); font-size:13.5px;
+    padding:5px 9px; border-radius:7px; letter-spacing:-.02em; }
+  .toc a:hover{ background:var(--sunken); color:var(--ink); }
+  .toc .n{ color:var(--muted); font-variant-numeric:tabular-nums; margin-right:7px; font-size:11.5px; font-weight:700; }
+
+  .doc{ min-width:0; padding:40px 0 0; }
+  .sec{ padding:52px 0; border-top:1px solid var(--line); scroll-margin-top:24px; }
+  .sec:first-child{ border-top:0; padding-top:0; }
+
+  .num{ font-size:11px; font-weight:700; letter-spacing:.18em; color:var(--red);
+    font-variant-numeric:tabular-nums; margin:0 0 12px; text-transform:uppercase; }
+  h2{ font-size:clamp(24px,3.2vw,31px); font-weight:800; letter-spacing:-.038em;
+    line-height:1.22; margin:0 0 10px; text-wrap:balance; }
+  h3{ font-size:17.5px; font-weight:700; letter-spacing:-.032em; margin:34px 0 10px; }
+  h4{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); margin:0 0 12px; }
+  .lede{ max-width:62ch; color:var(--sub); font-size:15.5px; margin:0 0 8px; }
+
+  /* ── 표지 ─────────────────────────────── */
+  .cover{ padding:clamp(44px,7vw,72px) 0 52px; }
+  .cover-mark{ display:flex; align-items:center; gap:20px; margin:0 0 30px; }
+  .cover h1{ font-size:clamp(34px,6.4vw,54px); font-weight:800; letter-spacing:-.05em;
+    line-height:1.04; margin:0 0 12px; }
+  .cover h1 .t{ color:var(--red); }
+  .cover .sub{ font-size:clamp(15px,2vw,18px); font-weight:600; letter-spacing:-.03em;
+    color:var(--sub); margin:0 0 26px; }
+  .meta-row{ display:flex; flex-wrap:wrap; gap:10px 28px; padding-top:22px; border-top:1px solid var(--line); }
+  .meta-row div{ font-size:13px; color:var(--sub); }
+  .meta-row .k{ display:block; font-size:10.5px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+
+  /* ── 인용 ─────────────────────────────── */
+  .pull{ border-left:3px solid var(--red); padding:2px 0 2px 20px; margin:26px 0;
+    font-size:clamp(17px,2.4vw,21px); font-weight:700; letter-spacing:-.035em;
+    line-height:1.45; max-width:26ch; }
+
+  /* ── 카드 격자 ────────────────────────── */
+  .cards{ display:grid; gap:1px; background:var(--line); border:1px solid var(--line);
+    border-radius:14px; overflow:hidden; margin:22px 0; }
+  .c3{ grid-template-columns:repeat(3,1fr); }
+  .c2{ grid-template-columns:repeat(2,1fr); }
+  @media (max-width:760px){ .c3, .c2{ grid-template-columns:1fr; } }
+  .cards > div{ background:var(--card); padding:22px 20px 24px; }
+  .cards h5{ font-size:16px; font-weight:700; letter-spacing:-.03em; margin:0 0 7px; }
+  .cards p{ font-size:14px; color:var(--sub); margin:0; }
+  .cards .k{ display:block; font-size:10.5px; font-weight:700; letter-spacing:.14em;
+    color:var(--red); text-transform:uppercase; margin:0 0 9px; }
+
+  /* ── 신념 리스트 ──────────────────────── */
+  .beliefs{ list-style:none; margin:22px 0 0; padding:0; display:flex; flex-direction:column; gap:0; }
+  .beliefs li{ display:grid; grid-template-columns:44px 1fr; gap:18px;
+    padding:20px 0; border-top:1px solid var(--line); }
+  .beliefs li:last-child{ border-bottom:1px solid var(--line); }
+  .beliefs .idx{ font-size:12px; font-weight:700; color:var(--red);
+    font-variant-numeric:tabular-nums; letter-spacing:.1em; padding-top:3px; }
+  .beliefs h5{ font-size:17px; font-weight:700; letter-spacing:-.033em; margin:0 0 6px; }
+  .beliefs p{ font-size:14.5px; color:var(--sub); margin:0; max-width:58ch; }
+
+  /* ── 표 ───────────────────────────────── */
+  .tw{ overflow-x:auto; border:1px solid var(--line); border-radius:14px;
+    background:var(--card); margin:20px 0; }
+  table{ border-collapse:collapse; width:100%; min-width:560px; }
+  th,td{ text-align:left; padding:13px 17px; border-bottom:1px solid var(--line);
+    font-size:14px; vertical-align:top; }
+  th{ font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
+  tbody tr:last-child td{ border-bottom:0; }
+  td{ color:var(--sub); }
+  td.key{ color:var(--ink); font-weight:700; letter-spacing:-.028em; white-space:nowrap; }
+  .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums;
+    font-size:13px; letter-spacing:0; }
+  .pass{ color:var(--money-text); font-weight:700; }
+  .fail{ color:var(--red-strong); font-weight:700; }
+  .sq{ display:inline-block; width:11px; height:11px; border-radius:3px;
+    margin-right:7px; vertical-align:-1px; border:1px solid rgba(128,128,128,.3); }
+
+  /* 테마 고정 판 — 보는 사람 테마와 무관하게 렌더 */
+  .themepair{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:22px 0; }
+  @media (max-width:640px){ .themepair{ grid-template-columns:1fr; } }
+  .tp{ border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .tp-lab{ padding:10px 15px; font-size:10.5px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); background:var(--card);
+    border-bottom:1px solid var(--line); }
+  .tp-box{ padding:30px 22px; display:flex; align-items:center; gap:13px; }
+  .tp-box.lt{ background:#f1f2f6; }
+  .tp-box.dk{ background:#0e0f13; }
+  .tp-wm{ font-size:20px; font-weight:800; letter-spacing:-.05em; line-height:1; }
+  .tp-box.lt .tp-wm{ color:#13151b; }
+  .tp-box.dk .tp-wm{ color:#f0f1f4; }
+  .tp-box.lt .tp-wm .t{ color:#dc2626; }
+  .tp-box.dk .tp-wm .t{ color:#f2564a; }
+
+  /* ── Do / Don't ───────────────────────── */
+  .dd{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:22px 0; }
+  @media (max-width:760px){ .dd{ grid-template-columns:1fr; } }
+  .dd-col{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px 22px; }
+  .dd-col h4{ margin-bottom:14px; }
+  .dd-col.no h4{ color:var(--red-strong); }
+  .dd-col.yes h4{ color:var(--money-text); }
+  .dd-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+  .dd-col li{ font-size:14px; color:var(--sub); display:grid; grid-template-columns:15px 1fr; gap:10px; }
+  .dd-col .m{ font-weight:800; }
+  .no .m{ color:var(--red); } .yes .m{ color:var(--money-text); }
+  .say{ color:var(--ink); font-weight:600; letter-spacing:-.02em; }
+
+  /* ── 로고 스테이지 ────────────────────── */
+  .stage{ background:var(--sunken); border:1px solid var(--line); border-radius:16px;
+    display:flex; align-items:center; justify-content:center; gap:26px;
+    padding:46px 24px; margin:22px 0; flex-wrap:wrap; }
+  .stage svg{ display:block; }
+  .lockgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin:22px 0; }
+  @media (max-width:760px){ .lockgrid{ grid-template-columns:1fr; } }
+  .lockcard{ background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .lockcard .box{ background:var(--sunken); padding:32px 22px; display:flex;
+    align-items:center; justify-content:center; min-height:96px; border-bottom:1px solid var(--line); }
+  .lockcard .cap{ padding:14px 18px 16px; }
+  .lockcard .cap b{ display:block; font-size:13.5px; font-weight:700; letter-spacing:-.028em; margin-bottom:3px; }
+  .lockcard .cap span{ font-size:12.5px; color:var(--muted); }
+  .lk{ display:flex; align-items:center; gap:11px; }
+  .lk .txt{ font-weight:800; letter-spacing:-.05em; line-height:1; font-size:26px; }
+  .lk .txt .t{ color:var(--red); }
+  .onlyword{ display:flex; align-items:center; gap:2px; }
+  .onlyword .ch{ font-size:30px; font-weight:800; letter-spacing:.02em; line-height:1; }
+
+  /* ── 오용 ─────────────────────────────── */
+  .misuse{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:22px 0; }
+  @media (max-width:760px){ .misuse{ grid-template-columns:repeat(2,1fr); } }
+  .mis{ background:var(--card); border:1px solid var(--line); border-radius:13px; overflow:hidden; }
+  .mis .box{ background:var(--sunken); padding:24px; display:flex; justify-content:center;
+    border-bottom:1px solid var(--line); position:relative; }
+  .mis .cap{ padding:11px 14px 13px; font-size:12.5px; color:var(--sub); line-height:1.5; }
+  .mis .cap b{ color:var(--red-strong); font-weight:700; display:block; font-size:12.5px; margin-bottom:2px; }
+
+  /* ── 컬러 ─────────────────────────────── */
+  .swatches{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:22px 0; }
+  @media (max-width:760px){ .swatches{ grid-template-columns:repeat(2,1fr); } }
+  .sw{ border:1px solid var(--line); border-radius:13px; overflow:hidden; background:var(--card); }
+  .sw .chip{ height:76px; }
+  .sw .meta{ padding:13px 15px 15px; }
+  .sw .name{ font-size:13.5px; font-weight:700; letter-spacing:-.025em; }
+  .sw .hex{ font-size:12px; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-variant-numeric:tabular-nums; }
+  .sw .role{ font-size:12.5px; color:var(--sub); margin-top:5px; line-height:1.5; }
+
+  .ratio{ display:flex; height:52px; border-radius:11px; overflow:hidden;
+    border:1px solid var(--line); margin:18px 0 8px; }
+  .ratio div{ display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+
+  /* ── 타입 견본 ────────────────────────── */
+  .specimen{ background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:28px 26px 30px; margin:22px 0; display:flex; flex-direction:column; gap:22px; }
+  .sp-row{ display:grid; grid-template-columns:118px 1fr; gap:20px; align-items:baseline; }
+  @media (max-width:640px){ .sp-row{ grid-template-columns:1fr; gap:6px; } }
+  .sp-row .tag{ font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.6; }
+  .sp-display{ font-size:38px; font-weight:800; letter-spacing:-.05em; line-height:1.05; }
+  .sp-h1{ font-size:29px; font-weight:800; letter-spacing:-.04em; line-height:1.2; }
+  .sp-h2{ font-size:22px; font-weight:700; letter-spacing:-.035em; line-height:1.3; }
+  .sp-h3{ font-size:17px; font-weight:700; letter-spacing:-.03em; line-height:1.4; }
+  .sp-body{ font-size:15.5px; font-weight:450; letter-spacing:-.011em; line-height:1.7; }
+  .sp-small{ font-size:13.5px; font-weight:450; letter-spacing:-.008em; color:var(--sub); }
+  .sp-label{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .sp-num{ font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+
+  /* ── 체크리스트 ───────────────────────── */
+  .check{ list-style:none; margin:22px 0 0; padding:0; display:flex; flex-direction:column; gap:0; }
+  .check li{ display:grid; grid-template-columns:22px 1fr; gap:12px; padding:13px 0;
+    border-top:1px solid var(--line); font-size:14.5px; color:var(--sub); }
+  .check li:last-child{ border-bottom:1px solid var(--line); }
+  .check .b{ width:15px; height:15px; border:2px solid var(--muted); border-radius:4px; margin-top:5px; }
+
+  footer{ padding:44px 0 76px; color:var(--muted); font-size:13px; border-top:1px solid var(--line); }
+  footer p{ max-width:64ch; margin:0; }
+
+  @keyframes settle{
+    0%{ transform:rotate(-40deg); } 55%{ transform:rotate(10deg); }
+    78%{ transform:rotate(-3.5deg); } 100%{ transform:rotate(0deg); }
+  }
+  .needle{ transform-origin:32px 32px; animation:settle 1.6s cubic-bezier(.22,.9,.28,1) both; }
+  @media (prefers-reduced-motion: reduce){ .needle{ animation:none; } }
+</style>
+
+
+<style media="print">
+  :root{
+    --paper:#ffffff; --card:#ffffff; --sunken:#f4f5f8; --line:#d8dce4;
+    --ink:#101319; --sub:#3f4552; --muted:#5b6675;
+    --red:#dc2626; --red-strong:#b91c1c; --on-red:#ffffff;
+    --money:#10b981; --money-text:#047857; --faint:rgba(19,21,27,.22);
+    --shadow:none;
+  }
+  @page{ margin:16mm 14mm; }
+  body{ background:#fff; font-size:10.5pt; }
+  .shell{ display:block; max-width:none; padding:0; }
+  .toc{ display:none; }
+  .doc{ padding:0; }
+  .sec{ padding:22pt 0; }
+  .sec, h2, h3{ break-after:avoid; }
+  .cards > div, .lockcard, .mis, .sw, .panel, .specimen, .tp,
+  .beliefs li, .check li, tr{ break-inside:avoid; }
+  .tw{ overflow:visible; }
+  table{ min-width:0; }
+  a{ color:inherit; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ══ TOC ══ -->
+  <nav class="toc" aria-label="목차">
+    <p class="toc-lab">Contents</p>
+    <ol>
+      <li><a href="#s1"><span class="n">01</span>미션과 철학</a></li>
+      <li><a href="#s2"><span class="n">02</span>보이스와 톤</a></li>
+      <li><a href="#s3"><span class="n">03</span>로고</a></li>
+      <li><a href="#s4"><span class="n">04</span>컬러</a></li>
+      <li><a href="#s5"><span class="n">05</span>타이포그래피</a></li>
+      <li><a href="#s6"><span class="n">06</span>아이콘과 그래픽</a></li>
+      <li><a href="#s7"><span class="n">07</span>적용</a></li>
+      <li><a href="#s8"><span class="n">08</span>체크리스트</a></li>
+    </ol>
+  </nav>
+
+  <main class="doc">
+
+    <!-- ══ 표지 ══ -->
+    <header class="sec cover">
+      <div class="cover-mark">
+        <svg width="76" height="76" viewBox="0 0 64 64" role="img" aria-label="오직 트레이너 심볼">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="3.4"/>
+          <g class="needle">
+            <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+            <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+          </g>
+        </svg>
+      </div>
+      <h1>오직 <span class="t">트레이너</span><br>브랜드 가이드라인</h1>
+      <p class="sub">방향은 여럿 보여주지 않습니다. 오직 하나.</p>
+      <div class="meta-row">
+        <div><span class="k">Version</span>v1.2</div>
+        <div><span class="k">Symbol</span>유일침 (Route 01-A)</div>
+        <div><span class="k">Typeface</span>Pretendard</div>
+        <div><span class="k">적용 범위</span>앱 · 홈페이지 · SNS · 인쇄물</div>
+      </div>
+    </header>
+
+    <!-- ══ 01 미션과 철학 ══ -->
+    <section class="sec" id="s1">
+      <p class="num">Section 01</p>
+      <h2>미션과 철학</h2>
+      <p class="lede">
+        이 브랜드가 파는 것은 세일즈 기술이 아닙니다. 세일즈에 대한 트레이너의 정의를 바꾸는 것입니다.
+        아래 문장들이 모든 제품 결정과 표현의 상위 기준입니다.
+      </p>
+
+      <h3>미션</h3>
+      <p class="pull">트레이너가 죄책감 없이 자기 가치를 말할 수 있게 한다.</p>
+      <p class="lede">
+        트레이너의 세일즈 저항은 스킬 부족이 아니라 정체성 충돌에서 옵니다 —
+        “나는 파는 사람이 아니다”, “거절이 두렵다”. 우리는 그 충돌을 없애는 쪽으로만 제품을 만듭니다.
+        기능은 수단이고, 트레이너가 회원 앞에서 당당해지는 것이 목적입니다.
+      </p>
+
+      <h3>포지셔닝</h3>
+      <div class="cards c3">
+        <div>
+          <span class="k">For</span>
+          <h5>솔로 트레이너</h5>
+          <p>혼자 회원을 만들고 지켜야 하는 개인 트레이너. 조직의 세일즈 교육을 못 받는 사람.</p>
+        </div>
+        <div>
+          <span class="k">Unlike</span>
+          <h5>스크립트 앱 · 일반 CRM</h5>
+          <p>정답 대사를 던져주거나 명단만 관리하는 도구들. 트레이너의 판단은 다루지 않습니다.</p>
+        </div>
+        <div>
+          <span class="k">We</span>
+          <h5>판단을 겨뤄 다듬는다</h5>
+          <p>먼저 관찰하고 입력한 트레이너의 생각을 AI가 스파링 상대로 되받습니다.</p>
+        </div>
+      </div>
+
+      <h3>다섯 가지 신념</h3>
+      <ol class="beliefs">
+        <li>
+          <span class="idx">01</span>
+          <div>
+            <h5>세일즈는 회원을 책임지는 행위다</h5>
+            <p>등록을 권하지 않는 것은 배려가 아니라 방치입니다. 결과를 만들 수 있다고 믿는다면 말하는 것이 책임입니다.</p>
+          </div>
+        </li>
+        <li>
+          <span class="idx">02</span>
+          <div>
+            <h5>설득이 아니라 증명이다</h5>
+            <p>말솜씨로 넘기지 않습니다. 관찰과 기록이 쌓여 회원이 스스로 납득하게 만드는 것이 우리의 방식입니다.</p>
+          </div>
+        </li>
+        <li>
+          <span class="idx">03</span>
+          <div>
+            <h5>AI는 정답이 아니라 스파링 파트너다</h5>
+            <p>AI가 대신 생각하면 트레이너는 자라지 않습니다. 트레이너가 먼저 판단한 뒤에만 AI가 개입합니다.</p>
+          </div>
+        </li>
+        <li>
+          <span class="idx">04</span>
+          <div>
+            <h5>거절은 관계의 끝이 아니라 과정의 한 점이다</h5>
+            <p>“생각해볼게요”는 실패가 아니라 데이터입니다. 시스템이 다음 시점을 기억해 트레이너의 공포를 흡수합니다.</p>
+          </div>
+        </li>
+        <li>
+          <span class="idx">05</span>
+          <div>
+            <h5>회원이 만족해야 재등록이 된다</h5>
+            <p>트레이너 도구에서 멈추지 않습니다. 회원이 자기 변화를 눈으로 보게 만드는 것까지가 제품의 범위입니다.</p>
+          </div>
+        </li>
+      </ol>
+
+      <h3>우리가 하지 않는 것</h3>
+      <div class="dd">
+        <div class="dd-col no">
+          <h4>하지 않습니다</h4>
+          <ul>
+            <li><span class="m">✕</span><span>트레이너 대신 판단해 주기. 관찰 입력을 건너뛴 자동 생성은 만들지 않습니다.</span></li>
+            <li><span class="m">✕</span><span>회원을 설득 대상으로 다루기. 압박·기한 조작 같은 기법은 다루지 않습니다.</span></li>
+            <li><span class="m">✕</span><span>의료 영역 침범. 진단·치료·교정을 말하지 않습니다.</span></li>
+            <li><span class="m">✕</span><span>성과 보장. 매출·체중 같은 수치를 약속하지 않습니다.</span></li>
+          </ul>
+        </div>
+        <div class="dd-col yes">
+          <h4>합니다</h4>
+          <ul>
+            <li><span class="m">✓</span><span>트레이너가 이미 가진 관찰을 말이 되게 다듬어 주기.</span></li>
+            <li><span class="m">✓</span><span>기록을 회원이 이해할 수 있는 형태로 되돌려 주기.</span></li>
+            <li><span class="m">✓</span><span>불편한 순간(가격·거절·재등록)을 미리 연습시켜 주기.</span></li>
+            <li><span class="m">✓</span><span>트레이너 편에 서기. 센터와 회원 사이에서 중립인 척하지 않습니다.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 02 보이스와 톤 ══ -->
+    <section class="sec" id="s2">
+      <p class="num">Section 02</p>
+      <h2>보이스와 톤</h2>
+      <p class="lede">
+        보이스는 하나입니다 — <strong>확신에 찬 선배</strong>. 말수가 적고, 근거를 먼저 꺼내고, 겁주지 않습니다.
+        톤은 듣는 사람에 따라 바뀝니다.
+      </p>
+
+      <h3>보이스 원칙</h3>
+      <div class="cards c2">
+        <div>
+          <span class="k">01</span>
+          <h5>짧게, 결론부터</h5>
+          <p>수업 직전 30초에 읽힙니다. 배경 설명이 결론보다 앞서면 안 됩니다.</p>
+        </div>
+        <div>
+          <span class="k">02</span>
+          <h5>바로 말할 수 있는 문장으로</h5>
+          <p>‘참고하세요’가 아니라 그대로 입에서 나올 완성 대사로 씁니다.</p>
+        </div>
+        <div>
+          <span class="k">03</span>
+          <h5>근거를 붙인다</h5>
+          <p>주장에는 관찰이나 기록이 따라붙습니다. 근거 없는 단정은 쓰지 않습니다.</p>
+        </div>
+        <div>
+          <span class="k">04</span>
+          <h5>겁주지 않는다</h5>
+          <p>공포·조급함으로 움직이게 하지 않습니다. 불안이 아니라 확신을 남깁니다.</p>
+        </div>
+      </div>
+
+      <h3>대상별 톤 스위치</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>대상</th><th>어투</th><th>앞세우는 것</th><th>예시</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="key">트레이너</td>
+              <td>친근한 반말 허용</td>
+              <td>당장의 실행</td>
+              <td>“오늘 2차 들어가기 전에 이것만 외우고 가자.”</td>
+            </tr>
+            <tr>
+              <td class="key">센터 원장</td>
+              <td>존대 · 전문 톤</td>
+              <td>운영 지표와 이탈 방지</td>
+              <td>“재등록 도래 회원을 놓치지 않도록 시점을 관리합니다.”</td>
+            </tr>
+            <tr>
+              <td class="key">회원</td>
+              <td>존대 · 담백하게</td>
+              <td>본인의 변화</td>
+              <td>“지난달보다 스쿼트 무게가 올라갔어요.”</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>표현 가드레일</h3>
+      <p class="lede">
+        아래는 취향이 아니라 <strong>지켜야 하는 선</strong>입니다. 의료 표현과 성과 보장은
+        제품 신뢰와 법적 안전에 직결되므로 예외를 두지 않습니다.
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>영역</th><th>쓰지 않습니다</th><th>이렇게 씁니다</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="key">의료</td>
+              <td>치료 · 완치 · 교정 · 진단 · 재활 처방</td>
+              <td>불편한 부위를 고려한 · 움직임을 개선하는</td>
+            </tr>
+            <tr>
+              <td class="key">수치 처방</td>
+              <td>구체적인 세트 · 횟수 · 중량 · 각도 지정</td>
+              <td>강도와 방향만 제시하고 판단은 트레이너에게</td>
+            </tr>
+            <tr>
+              <td class="key">성과</td>
+              <td>매출 2배 · 등록률 보장 · 반드시 빠집니다</td>
+              <td>놓치던 시점을 잡습니다 · 근거를 남깁니다</td>
+            </tr>
+            <tr>
+              <td class="key">압박</td>
+              <td>오늘까지만 · 마지막 기회 · 지금 아니면</td>
+              <td>지금 시작하면 무엇이 달라지는지 설명</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="lede" style="margin-top:16px">
+        예외는 하나뿐입니다 — 통증이나 부상 같은 <strong>급한 불</strong>을 다룰 때는
+        의료 안전이 우선이므로 단정하지 않고 보수적으로 말하며, 필요하면 전문의 상담을 권합니다.
+      </p>
+    </section>
+
+    <!-- ══ 03 로고 ══ -->
+    <section class="sec" id="s3">
+      <p class="num">Section 03</p>
+      <h2>로고</h2>
+      <p class="lede">
+        심볼의 이름은 <strong>유일침</strong>입니다. 나침반에서 세 가지를 덜어내 만들었고,
+        덜어낸 자리가 곧 브랜드의 뜻입니다.
+      </p>
+
+      <div class="stage">
+        <svg width="132" height="132" viewBox="0 0 64 64" role="img" aria-label="유일침 심볼 원본">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="3.4"/>
+          <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+          <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+        </svg>
+        <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="4"/>
+          <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+          <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+        </svg>
+        <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="5.2"/>
+          <path d="M32 7 L38.5 33 L25.5 33 Z" fill="var(--red)"/>
+          <circle cx="32" cy="32" r="5" fill="var(--ink)"/>
+        </svg>
+        <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="6.4"/>
+          <path d="M32 6 L39.5 34 L24.5 34 Z" fill="var(--red)"/>
+        </svg>
+      </div>
+
+      <h3>심볼의 의미</h3>
+      <div class="cards c3">
+        <div>
+          <span class="k">The circle</span>
+          <h5>원은 ㅇ이고 O다</h5>
+          <p>나침반 테두리이면서 동시에 ‘<strong>오</strong>직’의 ㅇ이고 <strong>O</strong>NLY의 O입니다. 한글과 영문 이름이 한 획에 겹칩니다.</p>
+        </div>
+        <div>
+          <span class="k">The one end</span>
+          <h5>끝이 하나뿐이다</h5>
+          <p>나침반 바늘은 원래 남북 양 끝입니다. 남쪽을 잘라냈습니다 — 양다리를 걸치지 않는다, 트레이너 편만 든다는 뜻입니다.</p>
+        </div>
+        <div>
+          <span class="k">The stillness</span>
+          <h5>바늘이 멈춰 있다</h5>
+          <p>흔들리는 바늘은 망설임입니다. 멈춘 바늘은 이미 정해진 방향 — 레드가 공격이 아니라 확신으로 읽히는 이유입니다.</p>
+        </div>
+      </div>
+
+      <h3>비례와 여백</h3>
+      <div class="stage" style="gap:44px">
+        <svg width="180" height="180" viewBox="0 0 100 100" role="img" aria-label="심볼 비례와 최소 여백">
+          <rect x="1" y="1" width="98" height="98" rx="6" fill="none" stroke="var(--red)"
+                stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>
+          <rect x="18" y="18" width="64" height="64" fill="none" stroke="var(--faint)" stroke-width="1"/>
+          <g transform="translate(18,18)">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="3.4"/>
+            <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+            <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+          </g>
+          <line x1="50" y1="4" x2="50" y2="15" stroke="var(--red)" stroke-width="1"/>
+          <text x="53" y="12" font-size="7" fill="var(--red)" font-family="ui-monospace,monospace">0.3×</text>
+        </svg>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>항목</th><th>값</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td class="key">원 지름</td><td class="mono">심볼 폭의 84%</td><td>여백 포함 정사각 기준</td></tr>
+            <tr><td class="key">선 두께</td><td class="mono">지름의 6.3%</td><td>축소 시 굵기를 키워 보정</td></tr>
+            <tr><td class="key">최소 여백</td><td class="mono">원 지름 × 0.3</td><td>사방 동일. 다른 요소 침범 금지</td></tr>
+            <tr><td class="key">최소 크기</td><td class="mono">20 px / 7 mm</td><td>이하에서는 허브 점을 생략</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>락업</h3>
+      <div class="lockgrid">
+        <div class="lockcard">
+          <div class="box">
+            <div class="lk">
+              <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true">
+                <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="4.2"/>
+                <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+                <circle cx="32" cy="32" r="4.4" fill="var(--ink)"/>
+              </svg>
+              <span class="txt">오직 <span class="t">트레이너</span></span>
+            </div>
+          </div>
+          <div class="cap"><b>가로형 (기본)</b><span>헤더 · 명함 · 문서 상단. 심볼 높이를 글자 높이에 맞춥니다.</span></div>
+        </div>
+
+        <div class="lockcard">
+          <div class="box">
+            <div class="onlyword">
+              <svg width="29" height="29" viewBox="0 0 64 64" role="img" aria-label="ONLY의 O를 대신하는 심볼">
+                <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="5"/>
+                <path d="M32 8 L38 33 L26 33 Z" fill="var(--red)"/>
+                <circle cx="32" cy="32" r="4.6" fill="var(--ink)"/>
+              </svg>
+              <span class="ch">N</span><span class="ch">L</span><span class="ch">Y</span>
+            </div>
+          </div>
+          <div class="cap"><b>영문 · ONLY</b><span>심볼이 O 자리를 대신합니다. SNS 프로필 · 굿즈 · 해외 표기.</span></div>
+        </div>
+
+        <div class="lockcard">
+          <div class="box">
+            <span class="lk"><span class="txt" style="font-size:22px">오직 <span class="t">트레이너</span></span></span>
+          </div>
+          <div class="cap"><b>워드마크 단독</b><span>앱 헤더처럼 심볼이 이미 근처에 있는 곳, 본문 중 브랜드 언급.</span></div>
+        </div>
+
+        <div class="lockcard">
+          <div class="box">
+            <svg width="46" height="46" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="3.8"/>
+              <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+              <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+            </svg>
+          </div>
+          <div class="cap"><b>심볼 단독</b><span>앱 아이콘 · 파비콘 · 로딩. 이름이 이미 노출된 맥락에서만.</span></div>
+        </div>
+      </div>
+
+      <h3>배경 운용</h3>
+      <div class="stage" style="gap:20px; background:var(--card)">
+        <div style="background:#ffffff; padding:22px; border-radius:12px; border:1px solid var(--line)">
+          <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="#0f172a" stroke-width="3.4"/>
+            <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#dc2626"/>
+            <circle cx="32" cy="32" r="4.2" fill="#0f172a"/>
+          </svg>
+        </div>
+        <div style="background:#0f172a; padding:22px; border-radius:12px">
+          <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="#ffffff" stroke-width="3.4"/>
+            <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#f2564a"/>
+            <circle cx="32" cy="32" r="4.2" fill="#ffffff"/>
+          </svg>
+        </div>
+        <div style="background:#dc2626; padding:22px; border-radius:12px">
+          <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="#ffffff" stroke-width="3.4"/>
+            <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#ffffff"/>
+            <circle cx="32" cy="32" r="4.2" fill="#ffffff"/>
+          </svg>
+        </div>
+        <div style="background:var(--sunken); padding:22px; border-radius:12px; border:1px solid var(--line)">
+          <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="#0f172a" stroke-width="3.4"/>
+            <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#0f172a"/>
+            <circle cx="32" cy="32" r="4.2" fill="#0f172a"/>
+          </svg>
+        </div>
+      </div>
+      <p class="lede">
+        왼쪽부터 흰 배경(기본), 먹색 배경(레드는 밝은 값으로 교체), 레드 배경(전체 흰색 1도),
+        단색 1도(자수·각인·팩스). 사진 위에는 직접 얹지 않고 흰색 또는 먹색 판을 깔고 올립니다.
+      </p>
+
+      <h3>오용 금지</h3>
+      <div class="misuse">
+        <div class="mis">
+          <div class="box">
+            <svg width="52" height="52" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="3.4"/>
+              <g transform="rotate(38 32 32)">
+                <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+              </g>
+              <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+            </svg>
+          </div>
+          <div class="cap"><b>바늘을 기울이지 않습니다</b>멈춘 바늘이 이 마크의 전부입니다.</div>
+        </div>
+
+        <div class="mis">
+          <div class="box">
+            <svg width="52" height="52" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="3.4"/>
+              <path d="M32 7 L37.5 32 L26.5 32 Z" fill="var(--red)"/>
+              <path d="M32 57 L37.5 32 L26.5 32 Z" fill="var(--ink)" opacity=".8"/>
+              <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+            </svg>
+          </div>
+          <div class="cap"><b>남쪽 바늘을 되살리지 않습니다</b>끝이 둘이면 ‘오직’이 사라집니다.</div>
+        </div>
+
+        <div class="mis">
+          <div class="box">
+            <svg width="52" height="52" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--red)" stroke-width="3.4"/>
+              <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--ink)"/>
+              <circle cx="32" cy="32" r="4.2" fill="var(--red)"/>
+            </svg>
+          </div>
+          <div class="cap"><b>색을 뒤집지 않습니다</b>바늘은 항상 레드, 원은 항상 먹색입니다.</div>
+        </div>
+
+        <div class="mis">
+          <div class="box">
+            <svg width="70" height="52" viewBox="0 0 64 64" preserveAspectRatio="none" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ink)" stroke-width="3.4"/>
+              <path d="M32 7 L37.5 33 L26.5 33 Z" fill="var(--red)"/>
+              <circle cx="32" cy="32" r="4.2" fill="var(--ink)"/>
+            </svg>
+          </div>
+          <div class="cap"><b>비율을 바꾸지 않습니다</b>원은 언제나 정원입니다.</div>
+        </div>
+
+        <div class="mis">
+          <div class="box">
+            <svg width="52" height="52" viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <linearGradient id="badgrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#f97316"/><stop offset="100%" stop-color="#7c3aed"/>
+                </linearGradient>
+              </defs>
+              <circle cx="32" cy="32" r="27" fill="none" stroke="url(#badgrad)" stroke-width="3.4"/>
+              <path d="M32 7 L37.5 33 L26.5 33 Z" fill="url(#badgrad)"/>
+              <circle cx="32" cy="32" r="4.2" fill="url(#badgrad)"/>
+            </svg>
+          </div>
+          <div class="cap"><b>그라데이션·효과를 넣지 않습니다</b>그림자·광택·외곽선 모두 금지입니다.</div>
+        </div>
+
+        <div class="mis">
+          <div class="box" style="background:#8a94a6">
+            <svg width="52" height="52" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/>
+              <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#dc2626"/>
+              <circle cx="32" cy="32" r="4.2" fill="#13151b"/>
+            </svg>
+          </div>
+          <div class="cap"><b>대비가 낮은 바탕에 얹지 않습니다</b>사진·중간 톤 위에는 판을 깔고 올립니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 04 컬러 ══ -->
+    <section class="sec" id="s4">
+      <p class="num">Section 04</p>
+      <h2>컬러</h2>
+      <p class="lede">
+        색은 장식이 아니라 <strong>역할 표시</strong>입니다. 하나의 색은 하나의 뜻만 가집니다.
+        이 브랜드는 <strong>레드와 먹색, 두 색으로 굴러갑니다.</strong> 돈을 초록으로 칠하지 않고,
+        금액도 기본은 먹색입니다 — 색을 아껴야 레드가 힘을 갖기 때문입니다.
+      </p>
+
+      <h3>브랜드 색</h3>
+      <div class="swatches">
+        <div class="sw">
+          <div class="chip" style="background:#dc2626"></div>
+          <div class="meta"><div class="name">Brand Red</div><div class="hex">#dc2626</div>
+            <div class="role">심볼의 바늘, CTA, 선택·활성 상태, 포커스 링</div></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#b91c1c"></div>
+          <div class="meta"><div class="name">Red Strong</div><div class="hex">#b91c1c</div>
+            <div class="role">밝은 배경 위 레드 텍스트 전용. 면에는 쓰지 않습니다</div></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#fef2f2; border-bottom:1px solid var(--line)"></div>
+          <div class="meta"><div class="name">Red Soft</div><div class="hex">#fef2f2</div>
+            <div class="role">선택된 행, 강조 블록의 옅은 배경</div></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#0f172a"></div>
+          <div class="meta"><div class="name">Ink</div><div class="hex">#0f172a</div>
+            <div class="role">심볼의 원과 허브, 워드마크 ‘오직’, 본문</div></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#eef1f5; border-bottom:1px solid var(--line)"></div>
+          <div class="meta"><div class="name">Base</div><div class="hex">#eef1f5</div>
+            <div class="role">앱 바탕. 흰 카드를 띄우는 밝은 회색</div></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#475569"></div>
+          <div class="meta"><div class="name">Sub</div><div class="hex">#475569</div>
+            <div class="role">보조 텍스트. 본문보다 한 단계 물러난 설명</div></div>
+        </div>
+      </div>
+
+      <h3>돈은 색으로 칠하지 않습니다</h3>
+      <p class="lede">
+        많은 앱이 매출과 급여를 초록으로 칠합니다. 이 브랜드는 그러지 않습니다.
+        <strong>초록을 쓰는 순간 색이 세 벌이 되고, 레드가 가진 “여기를 보라”는 힘이 나눠집니다.</strong>
+        대신 <strong>위계</strong>로 구분합니다 — 화면에서 가장 중요한 금액 하나만 레드 텍스트로 올리고,
+        나머지 금액은 전부 먹색입니다.
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>표시 대상</th><th>색</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td class="key">급여 (헤드라인)</td><td class="mono">Red Strong 텍스트</td>
+              <td>그 화면에서 트레이너가 가장 먼저 봐야 할 단 하나의 숫자</td></tr>
+            <tr><td class="key">매출 · 수업 · 클로징률</td><td class="mono">Ink</td>
+              <td>지표는 읽는 것이지 강조 대상이 아닙니다</td></tr>
+            <tr><td class="key">재등록 매출</td><td class="mono">sky</td>
+              <td>돈이라서가 아니라 PT 흐름에 속하기 때문입니다</td></tr>
+            <tr><td class="key">환불</td><td class="mono">rose 텍스트</td>
+              <td>손실 신호. 면을 채우지 않아 브랜드 레드와 구분됩니다</td></tr>
+            <tr><td class="key">목표 진행률</td><td class="mono">Red 채움</td>
+              <td>브랜드 레드로 채우는 것은 진행·달성 표시에만 허용됩니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="lede">
+        여기서 <strong>레드 텍스트와 레드 채움을 구분하는 것</strong>이 핵심입니다.
+        채움은 “누르는 곳”(CTA·진행바), 텍스트는 “보는 곳”(금액)입니다.
+        둘이 한 화면에 있어도 역할이 겹치지 않습니다.
+      </p>
+
+      <h3>역할 색</h3>
+      <p class="lede">
+        업무 흐름을 구분하는 보조 색입니다. 브랜드 색이 아니므로 로고나 CTA에 쓰지 않습니다.
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>역할</th><th>색</th><th>쓰이는 곳</th></tr></thead>
+          <tbody>
+            <tr><td class="key">OT 흐름</td><td class="mono">amber</td><td>1차 OT 준비 · 1차 피드백 · 2차 OT 준비 탭</td></tr>
+            <tr><td class="key">PT 흐름</td><td class="mono">sky</td><td>회원자료 · 자료남기기 · 재등록 준비 탭</td></tr>
+            <tr><td class="key">원장</td><td class="mono">fuchsia</td><td>관리자 대시보드 전용</td></tr>
+            <tr><td class="key">위험</td><td class="mono">rose · 외곽선만</td><td>삭제 · 환불. 브랜드 레드와 겹치지 않도록 면을 채우지 않습니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>사용 비율</h3>
+      <div class="ratio">
+        <div style="background:#eef1f5; color:#0f172a; flex:62">Base 62</div>
+        <div style="background:#ffffff; color:#0f172a; flex:24; box-shadow:inset 0 0 0 1px #dfe2ea">Card 24</div>
+        <div style="background:#0f172a; color:#ffffff; flex:9">Ink 9</div>
+        <div style="background:#dc2626; color:#ffffff; flex:5">Red 5</div>
+      </div>
+      <p class="lede">
+        레드는 화면의 <strong>5% 안팎</strong>일 때 가장 강합니다. 넓은 면을 레드로 채우면
+        확신이 아니라 경고로 읽힙니다. 브랜드 레드로 채우는 그라데이션은 CTA 한 곳에만 허용합니다.
+      </p>
+
+      <h3>접근성</h3>
+      <p class="lede">
+        실측한 명도 대비입니다. <strong>본문 기준은 4.5:1</strong>이며, 아래 두 줄은 이 기준을 넘지 못하므로
+        표시된 대체값을 씁니다.
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>조합</th><th>대비</th><th>판정</th><th>지침</th></tr></thead>
+          <tbody>
+            <tr><td class="key">Ink / 흰 배경</td><td class="mono">17.85</td><td class="pass">통과</td><td>본문 기본</td></tr>
+            <tr><td class="key">Ink / Base</td><td class="mono">15.76</td><td class="pass">통과</td><td>앱 바탕 위 본문</td></tr>
+            <tr><td class="key">Sub #475569 / 흰 배경</td><td class="mono">7.58</td><td class="pass">통과</td><td>보조 텍스트</td></tr>
+            <tr><td class="key">Red Strong / 흰 배경</td><td class="mono">6.47</td><td class="pass">통과</td><td>레드 텍스트는 반드시 이 값으로</td></tr>
+            <tr><td class="key">Brand Red / 흰 배경</td><td class="mono">4.83</td><td class="pass">통과</td><td>큰 글자·아이콘·면. 작은 본문에는 비권장</td></tr>
+            <tr><td class="key">Muted #5b6675 / 흰 배경</td><td class="mono">5.83</td><td class="pass">통과</td><td>흐린 텍스트 · placeholder</td></tr>
+            <tr><td class="key">Muted #5b6675 / Base</td><td class="mono">5.15</td><td class="pass">통과</td><td>카드 밖 로딩 · 에러 문구</td></tr>
+            <tr><td class="key">Muted #64748b (구값) / Base</td><td class="mono">4.20</td><td class="fail">미달</td><td>흰 카드에서만 재고 통과로 판정했던 값. <strong>2026-07 교체 완료</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="lede" style="margin-top:16px">
+        마지막 줄이 이 문서를 만들며 발견한 실제 결함입니다. 흐린 회색을 <strong>흰 카드 위에서만
+        측정하고 “AA 확보”로 적어둔 탓에</strong>, 카드 밖 회색 바탕과 입력칸 배경에서는
+        기준에 못 미친 채로 쓰이고 있었습니다. 새 색을 정할 때는 반드시
+        <strong>bg · card · elevate 세 배경 모두에서</strong> 측정합니다.
+      </p>
+      <h3>다크 팔레트</h3>
+      <p class="lede">
+        <strong>다크 모드는 브랜드의 일부가 아니라 매체의 사정입니다.</strong>
+        앱은 라이트 전용을 유지합니다 — 헬스장은 조명이 밝아 어두운 화면이 반사로 더 안 보이고,
+        역할 색까지 두 벌로 늘어나는 비용에 비해 얻는 것이 적습니다.
+        밤에 폰으로 읽는 <strong>브랜드 문서와 홈페이지에만</strong> 다크를 지원합니다.
+      </p>
+
+      <div class="themepair">
+        <div class="tp">
+          <div class="tp-lab">Light — 앱 · 인쇄</div>
+          <div class="tp-box lt">
+            <svg width="42" height="42" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/>
+              <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#dc2626"/>
+              <circle cx="32" cy="32" r="4.2" fill="#13151b"/>
+            </svg>
+            <span class="tp-wm">오직 <span class="t">트레이너</span></span>
+          </div>
+        </div>
+        <div class="tp">
+          <div class="tp-lab">Dark — 문서 · 홈페이지</div>
+          <div class="tp-box dk">
+            <svg width="42" height="42" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="#f0f1f4" stroke-width="3.4"/>
+              <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#f2564a"/>
+              <circle cx="32" cy="32" r="4.2" fill="#f0f1f4"/>
+            </svg>
+            <span class="tp-wm">오직 <span class="t">트레이너</span></span>
+          </div>
+        </div>
+      </div>
+      <p class="lede">
+        심볼에서 바뀌는 값은 둘뿐입니다 — 원과 허브가 먹색↔흰색, 바늘이 레드의 밝은 값으로.
+        <strong>형태·굵기·바늘 각도·여백은 어떤 경우에도 동일합니다.</strong>
+      </p>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>토큰</th><th>Light</th><th>Dark</th><th>메모</th></tr></thead>
+          <tbody>
+            <tr><td class="key">bg</td>
+              <td class="mono"><i class="sq" style="background:#f1f2f6"></i>#f1f2f6</td>
+              <td class="mono"><i class="sq" style="background:#0e0f13"></i>#0e0f13</td>
+              <td>순수 검정 대신 푸른 기가 도는 먹색</td></tr>
+            <tr><td class="key">card</td>
+              <td class="mono"><i class="sq" style="background:#ffffff"></i>#ffffff</td>
+              <td class="mono"><i class="sq" style="background:#17191f"></i>#17191f</td>
+              <td>양쪽 모두 카드가 배경보다 밝습니다</td></tr>
+            <tr><td class="key">line</td>
+              <td class="mono"><i class="sq" style="background:#dfe2ea"></i>#dfe2ea</td>
+              <td class="mono"><i class="sq" style="background:#282b34"></i>#282b34</td>
+              <td>배경 대비 아주 약하게</td></tr>
+            <tr><td class="key">ink</td>
+              <td class="mono"><i class="sq" style="background:#13151b"></i>#13151b</td>
+              <td class="mono"><i class="sq" style="background:#f0f1f4"></i>#f0f1f4</td>
+              <td>순백을 쓰지 않아 야간 눈부심을 줄입니다</td></tr>
+            <tr><td class="key">muted</td>
+              <td class="mono"><i class="sq" style="background:#5b6675"></i>#5b6675</td>
+              <td class="mono"><i class="sq" style="background:#8d94a1"></i>#8d94a1</td>
+              <td>양쪽 각각 4.5:1을 넘도록 따로 잡은 값</td></tr>
+            <tr><td class="key">primary</td>
+              <td class="mono"><i class="sq" style="background:#dc2626"></i>#dc2626</td>
+              <td class="mono"><i class="sq" style="background:#f2564a"></i>#f2564a</td>
+              <td>밝히고 채도를 살짝 낮춥니다</td></tr>
+            <tr><td class="key">primary-strong</td>
+              <td class="mono"><i class="sq" style="background:#b91c1c"></i>#b91c1c</td>
+              <td class="mono"><i class="sq" style="background:#ff7b6e"></i>#ff7b6e</td>
+              <td>방향이 뒤집힙니다 — 아래 경고 참조</td></tr>
+            <tr><td class="key">sub</td>
+              <td class="mono"><i class="sq" style="background:#475569"></i>#475569</td>
+              <td class="mono"><i class="sq" style="background:#b0b5c0"></i>#b0b5c0</td>
+              <td>본문과 muted 사이 단계를 양쪽에서 유지</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>반전으로 만들지 마십시오</h3>
+      <p class="lede">
+        가장 흔한 실수는 배경과 글자만 뒤집고 브랜드 색은 그대로 두는 것입니다.
+        실측하면 <strong>두 모드는 서로 다른 색에서 실패합니다.</strong>
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>색</th><th>밝은 카드</th><th>어두운 카드</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td class="key"><i class="sq" style="background:#dc2626"></i>#dc2626</td>
+              <td class="mono pass">4.83 통과</td><td class="mono fail">3.64 미달</td>
+              <td>그대로 쓰면 CTA와 아이콘이 배경에 묻힙니다</td></tr>
+            <tr><td class="key"><i class="sq" style="background:#b91c1c"></i>#b91c1c</td>
+              <td class="mono pass">6.47 통과</td><td class="mono fail">2.72 미달</td>
+              <td>라이트에서 가장 잘 읽히는 레드가 다크에서는 가장 안 보이는 색이 됩니다</td></tr>
+            <tr><td class="key"><i class="sq" style="background:#f59e0b"></i>amber (OT)</td>
+              <td class="mono fail">2.15 미달</td><td class="mono pass">8.18 통과</td>
+              <td>반대 방향 — 역할 색은 밝은 화면에서만 문제입니다. OT 라벨을 앰버 글자로 쓰지 말고 아이콘·테두리로만 쓰는 이유</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="lede">
+        그래서 다크는 라이트의 반전이 아니라 <strong>따로 조율한 별도의 한 벌</strong>입니다.
+        새 색을 추가할 때는 반드시 두 배경 모두에서 대비를 실측하고 각각의 값을 정합니다.
+      </p>
+    </section>
+
+    <!-- ══ 05 타이포그래피 ══ -->
+    <section class="sec" id="s5">
+      <p class="num">Section 05</p>
+      <h2>타이포그래피</h2>
+      <p class="lede">
+        서체는 <strong>Pretendard 한 벌</strong>입니다. 한글과 숫자의 굵기가 고르고 작은 크기에서 무너지지 않아,
+        폰을 흘긋 보는 사용 방식에 맞습니다. 다른 서체를 섞지 않고 <strong>굵기와 자간으로만</strong> 위계를 만듭니다.
+      </p>
+
+      <div class="specimen">
+        <div class="sp-row"><span class="tag">Display 38 / 800 / −.05em</span>
+          <span class="sp-display">오직 트레이너</span></div>
+        <div class="sp-row"><span class="tag">H1 29 / 800 / −.04em</span>
+          <span class="sp-h1">설득이 아니라 증명입니다</span></div>
+        <div class="sp-row"><span class="tag">H2 22 / 700 / −.035em</span>
+          <span class="sp-h2">2차 OT 클로징 준비</span></div>
+        <div class="sp-row"><span class="tag">H3 17 / 700 / −.03em</span>
+          <span class="sp-h3">거절 대처 · 가격 이야기</span></div>
+        <div class="sp-row"><span class="tag">Body 15.5 / 450 / 1.7</span>
+          <span class="sp-body">회원이 처음 말한 목표와 지난 8주의 기록을 나란히 놓고 이야기를 시작합니다.</span></div>
+        <div class="sp-row"><span class="tag">Small 13.5 / 450</span>
+          <span class="sp-small">마지막 수업 이후 12일 경과 · 재접근 시점이 다가옵니다</span></div>
+        <div class="sp-row"><span class="tag">Label 11 / 700 / +.16em</span>
+          <span class="sp-label">Today · 오늘 할 일</span></div>
+        <div class="sp-row"><span class="tag">Numeric · tabular</span>
+          <span class="sp-num">1,240,000원 · 42회 · 87%</span></div>
+      </div>
+
+      <h3>한글 조판 규칙</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>항목</th><th>규칙</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td class="key">자간</td><td>제목은 음수 자간, 본문은 −0.011em, 라벨만 양수</td><td>한글은 자소가 꽉 차 있어 조이지 않으면 헐거워 보입니다</td></tr>
+            <tr><td class="key">행간</td><td>본문 1.7, 제목 1.2~1.3</td><td>받침이 있는 줄과 없는 줄의 높이 차를 흡수합니다</td></tr>
+            <tr><td class="key">줄바꿈</td><td>제목에 <code>text-wrap: balance</code></td><td>제목 마지막 줄에 한 단어만 남는 것을 막습니다</td></tr>
+            <tr><td class="key">숫자</td><td>표·금액·기록은 고정폭 숫자</td><td>세로로 자리가 맞아야 비교가 됩니다</td></tr>
+            <tr><td class="key">한 줄 길이</td><td>본문 45~65자</td><td>더 길면 다음 줄을 찾는 데 눈이 흔들립니다</td></tr>
+            <tr><td class="key">강조</td><td>굵게만. 밑줄·기울임 금지</td><td>한글은 기울이면 자소가 무너집니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ 06 아이콘과 그래픽 ══ -->
+    <section class="sec" id="s6">
+      <p class="num">Section 06</p>
+      <h2>아이콘과 그래픽</h2>
+      <p class="lede">
+        아이콘은 <strong>Lucide</strong> 한 벌만 씁니다. 선 굵기와 끝 처리가 심볼의 원·바늘과 같은 계열이라
+        나란히 놓아도 이질감이 없습니다.
+      </p>
+      <div class="cards c2">
+        <div>
+          <span class="k">Icon</span>
+          <h5>선 아이콘, 채우지 않음</h5>
+          <p>기본 굵기 유지, 크기는 16 · 20 · 24px 세 단계. 이모지는 UI에 쓰지 않습니다.</p>
+        </div>
+        <div>
+          <span class="k">Radius</span>
+          <h5>모서리는 한 단계씩</h5>
+          <p>버튼·입력칸 10px, 카드 14~16px, 알약형 999px. 그 사이 값을 임의로 만들지 않습니다.</p>
+        </div>
+        <div>
+          <span class="k">Elevation</span>
+          <h5>그림자는 카드에만</h5>
+          <p>얕고 넓게 한 종류만. 그림자로 위계를 만들지 말고 배경 명도로 만듭니다.</p>
+        </div>
+        <div>
+          <span class="k">Motion</span>
+          <h5>140~220ms, 감속</h5>
+          <p>탭 전환과 상태 변화에만. 장식적 애니메이션은 넣지 않고, 감소 설정을 존중합니다.</p>
+        </div>
+      </div>
+      <h3>사진</h3>
+      <p class="lede">
+        연출된 피트니스 스톡 사진을 쓰지 않습니다. 쓴다면 <strong>실제 트레이너의 현장</strong> —
+        수업 중인 손, 노트, 기구, 화면을 든 모습입니다. 몸매를 전시하는 사진은
+        ‘증명’이 아니라 ‘과시’로 읽히므로 브랜드와 맞지 않습니다.
+      </p>
+    </section>
+
+    <!-- ══ 07 적용 ══ -->
+    <section class="sec" id="s7">
+      <p class="num">Section 07</p>
+      <h2>적용</h2>
+      <div class="tw">
+        <table>
+          <thead><tr><th>매체</th><th>락업</th><th>주의</th></tr></thead>
+          <tbody>
+            <tr><td class="key">앱 아이콘</td><td>심볼 단독</td><td>흰 바탕에 심볼. 여백 0.3× 유지, 원형 크롭에서도 잘리지 않습니다</td></tr>
+            <tr><td class="key">앱 헤더</td><td>워드마크 단독</td><td>높이 20px 내외. 심볼과 중복 노출하지 않습니다</td></tr>
+            <tr><td class="key">홈페이지</td><td>가로형</td><td>상단 고정. 스크롤 시 축소하되 최소 크기 아래로 내리지 않습니다</td></tr>
+            <tr><td class="key">SNS 프로필</td><td>심볼 단독 또는 ONLY</td><td>원형 크롭 기준으로 여백을 다시 계산합니다</td></tr>
+            <tr><td class="key">명함 · 인쇄</td><td>가로형</td><td>최소 7mm. 단색 인쇄 시 먹색 1도</td></tr>
+            <tr><td class="key">굿즈 · 자수</td><td>심볼 단독</td><td>허브 점 생략, 선 굵기를 한 단계 올립니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ 08 체크리스트 ══ -->
+    <section class="sec" id="s8">
+      <p class="num">Section 08</p>
+      <h2>내보내기 전 확인</h2>
+      <p class="lede">화면이든 인쇄물이든, 브랜드가 붙은 것을 밖으로 내보내기 전에 훑습니다.</p>
+      <ul class="check">
+        <li><span class="b"></span><span>바늘이 수직인가. 남쪽 바늘이 살아나지 않았는가.</span></li>
+        <li><span class="b"></span><span>워드마크가 ‘오직’ 먹색 + ‘트레이너’ 레드 순서인가.</span></li>
+        <li><span class="b"></span><span>심볼 사방에 원 지름의 30% 여백이 있는가.</span></li>
+        <li><span class="b"></span><span>레드가 화면의 5%를 크게 넘지 않는가.</span></li>
+        <li><span class="b"></span><span>금액을 초록으로 칠하지 않았는가. 레드 텍스트로 올린 숫자가 화면당 하나뿐인가.</span></li>
+        <li><span class="b"></span><span>본문 대비가 4.5:1 이상인가. 회색 바탕에서 흐린 회색을 쓰지 않았는가.</span></li>
+        <li><span class="b"></span><span>다크로도 보이는 매체라면, 레드를 밝은 값으로 바꿨는가. 반전으로만 만들지 않았는가.</span></li>
+        <li><span class="b"></span><span>치료·완치·교정 같은 의료 표현이 없는가.</span></li>
+        <li><span class="b"></span><span>수치 보장이나 기한 압박 표현이 없는가.</span></li>
+        <li><span class="b"></span><span>세트·횟수·중량 같은 구체적 처방을 대신 정해주지 않았는가.</span></li>
+        <li><span class="b"></span><span>Pretendard 외의 서체가 섞이지 않았는가.</span></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>
+        오직 트레이너 브랜드 가이드라인 v1.2 · 심볼 ‘유일침’ 기준.
+        이 문서와 실제 제품이 어긋날 때는 이 문서를 기준으로 제품을 고칩니다.
+        예외가 필요하면 예외를 적용하기 전에 이 문서를 먼저 고칩니다.
+      </p>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>
