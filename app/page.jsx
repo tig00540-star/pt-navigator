@@ -659,25 +659,11 @@ export default function OTNavigatorDashboard() {
               </div>
             </div>
 
+            {/* 회원 드롭다운 제거(2026-07-21) — 현장에서 거의 안 쓴다는 판단.
+                회원 선택은 회원 목록 카드 탭이 주 경로이고, '오늘' 할일·이탈위험·내 실적에서도
+                해당 회원으로 바로 들어간다(setSelectedId 경로 5곳). 즉 기능 손실이 없다.
+                덤으로 폰 헤더가 빡빡해서 워드마크가 겹치던 원인도 사라진다. */}
             <div className="flex min-w-0 items-center gap-2">
-              {members.length > 0 && (
-                <label className="flex items-center gap-1 rounded-lg border border-line bg-elevate pl-2 pr-1 focus-within:border-primary">
-                  <User className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
-                  <span className="hidden text-[10px] font-medium text-muted sm:inline">회원</span>
-                  <select
-                    value={selectedId || ""}
-                    onChange={(e) => setSelectedId(e.target.value)}
-                    className="max-w-[68px] min-w-0 bg-transparent py-1.5 pr-1 text-xs text-sub outline-none sm:max-w-[120px]"
-                    aria-label="회원 선택"
-                  >
-                    {members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
               <button
                 onClick={() => setShowForm(true)}
                 className="flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-sub transition hover:border-primary hover:text-primary-strong active:scale-95"
