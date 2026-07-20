@@ -644,16 +644,17 @@ export default function OTNavigatorDashboard() {
       <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
-            {/* 축소 우선순위 — 폰(390px)에서 헤더가 빡빡하다.
-                워드마크는 브랜드 이름이라 쪼개져도(줄바꿈) 잘려도(overflow) 안 된다.
-                min-w-0으로 왼쪽을 줄였더니 이번엔 워드마크가 오른쪽 그룹과 8px 겹쳤다.
-                → 왼쪽 그룹은 shrink-0으로 고정하고, 대신 오른쪽(회원 셀렉트)이 줄어든다.
-                셀렉트는 탭하면 전체 목록이 뜨므로 폭이 좁아도 기능을 잃지 않는다. */}
-            <div className="flex shrink-0 items-center gap-3">
+            {/* 헤더 락업 — 심볼 + 워드마크 + 로그인한 트레이너.
+                회원 드롭다운을 걷어내 자리가 생겼으므로 위계를 바로잡았다.
+                이전엔 워드마크 13px < 이름 14px로 위계가 뒤집혀 있었다(브랜드가 더 작음).
+                → 워드마크를 h3 스케일(17px)로 올려 브랜드를 앞세우고,
+                  이름은 12px muted 보조 라인으로 내린다. 심볼 36px과 두 줄 높이가 맞는다.
+                워드마크는 shrink-0(쪼개짐·잘림 금지), 이름만 길면 truncate. */}
+            <div className="flex min-w-0 shrink-0 items-center gap-2.5">
               <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 shrink-0 rounded-lg" />
-              <div className="min-w-0 leading-tight">
-                <Wordmark className="text-[13px] font-extrabold tracking-[-0.05em]" />
-                <div className="max-w-[110px] truncate text-sm font-semibold text-ink sm:max-w-none">
+              <div className="min-w-0">
+                <Wordmark className="block text-[17px] font-extrabold leading-none tracking-[-0.04em]" />
+                <div className="mt-1 max-w-[140px] truncate text-[12px] font-medium leading-none text-muted sm:max-w-none">
                   {trainerName || "트레이너"}
                 </div>
               </div>
