@@ -11,6 +11,7 @@ import OunwanRewardSettings from "@/components/views/OunwanRewardSettings";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Card from "@/components/ui/Card";
 
 // 상단 헤더 서브탭 바가 이 목록으로 렌더됨(page.jsx가 import). 라벨 단일 출처.
 export const SETTINGS_SUBTABS = [
@@ -31,7 +32,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
           <PasswordChange />
           {/* 로그아웃 — AuthGate의 전 화면 플로팅에서 이관(콘텐츠 가림 제거). signOut 시 onAuthStateChange가
               session=null로 만들어 로그인 폼으로 자동 전환(기존 흐름 재사용). supabase?는 데모모드 가드. */}
-          <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+          <Card as="section">
             <Eyebrow icon={LogOut}>계정</Eyebrow>
             <button
               onClick={() => supabase?.auth.signOut()}
@@ -39,7 +40,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
             >
               로그아웃
             </button>
-          </section>
+          </Card>
         </>
       )}
       {sub === "money" && (

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { reregisterReapproachToday, viewFor } from "@/lib/memberStatus";
-import Card from "@/components/ui/Card";
+import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
 
@@ -54,7 +54,7 @@ export default function RegisterReapproachToday({ members, onSelect }) {
   const list = [...rows].sort((a, b) => (a.reg_reapproach_at < b.reg_reapproach_at ? -1 : 1));
 
   return (
-    <Card tone="emerald">
+    <ToneCard tone="emerald">
       <SectionHeader
         tone="emerald"
         icon={CalendarClock}
@@ -83,6 +83,6 @@ export default function RegisterReapproachToday({ members, onSelect }) {
           );
         })}
       </div>
-    </Card>
+    </ToneCard>
   );
 }

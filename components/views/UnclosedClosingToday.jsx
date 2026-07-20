@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { unclosedClosings, viewFor } from "@/lib/memberStatus";
-import Card from "@/components/ui/Card";
+import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
 
@@ -36,7 +36,7 @@ export default function UnclosedClosingToday({ members, onSelect }) {
   const nameOf = (id) => members?.find((m) => m.id === id)?.name || "회원";
 
   return (
-    <Card tone="rose">
+    <ToneCard tone="rose">
       <SectionHeader
         tone="rose"
         icon={AlertCircle}
@@ -56,6 +56,6 @@ export default function UnclosedClosingToday({ members, onSelect }) {
           </ListRow>
         ))}
       </div>
-    </Card>
+    </ToneCard>
   );
 }

@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
@@ -63,7 +64,7 @@ export default function TrainerGoalSetter() {
   const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Target}>이달 목표매출</Eyebrow>
         <div className="mt-2 text-[11px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
         <div className="mt-3 flex gap-2">
@@ -73,7 +74,7 @@ export default function TrainerGoalSetter() {
           </Button>
         </div>
         <p className="mt-2 text-[11px] text-muted">달성률은 &lsquo;내 실적&rsquo;에서 확인돼요.</p>
-      </section>
+      </Card>
       <Toast message={toast} />
     </div>
   );

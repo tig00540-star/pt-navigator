@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { CalendarX } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { pastDueAppointments } from "@/lib/memberStatus";
-import Card from "@/components/ui/Card";
+import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
 
@@ -51,7 +51,7 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
   };
 
   return (
-    <Card tone="zinc">
+    <ToneCard tone="zinc">
       <SectionHeader
         tone="zinc"
         icon={CalendarX}
@@ -77,6 +77,6 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
           );
         })}
       </div>
-    </Card>
+    </ToneCard>
   );
 }

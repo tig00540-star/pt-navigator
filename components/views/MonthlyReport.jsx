@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import { X, Award, Wallet, Target, Dumbbell, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import { won, personName } from "@/lib/format";
-import Card from "@/components/ui/Card";
+import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
@@ -129,7 +129,7 @@ export default function MonthlyReport({ data, onClose }) {
         </div>
 
         {/* 급여 헤드라인(확정/예상) */}
-        <Card tone="emerald">
+        <ToneCard tone="emerald">
           <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
             <Wallet className="h-3.5 w-3.5" /> {confirmed ? "확정" : "예상"} 급여
           </div>
@@ -151,7 +151,7 @@ export default function MonthlyReport({ data, onClose }) {
           ) : (
             <div className="mt-2 tabular-nums text-2xl font-extrabold text-muted">확정 대기(수동 급여)</div>
           )}
-        </Card>
+        </ToneCard>
 
         {/* 핵심 지표 grid */}
         <div className="grid gap-3 sm:grid-cols-2">
@@ -193,7 +193,7 @@ export default function MonthlyReport({ data, onClose }) {
         )}
 
         {/* 클로징 성과 — ot_log 누적(월 스코프 불가). 성공/보류/실패 + 강점 방향 + 놓친 이유 */}
-        <Card tone="zinc">
+        <ToneCard tone="zinc">
           <SectionHeader tone="zinc" icon={Target} title="클로징 성과" hint="전체 기간 누적" />
           {closing.attempted === 0 ? (
             <EmptyState className="py-1 text-sm">아직 클로징 시도 기록이 없어요.</EmptyState>
@@ -236,10 +236,10 @@ export default function MonthlyReport({ data, onClose }) {
               )}
             </>
           )}
-        </Card>
+        </ToneCard>
 
         {/* 재등록 파이프라인 — 이달 결과(월) + 누적 전환 퍼널(reg_result, 월 스코프 불가) */}
-        <Card tone="zinc">
+        <ToneCard tone="zinc">
           <SectionHeader tone="zinc" icon={RefreshCw} title="재등록 파이프라인" />
           <div className="flex items-center justify-between rounded-lg border border-line bg-card px-3 py-2 text-sm">
             <span className="text-sub">이달 재등록</span>
@@ -268,10 +268,10 @@ export default function MonthlyReport({ data, onClose }) {
               )}
             </>
           )}
-        </Card>
+        </ToneCard>
 
         {/* 매출 내역 */}
-        <Card tone="zinc">
+        <ToneCard tone="zinc">
           <SectionHeader tone="zinc" icon={Wallet} title="매출 내역" count={revRows.length + refundRows.length} />
           {revRows.length === 0 && refundRows.length === 0 ? (
             <EmptyState className="py-1 text-sm">이번달 매출이 없어요.</EmptyState>
@@ -295,10 +295,10 @@ export default function MonthlyReport({ data, onClose }) {
               ))}
             </ul>
           )}
-        </Card>
+        </ToneCard>
 
         {/* 수업 내역(회원별) */}
-        <Card tone="zinc">
+        <ToneCard tone="zinc">
           <SectionHeader tone="zinc" icon={Dumbbell} title="회원별 수업" count={sessionRows.length} hint={`총 ${sessionRows.reduce((s, r) => s + r.count, 0)}회`} />
           {sessionRows.length === 0 ? (
             <EmptyState className="py-1 text-sm">이번달 수업 기록이 없어요.</EmptyState>
@@ -312,7 +312,7 @@ export default function MonthlyReport({ data, onClose }) {
               ))}
             </ul>
           )}
-        </Card>
+        </ToneCard>
 
         <p className="mt-4 text-[10px] text-muted">※ 예상 급여는 완료 수업 기준 자동계산 · 실지급은 원장 확정액 기준. 클로징률은 전체 기간 누적. 생성 {ym} 기준.</p>
       </div>

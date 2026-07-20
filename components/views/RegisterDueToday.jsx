@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor, activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
-import Card from "@/components/ui/Card";
+import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
 
@@ -46,7 +46,7 @@ export default function RegisterDueToday({ members, onSelect }) {
   const list = [...rows].sort((a, b) => a.paid - b.paid);
 
   return (
-    <Card tone="emerald">
+    <ToneCard tone="emerald">
       <SectionHeader
         tone="emerald"
         icon={RefreshCw}
@@ -69,6 +69,6 @@ export default function RegisterDueToday({ members, onSelect }) {
           </ListRow>
         ))}
       </div>
-    </Card>
+    </ToneCard>
   );
 }
