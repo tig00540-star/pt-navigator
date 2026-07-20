@@ -10,6 +10,7 @@ import { Megaphone, Pin, Users, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import { inputClsOwner as inputCls } from "@/components/ui/Field";
 
 export default function AdminAnnouncements({ trainers = [] }) {
   const [anns, setAnns] = useState([]);
@@ -26,8 +27,6 @@ export default function AdminAnnouncements({ trainers = [] }) {
   const [posting, setPosting] = useState(false);
   const [err, setErr] = useState("");
   const [confirmId, setConfirmId] = useState(null);
-
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-fuchsia-500/50 disabled:opacity-50";
   const nameOf = (id) => trainers.find((t) => t.id === id)?.name || "트레이너";
 
   useEffect(() => {

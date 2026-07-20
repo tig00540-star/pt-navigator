@@ -17,6 +17,7 @@ import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Card from "@/components/ui/Card";
+import { inputCls } from "@/components/ui/Field";
 
 export default function PtPricingSettings() {
   const [rows, setRows] = useState([]);
@@ -59,9 +60,6 @@ export default function PtPricingSettings() {
     })();
     return () => { cancelled = true; };
   }, []);
-
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
-
   const resetForm = () => {
     setName(""); setSessions(""); setDurationLabel(""); setPrice("");
     setListPrice(""); setNote(""); setActive(true); setSort("");
@@ -174,7 +172,7 @@ export default function PtPricingSettings() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">세션수</span>
-              <NumberInput value={sessions} onValueChange={setSessions} disabled={saving} placeholder="회 (비우면 기간제)" className={inputCls} />
+              <NumberInput value={sessions} onValueChange={setSessions} disabled={saving} placeholder="회 (비우면 기간제)" />
             </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">기간</span>
@@ -182,11 +180,11 @@ export default function PtPricingSettings() {
             </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">실판매가(원) *</span>
-              <NumberInput value={price} onValueChange={setPrice} disabled={saving} placeholder="1200000" className={inputCls} />
+              <NumberInput value={price} onValueChange={setPrice} disabled={saving} placeholder="1200000" />
             </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-medium text-muted">정가(원) <span className="text-muted">(선택)</span></span>
-              <NumberInput value={listPrice} onValueChange={setListPrice} disabled={saving} placeholder="할인 전 가격" className={inputCls} />
+              <NumberInput value={listPrice} onValueChange={setListPrice} disabled={saving} placeholder="할인 전 가격" />
             </label>
           </div>
           <label className="block">

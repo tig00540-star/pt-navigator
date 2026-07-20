@@ -18,6 +18,7 @@ import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Card from "@/components/ui/Card";
+import { inputCls } from "@/components/ui/Field";
 
 const PAYOUT_OPTS = [
   { value: "pct_of_price", label: "판매가 %" },
@@ -53,9 +54,6 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
   const [sCnt, setSCnt] = useState("");
   const [sSum, setSSum] = useState("");
   const { toast, showToast } = useToast();
-
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
-
   // 스코프 행 → 폼 프리필(없으면 기본값). scope 전환·로드 공용.
   const loadForm = (row) => {
     setType(row?.type || "banded");
@@ -282,7 +280,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
                             <span className="mb-1 block text-[10px] font-medium text-muted">
                               {bandBasis === "session_count" ? "수업 ○개 이상" : "매출 ○원 이상"}
                             </span>
-                            <NumberInput value={b.min} onValueChange={(v) => updateBand(i, { min: v })} disabled={saving} placeholder="0" className={inputCls} />
+                            <NumberInput value={b.min} onValueChange={(v) => updateBand(i, { min: v })} disabled={saving} placeholder="0" />
                           </label>
                           <label className="block">
                             <span className="mb-1 block text-[10px] font-medium text-muted">지급 유형</span>
@@ -321,15 +319,15 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 매출</span>
-                      <NumberInput value={sRev} onValueChange={setSRev} placeholder="0" className={inputCls} />
+                      <NumberInput value={sRev} onValueChange={setSRev} placeholder="0" />
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 수업수</span>
-                      <NumberInput value={sCnt} onValueChange={setSCnt} placeholder="0" className={inputCls} />
+                      <NumberInput value={sCnt} onValueChange={setSCnt} placeholder="0" />
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-medium text-muted">예시 수업료합</span>
-                      <NumberInput value={sSum} onValueChange={setSSum} placeholder="0" className={inputCls} />
+                      <NumberInput value={sSum} onValueChange={setSSum} placeholder="0" />
                     </label>
                   </div>
                   <div className="mt-3 flex items-baseline justify-between">

@@ -50,6 +50,23 @@ function ringFor(error, accent) {
   return accent === "owner" ? RING_OWNER : RING;
 }
 
+/* =========================================================================
+   inputCls — 컴포넌트로 아직 안 옮긴 raw <input>/<select>/<textarea>용 공유 클래스.
+
+   ⚠️ 이건 과도기 장치다. 목표는 위의 Input/Textarea/Select 컴포넌트지만,
+   앱의 라벨 마크업이 8가지로 갈라져 있어(label className만 8종) JSX 재구조화는
+   위험 대비 이득이 낮다. 그래서 '드리프트'부터 없앤다 —
+   21개 파일이 각자 정의하던 문자열을 여기 한 곳으로 모은다.
+
+   이렇게 하면 최소한 "한 곳을 고치면 전부 따라온다"가 성립한다.
+   컴포넌트 전환은 라벨·에러가 실제로 필요한 화면부터 점진적으로.
+   ========================================================================= */
+export const inputCls = `${BASE} ${SIZE.md} ${RING}`;
+/* admin 화면 — 원장 accent(fuchsia). Button의 accent="owner"와 같은 규율. */
+export const inputClsOwner = `${BASE} ${SIZE.md} ${RING_OWNER}`;
+/* 조밀한 표 입력(SetsEditor·PayrollConfirm 자리) */
+export const inputClsSm = `${BASE} ${SIZE.sm} ${RING}`;
+
 /* 라벨 + hint/error 껍데기 — 4종이 공유한다. */
 function Shell({ label, htmlFor, hint, error, children, className = "" }) {
   return (

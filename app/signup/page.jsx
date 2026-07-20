@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
+import { inputCls } from "@/components/ui/Field";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -16,8 +17,6 @@ export default function SignupPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [sent, setSent] = useState(false);              // 이메일 인증 대기 화면
-
-  const inputCls = "w-full rounded-lg bg-elevate border border-line px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary";
 
   const submit = async () => {
     if (busy) return;

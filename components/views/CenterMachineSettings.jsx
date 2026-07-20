@@ -13,6 +13,7 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Card from "@/components/ui/Card";
+import { inputCls } from "@/components/ui/Field";
 
 const KINDS = [
   { v: "machine", label: "머신" },
@@ -123,8 +124,6 @@ export default function CenterMachineSettings() {
   const groups = {};
   for (const r of rows) { const k = KIND_LABEL[r.kind] || "미분류"; (groups[k] ||= []).push(r); }
   const cats = Object.keys(groups);
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
-
   return (
     <div className="space-y-4">
       {isOwner ? (

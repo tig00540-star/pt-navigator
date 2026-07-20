@@ -4,6 +4,7 @@ import { UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import { inputClsOwner as inputCls } from "@/components/ui/Field";
 
 export default function AddTrainerForm() {
   const [email, setEmail] = useState("");
@@ -11,8 +12,6 @@ export default function AddTrainerForm() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [result, setResult] = useState(null);
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-fuchsia-500/50";
-
   const submit = async () => {
     if (!supabase || busy) return;
     if (!email.trim() || !name.trim()) { setErr("이메일과 이름을 입력하세요."); return; }

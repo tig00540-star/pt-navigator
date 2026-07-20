@@ -110,7 +110,6 @@ export default function OunwanRewardSettings() {
               onValueChange={setMilestone}
               disabled={saving}
               placeholder="10"
-              className={inputCls}
             />
           </label>
           <label className="block">

@@ -14,6 +14,7 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import { useToast } from "@/hooks/useToast";
+import { inputCls } from "@/components/ui/Field";
 import {
   STIMULUS_OPTS,
   ATTITUDE_TAGS,
@@ -83,9 +84,6 @@ function rowToForm(row) {
     detailOutcome: row?.closing_detail?.outcome || "",
   };
 }
-
-const inputCls =
-  "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary";
 
 export default function ObservationTab({ member, onClosingSaved }) {
   const [form, setForm] = useState(emptyForm);

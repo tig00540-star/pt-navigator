@@ -11,6 +11,7 @@ import Card from "@/components/ui/Card";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import { inputCls } from "@/components/ui/Field";
 
 export default function TrainerGoalSetter() {
   const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7); // KST 이번달
@@ -61,14 +62,13 @@ export default function TrainerGoalSetter() {
     }
   };
 
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
   return (
     <div className="space-y-4">
       <Card as="section">
         <Eyebrow icon={Target}>이달 목표매출</Eyebrow>
         <div className="mt-2 text-[11px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
         <div className="mt-3 flex gap-2">
-          <NumberInput value={value} onValueChange={setValue} disabled={saving} placeholder="목표 순매출(원)" className={inputCls} />
+          <NumberInput value={value} onValueChange={setValue} disabled={saving} placeholder="목표 순매출(원)" />
           <Button variant="primary" size="md" onClick={save} disabled={saving} className="shrink-0">
             {saving ? "저장 중…" : "저장"}
           </Button>

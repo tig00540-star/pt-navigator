@@ -11,6 +11,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { CLOSING_APPROACH_OPTS, SALES_INTENSITY_OPTS } from "@/lib/labels";
 import Card from "@/components/ui/Card";
+import { inputCls } from "@/components/ui/Field";
 
 export default function TrainerProfileSettings() {
   const [uid, setUid] = useState(null);
@@ -74,8 +75,6 @@ export default function TrainerProfileSettings() {
       setSaving(false);
     }
   };
-
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
   const chip = (on) => `rounded-full px-3 py-1 text-xs font-medium transition ${on ? "bg-primary-soft text-primary-strong" : "bg-elevate text-sub hover:text-ink"}`;
 
   return (

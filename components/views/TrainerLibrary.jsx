@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Card from "@/components/ui/Card";
+import { inputCls } from "@/components/ui/Field";
 
 // URL에서 출처 추정(배지·후속 필터용).
 function detectSource(url) {
@@ -125,9 +126,6 @@ export default function TrainerLibrary() {
   const existingCats = [...new Set(rows.map((r) => r.category).filter(Boolean))];
   const isOpen = (cat) => ql !== "" || !collapsed[cat];        // 검색 중이면 강제 펼침
   const toggleCat = (cat) => setCollapsed((p) => ({ ...p, [cat]: !p[cat] }));
-
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
-
   return (
     <div className="space-y-4">
       {/* 입력(신규/수정 겸용) */}

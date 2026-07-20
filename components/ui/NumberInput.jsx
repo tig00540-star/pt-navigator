@@ -1,5 +1,6 @@
 "use client";
 import { useRef } from "react";
+import { Input } from "@/components/ui/Field";
 
 // 천단위 콤마 정수 입력. ★ value = '콤마 없는 숫자 문자열'(부모 state 그대로) — 화면에만 콤마.
 // 저장·검증(Number()/=== "")은 부모가 기존과 동일. 정수 전용(소수·퍼센트엔 쓰지 말 것 — §5).
@@ -29,8 +30,11 @@ export default function NumberInput({ value, onValueChange, ...rest }) {
     });
   };
 
+  /* 셸은 Field의 Input에 위임한다 — 17곳이 여기를 거치므로 한 번에 규격이 통일된다.
+     ref는 React 19에서 일반 prop이라 그대로 내려간다(forwardRef 불필요).
+     캐럿 복원 로직은 그 ref에 의존하므로 반드시 실제 <input>까지 닿아야 한다. */
   return (
-    <input
+    <Input
       {...rest}
       ref={ref}
       type="text"

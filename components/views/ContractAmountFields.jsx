@@ -2,9 +2,7 @@
 // 계약 금액 입력 4칸(controlled). 값·검증·저장은 부모. 여기선 렌더+onChange만.
 // sessions·price 입력 → 총액 자동(부모가 autoAmount 계산해 넘김). 총액칸은 수정 허용(amountEdited).
 import NumberInput from "@/components/ui/NumberInput";
-
-const inputCls =
-  "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+import { inputCls } from "@/components/ui/Field";
 
 export default function ContractAmountFields({
   sessions, price, amountEdited, svc, autoAmount, disabled, onChange,
@@ -14,19 +12,19 @@ export default function ContractAmountFields({
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="block">
         <span className="mb-1 block text-[11px] font-medium text-muted">세션수 *</span>
-        <NumberInput value={sessions} onValueChange={(v) => onChange("sessions", v)} disabled={disabled} placeholder="24" className={inputCls} />
+        <NumberInput value={sessions} onValueChange={(v) => onChange("sessions", v)} disabled={disabled} placeholder="24" />
       </label>
       <label className="block">
         <span className="mb-1 block text-[11px] font-medium text-muted">회당단가(원) *</span>
-        <NumberInput value={price} onValueChange={(v) => onChange("price", v)} disabled={disabled} placeholder="60000" className={inputCls} />
+        <NumberInput value={price} onValueChange={(v) => onChange("price", v)} disabled={disabled} placeholder="60000" />
       </label>
       <label className="block">
         <span className="mb-1 block text-[11px] font-medium text-muted">총액(원) · 자동</span>
-        <NumberInput value={amountEdited !== "" ? amountEdited : autoAmount ? String(autoAmount) : ""} onValueChange={(v) => onChange("amountEdited", v)} disabled={disabled} placeholder="자동 계산" className={inputCls} />
+        <NumberInput value={amountEdited !== "" ? amountEdited : autoAmount ? String(autoAmount) : ""} onValueChange={(v) => onChange("amountEdited", v)} disabled={disabled} placeholder="자동 계산" />
       </label>
       <label className="block">
         <span className="mb-1 block text-[11px] font-medium text-muted">서비스 세션</span>
-        <NumberInput value={svc} onValueChange={(v) => onChange("svc", v)} disabled={disabled} placeholder="0" className={inputCls} />
+        <NumberInput value={svc} onValueChange={(v) => onChange("svc", v)} disabled={disabled} placeholder="0" />
       </label>
     </div>
   );

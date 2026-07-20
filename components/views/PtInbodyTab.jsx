@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/useToast";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { kstToday } from "@/lib/date";
 import Card from "@/components/ui/Card";
+import { inputCls } from "@/components/ui/Field";
 
 // 입력 상태 초기값 — INBODY_FIELDS.key별 빈 문자열.
 function emptyVals() {
@@ -156,8 +157,6 @@ export default function PtInbodyTab({ member, mode }) {
     setConfirmId(null);
     showToast("삭제됨");
   };
-
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
   // delta 표시값 — ±값(소수 1자리 반올림) + 방향 아이콘.
   const fmtDelta = (d) => (d > 0 ? "+" : "") + (Math.round(d * 10) / 10);
 

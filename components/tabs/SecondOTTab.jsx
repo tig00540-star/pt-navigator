@@ -35,6 +35,7 @@ import { CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, CLOSING_RESULT_OPTS } from 
 import { otObsHash } from "@/lib/otHash";
 import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
 import { won } from "@/lib/format";
+import { inputCls } from "@/components/ui/Field";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
 const RAW_FEEDBACK =
@@ -119,9 +120,6 @@ const ROUTINE_2 = [
 
 // 2차 거절 5종 한글 라벨(purge-safe 정적 맵). objection_defense[].reason 키와 물림.
 const SECOND_OBJ_LABEL = { price: "가격 부담", hesitation: "생각해볼게요 (망설임)", doubt: "효과·필요성 의심", time: "시간 부족", compare: "타 센터 비교" };
-
-const inputCls =
-  "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary";
 
 // D-3 개발용: URL에 ?d3=1 이면 게이트 무시 + 실 케이스 5건 미만이면 데모 케이스로 렌더/프롬프트 경로 점검.
 // 실사용자는 이 플래그를 안 쓰므로 영향 0. ⑦ 상용화 때 제거 권장.

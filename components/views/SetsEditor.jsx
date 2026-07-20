@@ -4,9 +4,7 @@
    음성은 부모가 자동채움, 손입력은 빈 상태로 시작. 편집은 불변 업데이트로 onChange(next). */
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Dumbbell, Plus, Trash2, X } from "lucide-react";
-
-const inputCls =
-  "w-full rounded-lg border border-line bg-card px-2 py-1.5 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
+import { inputCls } from "@/components/ui/Field";
 
 function ExerciseNameInput({ value, options, onChange, disabled, open, onOpenChange }) {
   const wrapRef = useRef(null);
