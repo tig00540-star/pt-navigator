@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Flame, Trophy, Sparkles } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { holidayName } from "@/lib/holidays";
@@ -35,6 +35,17 @@ const ACTIVITY_MARKS = {
   cardio:   { label: "유산소",   dot: "bg-sky-500" },
 };
 const MARK_ORDER = ["pt", "personal", "cardio"]; // 점 표시 순서 고정
+
+/* 오운완 뱃지 티어 — 정적 const(purge-safe · 동적 조립 금지).
+   앞쪽을 촘촘하게: 도달 못 할 뱃지가 흐리게 오래 떠 있으면 동기부여가 아니라 좌절 신호가 된다.
+   kind: total=누적 오운완일 · streak=연속일. trainer_reward(트레이너 커스텀 포상)와는 별개 축. */
+const OUNWAN_BADGES = [
+  { key: "first",    label: "첫 오운완", need: 1,  kind: "total"  },
+  { key: "flame7",   label: "불꽃 7일",  need: 7,  kind: "streak" },
+  { key: "steady10", label: "꾸준 10회", need: 10, kind: "total"  },
+  { key: "steady30", label: "든든 30회", need: 30, kind: "total"  },
+  { key: "gold60",   label: "골드 60회", need: 60, kind: "total"  },
+];
 
 // 로컬 'YYYY-MM-DD'
 function ymd(d) {
@@ -637,7 +648,101 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
   );
 }
 
-function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut }) {
+/* 오운완 카드 — '내 기록' 최상단. 회원이 제일 먼저 보는 성취 화면.
+   ⚠️ 누적(total)·연속(streak)은 반드시 서버 RPC(ounwan_stats) 값만 쓴다.
+      loadHome의 조회는 limit(30/60)이 걸려 있어 buildActivityMap을 세면 누적이 창에 갇히고,
+      기록이 쌓일수록 옛 날짜가 밀려나 '누적이 줄어드는' 현상이 생긴다(성취 화면에선 치명적).
+      buildActivityMap은 '오늘 했는지' 판정에만 쓴다 — 오늘은 항상 최근 창 안이라 정확. */
+function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
+  const total = stats?.total ?? 0;
+  const streak = stats?.streak ?? 0;
+  const monthCount = stats?.month_count ?? 0;
+  const earned = (b) => (b.kind === "streak" ? streak >= b.need : total >= b.need);
+
+  return (
+    <section className="mb-8 rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <div className="flex items-center gap-2">
+        <Flame className={`h-5 w-5 ${todayDone ? "text-primary" : "text-muted"}`} />
+        <span className="text-base font-bold text-ink">
+          {todayDone ? `오늘 오운완 완료!` : "오늘은 아직이에요"}
+        </span>
+      </div>
+      <p className="mt-1.5 text-sm text-sub">
+        {todayDone
+          ? streak > 1 ? `${streak}일 연속으로 해내고 있어요 🔥` : "오늘도 몸을 움직였어요 👏"
+          : "운동을 기록하면 오늘 오운완이 채워져요."}
+      </p>
+      {!todayDone && (
+        <button
+          onClick={onGoWrite}
+          className="mt-3 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition active:scale-95"
+        >
+          기록 남기러 가기
+        </button>
+      )}
+
+      <div className="mt-4 flex items-center gap-4 border-t border-line pt-4">
+        <div>
+          <div className="text-[11px] text-muted">이번 달</div>
+          <div className="text-xl font-extrabold text-ink">{monthCount}<span className="ml-0.5 text-sm font-bold text-muted">회</span></div>
+        </div>
+        <div>
+          <div className="text-[11px] text-muted">누적</div>
+          <div className="text-xl font-extrabold text-ink">{total}<span className="ml-0.5 text-sm font-bold text-muted">회</span></div>
+        </div>
+        <div>
+          <div className="text-[11px] text-muted">연속</div>
+          <div className="text-xl font-extrabold text-ink">{streak}<span className="ml-0.5 text-sm font-bold text-muted">일</span></div>
+        </div>
+      </div>
+
+      {/* 뱃지 — 획득은 레드 강조, 미획득은 흐리게(정적 클래스 분기) */}
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {OUNWAN_BADGES.map((b) => (
+          <span
+            key={b.key}
+            className={
+              earned(b)
+                ? "inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-bold text-primary-strong ring-1 ring-primary/30"
+                : "inline-flex items-center gap-1 rounded-full bg-elevate px-2.5 py-1 text-[11px] font-medium text-muted"
+            }
+          >
+            {earned(b) && <Sparkles className="h-3 w-3" />}
+            {b.label}
+          </span>
+        ))}
+      </div>
+
+      {/* 트레이너 포상 — 정의된 게 있을 때만. 데모/0건이면 통째로 숨김. */}
+      {rewards.length > 0 && (
+        <div className="mt-4 space-y-2 border-t border-line pt-4">
+          <div className="flex items-center gap-1.5">
+            <Trophy className="h-4 w-4 text-primary-strong" />
+            <span className="text-xs font-bold text-sub">트레이너 포상</span>
+          </div>
+          {rewards.map((r) => {
+            const done = total >= r.milestone;
+            const pct = Math.min(100, Math.round((total / Math.max(1, r.milestone)) * 100));
+            return (
+              <div key={r.id}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold text-ink">{r.reward_text}</span>
+                  <span className="shrink-0 text-[11px] text-muted">{total}/{r.milestone}회</span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-elevate">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                </div>
+                {done && <div className="mt-1 text-[11px] font-bold text-primary-strong">달성! 트레이너에게 받으세요 🎉</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, rewards }) {
   const [subTab, setSubTab] = useState("read"); // read=내 기록(첫 화면) · write=기록 남기기
   if (!me) {
     return (
@@ -721,6 +826,15 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {subTab === "read" && (
           <>
+        {/* 오운완 카드 — 최상단. 누적·연속은 RPC(ounwan) 값만 사용(§2 규칙).
+            '오늘 했는지'만 로컬 파생 — 오늘은 항상 최근 조회 창 안이라 정확하다. */}
+        <OunwanCard
+          stats={ounwan}
+          rewards={rewards}
+          todayDone={Boolean(buildActivityMap(logs, cardio, schedule)[todayStr()])}
+          onGoWrite={() => setSubTab("write")}
+        />
+
         {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음). 한눈 개요 먼저. */}
         <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
 
@@ -862,6 +976,8 @@ export default function MemberHome() {
   const [cardio, setCardio] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [schedule, setSchedule] = useState([]);
+  const [ounwan, setOunwan] = useState(null);   // ounwan_stats() 1행 {total, month_count, streak} — 누적·연속의 유일한 소스
+  const [rewards, setRewards] = useState([]);   // 내 트레이너의 활성 포상(회원 read 정책 스코프)
   const [last4, setLast4] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -902,13 +1018,16 @@ export default function MemberHome() {
   const loadHome = useCallback(async () => {
     if (!memberSupabase) return;
     try {
-      const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes] = await Promise.all([
+      const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes, ounwanRes, rewardRes] = await Promise.all([
         memberSupabase.from("member_me").select("*").maybeSingle(),
         memberSupabase.from("member_workout_log").select("*").order("created_at", { ascending: false }),
         memberSupabase.from("member_inbody").select("*").order("measured_at", { ascending: true }),
         memberSupabase.from("cardio_log").select("*").order("performed_on", { ascending: false }).limit(30),
         memberSupabase.from("member_photo").select("*").order("taken_on", { ascending: false }).limit(60),
         memberSupabase.from("schedule_check").select("*").order("on_date", { ascending: false }).limit(60),
+        // 오운완 집계 — 서버 RPC(정의 단일 출처). 위 조회들의 limit과 무관하게 전체 이력 기준.
+        memberSupabase.rpc("ounwan_stats"),
+        memberSupabase.from("trainer_reward").select("*").eq("active", true).order("milestone"),
       ]);
       setMe(meRes.data ?? null);
       setLogs(logRes.data ?? []);
@@ -916,6 +1035,8 @@ export default function MemberHome() {
       setCardio(cardioRes.data ?? []);
       setPhotos(photoRes.data ?? []);
       setSchedule(schedRes.data ?? []);
+      setOunwan(ounwanRes.data?.[0] ?? null);   // RPC는 setof → 배열. 실패/0행이면 null(카드가 0으로 표시)
+      setRewards(rewardRes.data ?? []);
       setPhase("home");
     } catch {
       setPhase("home"); // 부분 실패해도 빈 상태로 진입(me null → 재로그인 안내 카드) — 무한 스피너 방지
@@ -963,11 +1084,11 @@ export default function MemberHome() {
 
   const signOut = async () => {
     if (memberSupabase) await memberSupabase.auth.signOut();
-    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setLast4(""); setPhase("login");
+    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setOunwan(null); setRewards([]); setLast4(""); setPhase("login");
   };
 
   if (phase === "checking") return <ScreenMsg>불러오는 중…</ScreenMsg>;
   if (phase === "login")
     return <LoginCard last4={last4} setLast4={setLast4} onSubmit={submit} busy={busy} err={err} />;
-  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} />;
+  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} ounwan={ounwan} rewards={rewards} />;
 }
