@@ -16,6 +16,8 @@
 --       ※ coalesce는 클라 buildActivityMap의 `session_at ?? created_at`과 규칙을 맞추기 위한 것(드리프트 방지).
 --
 -- 전제: auth_member_id() · auth_account_id() · auth_is_owner() 헬퍼 · user_table(account_id·hidden·trainer_id).
+-- 신규 헬퍼 2개: auth_member_account_id() · auth_member_trainer_id()
+--   — 회원 포상 정책이 user_table 서브쿼리로는 동작 불가(회원에 해당 SELECT 정책 없음)라 추가. §2 하단 주석 참조.
 -- 인덱스: cardio_log(user_id,performed_on) · schedule_check(user_id,on_date) · daily_workout_log(user_id,…) 존재 확인됨 → 추가 안 함.
 -- 멱등: create or replace function / create table if not exists / drop policy if exists → create.
 -- 롤백: 파일 하단.
@@ -134,15 +136,35 @@ drop policy if exists "tr_reward_delete" on trainer_reward;
 create policy "tr_reward_delete" on trainer_reward for delete to authenticated
   using (account_id = auth_account_id() and (auth_is_owner() or trainer_id = auth.uid()));
 
+-- ── 회원 스코프 헬퍼 (auth_member_id() 패턴 동일 · RLS 우회해 '내 행'의 값만 반환) ──
+-- ★왜 필요한가: 정책 안 서브쿼리는 '호출자 권한'으로 실행돼 대상 테이블 RLS를 그대로 탄다.
+--   그런데 회원은 user_table에 SELECT 정책이 없다 — 2026-07-16-member-auth-rls.sql이 만든
+--   "member_read_own_user"를 2026-07-16-member-views.sql이 뷰로 대체하며 drop했다.
+--   → `exists (select 1 from user_table ...)` 형태는 회원 세션에서 항상 0행 = 정책 영구 false
+--     (회원앱 포상 블록이 절대 안 뜬다). 그래서 SECURITY DEFINER 헬퍼로 값을 꺼내 직접 비교한다.
+-- 안전성: 반환은 '호출자 본인 행'의 컬럼 하나뿐(임의 조회 불가). 트레이너 세션은 member_auth_id가
+--   안 잡혀 null → 아래 정책의 account_id 비교가 null이 되어 거짓 = 트레이너 접근을 넓히지 않음.
+create or replace function auth_member_account_id()
+returns uuid language sql stable security definer set search_path = public as $$
+  select account_id from user_table where member_auth_id = auth.uid()
+$$;
+grant execute on function auth_member_account_id() to authenticated;
+
+create or replace function auth_member_trainer_id()
+returns uuid language sql stable security definer set search_path = public as $$
+  select trainer_id from user_table where member_auth_id = auth.uid()
+$$;
+grant execute on function auth_member_trainer_id() to authenticated;
+
 -- 회원: 자기 트레이너의 활성 포상만 read(쓰기 없음).
 -- solo(user_table.trainer_id null)면 계정 내 포상 전체 허용 — 트레이너 1인이라 포상이 안 보이는 문제 방지.
 drop policy if exists "tr_reward_member_read" on trainer_reward;
 create policy "tr_reward_member_read" on trainer_reward for select to authenticated
-  using (active and exists (
-    select 1 from user_table u
-    where u.id = auth_member_id() and u.account_id = trainer_reward.account_id
-      and (u.trainer_id = trainer_reward.trainer_id or u.trainer_id is null)
-  ));
+  using (
+    active
+    and account_id = auth_member_account_id()
+    and (trainer_id = auth_member_trainer_id() or auth_member_trainer_id() is null)
+  );
 
 
 -- =============================================================================
@@ -176,6 +198,13 @@ create policy "tr_reward_member_read" on trainer_reward for select to authentica
 --       select polname, polcmd from pg_policy where polrelid='trainer_reward'::regclass order by polname;
 --       → tr_reward_read/insert/update/delete/member_read = 5행.
 --
+--   (G) ★회원 포상 read가 실제로 되는지(정책 서브쿼리 버그 회귀 확인):
+--       트레이너 세션에서 포상 1건 추가 후, 회원 세션(access_token)으로
+--       GET /rest/v1/trainer_reward?select=*   → 1행(내 트레이너의 active 포상).
+--       0행이면 정책이 다시 영구 false — 헬퍼(auth_member_account_id/trainer_id) grant를 확인할 것.
+--       ※ exists(select from user_table) 형태로 되돌리면 회원은 user_table SELECT 정책이 없어
+--         (member-views가 drop) 항상 0행이 된다. ⚠️ 서브쿼리 형태로 되돌리지 말 것.
+--
 -- 롤백:
 --   drop policy if exists "tr_reward_member_read" on trainer_reward;
 --   drop policy if exists "tr_reward_delete" on trainer_reward;
@@ -183,6 +212,8 @@ create policy "tr_reward_member_read" on trainer_reward for select to authentica
 --   drop policy if exists "tr_reward_insert" on trainer_reward;
 --   drop policy if exists "tr_reward_read" on trainer_reward;
 --   drop table if exists trainer_reward;
+--   drop function if exists auth_member_trainer_id();
+--   drop function if exists auth_member_account_id();
 --   drop function if exists ounwan_ranking();
 --   drop function if exists ounwan_stats();
 --   drop function if exists ounwan_stats_for(uuid);
