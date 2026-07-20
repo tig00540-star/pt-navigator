@@ -313,7 +313,7 @@ function MemberForm({ onClose, onSaved }) {
             <option value="external">외부 PT 등록</option>
           </select>
           <p className="mt-1 text-[10px] leading-relaxed text-muted">
-            인계·외부 PT는 OT 없이 바로 PT 뷰로 시작합니다(§1.5). 상태는 자동 결정.
+            인계·외부 PT는 OT 없이 바로 PT 뷰로 시작합니다. 상태는 자동 결정.
           </p>
         </div>
 
