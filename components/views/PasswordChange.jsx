@@ -11,6 +11,7 @@ import { KeyRound } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
+import { Input } from "@/components/ui/Field";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
@@ -20,7 +21,6 @@ export default function PasswordChange({ forced = false, onDone }) {
   const [saving, setSaving] = useState(false);
   const { toast, showToast } = useToast();
 
-  const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
 
   const submit = async () => {
     if (saving) return;
@@ -48,14 +48,30 @@ export default function PasswordChange({ forced = false, onDone }) {
   const FORM_BODY = (
     <>
       <div className="mt-3 space-y-3">
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-medium text-muted">새 비밀번호</span>
-          <input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} disabled={saving || !supabase} placeholder="6자 이상" className={inputCls} />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-medium text-muted">새 비밀번호 확인</span>
-          <input type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} disabled={saving || !supabase} placeholder="다시 입력" className={inputCls} />
-        </label>
+        <Input
+          id="pw-new"
+          label="새 비밀번호"
+          type="password"
+          autoComplete="new-password"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          disabled={saving || !supabase}
+          placeholder="6자 이상"
+          /* 입력 중 즉시 검증하지 않는다 — 6자 미만이라고 타이핑 도중 빨갛게 물들면
+             아직 다 안 쳤을 뿐인데 틀렸다고 혼내는 꼴이다. 제출 시 토스트로 알린다. */
+          hint="6자 이상"
+        />
+        <Input
+          id="pw-confirm"
+          label="새 비밀번호 확인"
+          type="password"
+          autoComplete="new-password"
+          value={pw2}
+          onChange={(e) => setPw2(e.target.value)}
+          disabled={saving || !supabase}
+          placeholder="다시 입력"
+          error={pw2 && pw !== pw2 ? "확인이 일치하지 않아요" : undefined}
+        />
         <Button variant="primary" size="md" fullWidth onClick={submit} disabled={saving || !supabase} className="gap-2">
           <KeyRound className="h-4 w-4" strokeWidth={2.5} /> {saving ? "변경 중…" : "비밀번호 변경"}
         </Button>
