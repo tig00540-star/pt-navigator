@@ -46,9 +46,9 @@ export default function RegisterDueToday({ members, onSelect }) {
   const list = [...rows].sort((a, b) => a.paid - b.paid);
 
   return (
-    <ToneCard tone="emerald">
+    <ToneCard tone="renewal">
       <SectionHeader
-        tone="emerald"
+        tone="renewal"
         icon={RefreshCw}
         title="재등록 타이밍"
         count={list.length}
@@ -58,7 +58,7 @@ export default function RegisterDueToday({ members, onSelect }) {
         {list.map((r) => (
           <ListRow
             key={r.user_id}
-            tone="emerald"
+            tone="renewal"
             name={nameOf(r.user_id)}
             onClick={() => onSelect(r.user_id)}
           >

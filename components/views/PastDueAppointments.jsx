@@ -51,9 +51,9 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
   };
 
   return (
-    <ToneCard tone="zinc">
+    <ToneCard tone="neutral">
       <SectionHeader
-        tone="zinc"
+        tone="neutral"
         icon={CalendarX}
         title="미처리 예약"
         count={rows.length}
@@ -65,7 +65,7 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
           return (
             <ListRow
               key={a.id}
-              tone="zinc"
+              tone="neutral"
               name={nameOfEl(a.user_id)}
               onClick={() => onSelect(a.user_id)}
             >

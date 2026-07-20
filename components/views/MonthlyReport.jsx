@@ -129,7 +129,7 @@ export default function MonthlyReport({ data, onClose }) {
         </div>
 
         {/* 급여 헤드라인(확정/예상) */}
-        <ToneCard tone="emerald">
+        <ToneCard tone="brand">
           <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
             <Wallet className="h-3.5 w-3.5" /> {confirmed ? "확정" : "예상"} 급여
           </div>

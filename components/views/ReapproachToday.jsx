@@ -63,9 +63,9 @@ export default function ReapproachToday({ members, onSelect }) {
   );
 
   return (
-    <ToneCard tone="amber">
+    <ToneCard tone="reapproach">
       <SectionHeader
-        tone="amber"
+        tone="reapproach"
         icon={CalendarClock}
         title="오늘 재접근"
         count={list.length}
@@ -77,7 +77,7 @@ export default function ReapproachToday({ members, onSelect }) {
           return (
             <ListRow
               key={`${r.user_id}-${r.ot_round}`}
-              tone="amber"
+              tone="reapproach"
               name={nameOf(r.user_id)}
               onClick={() => onSelect(r.user_id)}
             >

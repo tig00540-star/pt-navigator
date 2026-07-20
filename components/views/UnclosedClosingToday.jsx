@@ -36,9 +36,9 @@ export default function UnclosedClosingToday({ members, onSelect }) {
   const nameOf = (id) => members?.find((m) => m.id === id)?.name || "회원";
 
   return (
-    <ToneCard tone="rose">
+    <ToneCard tone="unclosed">
       <SectionHeader
-        tone="rose"
+        tone="unclosed"
         icon={AlertCircle}
         title="클로징 미마감"
         count={rows.length}
@@ -48,7 +48,7 @@ export default function UnclosedClosingToday({ members, onSelect }) {
         {rows.map((r) => (
           <ListRow
             key={r.user_id}
-            tone="rose"
+            tone="unclosed"
             name={nameOf(r.user_id)}
             onClick={() => onSelect(r.user_id)}
           >

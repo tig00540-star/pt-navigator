@@ -54,9 +54,9 @@ export default function RegisterReapproachToday({ members, onSelect }) {
   const list = [...rows].sort((a, b) => (a.reg_reapproach_at < b.reg_reapproach_at ? -1 : 1));
 
   return (
-    <ToneCard tone="emerald">
+    <ToneCard tone="renewal">
       <SectionHeader
-        tone="emerald"
+        tone="renewal"
         icon={CalendarClock}
         title="재등록 재접근"
         count={list.length}
@@ -68,7 +68,7 @@ export default function RegisterReapproachToday({ members, onSelect }) {
           return (
             <ListRow
               key={r.user_id}
-              tone="emerald"
+              tone="renewal"
               name={nameOf(r.user_id)}
               onClick={() => onSelect(r.user_id)}
             >
