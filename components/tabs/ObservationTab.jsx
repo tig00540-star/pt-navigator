@@ -510,7 +510,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
             className={inputCls}
           />
           <p className="mt-2 text-[10px] leading-relaxed text-muted">
-            2차 OT 준비 시 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게. (②의 메모=회원 반응 국소 / 여기=관찰 전체 종합)
+            2차 OT 준비 시 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게.
           </p>
 
           <div className="mt-4">
@@ -526,8 +526,12 @@ export default function ObservationTab({ member, onClosingSaved }) {
                 </option>
               ))}
             </select>
+            {/* 설명은 트레이너 말로 — 원래는 "근거를 얼마나 또렷이 짚을지(압박 세기 아님)",
+                "사실 기반 필요성", "라포 위주"처럼 스펙 문서 어휘였다. 이 값이 실제로 바꾸는 건
+                2차 브리핑의 말투 하나뿐이니 그것만 말한다. 마지막 문장은 남겼다 —
+                '강하게'를 고를 때 없는 문제를 지어내는 건 아닌지가 트레이너의 실제 걱정이다. */}
             <p className="mt-1 text-[10px] leading-relaxed text-muted">
-              근거를 얼마나 또렷이 짚을지 정도예요(압박 세기 아님). &lsquo;강하게&rsquo;=사실 기반 필요성을 분명히, &lsquo;부드럽게&rsquo;=오늘은 라포 위주. 없는 위기 창작·공포몰이는 금지.
+              2차 브리핑의 말투를 정해요. &lsquo;강하게&rsquo;는 등록이 왜 필요한지 분명히 짚고, &lsquo;부드럽게&rsquo;는 오늘은 친해지는 데 집중해요. 어느 쪽이든 없는 문제를 지어내지는 않아요.
             </p>
           </div>
         </div>
