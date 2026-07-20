@@ -43,6 +43,9 @@
      ⚠️ 카드가 아닌 나머지 7곳도 같이 깊어진다. DS 규율상 그림자는 카드 전용이므로
      그 7곳은 2단계에서 shadow 제거 대상으로 점검할 것. */
   --shadow-sm: 0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+  /* 모달·팝오버·시트 — "그림자는 카드에만 한 종류"의 유일한 예외.
+     카드용 shadow-sm을 모달에 쓰면 오버레이 위에서 떠 보이지 않는다. 별개 규격이다. */
+  --shadow-pop: 0 4px 12px rgba(19,21,27,.08), 0 24px 48px -20px rgba(19,21,27,.4);
 
   /* ── 역할 색 — 업무 흐름 구분용. 브랜드색이 아니다(로고·CTA 금지) ──
      그동안 Tailwind 팔레트를 직접 써서(text-amber-700 32곳·text-rose-600 35곳…)
@@ -122,4 +125,10 @@ input[type="date"] {
 @keyframes ot-indeterminate {
   from { transform: translateX(-100%); }
   to   { transform: translateX(350%); }
+}
+
+/* 모달 진입 — 바텀시트가 아래에서 올라온다. 220ms 감속(--dur-slow). */
+@keyframes ot-sheet {
+  from { transform: translateY(24px); opacity: .6; }
+  to   { transform: translateY(0); opacity: 1; }
 }
