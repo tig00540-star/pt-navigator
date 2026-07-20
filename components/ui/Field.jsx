@@ -33,17 +33,27 @@ const SIZE = {
   sm: "px-2.5 py-1.5 text-sm",
 };
 
-/* 링 — 평상시 1px, focus 2px. invalid는 rose. */
-const RING = "ring-1 ring-inset ring-line-strong focus:ring-2 focus:ring-primary";
-const RING_ERR = "ring-1 ring-inset ring-rose-500 focus:ring-2 focus:ring-rose-500";
+/* ⚠️ 테두리는 border다 — ring(box-shadow)이 아니다. 현장 제보로 되돌렸다.
+   DS 명세는 "focus에서 1px→2px 되며 밀리지 않게 ring을 쓰라"였지만, 두 가지가 겹쳐
+   iOS에서 필드가 통째로 사라졌다:
+     ① bg-card(흰색) — 흰 카드 위에 놓이니 배경만으로는 필드 경계가 안 보인다
+     ② ring = box-shadow — Safari는 네이티브 외형의 <select>에 box-shadow를 그리지 않는다
+   결과: 흰 배경 + 안 보이는 테두리 = 2차 클로징 결과의 드롭다운이 글자만 떠 있었다.
+
+   → 배경은 bg-elevate(앱 기존 규약 — 흰 카드 위 '눌린 면'이라 입력칸임이 분명하다),
+     테두리는 border(모든 브라우저·폼 컨트롤에서 확실히 그려진다).
+     focus는 색만 바꿔(두께 유지) 밀림이 없다 — ring 없이도 명세의 목적은 달성된다.
+     ring은 보너스로 얹어 두되(지원 브라우저에서 더 또렷), 신호는 border-color가 책임진다. */
+const RING = "border border-line-strong focus:border-primary focus:ring-2 focus:ring-primary/20";
+const RING_ERR = "border border-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20";
 /* 원장 화면 accent — 앱 고유 개념(DS Button에 accent 축이 없어 이식 금지 대상).
    폼도 같은 규율을 따른다: admin 화면은 fuchsia 포커스를 유지한다. */
-const RING_OWNER = "ring-1 ring-inset ring-line-strong focus:ring-2 focus:ring-fuchsia-500";
+const RING_OWNER = "border border-line-strong focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/20";
 
 const BASE =
-  "w-full min-w-0 rounded-lg bg-card text-ink outline-none placeholder:text-muted " +
-  "transition-[box-shadow] duration-[180ms] ease-[cubic-bezier(.22,.9,.28,1)] " +
-  "disabled:bg-elevate disabled:opacity-60 disabled:cursor-not-allowed";
+  "w-full min-w-0 rounded-lg bg-elevate text-ink outline-none placeholder:text-muted " +
+  "transition-[border-color,box-shadow] duration-[180ms] ease-[cubic-bezier(.22,.9,.28,1)] " +
+  "disabled:opacity-60 disabled:cursor-not-allowed";
 
 function ringFor(error, accent) {
   if (error) return RING_ERR;
