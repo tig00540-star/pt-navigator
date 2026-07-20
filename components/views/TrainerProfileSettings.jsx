@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { CLOSING_APPROACH_OPTS, SALES_INTENSITY_OPTS } from "@/lib/labels";
+import Card from "@/components/ui/Card";
 
 export default function TrainerProfileSettings() {
   const [uid, setUid] = useState(null);
@@ -79,7 +80,7 @@ export default function TrainerProfileSettings() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={UserCircle}>내 프로필</Eyebrow>
         <p className="mb-4 mt-2 text-[11px] text-muted">여기 입력은 이후 AI 브리핑이 내 스타일에 맞추는 재료가 돼요(개인화·배정). 지금은 저장만 됩니다.</p>
         {loading ? (
@@ -116,7 +117,7 @@ export default function TrainerProfileSettings() {
             </Button>
           </div>
         )}
-      </section>
+      </Card>
       <Toast message={toast} />
     </div>
   );

@@ -13,6 +13,7 @@ import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import Card from "@/components/ui/Card";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-sm text-ink placeholder-muted outline-none transition focus:border-primary disabled:opacity-50";
@@ -96,7 +97,7 @@ export default function OunwanRewardSettings() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Trophy}>포상 만들기</Eyebrow>
         <p className="mt-2 text-[11px] leading-relaxed text-muted">
           회원이 오운완을 누적 N회 채우면 줄 보상이에요. 회원앱에 진행 바로 표시됩니다.
@@ -127,9 +128,9 @@ export default function OunwanRewardSettings() {
             <Plus className="h-4 w-4" /> 포상 추가
           </Button>
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Trophy}>등록한 포상</Eyebrow>
         {loading ? (
           <p className="mt-3 text-sm text-muted">불러오는 중…</p>
@@ -180,7 +181,7 @@ export default function OunwanRewardSettings() {
         <p className="mt-3 text-[10px] leading-relaxed text-muted">
           숨김으로 두면 회원앱에 안 보여요(기록은 남습니다). 지급 여부 기록은 준비 중입니다.
         </p>
-      </section>
+      </Card>
 
       <Toast message={toast} />
     </div>

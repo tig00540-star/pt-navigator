@@ -27,6 +27,7 @@ import { loadCenterMachines } from "@/lib/centerMachines";
 import MemberCardioSummary from "@/components/views/MemberCardioSummary";
 import MemberPhotoSummary from "@/components/views/MemberPhotoSummary";
 import MemberScheduleSummary from "@/components/views/MemberScheduleSummary";
+import Card from "@/components/ui/Card";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
 function fmtDT(iso) {
@@ -323,7 +324,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
 
       {/* 회원 기본정보 (간단) */}
       {mode !== "record" && (
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <span className="inline-block rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[11px] font-semibold tracking-label-ko text-primary-strong">
           PT 회원
         </span>
@@ -342,12 +343,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           {hasVal(member.mbti) && <span className="rounded-md bg-elevate px-2 py-1">MBTI {member.mbti}</span>}
           {hasVal(member.pain) && <span className="rounded-md bg-elevate px-2 py-1">불편 {member.pain}</span>}
         </div>
-      </section>
+      </Card>
       )}
 
       {/* 잔여 현황(읽기 전용) — 신규 */}
       {mode !== "record" && (
-        <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Card as="section">
           <Eyebrow icon={Dumbbell}>잔여 현황</Eyebrow>
           {active ? (
             <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -358,12 +359,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           ) : (
             <p className="mt-2 text-sm text-muted">활성 계약 없음 — &lsquo;자료남기기&rsquo;에서 등록하세요.</p>
           )}
-        </section>
+        </Card>
       )}
 
       {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
       {mode !== "record" && (
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={History}>지난 수업</Eyebrow>
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>
@@ -425,13 +426,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             ))}
           </ul>
         )}
-      </section>
+      </Card>
       )}
 
       {/* 종목별 무게 추이 (③ 작업3-2) — logs 클라 집계(추가 쿼리 0). 인바디 추이 패턴 재사용.
           무게 데이터 있는 종목만. 진행 지표 = 세션별 최고중량(topSetWeight). */}
       {mode !== "record" && (
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={LineChart}>종목별 무게 추이</Eyebrow>
         {exerciseSeries.length === 0 ? (
           <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 표시됩니다.</p>
@@ -465,7 +466,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             })}
           </div>
         )}
-      </section>
+      </Card>
       )}
 
       {/* 인바디 추이(children · 열람) */}
@@ -491,7 +492,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
 
       {/* 현재 방향/목표 — PT 살아있는 상태축(③ 작업3-2). goal(OT 스냅샷)과 별개. */}
       {mode !== "view" && (
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <div className="flex items-center justify-between">
           <Eyebrow icon={Compass}>현재 방향 · 목표</Eyebrow>
           {!editingDir && (
@@ -527,12 +528,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             {direction || <span className="text-muted">아직 방향이 설정되지 않았습니다.</span>}
           </p>
         )}
-      </section>
+      </Card>
       )}
 
       {/* 수업 확인서 겸 운동일지 — 손입력 저장 = 차감 (③ step3-1a) */}
       {mode !== "view" && (
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={NotebookPen}>수업 확인서 · 운동일지</Eyebrow>
 
         {/* 잔여 카드 */}
@@ -609,7 +610,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <UserX className="h-4 w-4" /> 노쇼 차감
           </Button>
         </div>
-      </section>
+      </Card>
       )}
 
       {/* 인바디 입력 + 사진 업로드(children · 기록) */}

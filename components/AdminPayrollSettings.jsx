@@ -17,6 +17,7 @@ import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import Card from "@/components/ui/Card";
 
 const PAYOUT_OPTS = [
   { value: "pct_of_price", label: "판매가 %" },
@@ -187,7 +188,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
     <div className="space-y-4">
       <Eyebrow icon={Wallet}>{solo ? "내 급여 방식" : `급여 정책 설정 · ${scope == null ? "계정 기본" : (trainers.find((t) => t.id === scope)?.name || "트레이너")}`}</Eyebrow>
 
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         {/* 스코프 선택 — 계정 기본 + 트레이너별 override. solo면 대상이 본인 1명뿐이라 숨김(scope=null 유지). */}
         {!solo && (
         <div className="mb-4">
@@ -356,7 +357,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
             )}
           </div>
         )}
-      </section>
+      </Card>
 
       <Toast message={toast} />
     </div>

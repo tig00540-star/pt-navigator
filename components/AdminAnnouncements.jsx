@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Megaphone, Pin, Users, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 
 export default function AdminAnnouncements({ trainers = [] }) {
   const [anns, setAnns] = useState([]);
@@ -147,7 +148,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
       </div>
 
       {/* 작성/수정 폼 */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <div className="space-y-3">
           <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={posting} placeholder="제목" className={inputCls} />
           <textarea value={body} onChange={(e) => setBody(e.target.value)} disabled={posting} rows={3} placeholder="본문" className={inputCls + " resize-none"} />
@@ -224,10 +225,10 @@ export default function AdminAnnouncements({ trainers = [] }) {
             )}
           </div>
         </div>
-      </section>
+      </Card>
 
       {/* 목록 */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <div className="mb-3 text-[11px] font-semibold tracking-label-ko text-muted">게시한 공지</div>
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>
@@ -290,7 +291,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
             })}
           </ul>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

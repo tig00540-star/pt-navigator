@@ -20,6 +20,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Sparkline from "@/components/ui/Sparkline";
 import ImageLightbox from "@/components/ui/ImageLightbox";
+import Card from "@/components/ui/Card";
 
 // purge-safe delta 색 맵(PtInbodyTab 재사용 패턴 · 동적 조립 금지).
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
@@ -192,7 +193,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
     <section className="mb-8">
       <Eyebrow icon={Activity}>유산소 기록</Eyebrow>
       {mode !== "list" && (
-      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <Card padding="sm">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             날짜
@@ -217,7 +218,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
             <Plus className="h-4 w-4" /> {busy ? "저장 중…" : "기록"}
           </Button>
         </div>
-      </div>
+      </Card>
       )}
 
       {/* 목록 — 내 기록 탭에서만(mode=list) */}
@@ -347,7 +348,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
     <section className="mb-8">
       <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
       {mode !== "list" && (
-      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <Card padding="sm">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-1 min-w-0 text-xs font-medium text-muted">
             분류
@@ -367,7 +368,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
           <ImagePlus className="h-5 w-5" /> {busy ? "올리는 중…" : "사진 올리기"}
           <input type="file" accept="image/*" onChange={onPick} disabled={busy} className="hidden" />
         </label>
-      </div>
+      </Card>
       )}
 
       {/* 갤러리 — 내 기록 탭에서만(mode=list) */}
@@ -473,7 +474,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
     <section className="mb-8">
       <Eyebrow icon={CalendarCheck}>개인운동 기록</Eyebrow>
       {mode !== "list" && (
-      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <Card padding="sm">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             날짜
@@ -490,7 +491,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
             <Plus className="h-4 w-4" /> {busy ? "저장 중…" : "기록"}
           </Button>
         </div>
-      </div>
+      </Card>
       )}
 
       {/* 목록 — 내 기록 탭에서만(mode=list) */}
@@ -556,7 +557,7 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
   return (
     <section className="mb-8">
       <Eyebrow icon={CalendarDays}>운동 달력</Eyebrow>
-      <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <Card padding="sm">
         {/* 헤더 */}
         <div className="mb-3 flex items-center justify-between">
           <button onClick={prevMonth} aria-label="이전 달" className="rounded-lg p-2 text-muted transition hover:text-ink">
@@ -612,7 +613,7 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
             </span>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* 선택일 상세 */}
       {selected && (

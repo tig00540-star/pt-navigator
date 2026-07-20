@@ -12,6 +12,7 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import Card from "@/components/ui/Card";
 
 const KINDS = [
   { v: "machine", label: "머신" },
@@ -127,7 +128,7 @@ export default function CenterMachineSettings() {
   return (
     <div className="space-y-4">
       {isOwner ? (
-        <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Card as="section">
           <Eyebrow icon={Dumbbell}>보유 장비</Eyebrow>
           <div className="mt-3 space-y-3">
             <label className="block">
@@ -172,16 +173,16 @@ export default function CenterMachineSettings() {
             </div>
             <p className="text-[10px] leading-relaxed text-muted">여기 등록한 장비를 AI가 1·2차 OT·재등록 루틴에 &lsquo;있는 장비&rsquo;로 반영합니다. 덤벨·바벨은 종류를 &lsquo;프리웨이트&rsquo;로.</p>
           </div>
-        </section>
+        </Card>
       ) : (
         /* 비owner도 카드로 — 제목이 카드 안이라는 규칙을 두 분기 모두 지키게. */
-        <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Card as="section">
           <Eyebrow icon={Dumbbell}>보유 장비</Eyebrow>
           <p className="mt-2 text-[11px] text-muted">장비는 대표가 관리합니다. (열람 전용)</p>
-        </section>
+        </Card>
       )}
 
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Dumbbell}>등록된 장비</Eyebrow>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
@@ -218,7 +219,7 @@ export default function CenterMachineSettings() {
             ))}
           </div>
         )}
-      </section>
+      </Card>
       <Toast message={toast} />
     </div>
   );

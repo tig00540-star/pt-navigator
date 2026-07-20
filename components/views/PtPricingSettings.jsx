@@ -16,6 +16,7 @@ import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import Card from "@/components/ui/Card";
 
 export default function PtPricingSettings() {
   const [rows, setRows] = useState([]);
@@ -163,7 +164,7 @@ export default function PtPricingSettings() {
   return (
     <div className="space-y-4">
       {/* 입력 카드 (신규/수정 겸용) */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Tag}>내 PT 가격 설정</Eyebrow>
         <div className="mt-3 space-y-3">
           <label className="block">
@@ -214,10 +215,10 @@ export default function PtPricingSettings() {
             )}
           </div>
         </div>
-      </section>
+      </Card>
 
       {/* 리스트 */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Tag}>등록한 패키지</Eyebrow>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
@@ -280,7 +281,7 @@ export default function PtPricingSettings() {
             })}
           </ul>
         )}
-      </section>
+      </Card>
 
       <Toast message={toast} />
     </div>

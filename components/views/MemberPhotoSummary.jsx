@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { compressImage } from "@/lib/image";
 import Eyebrow from "@/components/ui/Eyebrow";
 import ImageLightbox from "@/components/ui/ImageLightbox";
+import Card from "@/components/ui/Card";
 
 const PHOTO_LABELS = { before: "비포", progress: "진행", after: "애프터" };
 
@@ -121,7 +122,7 @@ export default function MemberPhotoSummary({ member, mode }) {
 
   return (
     <>
-    <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+    <Card as="section">
       <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
 
       {/* 트레이너 업로드 폼 */}
@@ -196,7 +197,7 @@ export default function MemberPhotoSummary({ member, mode }) {
           ))}
         </div>
       ))}
-    </section>
+    </Card>
     <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
     </>
   );

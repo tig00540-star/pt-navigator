@@ -21,6 +21,7 @@ import RegBriefView from "@/components/views/RegBriefView";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import Badge from "@/components/ui/Badge";
 import { REG_RESULT_OPTS, REG_REASON_OPTS } from "@/lib/labels";
+import Card from "@/components/ui/Card";
 
 export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   // 재등록 결과 기록 — 최신 계약 행 session_log.reg_* UPDATE. 성공≠자동갱신(기록만).
@@ -186,7 +187,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
           <div className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-bold text-sub">
             재등록 결과 기록 · 수업 후
           </div>
-          <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+          <Card as="section">
             <Eyebrow icon={RefreshCw}>재등록 결과 기록</Eyebrow>
             <div className="mt-4 space-y-3">
               <label className="block">
@@ -230,7 +231,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
                 </Button>
               </div>
             </div>
-          </section>
+          </Card>
         </>
       )}
       <Toast message={toast} />

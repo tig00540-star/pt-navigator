@@ -3,6 +3,7 @@ import { useState } from "react";
 import { UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 
 export default function AddTrainerForm() {
   const [email, setEmail] = useState("");
@@ -33,7 +34,7 @@ export default function AddTrainerForm() {
   };
 
   return (
-    <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+    <Card>
       <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
         <UserPlus className="h-3.5 w-3.5" /> 트레이너 추가
       </div>
@@ -53,6 +54,6 @@ export default function AddTrainerForm() {
           <div className="mt-1 text-[11px] text-muted">⚠️ 이 화면에서만 보여요. 트레이너는 로그인 후 이 비번으로 접속합니다.</div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

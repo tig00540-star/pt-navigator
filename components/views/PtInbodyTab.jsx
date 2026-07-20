@@ -15,6 +15,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { kstToday } from "@/lib/date";
+import Card from "@/components/ui/Card";
 
 // 입력 상태 초기값 — INBODY_FIELDS.key별 빈 문자열.
 function emptyVals() {
@@ -164,7 +165,7 @@ export default function PtInbodyTab({ member, mode }) {
     <div className="space-y-6">
       {/* 입력 카드 */}
       {mode !== "view" && (
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Scale}>인바디 기록</Eyebrow>
         <div className="mt-3 space-y-3">
           <label className="block">
@@ -195,12 +196,12 @@ export default function PtInbodyTab({ member, mode }) {
             <Plus className="h-4 w-4" strokeWidth={2.5} /> {saving ? "저장 중…" : "측정 저장"}
           </Button>
         </div>
-      </section>
+      </Card>
       )}
 
       {/* 최근 요약 (직전 대비 delta) */}
       {mode !== "record" && latest && (
-        <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Card as="section">
           <div className="flex items-center justify-between">
             <Eyebrow icon={Scale}>최근 측정</Eyebrow>
             <span className="font-mono text-[11px] text-muted">{latest.measured_at}</span>
@@ -229,12 +230,12 @@ export default function PtInbodyTab({ member, mode }) {
               );
             })}
           </div>
-        </section>
+        </Card>
       )}
 
       {/* 이력 리스트 */}
       {mode !== "record" && (
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={Scale}>지난 측정</Eyebrow>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
@@ -272,7 +273,7 @@ export default function PtInbodyTab({ member, mode }) {
             ))}
           </ul>
         )}
-      </section>
+      </Card>
       )}
 
       <Toast message={toast} />

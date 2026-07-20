@@ -30,6 +30,7 @@ import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import PayrollConfirm from "@/components/PayrollConfirm";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
+import Card from "@/components/ui/Card";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -399,7 +400,7 @@ export default function AdminDashboard() {
               </div>
               <div className="mt-1 text-xs text-muted">{ym} · 인계·외부 제외</div>
             </div>
-            <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
+            <Card>
               <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
                 <Target className="h-3.5 w-3.5" /> 클로징률
               </div>
@@ -407,8 +408,8 @@ export default function AdminDashboard() {
                 {rateText(closing.rate)}
               </div>
               <div className="mt-1 text-xs text-muted">누적 · 시도 {closing.attempted}명 중 {closing.success}</div>
-            </div>
-            <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
+            </Card>
+            <Card>
               <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
                 <Percent className="h-3.5 w-3.5" /> 재등록률
               </div>
@@ -416,7 +417,7 @@ export default function AdminDashboard() {
                 {rateText(rereg.rate)}
               </div>
               <div className="mt-1 text-xs text-muted">누적 · 시도 {rereg.attempted}건 중 {rereg.success}</div>
-            </div>
+            </Card>
           </div>
         </section>
         )}
@@ -553,14 +554,14 @@ export default function AdminDashboard() {
             </div>
 
             {/* 총 수업수 */}
-            <div className="rounded-2xl border border-line bg-card shadow-sm p-5">
+            <Card>
               <div className="text-[11px] font-semibold tracking-label-ko text-muted">총 수업수</div>
               <div className="mt-2 flex items-baseline gap-1">
                 <span className="font-mono text-5xl font-extrabold tracking-tight text-ink">{totalSessions}</span>
                 <span className="text-xl font-bold text-muted">회</span>
               </div>
               <div className="mt-1 text-xs text-muted">노쇼 취소분(voided) 제외 · 누적</div>
-            </div>
+            </Card>
           </div>
         </section>
         )}

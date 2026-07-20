@@ -9,6 +9,7 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import Card from "@/components/ui/Card";
 
 // URL에서 출처 추정(배지·후속 필터용).
 function detectSource(url) {
@@ -130,7 +131,7 @@ export default function TrainerLibrary() {
   return (
     <div className="space-y-4">
       {/* 입력(신규/수정 겸용) */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={BookMarked}>내 라이브러리</Eyebrow>
         <div className="mt-3 space-y-3">
           <label className="block">
@@ -162,10 +163,10 @@ export default function TrainerLibrary() {
             )}
           </div>
         </div>
-      </section>
+      </Card>
 
       {/* 리스트(카테고리별 그룹) */}
-      <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <Card as="section">
         <Eyebrow icon={BookMarked}>저장한 자료</Eyebrow>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
@@ -226,7 +227,7 @@ export default function TrainerLibrary() {
             )}
           </>
         )}
-      </section>
+      </Card>
       <Toast message={toast} />
     </div>
   );

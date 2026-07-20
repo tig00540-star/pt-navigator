@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Card from "@/components/ui/Card";
 
 function fmtDay(iso) {
   if (!iso) return "";
@@ -57,7 +58,7 @@ export default function MemberCardioSummary({ member }) {
   const wk = weekMinutes(rows);
 
   return (
-    <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+    <Card as="section">
       <Eyebrow icon={Activity}>유산소 기록</Eyebrow>
       {wk > 0 && <div className="mt-1 text-xs font-semibold text-primary-strong">이번 주 합계 {wk}분</div>}
       {loading ? (
@@ -76,6 +77,6 @@ export default function MemberCardioSummary({ member }) {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }

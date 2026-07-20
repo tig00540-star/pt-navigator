@@ -17,6 +17,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
 import OunwanRanking from "@/components/views/OunwanRanking";
+import Card from "@/components/ui/Card";
 
 export default function MyStats({ members = [], isSolo = false, onSelect }) {
   const [contracts, setContracts] = useState([]);
@@ -172,7 +173,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
 
       {/* 이달 목표 달성 (설정돼 있을 때만) */}
       {target != null && (
-        <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+        <Card padding="sm">
           <div className="flex items-baseline justify-between text-sm">
             <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-label-ko text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
             <span className="tabular-nums font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
@@ -181,12 +182,12 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
             <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
           </div>
           <div className="mt-1 text-[11px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
-        </div>
+        </Card>
       )}
 
       {/* #1 — PT 수업 현황(내 활성 PT 회원 전체 합). 회원 없으면 숨김. */}
       {ptMemberIds.size > 0 && (
-        <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <Card>
           <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
             <Dumbbell className="h-3.5 w-3.5" /> PT 수업 현황 · 활성 회원 {ptMemberIds.size}명
           </div>
@@ -203,7 +204,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
             <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600"
               style={{ width: `${sessTotalAll ? Math.round((doneAll / sessTotalAll) * 100) : 0}%` }} />
           </div>
-        </div>
+        </Card>
       )}
 
       {/* 이번달 수업 — 누르면 회원별 (P2) */}

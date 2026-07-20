@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { CalendarCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
+import Card from "@/components/ui/Card";
 
 const SCHEDULE_KINDS = { personal: "개인운동", pt: "PT" };
 
@@ -61,7 +62,7 @@ export default function MemberScheduleSummary({ member }) {
   const mc = monthCounts(rows);
 
   return (
-    <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+    <Card as="section">
       <Eyebrow icon={CalendarCheck}>운동 스케줄</Eyebrow>
       {(mc.personal > 0 || mc.pt > 0) && (
         <div className="mt-1 text-xs font-semibold text-primary-strong">
@@ -89,6 +90,6 @@ export default function MemberScheduleSummary({ member }) {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }

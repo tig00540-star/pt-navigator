@@ -23,6 +23,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { machinesToStructured } from "@/lib/workout";
 import { loadCenterMachines } from "@/lib/centerMachines";
+import Card from "@/components/ui/Card";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한
 const AUDIO_BPS = 48000; // 48kbps opus/aac — 음성 STT 충분 · 10분≈3.6MB (Vercel 함수 body 4.5MB 한도 방어)
@@ -407,7 +408,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
       {/* 처리중 스켈레톤 */}
       {phase === "processing" && (
-        <section className="rounded-2xl border border-line bg-card shadow-sm p-5">
+        <Card as="section">
           <div className="mb-3 flex items-center gap-2 text-xs text-muted">
             <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 음성 → 텍스트 변환 후 AI가 리포트로 정제하는 중
           </div>
@@ -419,7 +420,7 @@ export default function VoiceLogTab({ member, onResult }) {
             <div className="h-3 w-full animate-pulse rounded bg-elevate" />
             <div className="h-3 w-2/3 animate-pulse rounded bg-elevate" />
           </div>
-        </section>
+        </Card>
       )}
 
       {/* 리포트 프리뷰 */}
