@@ -1,0 +1,38 @@
+/* 오직 트레이너 — Typography tokens
+ * 서체는 Pretendard 한 벌. 굵기와 자간으로만 위계를 만든다. */
+:root{
+  --font-sans:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,"SF Mono",monospace;
+
+  /* 굵기 — 본문은 450 */
+  --fw-regular:450; /* @kind font */
+  --fw-medium:500; /* @kind font */
+  --fw-semibold:600; /* @kind font */
+  --fw-bold:700; /* @kind font */
+  --fw-extrabold:800; /* @kind font */
+
+  /* 크기 */
+  --fs-display:38px;
+  --fs-h1:29px;
+  --fs-h2:22px;
+  --fs-h3:17px;
+  --fs-body:15.5px;
+  --fs-small:13.5px;
+  --fs-label:11px;
+
+  /* 자간 — 제목 음수, 본문 −.011em, 라벨만 양수 */
+  --ls-display:-.05em; /* @kind font */
+  --ls-h1:-.04em; /* @kind font */
+  --ls-h2:-.035em; /* @kind font */
+  --ls-h3:-.03em; /* @kind font */
+  --ls-body:-.011em; /* @kind font */
+  --ls-small:-.008em; /* @kind font */
+  --ls-label:.16em; /* @kind font */
+
+  /* 행간 — 본문 1.7, 제목 1.2~1.4 */
+  --lh-display:1.05; /* @kind font */
+  --lh-h1:1.2; /* @kind font */
+  --lh-h2:1.3; /* @kind font */
+  --lh-h3:1.4; /* @kind font */
+  --lh-body:1.7; /* @kind font */
+}

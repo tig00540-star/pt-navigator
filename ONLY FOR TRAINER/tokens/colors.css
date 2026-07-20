@@ -1,0 +1,57 @@
+/* 오직 트레이너 — Color tokens
+ * 색은 장식이 아니라 역할이다. 레드와 먹색 두 색으로 굴러간다.
+ * 앱은 라이트 전용. 다크는 문서·홈페이지 전용 (data-theme="dark"). */
+:root{
+  /* ── Brand ── */
+  --red:#dc2626;            /* 심볼 바늘 · CTA · 활성 · 포커스 */
+  --red-strong:#b91c1c;     /* 밝은 배경 위 레드 텍스트 전용 */
+  --red-soft:#fef2f2;       /* 선택 행 · 강조 블록 옅은 배경 */
+  --red-hover:#c11f1f;      /* 레드 면 hover */
+  --ink:#13151b;            /* 심볼 원·허브 · 워드마크 '오직' · 본문 */
+
+  /* ── Surfaces & neutrals ── */
+  --paper:#f1f2f6;          /* 앱 바탕 */
+  --card:#ffffff;           /* 카드 · 입력칸 */
+  --sunken:#e8eaf0;         /* 들어간 면 · 스테이지 */
+  --line:#dfe2ea;           /* 경계선 */
+  --sub:#475569;            /* 보조 텍스트 (7.58:1) */
+  --muted:#5b6675;          /* 흐린 텍스트 · placeholder (5.83:1) */
+  --faint:rgba(19,21,27,.22);
+
+  /* ── Role colors (업무 흐름 구분 · 브랜드색 아님, 로고·CTA 금지) ── */
+  --ot:#f59e0b;   --ot-text:#b45309;   --ot-soft:#fffbeb;   /* OT 흐름 amber */
+  --pt:#0ea5e9;   --pt-text:#0369a1;   --pt-soft:#f0f9ff;   /* PT 흐름 sky */
+  --admin:#c026d3;--admin-text:#a21caf;--admin-soft:#fdf4ff;/* 원장 fuchsia */
+  --danger:#e11d48;--danger-text:#be123c;                   /* 위험 rose (외곽선만) */
+  --success:#10b981;--success-text:#047857;                 /* 통과 표시 전용 (금액 아님) */
+
+  /* ── Semantic aliases ── */
+  --surface-page:var(--paper);
+  --surface-card:var(--card);
+  --surface-sunken:var(--sunken);
+  --surface-input:var(--card);
+  --surface-selected:var(--red-soft);
+  --border:var(--line);
+  --border-strong:#cbd2dd;
+
+  --text-body:var(--ink);
+  --text-heading:var(--ink);
+  --text-sub:var(--sub);
+  --text-muted:var(--muted);
+  --text-money:var(--ink);            /* 금액 기본은 먹색 */
+  --text-money-hero:var(--red-strong);/* 화면당 하나뿐인 헤드라인 금액 */
+  --text-on-red:#ffffff;
+
+  --accent:var(--red);
+  --accent-strong:var(--red-strong);
+  --accent-hover:var(--red-hover);
+  --focus-ring:var(--red);
+}
+/* 다크 — 문서·홈페이지 전용. 반전이 아니라 따로 조율한 한 벌 */
+:root[data-theme="dark"]{
+  --red:#f2564a; --red-strong:#ff7b6e; --red-soft:#2a1613; --red-hover:#f2564a; --ink:#f0f1f4;
+  --paper:#0e0f13; --card:#17191f; --sunken:#1e2028; --line:#282b34;
+  --sub:#b0b5c0; --muted:#8d94a1; --faint:rgba(240,241,244,.24);
+  --border-strong:#3a3e49; --text-on-red:#180806;
+  --success-text:#4fd8ae;
+}

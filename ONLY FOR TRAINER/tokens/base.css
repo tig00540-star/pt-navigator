@@ -1,0 +1,18 @@
+/* 오직 트레이너 — base element defaults (opt-in via styles.css) */
+:root{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+body{
+  margin:0;background:var(--surface-page);color:var(--text-body);
+  font-family:var(--font-sans);font-weight:var(--fw-regular);
+  font-size:var(--fs-body);line-height:var(--lh-body);letter-spacing:var(--ls-body);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+*,*::before,*::after{box-sizing:border-box}
+::selection{background:var(--red);color:var(--text-on-red)}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+a{color:var(--red-strong);text-decoration:none}
+a:hover{color:var(--red)}
+strong{font-weight:var(--fw-bold)}
+code{font-family:var(--font-mono);font-size:.9em;background:var(--sunken);padding:1px 5px;border-radius:var(--radius-sm);letter-spacing:0}
+h1,h2,h3,h4,p{margin:0}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}

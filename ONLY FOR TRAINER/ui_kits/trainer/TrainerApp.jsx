@@ -1,0 +1,267 @@
+const DS = window.DesignSystem_ac3846;
+const { Icon, Button, IconButton, Card, Badge, Chip, Input, Textarea, Select, Checkbox,
+  ProgressBar, Modal, Toast, EmptyState, AIBriefBlock, BottomNav, WorkflowTabBar,
+  StatCard, MemberCard, TodoItem } = DS;
+
+const MEMBERS = [
+  { id: "kim", name: "김지훈", status: "ot", summary: "1차 완료 · 재접근 도래", meta: "2일 전", goal: "체중 감량 · 무릎 불편", type: "OT 유입" },
+  { id: "park", name: "박서연", status: "pt", summary: "잔여 8회 · 재등록 임박", meta: "어제", goal: "체형 교정 · 근력", type: "OT 유입" },
+  { id: "choi", name: "최유진", status: "pt", summary: "잔여 2회 · 재등록 도래", meta: "3일 전", goal: "바디프로필 준비", type: "인계" },
+  { id: "lee", name: "이도현", status: "inactive", summary: "환불 종결", meta: "2주 전", goal: "—", type: "외부" },
+];
+
+function Section({ title, right, children }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 11 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--text-muted)" }}>{title}</span>
+        {right}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Header({ member, onSelect, onNew }) {
+  return (
+    <header style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "var(--surface-card)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 20 }}>
+      <img src="../../assets/logo-symbol.svg" width="26" height="26" alt="" />
+      <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-.05em", color: "var(--ink)" }}>오직 <span style={{ color: "var(--red)" }}>트레이너</span></span>
+      <span style={{ flex: 1 }} />
+      <IconButton icon="bell" label="공지" size="sm" />
+      <IconButton icon="user-plus" label="신규 등록" size="sm" variant="primary" onClick={onNew} />
+    </header>
+  );
+}
+
+function TodayScreen({ onGo }) {
+  return (
+    <div style={{ padding: "18px 16px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.045em", margin: "0 0 4px" }}>오늘</h1>
+      <p style={{ fontSize: 13.5, color: "var(--text-sub)", margin: "0 0 22px" }}>2026년 7월 21일 화요일 · 오늘 수업 5건</p>
+
+      <Section title="오늘 할 일 · 자동 감지">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <TodoItem kind="unclosed" title="미확정 클로징" detail="박서연 · 2차 진행됨, 결과 미기록" onClick={() => onGo("park")} />
+          <TodoItem kind="reapproach" title="오늘 재접근" detail="김지훈 · 1차 보류 3일차" onClick={() => onGo("kim")} />
+          <TodoItem kind="renewal" title="재등록 도래" detail="최유진 · 잔여 2회" onClick={() => onGo("choi")} />
+        </div>
+      </Section>
+
+      <Section title="이탈 위험">
+        <Card padding="14px 16px">
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <span style={{ display: "inline-flex", width: 34, height: 34, borderRadius: 9, background: "var(--ot-soft)", alignItems: "center", justifyContent: "center" }}><Icon name="alert-triangle" size={17} color="var(--ot-text)" /></span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>정민재 · 마지막 수업 14일 전</div>
+              <div style={{ fontSize: 12.5, color: "var(--text-muted)" }}>수업 공백 기준 초과</div>
+            </div>
+            <Button variant="secondary" size="sm">연락</Button>
+          </div>
+        </Card>
+      </Section>
+
+      <Section title="오늘 예약">
+        <Card padding="0">
+          {[["07:00", "박서연", "PT", "pt"], ["10:30", "김지훈", "1차 OT", "ot"], ["18:00", "최유진", "PT", "pt"]].map(([t, n, k, tone], i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderTop: i ? "1px solid var(--border)" : "none" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)", width: 46 }}>{t}</span>
+              <span style={{ flex: 1, fontSize: 14.5, color: "var(--ink)" }}>{n}</span>
+              <Badge tone={tone}>{k}</Badge>
+            </div>
+          ))}
+        </Card>
+      </Section>
+    </div>
+  );
+}
+
+function MembersScreen({ onSelect }) {
+  const [q, setQ] = React.useState("");
+  const [filter, setFilter] = React.useState("all");
+  const list = MEMBERS.filter((m) => (filter === "all" || m.status === filter) && m.name.includes(q));
+  return (
+    <div style={{ padding: "18px 16px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.045em", margin: "0 0 16px" }}>회원</h1>
+      <Input placeholder="회원 검색" value={q} onChange={(e) => setQ(e.target.value)} containerStyle={{ marginBottom: 12 }} />
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        {[["all", "전체"], ["ot", "OT"], ["pt", "PT"], ["inactive", "종결"]].map(([k, l]) => (
+          <Chip key={k} selected={filter === k} onClick={() => setFilter(k)}>{l}</Chip>
+        ))}
+      </div>
+      {list.length ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {list.map((m) => <MemberCard key={m.id} name={m.name} status={m.status} summary={m.summary} meta={m.meta} onClick={() => onSelect(m.id)} />)}
+        </div>
+      ) : (
+        <EmptyState icon="search" title="검색 결과가 없어요" description="다른 이름이나 필터로 다시 찾아보세요." />
+      )}
+    </div>
+  );
+}
+
+function OTWorkflow({ member, onBack }) {
+  const [tab, setTab] = React.useState("ot1-prep");
+  const [briefState, setBriefState] = React.useState("idle");
+  const generate = () => { setBriefState("loading"); setTimeout(() => setBriefState("ready"), 2600); };
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px 0" }}>
+        <IconButton icon="arrow-left" label="뒤로" size="sm" onClick={onBack} />
+        <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-.035em" }}>{member.name}</span>
+        <Badge tone="ot">OT 진행</Badge>
+      </div>
+      <div style={{ padding: "12px 16px 0" }}>
+        <WorkflowTabBar group="ot" active={tab} onChange={setTab} style={{ borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden" }} />
+      </div>
+      <div style={{ padding: "18px 16px" }}>
+        {tab === "ot1-prep" && (
+          <>
+            <Card padding="15px 17px" style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".13em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>회원 기본정보</div>
+              <div style={{ fontSize: 14.5, color: "var(--ink)", lineHeight: 1.6 }}>{member.goal}<br /><span style={{ color: "var(--text-sub)", fontSize: 13 }}>{member.type} · 종이 문진 17필드 입력 완료</span></div>
+            </Card>
+            <AIBriefBlock status={briefState} title="1차 사전무장" onGenerate={generate} onRegenerate={generate}
+              waitingHint="약 45초 걸립니다. 들어가기 전에 문진표를 다시 훑어보세요.">
+              <div style={{ fontSize: 14, lineHeight: 1.65, color: "var(--text-sub)" }}>
+                <div><b style={{ color: "var(--ink)" }}>오프닝</b> — "무릎 얘기부터 여쭤볼게요. 언제부터 불편하셨어요?"</div>
+                <div><b style={{ color: "var(--ink)" }}>타깃 종목</b> — 고블릿 스쿼트 · 힙힌지 (통증 회피 각도)</div>
+                <div><b style={{ color: "var(--ink)" }}>거절 방어 · 가격</b> — "지금 등록이 아니라, 오늘 몸 상태부터 정확히 볼게요."</div>
+              </div>
+            </AIBriefBlock>
+            <Textarea label="현장 메모" rows={3} placeholder="수업 중 관찰한 것을 즉시 기입" containerStyle={{ marginTop: 16 }} />
+          </>
+        )}
+        {tab === "ot1-feedback" && (
+          <>
+            <p style={{ fontSize: 13.5, color: "var(--text-sub)", margin: "0 0 16px", lineHeight: 1.6 }}>1차에서 관찰한 것을 데이터로 남깁니다. <b style={{ color: "var(--ink)" }}>2차 AI의 유일한 근거</b>입니다.</p>
+            {["관찰 기록", "반응·성향", "진짜 목적", "종합 소견"].map((b, i) => (
+              <Textarea key={i} label={`${["①", "②", "③", "④"][i]} ${b}`} rows={2} containerStyle={{ marginBottom: 12 }} />
+            ))}
+            <Card padding="15px 17px" selected style={{ marginTop: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--red-strong)", marginBottom: 10 }}>㉠ 1차 클로징 결과</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button size="sm" variant="secondary">성공</Button>
+                <Button size="sm" variant="primary">보류</Button>
+                <Button size="sm" variant="secondary">실패</Button>
+              </div>
+            </Card>
+            <Button fullWidth style={{ marginTop: 16 }} icon="save">관찰 저장</Button>
+          </>
+        )}
+        {tab === "ot2-prep" && (
+          <>
+            <AIBriefBlock status="stale" title="2차 등록 당위성 브리핑" onRegenerate={() => {}}
+              waitingHint="약 45초 걸립니다.">
+              <div style={{ fontSize: 14, lineHeight: 1.65, color: "var(--text-sub)" }}>
+                <div><b style={{ color: "var(--ink)" }}>지금인 이유</b> — 1차에서 힙힌지 각도가 개선됐습니다. 근거가 생겼을 때 시작해야 합니다.</div>
+                <div><b style={{ color: "var(--ink)" }}>제안 패키지</b> — 주 2회 · 20회 (가격은 가격표에서 조회)</div>
+              </div>
+            </AIBriefBlock>
+            <Card padding="15px 17px" style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>㉠ 2차 클로징 결과</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button size="sm" variant="primary">성공</Button>
+                <Button size="sm" variant="secondary">보류</Button>
+                <Button size="sm" variant="secondary">실패</Button>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "12px 0 0", lineHeight: 1.5 }}>성공을 눌러도 자동 등록되지 않습니다. 계약 금액을 넣고 확정해야 PT로 전환됩니다.</p>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatsScreen() {
+  return (
+    <div style={{ padding: "18px 16px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.045em", margin: "0 0 4px" }}>내 실적</h1>
+      <p style={{ fontSize: 13.5, color: "var(--text-sub)", margin: "0 0 22px" }}>2026년 7월</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+        <StatCard label="이달 급여 (예상)" value="3,240,000" unit="원" emphasis="hero" icon="wallet" style={{ gridColumn: "1 / -1" }} />
+        <StatCard label="이달 수업" value="42" unit="회" delta="+6" deltaTone="up" icon="dumbbell" />
+        <StatCard label="클로징률" value="61" unit="%" delta="-4" deltaTone="down" icon="target" />
+      </div>
+      <Section title="이달 목표">
+        <Card><ProgressBar label="수업 50회 목표" value={42} max={50} valueLabel="42 / 50" /></Card>
+      </Section>
+      <Section title="오운완 랭킹 · 담당 회원">
+        <Card padding="0">
+          {[["박서연", "23일", 1], ["최유진", "18일", 2], ["김지훈", "9일", 3]].map(([n, d, r], i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop: i ? "1px solid var(--border)" : "none" }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: r === 1 ? "var(--red)" : "var(--text-muted)", width: 18 }}>{r}</span>
+              <span style={{ flex: 1, fontSize: 14.5, color: "var(--ink)" }}>{n}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-sub)", fontVariantNumeric: "tabular-nums" }}>연속 {d}</span>
+            </div>
+          ))}
+        </Card>
+      </Section>
+      <Button fullWidth variant="secondary" icon="file-text">월간 리포트 열기</Button>
+    </div>
+  );
+}
+
+function SettingsScreen() {
+  return (
+    <div style={{ padding: "18px 16px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.045em", margin: "0 0 22px" }}>설정</h1>
+      {[["user", "내 정보", "프로필 · 월 목표 · 비밀번호"], ["tag", "정산", "PT 패키지 가격표"], ["dumbbell", "장비/큐", "센터 장비 · AI 큐"], ["book-open", "도서관", "자료 CRUD"], ["gift", "포상", "오운완 누적 포상 정의"]].map(([ic, t, d], i) => (
+        <Card key={i} interactive padding="14px 16px" style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+            <span style={{ display: "inline-flex", width: 34, height: 34, borderRadius: 9, background: "var(--sunken)", alignItems: "center", justifyContent: "center" }}><Icon name={ic} size={17} color="var(--text-sub)" /></span>
+            <div style={{ flex: 1 }}><div style={{ fontSize: 14.5, fontWeight: 600, color: "var(--ink)" }}>{t}</div><div style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{d}</div></div>
+            <Icon name="chevron-right" size={18} color="var(--text-muted)" />
+          </div>
+        </Card>
+      ))}
+      <Button fullWidth variant="secondary" icon="log-out" style={{ marginTop: 8 }}>로그아웃</Button>
+    </div>
+  );
+}
+
+function RegisterModal({ onClose }) {
+  return (
+    <Modal title="신규 회원 등록" subtitle="종이 문진표를 앱으로 옮겨 적습니다" onClose={onClose}
+      footer={<><Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>취소</Button><Button style={{ flex: 2 }} onClick={onClose}>등록</Button></>}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+        <Input label="이름" placeholder="회원 이름" />
+        <Input label="휴대폰" placeholder="010-0000-0000" />
+        <Select label="등록 유형"><option>OT 유입</option><option>인계</option><option>외부</option></Select>
+        <Input label="목표" placeholder="예: 체중 감량 · 무릎 불편" />
+      </div>
+    </Modal>
+  );
+}
+
+function TrainerApp() {
+  const [tab, setTab] = React.useState("today");
+  const [selected, setSelected] = React.useState(null);
+  const [modal, setModal] = React.useState(false);
+  const [toast, setToast] = React.useState(false);
+
+  const member = MEMBERS.find((m) => m.id === selected);
+  const openMember = (id) => { setSelected(id); };
+  const closeMember = () => setSelected(null);
+
+  let body;
+  if (member && member.status !== "inactive") body = <OTWorkflow member={member} onBack={closeMember} />;
+  else if (member) body = <div style={{ padding: 24 }}><EmptyState icon="user-x" title={`${member.name} · 종결`} description="환불·종료된 회원입니다." /><Button fullWidth variant="secondary" onClick={closeMember}>회원 목록</Button></div>;
+  else if (tab === "today") body = <TodayScreen onGo={openMember} />;
+  else if (tab === "members") body = <MembersScreen onSelect={openMember} />;
+  else if (tab === "stats") body = <StatsScreen />;
+  else body = <SettingsScreen />;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--surface-page)" }}>
+      <Header member={member} onNew={() => setModal(true)} />
+      <div style={{ flex: 1, overflowY: "auto" }}>{body}</div>
+      <BottomNav active={tab} onChange={(k) => { setSelected(null); setTab(k); }} />
+      {modal && <RegisterModal onClose={() => { setModal(false); setToast(true); setTimeout(() => setToast(false), 2200); }} />}
+      {toast && <div style={{ position: "fixed", bottom: 78, left: "50%", transform: "translateX(-50%)", zIndex: 200 }}><Toast tone="success" message="회원을 등록했어요." /></div>}
+    </div>
+  );
+}
+
+window.TrainerApp = TrainerApp;

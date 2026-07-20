@@ -1,0 +1,19 @@
+/* 오직 트레이너 — Radius · Elevation · Motion
+ * 모서리는 한 단계씩. 그림자는 카드에만 한 종류. 애니는 짧고 감속. */
+:root{
+  --radius-sm:4px;         /* code · 포커스 */
+  --radius-control:10px;   /* 버튼 · 입력칸 · 칩 */
+  --radius-card:14px;      /* 카드 */
+  --radius-card-lg:16px;   /* 큰 카드 · 시트 */
+  --radius-pill:999px;     /* 알약형 */
+
+  /* 그림자 — 얕고 넓게 한 종류. 위계는 배경 명도로 만든다 */
+  --shadow-card:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+  --shadow-pop:0 4px 12px rgba(19,21,27,.08), 0 24px 48px -20px rgba(19,21,27,.4);
+
+  /* 모션 — 140~220ms 감속. 장식적 애니 금지 */
+  --ease-out:cubic-bezier(.22,.9,.28,1); /* @kind other */
+  --dur-fast:140ms; /* @kind other */
+  --dur:180ms; /* @kind other */
+  --dur-slow:220ms; /* @kind other */
+}

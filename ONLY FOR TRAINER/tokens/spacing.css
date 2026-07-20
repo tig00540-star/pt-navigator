@@ -1,0 +1,21 @@
+/* 오직 트레이너 — Spacing tokens (4px 기준) */
+:root{
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-8:32px;
+  --space-10:40px;
+  --space-12:48px;
+  --space-16:64px;
+
+  /* 자주 쓰는 맥락값 */
+  --gap-card:14px;         /* 카드 내부 요소 간격 */
+  --pad-card:20px;         /* 카드 안쪽 여백 */
+  --pad-control-x:16px;    /* 버튼·입력칸 좌우 */
+  --pad-control-y:11px;    /* 버튼·입력칸 상하 */
+  --page-max:1180px;       /* 문서 셸 최대폭 */
+  --app-max:480px;         /* 트레이너/회원앱 뷰포트폭 */
+}

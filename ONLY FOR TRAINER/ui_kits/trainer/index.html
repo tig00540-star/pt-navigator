@@ -1,0 +1,19 @@
+<!-- @dsCard group="Trainer App" viewport="430x820" name="트레이너 앱" subtitle="오늘 · 회원 · OT 워크플로우 · 내 실적 (클릭스루)" -->
+<!-- @startingPoint section="Trainer App" subtitle="트레이너 앱 전체 클릭스루" viewport="430x820" -->
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>오직 트레이너 — 트레이너 앱</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0;height:100%;background:var(--sunken)}#root{height:100vh;max-width:430px;margin:0 auto;background:var(--surface-page);box-shadow:0 0 60px rgba(19,21,27,.12);overflow:hidden}</style></head>
+<body><div id="root"></div>
+<script type="text/babel" src="TrainerApp.jsx"></script>
+<script type="text/babel">
+(function mount(){
+  if(!window.TrainerApp){ return setTimeout(mount, 40); }
+  const App = window.TrainerApp;
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+})();
+</script></body></html>

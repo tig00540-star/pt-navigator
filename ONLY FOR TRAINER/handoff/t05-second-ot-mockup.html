@@ -1,0 +1,102 @@
+<!-- @dsCard group="Handoff" viewport="430x900" name="T-05 · 2차 OT 준비 (리뉴얼 목업)" subtitle="AIBriefBlock이 사는 실제 화면. 재작성 맥락 검증용" -->
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>T-05 2차 OT 준비 — 목업</title>
+<link rel="stylesheet" href="../styles.css">
+<!-- 로컬 실행용 shim — tokens/fonts.css가 가리키는 OTF가 저장소에 없어 공식 CDN 웹폰트로 대체 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<style>html,body{margin:0;height:100%;background:var(--sunken)}#root{height:100vh;max-width:430px;margin:0 auto;background:var(--surface-page);box-shadow:0 0 60px rgba(19,21,27,.12);display:flex;flex-direction:column;overflow:hidden}</style></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { AIBriefBlock, WorkflowTabBar, BottomNav, Card, Badge, Button, IconButton, Icon } = window.DesignSystem_ac3846;
+
+function Sec({title,children,right}){return(
+  <div style={{marginBottom:20}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+      <span style={{fontSize:11,fontWeight:700,letterSpacing:'.14em',textTransform:'uppercase',color:'var(--text-muted)'}}>{title}</span>{right}
+    </div>{children}
+  </div>);}
+
+function Screen(){
+  const [brief,setBrief]=React.useState("stale");
+  const [result,setResult]=React.useState(null);
+  const gen=()=>{setBrief("loading");setTimeout(()=>setBrief("ready"),2800);};
+  return(
+    <>
+      <header style={{display:'flex',alignItems:'center',gap:10,padding:'12px 16px',background:'var(--surface-card)',borderBottom:'1px solid var(--border)'}}>
+        <img src="../assets/logo-symbol.svg" width="24" height="24" alt=""/>
+        <span style={{fontSize:16,fontWeight:800,letterSpacing:'-.05em',color:'var(--ink)'}}>오직 <span style={{color:'var(--red)'}}>트레이너</span></span>
+        <span style={{flex:1}}/>
+        <IconButton icon="bell" label="공지" size="sm"/>
+        <IconButton icon="user-plus" label="신규 등록" size="sm" variant="primary"/>
+      </header>
+      <div style={{display:'flex',alignItems:'center',gap:9,padding:'12px 16px 0'}}>
+        <IconButton icon="arrow-left" label="뒤로" size="sm"/>
+        <span style={{fontSize:17,fontWeight:800,letterSpacing:'-.035em'}}>박서연</span>
+        <Badge tone="ot">OT 진행</Badge>
+        <span style={{flex:1}}/>
+        <Button variant="ghost" size="sm" icon="pencil">정보 수정</Button>
+      </div>
+      <div style={{padding:'12px 16px 0'}}>
+        <WorkflowTabBar group="ot" active="ot2-prep" style={{borderRadius:12,border:'1px solid var(--border)',overflow:'hidden'}}/>
+      </div>
+
+      <div style={{flex:1,overflowY:'auto',padding:'18px 16px 24px'}}>
+        <Sec title="AI 등록 당위성 브리핑">
+          <AIBriefBlock status={brief} title="2차 등록 당위성 브리핑" onGenerate={gen} onRegenerate={gen}
+            waitingHint="약 45초 걸립니다. 들어가기 전에 1차 관찰을 다시 훑어보세요.">
+            <div style={{fontSize:14,lineHeight:1.65,color:'var(--text-sub)'}}>
+              <div><b style={{color:'var(--ink)'}}>지금인 이유</b> — 1차에서 힙힌지 각도가 개선됐습니다. 근거가 생겼을 때 시작해야 합니다.</div>
+              <div><b style={{color:'var(--ink)'}}>거절 방어 · 비용</b> — "회당 비용이 아니라, 무릎 없이 3개월 뒤를 사는 겁니다."</div>
+            </div>
+          </AIBriefBlock>
+        </Sec>
+
+        <Sec title="조정팁 · 2차 루틴">
+          <Card padding="15px 17px">
+            <div style={{fontSize:14,lineHeight:1.65,color:'var(--text-sub)'}}>고블릿 스쿼트로 무릎 부담을 낮추고, 힙힌지 패턴을 먼저 잡습니다. <span style={{color:'var(--text-muted)'}}>방향과 원리만 · 세트·중량은 트레이너 판단</span></div>
+          </Card>
+        </Sec>
+
+        <Sec title="패키지 제안 · 가격표 연동">
+          <Card padding="0">
+            {[["주 2회 · 20회","1,200,000",true],["주 3회 · 30회","1,680,000",false]].map(([n,p,on],i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderTop:i?'1px solid var(--border)':'none',background:on?'var(--surface-selected)':'transparent'}}>
+                <Icon name={on?"check-circle-2":"circle"} size={18} color={on?"var(--red)":"var(--text-muted)"}/>
+                <span style={{flex:1,fontSize:14.5,fontWeight:on?700:500,color:'var(--ink)'}}>{n}</span>
+                <span style={{fontSize:15,fontWeight:800,color:on?'var(--red-strong)':'var(--ink)',fontVariantNumeric:'tabular-nums'}}>{p}원</span>
+              </div>
+            ))}
+          </Card>
+        </Sec>
+
+        <Sec title="과거 케이스 거울">
+          <Card padding="13px 16px">
+            <div style={{display:'flex',gap:11,alignItems:'flex-start'}}>
+              <Icon name="history" size={18} color="var(--text-muted)" style={{marginTop:2}}/>
+              <div style={{fontSize:13.5,color:'var(--text-sub)',lineHeight:1.55}}>비슷한 무릎 이슈로 시작한 <b style={{color:'var(--ink)'}}>3명 중 3명</b>이 등록 후 8주차에 통증 없이 스쿼트에 성공했습니다.</div>
+            </div>
+          </Card>
+        </Sec>
+
+        <Sec title="㉠ 2차 클로징 결과">
+          <Card padding="15px 17px">
+            <div style={{display:'flex',gap:8,marginBottom:result?12:0}}>
+              {[["success","성공"],["hold","보류"],["fail","실패"]].map(([k,l])=>(
+                <Button key={k} size="sm" variant={result===k?"primary":"secondary"} onClick={()=>setResult(k)} style={{flex:1}}>{l}</Button>
+              ))}
+            </div>
+            {result==="success" && <div style={{fontSize:12.5,color:'var(--text-muted)',lineHeight:1.5}}>성공을 눌러도 자동 등록되지 않습니다. 계약 금액을 넣고 확정해야 PT로 전환됩니다.<Button size="sm" style={{marginTop:10}} icon="check">PT 등록 확정</Button></div>}
+            {result==="hold" && <div style={{fontSize:12.5,color:'var(--text-muted)'}}>접근 방향 + 재접근일을 기록하면 그날 '오늘' 화면에 자동 등장합니다.</div>}
+          </Card>
+        </Sec>
+      </div>
+      <BottomNav active="members"/>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Screen/>);
+</script></body></html>

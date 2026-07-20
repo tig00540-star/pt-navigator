@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>토큰·폰트 적용 시 변화 — 오직 트레이너</title>
+
+<!-- Pretendard (웹폰트 · 공식 배포본) — 디자인 시스템 패널 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<!-- Geist — '현재' 패널을 실제 앱과 똑같이 만들기 위해 로드 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap">
+
+<style>
+  /* ── 페이지 크롬 ── */
+  :root{
+    --pg:#f1f2f6; --pg-card:#fff; --pg-line:#dfe2ea; --pg-ink:#13151b;
+    --pg-sub:#475569; --pg-muted:#5b6675; --pg-red:#dc2626; --pg-red-t:#b91c1c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --pg:#0e0f13; --pg-card:#17191f; --pg-line:#282b34; --pg-ink:#f0f1f4;
+           --pg-sub:#b0b5c0; --pg-muted:#8d94a1; --pg-red:#f2564a; --pg-red-t:#ff7b6e; }
+  }
+  :root[data-theme="dark"]{ --pg:#0e0f13; --pg-card:#17191f; --pg-line:#282b34; --pg-ink:#f0f1f4;
+           --pg-sub:#b0b5c0; --pg-muted:#8d94a1; --pg-red:#f2564a; --pg-red-t:#ff7b6e; }
+  :root[data-theme="light"]{ --pg:#f1f2f6; --pg-card:#fff; --pg-line:#dfe2ea; --pg-ink:#13151b;
+           --pg-sub:#475569; --pg-muted:#5b6675; --pg-red:#dc2626; --pg-red-t:#b91c1c; }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; background:var(--pg); color:var(--pg-ink);
+    font-family:"Pretendard",-apple-system,"Malgun Gothic",system-ui,sans-serif;
+    line-height:1.7; letter-spacing:-.011em; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:40px 24px 80px; }
+  h1{ font-size:clamp(24px,4vw,32px); font-weight:800; letter-spacing:-.04em; margin:0 0 10px; }
+  h2{ font-size:19px; font-weight:800; letter-spacing:-.035em; margin:44px 0 6px; }
+  .lede{ color:var(--pg-sub); font-size:15px; max-width:64ch; margin:0 0 8px; }
+  .eyebrow{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--pg-muted); margin:0 0 12px; }
+  code{ font-family:ui-monospace,Menlo,monospace; font-size:.88em; background:var(--pg-line);
+    padding:1px 5px; border-radius:4px; letter-spacing:0; }
+
+  /* ── 비교 판 ── */
+  .compare{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:22px 0 0; }
+  @media (max-width:860px){ .compare{ grid-template-columns:1fr; } }
+  .pane{ border:1px solid var(--pg-line); border-radius:18px; overflow:hidden; background:var(--pg-card); }
+  .pane-tag{ display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:11px 15px; border-bottom:1px solid var(--pg-line); }
+  .pane-tag b{ font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--pg-muted); }
+  .pane-tag span{ font-size:11px; color:var(--pg-muted); }
+  .badge{ font-size:10px; font-weight:700; letter-spacing:.08em; padding:2px 8px; border-radius:999px;
+    background:var(--pg-red); color:#fff; text-transform:uppercase; }
+
+  /* ══════════════════════════════════════════
+     스킨 — 각 패널은 자기 토큰만 본다 (하드코딩)
+     ══════════════════════════════════════════ */
+  .skin{ padding:22px 18px 26px; background:var(--s-bg); color:var(--s-ink);
+    font-family:var(--s-font); display:flex; flex-direction:column; gap:var(--s-gap); }
+
+  /* 지금 앱 — globals.css 실제 값 + Geist 스택 */
+  .skin.now{
+    --s-bg:#eef1f5; --s-card:#ffffff; --s-elevate:#f4f6fa; --s-line:#e6e9ef;
+    --s-ink:#0f172a; --s-sub:#475569; --s-muted:#5b6675;
+    --s-red:#dc2626; --s-red-t:#b91c1c; --s-red-soft:#fef2f2; --s-on-red:#fff;
+    --s-ot:#f59e0b; --s-ot-t:#b45309; --s-ot-soft:#fffbeb;
+    /* 앱 layout.js의 실제 스택 그대로. Geist는 라틴 전용이라 한글은 여기서 폴백된다 */
+    --s-font:"Geist",ui-sans-serif,system-ui,sans-serif;
+    --s-r-card:16px; --s-r-ctrl:12px; --s-r-pill:999px;
+    --s-shadow:0 1px 2px 0 rgba(0,0,0,.05);
+    --s-gap:14px; --s-pad:16px;
+    --s-fw-body:400; --s-fw-bold:700;
+    --s-ls-h:-.025em; --s-ls-body:0em;
+  }
+  /* 디자인 시스템 — tokens/*.css 값 그대로 */
+  .skin.ds{
+    --s-bg:#f1f2f6; --s-card:#ffffff; --s-elevate:#e8eaf0; --s-line:#dfe2ea;
+    --s-ink:#13151b; --s-sub:#475569; --s-muted:#5b6675;
+    --s-red:#dc2626; --s-red-t:#b91c1c; --s-red-soft:#fef2f2; --s-on-red:#fff;
+    --s-ot:#f59e0b; --s-ot-t:#b45309; --s-ot-soft:#fffbeb;
+    --s-font:"Pretendard",-apple-system,"Malgun Gothic",system-ui,sans-serif;
+    --s-r-card:14px; --s-r-ctrl:10px; --s-r-pill:999px;
+    --s-shadow:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+    --s-gap:14px; --s-pad:20px;
+    --s-fw-body:450; --s-fw-bold:700;
+    --s-ls-h:-.035em; --s-ls-body:-.011em;
+  }
+
+  /* ── 앱 UI 조각 (양쪽 마크업 100% 동일) ── */
+  .app-head{ display:flex; align-items:center; gap:10px; }
+  .wm{ font-size:19px; font-weight:800; letter-spacing:var(--s-ls-h); line-height:1; }
+  .wm i{ font-style:normal; color:var(--s-red); }
+  .who{ margin-left:auto; font-size:12px; color:var(--s-muted); letter-spacing:var(--s-ls-body); }
+
+  .tabbar{ display:flex; gap:6px; }
+  .tab{ font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:var(--s-r-pill);
+    background:var(--s-card); border:1px solid var(--s-line); color:var(--s-muted);
+    letter-spacing:var(--s-ls-body); white-space:nowrap; }
+  .tab.on{ background:var(--s-ot-soft); border-color:var(--s-ot); color:var(--s-ot-t); }
+
+  .card{ background:var(--s-card); border:1px solid var(--s-line); border-radius:var(--s-r-card);
+    padding:var(--s-pad); box-shadow:var(--s-shadow); display:flex; flex-direction:column; gap:var(--s-gap); }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .m-name{ font-size:16.5px; font-weight:700; letter-spacing:var(--s-ls-h); }
+  .pill{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:var(--s-r-pill);
+    background:var(--s-red-soft); color:var(--s-red-t); letter-spacing:var(--s-ls-body); }
+  .meta{ font-size:13px; color:var(--s-sub); letter-spacing:var(--s-ls-body); line-height:1.6; }
+  .lbl{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--s-muted); }
+
+  .bar{ height:7px; border-radius:999px; background:var(--s-elevate); overflow:hidden; }
+  .bar i{ display:block; height:100%; width:68%; border-radius:999px; background:var(--s-red); }
+
+  .stat{ font-size:26px; font-weight:700; letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums; color:var(--s-ink); }
+  .stat.hero{ color:var(--s-red-t); }
+
+  .btn{ display:block; text-align:center; padding:11px 16px; border-radius:var(--s-r-ctrl);
+    background:var(--s-red); color:var(--s-on-red); font-size:14.5px; font-weight:700;
+    letter-spacing:-.02em; }
+  .btn.ghost{ background:transparent; color:var(--s-ink); box-shadow:inset 0 0 0 1px var(--s-line); }
+
+  .input{ padding:11px 16px; border-radius:var(--s-r-ctrl); background:var(--s-card);
+    border:1px solid var(--s-line); font-size:14.5px; color:var(--s-muted);
+    letter-spacing:var(--s-ls-body); font-family:var(--s-font); }
+
+  .brief{ background:var(--s-card); border:1px solid var(--s-line); border-radius:var(--s-r-card);
+    padding:var(--s-pad); box-shadow:var(--s-shadow); }
+  .brief h4{ font-size:15px; font-weight:700; letter-spacing:var(--s-ls-h); margin:0 0 7px; }
+  .brief p{ margin:0; font-size:14px; color:var(--s-sub); line-height:1.7; letter-spacing:var(--s-ls-body);
+    font-weight:var(--s-fw-body); }
+
+  .bnav{ display:flex; gap:4px; background:var(--s-card); border:1px solid var(--s-line);
+    border-radius:var(--s-r-card); padding:7px; }
+  .bnav div{ flex:1; text-align:center; font-size:11px; font-weight:600; padding:7px 2px;
+    border-radius:var(--s-r-ctrl); color:var(--s-muted); letter-spacing:var(--s-ls-body); }
+  .bnav div.on{ background:var(--s-red-soft); color:var(--s-red-t); }
+
+  .body-copy{ font-size:15.5px; font-weight:var(--s-fw-body); color:var(--s-ink);
+    line-height:1.7; letter-spacing:var(--s-ls-body); }
+
+  /* ── 표 ── */
+  .tw{ overflow-x:auto; border:1px solid var(--pg-line); border-radius:14px;
+    background:var(--pg-card); margin:18px 0; }
+  table{ border-collapse:collapse; width:100%; min-width:600px; }
+  th,td{ text-align:left; padding:12px 16px; border-bottom:1px solid var(--pg-line);
+    font-size:13.5px; vertical-align:top; }
+  th{ font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--pg-muted); }
+  tbody tr:last-child td{ border-bottom:0; }
+  td{ color:var(--pg-sub); }
+  td.key{ color:var(--pg-ink); font-weight:700; letter-spacing:-.028em; white-space:nowrap; }
+  .mono{ font-family:ui-monospace,Menlo,monospace; font-size:12.5px; letter-spacing:0; white-space:nowrap; }
+  .sq{ display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:7px;
+    vertical-align:-1px; border:1px solid rgba(128,128,128,.3); }
+
+  .note{ background:var(--pg-card); border:1px solid var(--pg-line); border-radius:14px;
+    padding:20px 22px; margin:18px 0; }
+  .note.flag{ border-color:var(--pg-red); }
+  .note p{ margin:0 0 9px; font-size:14.5px; color:var(--pg-sub); }
+  .note p:last-child{ margin:0; }
+  .note b{ color:var(--pg-ink); }
+  #fontcheck{ font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Sample · 토큰 + 폰트만 적용</p>
+  <h1>바꾸면 이렇게 보입니다</h1>
+  <p class="lede">
+    양쪽 <strong>마크업은 100% 동일</strong>합니다. 다른 것은 CSS 변수값과 서체뿐입니다 —
+    JSX·로직은 한 줄도 손대지 않는 범위에서 무엇이 달라지는지 보여주는 게 목적입니다.
+  </p>
+  <p class="lede" id="fontcheck">폰트 로딩 확인 중…</p>
+
+  <h2>회원 워크플로우 화면</h2>
+  <div class="compare">
+
+    <!-- 현재 -->
+    <div class="pane">
+      <div class="pane-tag"><b>현재</b><span>globals.css · Geist</span></div>
+      <div class="skin now">
+        <div class="app-head">
+          <span class="wm">오직 <i>트레이너</i></span>
+          <span class="who">박서준 트레이너</span>
+        </div>
+        <div class="tabbar">
+          <div class="tab on">1차 OT 준비</div>
+          <div class="tab">1차 피드백</div>
+          <div class="tab">2차 OT</div>
+        </div>
+        <div class="card">
+          <div class="row">
+            <span class="m-name">김서연 회원</span>
+            <span class="pill">2차 OT 대기</span>
+          </div>
+          <div class="meta">34세 · 사무직 · 좌식 생활<br>목표 — 허리 불편 없이 오래 앉아 있기</div>
+          <div>
+            <div class="row" style="margin-bottom:7px">
+              <span class="lbl">등록 준비도</span><span class="meta">68%</span>
+            </div>
+            <div class="bar"><i></i></div>
+          </div>
+        </div>
+        <div class="card">
+          <span class="lbl">이번 달 정산</span>
+          <div class="stat hero">1,240,000원</div>
+          <div class="meta">미확정 · 기본 980,000원 + 인센 260,000원</div>
+        </div>
+        <div class="brief">
+          <h4>등록 당위성 브리핑</h4>
+          <p>1차에서 좌측 골반이 앞으로 밀린 채 스쿼트가 들어갔습니다. 혼자 하면 그 패턴이 굳습니다.
+             오늘은 세팅만 잡아 통증 없이 나오는 걸 보여주고, 그 자리에서 말하세요.</p>
+        </div>
+        <div class="input">회원 이름으로 검색</div>
+        <div class="btn">2차 브리핑 열기</div>
+        <div class="btn ghost">나중에</div>
+        <div class="bnav">
+          <div class="on">오늘</div><div>회원</div><div>내 실적</div><div>설정</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 디자인 시스템 -->
+    <div class="pane">
+      <div class="pane-tag"><b>디자인 시스템</b><span class="badge">적용 후</span></div>
+      <div class="skin ds">
+        <div class="app-head">
+          <span class="wm">오직 <i>트레이너</i></span>
+          <span class="who">박서준 트레이너</span>
+        </div>
+        <div class="tabbar">
+          <div class="tab on">1차 OT 준비</div>
+          <div class="tab">1차 피드백</div>
+          <div class="tab">2차 OT</div>
+        </div>
+        <div class="card">
+          <div class="row">
+            <span class="m-name">김서연 회원</span>
+            <span class="pill">2차 OT 대기</span>
+          </div>
+          <div class="meta">34세 · 사무직 · 좌식 생활<br>목표 — 허리 불편 없이 오래 앉아 있기</div>
+          <div>
+            <div class="row" style="margin-bottom:7px">
+              <span class="lbl">등록 준비도</span><span class="meta">68%</span>
+            </div>
+            <div class="bar"><i></i></div>
+          </div>
+        </div>
+        <div class="card">
+          <span class="lbl">이번 달 정산</span>
+          <div class="stat hero">1,240,000원</div>
+          <div class="meta">미확정 · 기본 980,000원 + 인센 260,000원</div>
+        </div>
+        <div class="brief">
+          <h4>등록 당위성 브리핑</h4>
+          <p>1차에서 좌측 골반이 앞으로 밀린 채 스쿼트가 들어갔습니다. 혼자 하면 그 패턴이 굳습니다.
+             오늘은 세팅만 잡아 통증 없이 나오는 걸 보여주고, 그 자리에서 말하세요.</p>
+        </div>
+        <div class="input">회원 이름으로 검색</div>
+        <div class="btn">2차 브리핑 열기</div>
+        <div class="btn ghost">나중에</div>
+        <div class="bnav">
+          <div class="on">오늘</div><div>회원</div><div>내 실적</div><div>설정</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>먼저 짚을 것 — 지금 한글은 폰트가 정해져 있지 않습니다</h2>
+  <div class="note flag">
+    <p>샘플을 만들다 실제 앱을 측정해보고 발견한 사실입니다.
+       앱의 서체 스택은 <code>Geist, ui-sans-serif, system-ui, sans-serif</code>인데,
+       <b>Geist에는 한글 글리프가 없습니다.</b> 라틴 문자와 숫자만 Geist로 그려지고,
+       <b>한글은 전부 그 다음 순위인 기기 기본 폰트로 떨어집니다.</b></p>
+    <p>브라우저에서 폭을 재서 확인했습니다 — 같은 한글 문장을 Geist로 지정했을 때와
+       존재하지 않는 폰트로 지정했을 때의 폭이 <b>사실상 같습니다</b>(154.22px vs 155.62px).
+       반면 Pretendard는 뚜렷하게 다릅니다(145.63px). Geist가 한글을 안 그린다는 증거입니다.</p>
+    <p>결과적으로 지금 앱은 <b>한 화면에 두 서체가 섞여</b> 있습니다 — 숫자·영문은 Geist,
+       한글은 시스템 폰트. 그리고 그 시스템 폰트는 <b>기기마다 다릅니다</b>
+       (윈도우는 맑은 고딕, 아이폰은 애플 SD 고딕, 안드로이드는 노토). 한국어 앱인데
+       정작 한글 조판이 통제되지 않는 상태입니다.</p>
+    <p>Pretendard는 한글과 라틴을 한 벌로 덮습니다. 즉 이 변경은 단순히
+       "예쁜 폰트로 바꾸기"가 아니라 <b>기기마다 달랐던 한글을 하나로 고정하는 일</b>입니다.</p>
+  </div>
+
+  <h2>본문 조판만 따로</h2>
+  <p class="lede">
+    한글에서 가장 크게 체감되는 부분입니다. 같은 문장, 같은 크기(15.5px), 같은 폭의 상자입니다.
+    왼쪽이 3줄, 오른쪽이 2줄로 떨어지는 건 Pretendard가 더 좁고 자간이 조여져서입니다.
+  </p>
+  <div class="compare">
+    <div class="pane">
+      <div class="pane-tag"><b>현재</b><span>Geist · 400 · 자간 0</span></div>
+      <div class="skin now" style="padding:26px 22px">
+        <p class="body-copy">회원이 처음 말한 목표와 지난 8주의 기록을 나란히 놓고 이야기를 시작합니다.
+        설득하지 않아도 됩니다. 숫자가 이미 말하고 있으니까요.</p>
+      </div>
+    </div>
+    <div class="pane">
+      <div class="pane-tag"><b>디자인 시스템</b><span>Pretendard · 450 · −.011em</span></div>
+      <div class="skin ds" style="padding:26px 22px">
+        <p class="body-copy">회원이 처음 말한 목표와 지난 8주의 기록을 나란히 놓고 이야기를 시작합니다.
+        설득하지 않아도 됩니다. 숫자가 이미 말하고 있으니까요.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>실제로 바뀌는 값</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th>항목</th><th>현재</th><th>디자인 시스템</th><th>체감</th></tr></thead>
+      <tbody>
+        <tr><td class="key">서체 (한글)</td><td class="mono">기기 기본 폰트<br>(제각각)</td><td class="mono">Pretendard</td>
+          <td><strong>가장 큼</strong> — 기기마다 달랐던 한글이 하나로 고정됨</td></tr>
+        <tr><td class="key">서체 (영문·숫자)</td><td class="mono">Geist</td><td class="mono">Pretendard</td>
+          <td>한글과 같은 벌이 되어 섞임이 사라짐</td></tr>
+        <tr><td class="key">본문 굵기</td><td class="mono">400</td><td class="mono">450</td>
+          <td>글이 조금 또렷해짐</td></tr>
+        <tr><td class="key">본문 자간</td><td class="mono">0</td><td class="mono">−.011em</td>
+          <td>한글이 헐거워 보이지 않게 조여짐</td></tr>
+        <tr><td class="key">먹색</td>
+          <td class="mono"><i class="sq" style="background:#0f172a"></i>#0f172a</td>
+          <td class="mono"><i class="sq" style="background:#13151b"></i>#13151b</td>
+          <td>푸른기 빠진 중립 검정</td></tr>
+        <tr><td class="key">바탕</td>
+          <td class="mono"><i class="sq" style="background:#eef1f5"></i>#eef1f5</td>
+          <td class="mono"><i class="sq" style="background:#f1f2f6"></i>#f1f2f6</td>
+          <td>거의 동일 (미세)</td></tr>
+        <tr><td class="key">경계선</td>
+          <td class="mono"><i class="sq" style="background:#e6e9ef"></i>#e6e9ef</td>
+          <td class="mono"><i class="sq" style="background:#dfe2ea"></i>#dfe2ea</td>
+          <td>카드 윤곽이 살짝 또렷</td></tr>
+        <tr><td class="key">카드 모서리</td><td class="mono">16px</td><td class="mono">14px</td>
+          <td>덜 둥글어 도구다워짐</td></tr>
+        <tr><td class="key">버튼 모서리</td><td class="mono">12px</td><td class="mono">10px</td><td>동일 방향</td></tr>
+        <tr><td class="key">카드 그림자</td><td class="mono">얕은 1단</td><td class="mono">2단(근접+확산)</td>
+          <td>카드가 종이처럼 떠 보임</td></tr>
+        <tr><td class="key">카드 안쪽 여백</td><td class="mono">16px</td><td class="mono">20px</td>
+          <td>숨통이 트임</td></tr>
+        <tr><td class="key">새로 생기는 것</td><td class="mono">—</td>
+          <td class="mono">역할색·간격·모션 토큰</td>
+          <td>amber/sky/fuchsia를 클래스가 아닌 토큰으로 관리</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note flag">
+    <p><b>이 범위에서 안 바뀌는 것</b></p>
+    <p>레이아웃 구조, 탭 순서, 컴포넌트 배치, 동작 — 전부 그대로입니다.
+       <code>globals.css</code> 한 파일과 폰트 설정만 건드리므로 <b>기능 회귀 위험이 사실상 없습니다.</b></p>
+    <p>반대로 말하면, 디자인 시스템이 제안하는 <b>새로운 컴포넌트 형태</b>(Button·Input·Modal 등의
+       구조와 여백 규칙)는 이 범위로는 들어오지 않습니다. 그건 화면 JSX를 다시 쓰는 별개 작업입니다.</p>
+  </div>
+
+  <div class="note">
+    <p><b>폰트 적용 방식</b></p>
+    <p>디자인 시스템에는 Pretendard가 <b>OTF 9종</b>으로 들어 있는데, 웹에 그대로 쓰면 용량이 큽니다.
+       실제 적용할 때는 <code>woff2</code>로 <code>next/font/local</code>에 붙이는 게 맞습니다 —
+       Next가 자동으로 서브셋·프리로드를 처리해 첫 화면 깜빡임도 줄어듭니다.</p>
+    <p>이 미리보기는 확인용으로 공식 CDN 웹폰트를 불러왔습니다. 실제 앱은 CDN에 의존하지 않고
+       폰트를 저장소에 넣습니다.</p>
+  </div>
+
+</div>
+
+<script>
+  // 폰트가 실제로 로드됐는지 확인 — 안 되면 비교가 무의미하므로 명시한다
+  (function () {
+    var el = document.getElementById("fontcheck");
+    function verdict() {
+      var p = false, g = false;
+      try { p = document.fonts.check('700 16px "Pretendard"'); } catch (e) {}
+      try { g = document.fonts.check('700 16px "Geist"'); } catch (e) {}
+      if (p && g) {
+        el.innerHTML = '✅ Pretendard·Geist 모두 로드됨 — 양쪽 패널 다 실제 렌더링입니다.';
+        el.style.color = "var(--pg-sub)";
+      } else {
+        el.innerHTML = '⚠️ <b>폰트를 불러오지 못했습니다'
+          + (p ? '' : ' (Pretendard)') + (g ? '' : ' (Geist)')
+          + '.</b> 해당 패널의 서체는 대체 폰트라 실제와 다릅니다 — 네트워크를 확인해 주세요.';
+        el.style.color = "var(--pg-red-t)";
+      }
+    }
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(verdict); }
+    else { setTimeout(verdict, 1200); }
+  })();
+</script>
+</body>
+</html>
