@@ -32,6 +32,7 @@ import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import PayrollConfirm from "@/components/PayrollConfirm";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
+import BrandMark from "@/components/ui/BrandMark";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -40,7 +41,7 @@ import Card from "@/components/ui/Card";
 // rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
 const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
-// admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). indigo accent.
+// admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
   { id: "perf",    label: "실적" },
   { id: "qc",      label: "QC" },
@@ -323,18 +324,20 @@ export default function AdminDashboard() {
 
               위아래를 바꿨다 — 원래는 10px 'Admin · 총괄 경영'이 위, 14px 센터명이 아래였다.
               트레이너 화면은 '누구인지'가 크게 위(오직 트레이너), '무슨 역할인지'가 작게 아래다.
-              같은 규칙이면 센터명이 위다. 역할 줄만 indigo를 유지해 관리자 화면임을 표시한다.
-              (트레이너 쪽은 이 자리가 text-muted) */}
+              같은 규칙이면 센터명이 위다. 역할 줄만 fuchsia로 관리자 화면임을 표시한다.
+              (트레이너 쪽은 이 자리가 text-muted)
+
+              마크는 방패 아이콘에서 브랜드 심볼로 바꿨다 — 방패는 앱 어디에도 없는 도형이라
+              같은 제품으로 안 읽혔다. 링·중심점은 그대로 두고 침만 관리자 색으로 칠한다.
+              같은 마크·다른 침색 = 같은 제품·다른 역할. */}
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-lg shadow-indigo-500/30">
-              <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </div>
+            <BrandMark accent="admin" title="오직 트레이너 관리자" className="h-9 w-9 shrink-0 rounded-lg shadow-sm" />
             <div className="min-w-0">
               {/* 센터명은 길 수 있다(폰 폭) — truncate로 로크업이 밀리지 않게. */}
               <div className="max-w-[150px] truncate text-[17px] font-extrabold leading-none tracking-[-0.04em] text-ink sm:max-w-none">
                 {centerName || "내 센터"}
               </div>
-              <div className="mt-1 text-[12px] font-medium leading-none text-indigo-700">
+              <div className="mt-1 text-[12px] font-medium leading-none text-fuchsia-700">
                 Admin · 총괄 경영
               </div>
             </div>
@@ -356,16 +359,16 @@ export default function AdminDashboard() {
             </Link>
           </div>
         </div>
-        {/* 섹션 탭 네비 (admin indigo) */}
+        {/* 섹션 탭 네비 (admin fuchsia) */}
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
             {ATABS.map((t) => {
               const active = atab === t.id;
               return (
                 <button key={t.id} onClick={() => setAtab(t.id)}
-                  className={`relative px-4 py-2.5 text-xs font-semibold transition ${active ? "text-indigo-700" : "text-muted hover:text-ink"}`}>
+                  className={`relative px-4 py-2.5 text-xs font-semibold transition ${active ? "text-fuchsia-700" : "text-muted hover:text-ink"}`}>
                   {t.label}
-                  {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-500" />}
+                  {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-fuchsia-500" />}
                 </button>
               );
             })}
@@ -683,7 +686,7 @@ export default function AdminDashboard() {
               주 거주 <span className="font-semibold text-primary-strong">{agg.topResidence}</span>
             </span>
             <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
-              주 통증 <span className="font-semibold text-indigo-700">{agg.topPain}</span>
+              주 통증 <span className="font-semibold text-fuchsia-700">{agg.topPain}</span>
             </span>
             <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
               주 직군 <span className="font-semibold text-cyan-700">{agg.topJob}</span>
@@ -699,8 +702,8 @@ export default function AdminDashboard() {
                   className="flex flex-col rounded-2xl border border-line bg-card shadow-sm p-5"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/20 to-indigo-600/20">
-                      <Icon className="h-4 w-4 text-indigo-700" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500/20 to-fuchsia-600/20">
+                      <Icon className="h-4 w-4 text-fuchsia-700" />
                     </div>
                     <div className="text-[11px] font-semibold text-sub">{c.platform}</div>
                   </div>
