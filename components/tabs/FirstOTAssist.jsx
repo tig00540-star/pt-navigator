@@ -17,8 +17,7 @@ import {
   CreditCard,
   Flag,
 } from "lucide-react";
-import Eyebrow from "@/components/ui/Eyebrow";
-import Button from "@/components/ui/Button";
+import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { won } from "@/lib/format";
@@ -186,71 +185,36 @@ export default function FirstOTAssist({ member }) {
   // 구캐시(구 스키마) 감지 — 신필드 전무면 '이전 형식' 안내 후 재생성 유도.
   const legacyCache = Boolean(data) && !op.line && !te.exercise && obj.length === 0;
 
+  /* AIBriefBlock 상태 매핑 — 이 탭은 데모 폴백이 없다(실패 시 미표시).
+     그래서 "demo"는 쓰지 않고 idle/loading/ready/stale 네 가지만 쓴다. */
+  const briefStatus = loading ? "loading" : !data ? "idle" : stale ? "stale" : "ready";
+
   return (
-    <section className="rounded-2xl border border-line bg-card shadow-sm p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Eyebrow icon={Sparkles}>① AI 1차 OT 지원 (가설)</Eyebrow>
-        <Button
-          variant={sameInput && !loading ? "ghost" : "primary"}
-          size="md"
-          onClick={generate}
-          disabled={loading}
-          title={sameInput ? "회원 정보가 바뀌면 다시 생성하세요 (지금은 같은 입력)" : undefined}
-          className="gap-2"
-        >
-          <Sparkles className="h-4 w-4" strokeWidth={2.5} /> {loading ? "준비 중…" : data ? "다시 준비" : "1차 OT 준비하기"}
-        </Button>
-      </div>
-
-      {/* 캐시/스테일 상태 */}
-      {data && !loading && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] leading-relaxed text-muted">
-          {meta?.generatedAt && (
-            <span>
-              생성 {new Date(meta.generatedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}
-              {persisted ? " · 저장돼 있어요(다시 와도 그대로)" : " · 이 화면에서만"}
-            </span>
-          )}
-          {stale && (
-            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-700">
-              ⚠️ 회원 정보 변경됨 — 다시 생성 권장
-            </span>
-          )}
-          {sameInput && (
-            <span className="text-muted">· 입력이 그대로예요 — 회원 정보가 바뀌면 다시 생성돼요</span>
-          )}
-        </div>
-      )}
-
-      {/* 로딩 — 핵심3줄 스켈레톤 (탭 얼어붙는 느낌 방지) */}
-      {loading && (
-        <div className="mt-4 space-y-3">
-          <p className="text-[11px] leading-relaxed text-muted">
-            생성 중… 최대 1분 걸릴 수 있어요. (관찰이 아니라 &lsquo;가설&rsquo;을 만드는 중)
-          </p>
-          <div className="space-y-2">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-xl border border-line bg-card shadow-sm p-4"
-              >
-                <div className="h-3 w-24 rounded bg-elevate" />
-                <div className="mt-2 h-3 w-3/4 rounded bg-elevate" />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 실패/키미설정 — 데모 폴백 없이 미표시 안내만 */}
-      {notice && !loading && (
-        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
-          {notice}
-        </div>
-      )}
-
-      {data && !loading && (
-        <div className="mt-4 space-y-3">
+    <AIBriefBlock
+      status={briefStatus}
+      title="① AI 1차 OT 지원 (가설)"
+      generateLabel="1차 OT 준비하기"
+      idleDescription="회원 기본정보 + 내 패키지로 3분 사전무장을 만듭니다 — 오프닝 · 타겟운동 · 세일즈 비유 · 클로징 한마디 · 거절 5방어. (관찰 아님 · 가설)"
+      waitingHint="최대 1분 걸릴 수 있어요. 기다리는 동안 회원 문진표를 다시 훑어보세요. (관찰이 아니라 ‘가설’을 만드는 중)"
+      onGenerate={generate}
+      onRegenerate={generate}
+      notice={notice || undefined}
+      meta={
+        data && (
+          <span className="flex flex-wrap items-center gap-x-2">
+            {meta?.generatedAt && (
+              <span>
+                생성 {new Date(meta.generatedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}
+                {persisted ? " · 저장돼 있어요(다시 와도 그대로)" : " · 이 화면에서만"}
+              </span>
+            )}
+            {sameInput && <span>· 입력이 그대로예요 — 회원 정보가 바뀌면 다시 생성돼요</span>}
+          </span>
+        )
+      }
+    >
+      {data && (
+        <div className="space-y-3">
           {legacyCache && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
               이전 형식 브리핑이에요 — &lsquo;다시 생성&rsquo;을 누르면 새 사전무장 컨닝페이퍼로 바뀝니다.
@@ -435,13 +399,6 @@ export default function FirstOTAssist({ member }) {
           </p>
         </div>
       )}
-
-      {/* 최초 안내 (생성 전) */}
-      {!data && !loading && !notice && (
-        <p className="mt-3 text-[11px] leading-relaxed text-muted">
-          회원 기본정보 + 내 패키지로 <b>3분 사전무장</b>을 만듭니다 — 오프닝 · 타겟운동 · 세일즈 비유 · 클로징 한마디 · 거절 5방어. (관찰 아님 · 가설)
-        </p>
-      )}
-    </section>
+    </AIBriefBlock>
   );
 }

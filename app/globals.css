@@ -96,3 +96,12 @@ input[type="date"] {
    backwards는 시작 전 from 상태 보호만 유지 → 진입 깜빡임 방지는 그대로, 끝 상태는 natural과 동일. */
 .tab-anim { animation: tabIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 @media (prefers-reduced-motion: reduce) { .tab-anim { animation: none; } }
+
+/* AI 브리핑 무한 진행바 — 끝을 모르는 대기(실측 45초~1분)를 '진행 중'으로 보이게 한다.
+   ⚠️ margin-left가 아니라 transform으로 움직인다 — margin은 매 프레임 레이아웃을
+   재계산시키지만 transform은 합성 단계에서만 처리된다(헬스장 저사양 폰 고려).
+   인디케이터 폭 40% 기준: -100% → 350%면 트랙을 완전히 가로지른다. */
+@keyframes ot-indeterminate {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(350%); }
+}
