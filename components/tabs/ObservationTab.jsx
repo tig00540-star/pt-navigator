@@ -423,18 +423,15 @@ export default function ObservationTab({ member, onClosingSaved }) {
             </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-[11px] font-medium text-muted">
-              메모
-            </label>
-            <textarea
-              value={form.reaction.memo}
-              onChange={(e) => setReaction("memo", e.target.value)}
-              rows={2}
-              placeholder="자유 메모"
-              className={inputCls}
-            />
-          </div>
+          {/* ② '자유 메모' 입력칸은 제거했다 — ④ 트레이너 종합 소견과 쓰임이 겹쳐,
+              트레이너가 같은 말을 어디에 적어야 하는지 매번 고민하게 만들었다.
+              자유 서술은 ④ 한 곳으로 모은다(2차 AI도 trainer_note를 주 재료로 읽는다).
+
+              ⚠️ 상태(form.reaction.memo)는 일부러 남겼다 — 입력칸만 없앤 통과 경로다.
+              지우면 기존 행을 열어 저장할 때 예전에 적어둔 메모가 ""로 덮여 조용히 사라진다.
+              지금은 로드된 값이 그대로 실려 나가 보존되고, AI 재료로도 계속 쓰인다.
+              otHash도 건드리지 않는다 — 해시 입력이 바뀌면 이미 캐시된 2차 브리핑이
+              전부 '오래됨'으로 뜬다(실제로는 아무것도 안 변했는데). */}
 
           <div>
             <label className="mb-1 block text-[11px] font-medium text-muted">
