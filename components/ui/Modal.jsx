@@ -33,12 +33,16 @@ const SHEET =
   "shadow-[0_4px_12px_rgb(19_21_27/0.08),0_24px_48px_-20px_rgb(19_21_27/0.4)] " +
   "animate-[ot-sheet_220ms_cubic-bezier(.22,.9,.28,1)] motion-reduce:animate-none";
 const SHAPE = {
-  center: "max-w-md rounded-2xl",
-  sheet: "max-w-lg rounded-t-2xl sm:rounded-2xl",
+  center: "rounded-2xl",
+  sheet: "rounded-t-2xl sm:rounded-2xl",
 };
+/* 폭은 별도 축 — className으로 max-w를 덮으면 Tailwind 소스 순서에 따라
+   기본값이 이기는 수가 있어(둘 다 특이도 0,1,0) 예측이 안 된다. */
+const WIDTH = { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg" };
 
 export default function Modal({
   variant = "center",
+  size, // sm | md | lg — 생략 시 variant 기본값(center=md, sheet=lg)
   dismissable = true,
   blocking = false, // 필수 공지 — 닫기 없음·배경 클릭 무시·ESC 무시
   title,
@@ -101,7 +105,9 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`${SHEET} ${SHAPE[variant] || SHAPE.center} ${structured ? "" : "p-5"} ${className}`}
+        className={`${SHEET} ${SHAPE[variant] || SHAPE.center} ${
+          WIDTH[size] || (variant === "sheet" ? WIDTH.lg : WIDTH.md)
+        } ${structured ? "" : "p-5"} ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {structured ? (

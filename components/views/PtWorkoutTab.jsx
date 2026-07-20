@@ -14,6 +14,7 @@ import { activeContract, remainingSessions, reregisterDue, buildContract } from 
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
+import Modal from "@/components/ui/Modal";
 import { useToast } from "@/hooks/useToast";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
@@ -658,14 +659,8 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
 
       {/* 계약 등록 모달 — PtConfirmBanner 확인모달과 동일 톤. buildContract·ContractAmountFields 재사용. */}
       {showContract && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
-          onClick={() => !cSaving && setShowContract(false)}
-        >
-          <div
-            className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-elevate p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <Modal size="sm" onClose={() => !cSaving && setShowContract(false)} className="bg-elevate">
+          <div>
             <div className="mb-3 flex items-center gap-2">
               <Dumbbell className="h-5 w-5 shrink-0 text-primary-strong" />
               <h3 className="text-base font-bold text-ink">{isReReg ? "재등록" : "계약 등록"}</h3>
@@ -699,7 +694,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       <Toast message={toast} />

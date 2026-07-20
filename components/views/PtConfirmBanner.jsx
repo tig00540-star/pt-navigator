@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 
 export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
@@ -125,14 +126,8 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
 
       {/* 중앙 확인 모달 — 확정 앞단 게이트. 취소·바깥 클릭은 닫힘만(동작 없음), 확정은 명시 버튼으로만. */}
       {confirming && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
-          onClick={() => !busy && setConfirming(false)}
-        >
-          <div
-            className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-card p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <Modal size="sm" onClose={() => !busy && setConfirming(false)}>
+          <div>
             <div className="mb-3 flex items-center gap-2">
               <BadgeCheck className="h-5 w-5 shrink-0 text-primary-strong" />
               <h3 className="text-base font-bold text-ink">PT 등록 확정</h3>
@@ -169,7 +164,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
               </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </>
   );
