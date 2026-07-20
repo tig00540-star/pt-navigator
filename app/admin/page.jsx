@@ -317,16 +317,25 @@ export default function AdminDashboard() {
       {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-30 border-b border-line/80 bg-card/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-lg shadow-indigo-500/30">
+          {/* 헤더 로크업은 트레이너 화면(app/page.jsx)이 정본 — 치수를 그대로 따른다.
+              아이콘 36px · gap-2.5 · 1행 17px extrabold · 2행 12px medium(mt-1).
+              두 화면을 오가는 사람이 같은 앱이라고 느끼려면 여기가 흔들리면 안 된다.
+
+              위아래를 바꿨다 — 원래는 10px 'Admin · 총괄 경영'이 위, 14px 센터명이 아래였다.
+              트레이너 화면은 '누구인지'가 크게 위(오직 트레이너), '무슨 역할인지'가 작게 아래다.
+              같은 규칙이면 센터명이 위다. 역할 줄만 indigo를 유지해 관리자 화면임을 표시한다.
+              (트레이너 쪽은 이 자리가 text-muted) */}
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-lg shadow-indigo-500/30">
               <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
-            <div className="leading-tight">
-              <div className="text-[10px] font-semibold tracking-label-ko text-indigo-700">
-                Admin · 총괄 경영
-              </div>
-              <div className="text-sm font-semibold text-ink">
+            <div className="min-w-0">
+              {/* 센터명은 길 수 있다(폰 폭) — truncate로 로크업이 밀리지 않게. */}
+              <div className="max-w-[150px] truncate text-[17px] font-extrabold leading-none tracking-[-0.04em] text-ink sm:max-w-none">
                 {centerName || "내 센터"}
+              </div>
+              <div className="mt-1 text-[12px] font-medium leading-none text-indigo-700">
+                Admin · 총괄 경영
               </div>
             </div>
           </div>
