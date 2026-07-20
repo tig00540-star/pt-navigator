@@ -284,7 +284,7 @@ function MemberForm({ onClose, onSaved }) {
             sm+에서만 2열(레포 참고 구현: MemberListTab·ObservationTab·admin의 sm:grid-cols-2). */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {fields.map((f) => (
-            <div key={f.k} className={f.k === "name" ? "col-span-2" : ""}>
+            <div key={f.k} className={f.k === "name" ? "sm:col-span-2" : ""}>
               <label className="mb-1 block text-[11px] font-medium text-muted">
                 {f.label}
                 {f.k === "name" && <span className="text-primary-strong"> *</span>}
@@ -338,7 +338,7 @@ function MemberForm({ onClose, onSaved }) {
                 className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
               />
             </label>
-            <p className="col-span-2 text-[10px] text-muted">
+            <p className="sm:col-span-2 text-[10px] text-muted">
               인계·외부 PT는 이월 계약으로 잔여가 잡힙니다(매출 제외).
             </p>
           </div>
@@ -644,11 +644,14 @@ export default function OTNavigatorDashboard() {
       <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
-            <div className="flex items-center gap-3">
-              <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 rounded-lg" />
-              <div className="leading-tight">
+            {/* 폰 폭(390px)에서 오른쪽 그룹(회원 셀렉트 + 버튼 3개)이 자리를 많이 먹는다.
+                워드마크는 브랜드 이름이라 쪼개지면 안 되므로(Wordmark가 whitespace-nowrap),
+                공간이 모자라면 트레이너 이름이 줄어들게 한다 — min-w-0 + truncate. */}
+            <div className="flex min-w-0 items-center gap-3">
+              <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 shrink-0 rounded-lg" />
+              <div className="min-w-0 leading-tight">
                 <Wordmark className="text-[13px] font-extrabold tracking-[-0.05em]" />
-                <div className="text-sm font-semibold text-ink">
+                <div className="truncate text-sm font-semibold text-ink">
                   {trainerName || "트레이너"}
                 </div>
               </div>
