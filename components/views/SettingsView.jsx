@@ -7,6 +7,7 @@ import PtPricingSettings from "@/components/views/PtPricingSettings";
 import CenterMachineSettings from "@/components/views/CenterMachineSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
+import OunwanRewardSettings from "@/components/views/OunwanRewardSettings";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -17,6 +18,7 @@ export const SETTINGS_SUBTABS = [
   { id: "money",   label: "정산" },
   { id: "gear",    label: "장비/큐" },
   { id: "library", label: "도서관" },
+  { id: "reward",  label: "포상" },   // 오운완 누적 N회 → 보상 정의(회원앱 진행 바에 반영)
 ];
 
 export default function SettingsView({ isSolo = false, sub = "me" }) {
@@ -48,6 +50,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
       )}
       {sub === "gear" && <CenterMachineSettings />}
       {sub === "library" && <TrainerLibrary />}
+      {sub === "reward" && <OunwanRewardSettings />}
     </div>
   );
 }
