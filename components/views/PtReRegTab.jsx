@@ -8,7 +8,7 @@
    ========================================================================= */
 
 import { useState, useEffect } from "react";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, latestContract } from "@/lib/memberStatus";
@@ -18,6 +18,8 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import RegBriefView from "@/components/views/RegBriefView";
+import AIBriefBlock from "@/components/ui/AIBriefBlock";
+import Badge from "@/components/ui/Badge";
 import { REG_RESULT_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 
 export default function PtReRegTab({ member, contracts, setContracts, logs }) {
@@ -155,63 +157,30 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             재등록 준비 · 수업 전
           </div>
 
-          {regGenerating ? (
-            /* 생성 중 스켈레톤 */
-            <div className="rounded-2xl border border-line bg-card shadow-sm p-6">
-              <div className="mb-3 flex items-center gap-2 text-xs text-muted">
-                <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 최근 PT 관리 데이터를 근거로 재등록 브리핑을 생성하는 중… 최대 1분 걸릴 수 있어요 (최초 1회, 이후 캐시)
-              </div>
-              <div className="space-y-2.5">
-                <div className="h-4 w-1/3 animate-pulse rounded bg-elevate" />
-                <div className="h-3 w-full animate-pulse rounded bg-elevate" />
-                <div className="h-3 w-5/6 animate-pulse rounded bg-elevate" />
-                <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-elevate" />
-                <div className="h-3 w-full animate-pulse rounded bg-elevate" />
-              </div>
-            </div>
-          ) : !regBrief ? (
-            /* 생성 전 — 가운데 카드(2차 renderPreGenerate 미러) */
-            <div className="rounded-2xl border border-line bg-card shadow-sm p-6 text-center">
-              <Sparkles className="mx-auto h-8 w-8 text-primary-strong" />
-              <p className="mt-3 text-sm text-sub">
-                <span className="font-semibold text-ink">{member.name}</span> 회원의 최근 PT 관리 데이터를 근거로 재등록 AI 지원(당위성·클로징·거절 대처)을 준비합니다.
-              </p>
-              <p className="mt-1 text-xs text-muted">수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.</p>
-              {due && (
-                <div className="mt-3">
-                  <span className="inline-flex rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                    재등록 타이밍
-                  </span>
-                </div>
-              )}
-              <div className="mt-4">
-                <Button variant="primary" size="md" onClick={generateReReg} disabled={regGenerating} className="gap-2">
-                  <Sparkles className="h-4 w-4" strokeWidth={2.5} /> AI 지원 준비 생성하기
-                </Button>
-              </div>
-              {regAiError && <p className="mt-3 text-[11px] text-amber-700">{regAiError}</p>}
-            </div>
-          ) : (
-            /* 생성 완료 — 메타 줄 + 브리핑 */
-            <>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary-strong">실 AI</span>
+          {/* AI 재등록 브리핑 — 상태 4종은 AIBriefBlock이 관리한다.
+             이 탭은 재등록 타이밍(due) 뱃지가 추가로 붙는다(meta 슬롯).
+             stale은 쓰지 않는다 — 재등록 브리핑은 관찰이 아니라 계약·수업 실적 기반이라
+             '무엇이 바뀌면 낡았는가'의 기준이 없다(2차 OT의 obsHash에 해당하는 게 없음). */}
+          <AIBriefBlock
+            status={regGenerating ? "loading" : regBrief ? "ready" : "idle"}
+            title="재등록 AI 지원"
+            generateLabel="AI 지원 준비 생성하기"
+            idleDescription={`${member.name} 회원의 최근 PT 관리 데이터를 근거로 재등록 AI 지원(당위성·클로징·거절 대처)을 준비합니다. 수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.`}
+            waitingHint="최대 1분 걸릴 수 있어요. 기다리는 동안 회원의 지난 수업 기록을 훑어보세요. (최초 1회만 · 이후는 저장된 걸 바로 보여드려요)"
+            onGenerate={generateReReg}
+            onRegenerate={generateReReg}
+            notice={regAiError || undefined}
+            meta={
+              <span className="flex flex-wrap items-center gap-2">
                 {regBriefMeta?.generatedAt && (
-                  <span className="text-[10px] text-muted">생성: {new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR")}</span>
+                  <span>생성: {new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR")}</span>
                 )}
-                {due && (
-                  <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                    재등록 타이밍
-                  </span>
-                )}
-                <Button variant="ghost" size="sm" onClick={generateReReg} disabled={regGenerating} className="ml-auto">
-                  <RefreshCw className="h-3 w-3" /> 재생성
-                </Button>
-              </div>
-              {regAiError && <p className="text-[11px] text-amber-700">{regAiError}</p>}
-              <RegBriefView brief={regBrief} highlightReason={regReason} />
-            </>
-          )}
+                {due && <Badge tone="ot">재등록 타이밍</Badge>}
+              </span>
+            }
+          >
+            {regBrief && <RegBriefView brief={regBrief} highlightReason={regReason} />}
+          </AIBriefBlock>
 
           {/* ── 재등록 결과 기록 · 수업 후 ── */}
           <div className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-bold text-sub">
