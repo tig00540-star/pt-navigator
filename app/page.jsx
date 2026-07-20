@@ -781,7 +781,7 @@ export default function OTNavigatorDashboard() {
         ) : tab === 7 ? (
           <div><SettingsView isSolo={isSolo} sub={settingsSub} /></div>
         ) : tab === 8 ? (
-          <div><MyStats members={members} isSolo={isSolo} /></div>
+          <div><MyStats members={members} isSolo={isSolo} onSelect={(id) => { setSelectedId(id); setTab(0); }} /></div>
         ) : (
           <>
         {/* OT 회원 + 클로징 성공 시 '수동 PT 등록 확정' 배너(자체 게이트) */}

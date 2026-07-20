@@ -16,8 +16,9 @@ import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
+import OunwanRanking from "@/components/views/OunwanRanking";
 
-export default function MyStats({ members = [], isSolo = false }) {
+export default function MyStats({ members = [], isSolo = false, onSelect }) {
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [otRows, setOtRows] = useState([]);
@@ -272,6 +273,10 @@ export default function MyStats({ members = [], isSolo = false }) {
       <p className="text-[10px] text-muted">{isSolo ? "※ 자동계산은 이달 완료 수업 기준입니다." : "※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 원장이 확정한 금액 기준입니다."}</p>
         </>
       )}
+
+      {/* 오운완 랭킹 — 자기완결 위젯(rpc 1콜). '오늘' 탭이 아니라 여기인 이유:
+          '오늘'은 앱 열 때마다 로드돼 부담이 크고, 랭킹은 주 1~2회 보는 실적성 정보다. */}
+      <OunwanRanking members={members} onSelect={onSelect} />
 
       {/* 월간 리포트 오버레이 (4-a) — 읽기 전용 재집계, MyStats 데이터 그대로 전달. */}
       {reportOpen && (
