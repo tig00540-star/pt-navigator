@@ -30,6 +30,7 @@ import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import TodoTab from "@/components/views/TodoTab";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import Badge from "@/components/ui/Badge";
+import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import FilterChip from "@/components/ui/FilterChip";
@@ -465,14 +466,14 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
             const on = m.id === selectedId;
             const goalSet = hasVal(m.goal) && m.goal !== "미설정";
             return (
-              <button
+              <Card
+                as="button"
                 key={m.id}
                 onClick={() => onSelect(m.id)}
-                className={`group flex items-start gap-3 rounded-2xl border p-4 text-left shadow-sm transition ${
-                  on
-                    ? "border-primary bg-primary-soft"
-                    : "border-line bg-card hover:border-primary"
-                }`}
+                interactive
+                selected={on}
+                padding="sm"
+                className="group flex items-start gap-3 text-left"
               >
                 <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line text-sm font-bold ${viewMeta(viewFor(m)).avatar}`}>
                   {m.name ? m.name.slice(0, 1) : "?"}
@@ -492,7 +493,7 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
                   </div>
                 </div>
                 <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted group-hover:text-primary-strong" />
-              </button>
+              </Card>
             );
           })}
         </div>
