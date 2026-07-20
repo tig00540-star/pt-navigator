@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import {
   Bell,
   CalendarDays,
@@ -31,6 +30,7 @@ import TodoTab from "@/components/views/TodoTab";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import BrandMark from "@/components/ui/BrandMark";
 import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import FilterChip from "@/components/ui/FilterChip";
@@ -651,7 +651,10 @@ export default function OTNavigatorDashboard() {
                   이름은 12px muted 보조 라인으로 내린다. 심볼 36px과 두 줄 높이가 맞는다.
                 워드마크는 shrink-0(쪼개짐·잘림 금지), 이름만 길면 truncate. */}
             <div className="flex min-w-0 shrink-0 items-center gap-2.5">
-              <Image src="/icons/icon-192.png" alt="오직 트레이너" width={36} height={36} priority className="h-9 w-9 shrink-0 rounded-lg" />
+              {/* 관리자 헤더와 같은 벡터 소스(BrandMark)를 쓴다 — PNG는 고해상도 화면에서
+                  36px로 줄어들 때 링 선이 뭉갠다. 아트워크는 동일하다(마크 지름 56%, 중심 정중앙).
+                  PNG는 PWA·홈화면 아이콘용으로 계속 필요하니 public/icons에 그대로 둔다. */}
+              <BrandMark accent="trainer" title="오직 트레이너" className="h-9 w-9 shrink-0 rounded-lg" />
               <div className="min-w-0">
                 <Wordmark className="block text-[17px] font-extrabold leading-none tracking-[-0.04em]" />
                 <div className="mt-1 max-w-[140px] truncate text-[12px] font-medium leading-none text-muted sm:max-w-none">
