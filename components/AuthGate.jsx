@@ -14,6 +14,8 @@ export default function AuthGate({ children }) {
   // 층1 구독 게이트 — my_account_status() 결과(null=조회 전/중). acctReady=조회 완료 여부.
   const [acct, setAcct] = useState(null);
   const [acctReady, setAcctReady] = useState(false);
+  // 초기 세션 조회가 오래 걸릴 때(응답 없음) 표시 — 무한 스피너 방지용.
+  const [stalled, setStalled] = useState(false);
 
   // 로그인 폼 로컬 상태
   const [email, setEmail] = useState("");
@@ -30,16 +32,33 @@ export default function AuthGate({ children }) {
       return;
     }
     let alive = true;
+
+    /* ⚠️ 고착 방어 — getSession()이 '거부'되면 아래 catch가 받지만,
+       '응답이 아예 안 오는' 경우(오프라인·네트워크 정체·토큰 갱신 실패)는 아무도 안 받는다.
+       그러면 ready가 영영 false라 앱 전체가 "불러오는 중…"에 영구 정지한다.
+       현장에서는 "앱이 안 켜져요"로 나타나고 원인 파악이 어렵다.
+       → 8초 뒤에도 안 끝나면 '지연' 상태로 전환해 사용자에게 상황과 재시도를 준다.
+       자동으로 로그아웃 취급하지 않는다 — 느린 네트워크가 늦게 성공할 수 있고,
+       그때는 아래 then이 정상적으로 ready를 세운다. */
+    const stallTimer = setTimeout(() => { if (alive) setStalled(true); }, 8000);
+
     supabase.auth.getSession().then(({ data }) => {
       if (!alive) return;
+      clearTimeout(stallTimer);
       setSession(data.session ?? null);
       setReady(true);
-    }).catch(() => { if (alive) { setSession(null); setReady(true); } });
+    }).catch(() => {
+      if (!alive) return;
+      clearTimeout(stallTimer);
+      setSession(null);
+      setReady(true);
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s ?? null);
     });
     return () => {
       alive = false;
+      clearTimeout(stallTimer);
       sub.subscription.unsubscribe();
     };
   }, []);
@@ -97,8 +116,18 @@ export default function AuthGate({ children }) {
   // 초기 세션 조회 전 — 깜빡임 방지용 최소 화면
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg text-muted text-sm">
-        불러오는 중…
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-bg px-6 text-center">
+        <span className="text-sm text-muted">불러오는 중…</span>
+        {stalled && (
+          <>
+            <p className="max-w-xs text-[13px] leading-relaxed text-sub">
+              네트워크가 느리거나 연결이 끊긴 것 같아요. 잠시 뒤에도 그대로면 다시 시도해 주세요.
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
+              다시 시도
+            </Button>
+          </>
+        )}
       </div>
     );
   }

@@ -26,6 +26,7 @@ import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, re
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import { won, personName } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
+import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import PayrollConfirm from "@/components/PayrollConfirm";
@@ -570,6 +571,21 @@ export default function AdminDashboard() {
         {atab === "qc" && (
         <section className="mb-8">
           <Eyebrow icon={Users}>트레이너 세일즈 QC 모니터링</Eyebrow>
+
+          {/* ⚠️ 데모 고지 — 이 섹션의 숫자는 전부 하드코딩(TRAINERS 상수)이다.
+              소스 주석에만 "데모"라고 적혀 있고 화면에는 표시가 없어서, 원장에게
+              시연할 때 실측으로 오인될 수 있었다. 가짜 숫자가 실측처럼 읽히는 건
+              기능 결함이 아니라 신뢰 사고다(PRD §7.2).
+              실데이터화는 조회율·리딩률 같은 '행동 계측' 수집이 선행돼야 해서
+              단기간에 안 된다 — 그때까지 이 배너를 지우지 말 것. */}
+          <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-ot-soft px-3.5 py-2.5">
+            <Badge tone="ot" className="mt-px shrink-0">예시</Badge>
+            <p className="text-[12px] leading-relaxed text-ot-text">
+              아래 지표는 <b>실제 데이터가 아닙니다.</b> 화면 형태를 보기 위한 예시 숫자예요 —
+              조회율·대본 리딩률 같은 행동 기록을 모으기 시작하면 실측으로 바뀝니다.
+            </p>
+          </div>
+
           <div className="space-y-3">
             {TRAINERS.map((t) => (
               <div
