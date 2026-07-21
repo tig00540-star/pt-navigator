@@ -35,7 +35,7 @@ export async function POST(req) {
   const result = String(body.result || "").trim();
   const disputeNote = body.dispute_note != null ? String(body.dispute_note).trim() || null : null;
   if (!UUID_RE.test(logId)) return Response.json({ error: "잘못된 요청" }, { status: 400 });
-  if (result !== "confirm" && result !== "dispute") {
+  if (result !== "confirm") {
     return Response.json({ error: "잘못된 요청" }, { status: 400 });
   }
 
