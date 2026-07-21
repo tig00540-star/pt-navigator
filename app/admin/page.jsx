@@ -33,6 +33,7 @@ import PayrollConfirm from "@/components/PayrollConfirm";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
 import BrandMark from "@/components/ui/BrandMark";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 
 /* =========================================================================
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
@@ -226,8 +227,11 @@ export default function AdminDashboard() {
         const [u, o, c, l, tr, ps, pr] = await Promise.all([
           supabase.from("user_table").select("*"),
           supabase.from("ot_log").select("*"),
-          supabase.from("session_log").select("*"),
-          supabase.from("daily_workout_log").select("*"),
+          // ⚠️ session_log·daily_workout_log는 센터 전체를 부른다 → 1000행 잘림 위험(P0-6).
+          //    페이지 페처로 끝까지 훑는다(급여·매출·QC 집계의 입력이라 잘리면 숫자가 틀림).
+          //    나머지(user_table·ot_log·trainer·pay_scheme·payroll_run)는 증가가 느려 당장 무관.
+          fetchAllRows(() => supabase.from("session_log").select("*")),
+          fetchAllRows(() => supabase.from("daily_workout_log").select("*")),
           supabase.from("trainer").select("id, name"),
           supabase.from("pay_scheme").select("*"),
           supabase.from("payroll_run").select("*"),

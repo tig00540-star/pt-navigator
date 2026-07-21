@@ -18,6 +18,7 @@ import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
 import OunwanRanking from "@/components/views/OunwanRanking";
 import Card from "@/components/ui/Card";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 
 export default function MyStats({ members = [], isSolo = false, onSelect }) {
   const [contracts, setContracts] = useState([]);
@@ -41,8 +42,11 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       const { data: au } = await supabase.auth.getUser();
       const myId = au?.user?.id ?? null;
       const [c, l, o, ps, pr, tr, tg] = await Promise.all([
-        supabase.from("session_log").select("*"),        // RLS: 본인 계약
-        supabase.from("daily_workout_log").select("*"),
+        // ⚠️ 페이지 페처 — 1000행 잘림 방지(P0-6). session_log·daily_workout_log는 급여
+        //    자동계산·잔여·매출의 입력이라 잘리면 돈 숫자가 틀린다. RLS로 본인 계약만 오지만
+        //    수업 로그는 트레이너 1인도 하루 15~16건이면 두 달여에 1000 도달한다.
+        fetchAllRows(() => supabase.from("session_log").select("*")),        // RLS: 본인 계약
+        fetchAllRows(() => supabase.from("daily_workout_log").select("*")),
         supabase.from("ot_log").select("*"),
         supabase.from("pay_scheme").select("*"),
         supabase.from("payroll_run").select("*"),
