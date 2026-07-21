@@ -50,7 +50,7 @@ Per MASTERPLAN §5: the **plumbing is real** (member register/list/select, clipb
 
 ### 디자인 시스템 프리미티브 (v2 · 2026-07-21 · `components/ui/`)
 
-07-21 2단계 전면개편으로 공용 프리미티브가 확립됐다. **인라인 카드/폼/모달을 새로 손수 만들지 말 것 — 아래를 쓴다.** 규격 출처는 「오직 트레이너 Design System」(`ONLY FOR TRAINER/` 미러). 모든 색 클래스는 purge-safe 정적 리터럴.
+07-21 2단계 전면개편으로 공용 프리미티브가 확립됐다. **인라인 카드/폼/모달을 새로 손수 만들지 말 것 — 아래를 쓴다.** 규격 출처는 「오직 트레이너 Design System」(`ONLY FOR TRAINER/` 미러). 모든 색 클래스는 purge-safe 정적 리터럴. **📄 상세 정본(토큰 값·전 프리미티브 props·변형·현장 함정·유지보수 규칙)은 `docs/v2-스펙-디자인시스템-구현정본.md` — 프리미티브를 수정·확장하기 전에 거기부터 본다. 아래는 인덱스.**
 
 - **폰트:** `app/layout.js`가 **Pretendard Variable**(`localFont`, weight `45 920`, `--font-pretendard`)를 전역 적용. Geist는 한글 글리프가 없어 걷어냄(한글이 기기 기본폰트로 폴백되던 문제 해결). `font-mono`(Geist Mono)만 숫자·코드용으로 유지(47곳).
 - **`Card` / `CardRow`** (`Card.jsx`) — 기본 흰 카드 셸(`rounded-2xl`·`shadow-sm`·`border-line`). `padding`(md/sm/lg/none)·`interactive`·`selected`·`elevated` 축. `padding="none"`은 분할 리스트(overflow-hidden). ⚠️ **기존 톤 카드(구 `Card`)는 `ToneCard`로 개명됨**(`ToneCard.jsx` — `tone`별 틴트·`widgetTone` 소비).
