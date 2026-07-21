@@ -665,15 +665,32 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
   }
 
+  // 입력 상한(P1-12) — 심층방어. 이 라우트는 requireTrainer(인증+구독)로 이미 게이트되지만,
+  // 프롬프트에 직삽입되는 필드에 길이·개수 상한이 없으면 인증 통과자가 거대한 본문으로
+  // Sonnet 토큰을 폭주시킬 수 있다. 두 겹으로 막는다:
+  //   ① 본문 전체 크기 — 정상 페이로드(회원+관찰+케이스 몇 건)는 수 KB다. 256KB는 넉넉한 상한.
+  //     (voice-log P0-3의 크기 가드와 같은 결.) 직렬화 길이로 재는 건 원본보다 약간 크지만 충분.
+  //   ② closingCases 개수 — secondPrompt가 전건 map + JSON.stringify(profile)로 펼치는 유일 배열.
+  //     토큰이 배열 길이에 선형 비례하므로 개수 상한이 실질 방어다. caseTier 로직상 통상 한 자리수.
+  const MAX_BODY_BYTES = 256 * 1024;
+  const MAX_CLOSING_CASES = 20;
+  let bodyBytes = 0;
+  try { bodyBytes = JSON.stringify(body).length; } catch { bodyBytes = MAX_BODY_BYTES + 1; } // 순환참조 등 = 거부
+  if (bodyBytes > MAX_BODY_BYTES) {
+    return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
+  }
+
   const { phase, member, report, ptContext, acuteContext, packages, closingCases, caseTier } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute") {
     return Response.json({ error: "phase는 'first'·'second'·'reregister'·'acute' 중 하나여야 합니다." }, { status: 400 });
   }
+  // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
+  const boundedCases = Array.isArray(closingCases) ? closingCases.slice(0, MAX_CLOSING_CASES) : closingCases;
 
   const model = MODEL_SECOND; // 전 phase Sonnet(1차도 승급).
   const basePrompt =
     phase === "first" ? firstPrompt(member, packages)
-    : phase === "second" ? secondPrompt(member, report, closingCases, caseTier, packages)
+    : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages)
     : phase === "reregister" ? reregisterPrompt(member, ptContext)
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute 제외.
@@ -684,7 +701,7 @@ export async function POST(request) {
       : `${equipmentBlock(centerMachines)}\n[기구 활용] 운동 구성은 위 [보유 장비]를 우선 활용하되, 목표에 더 맞는 장비가 목록에 없으면 그것도 함께 알려줘라(목록은 아직 추가 중일 수 있음). 규격의 중량 범위는 참고만 — 숫자 처방(세트·횟수·중량)은 여전히 금지, 방향까지만.\n\n${basePrompt}`;
   // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120,
   // 단 D-3 케이스 동봉 시 case_feedback ~300~500토큰 더 → 6144(잘림 방지).
-  const maxTokens = phase === "first" ? 8192 : (phase === "second" && closingCases?.length ? 6144 : 5120);
+  const maxTokens = phase === "first" ? 8192 : (phase === "second" && boundedCases?.length ? 6144 : 5120);
 
   try {
     const anthropic = new Anthropic({ apiKey });

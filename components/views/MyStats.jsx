@@ -6,7 +6,7 @@
    admin과 동일 함수 재사용(revenueByTrainer·sessionPriceSumByTrainer·closingStats·payForScheme).
    ========================================================================= */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Award, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
@@ -80,43 +80,61 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
     return () => { cancelled = true; };
   }, []);
 
-  const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
-  // 내 회원만(원장이 남의 회원 수업/클로징까지 세던 버그 수정 — 급여 스코프와 일치).
-  const memberIds = new Set(members.filter((m) => m.trainer_id === uid).map((m) => m.id));
-  const myOt = otRows.filter((r) => r && memberIds.has(r.user_id));
-  const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, refund: 0, total: 0, cntNew: 0, cntRe: 0 };
-  const goalRow = goals.find((g) => g.ym === ym) || null;
-  const target = goalRow?.target_revenue ?? null;
-  const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
-  const closing = closingStats(myOt);
-  const sessionCount = sessionCountByTrainer(logs, contracts, ym).get(uid) || 0;
-  const scheme = resolveScheme(schemes, uid);
-  const pay = payForScheme(scheme, { monthRevenue: rev.total, sessionCount, sessionPriceSum: priceSum });
-  const myRun = runs.find((r) => r.trainer_id === uid && r.ym === ym) || null;
-  const confirmed = myRun?.final_total != null;
-  const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
-  // P2 — drill-down 파생. memberIds·ym·uid·logs·contracts·members는 이미 있음.
-  const nameById = new Map(members.map((m) => [m.id, m.name]));
-  // hidden 회원은 members에 없으니 계약 이름 조회(contractNames)로 폴백.
-  const displayName = (id) => nameById.get(id) || contractNames.get(id) || "(알 수 없음)";
-  const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
-  const totalSessions = sessionRows.reduce((s, r) => s + r.count, 0);
-  const revRows = revenueContractsInMonth(contracts, uid, ym);        // session_log 행[]
-  const refundRows = refundsInMonth(contracts, uid, ym);              // 이달 처리 환불[]
+  // 파생 집계 전체를 useMemo로 감싼다(P1-10). 이 블록엔 O(계약×로그) reduce(remAll)와
+  // 로그 전체 순회 3~4개가 들어 있는데, 컴포넌트에 reportOpen 모달 state가 있어
+  // 리포트를 여닫을 때마다(그 외 어떤 렌더에도) 통째로 다시 돌았다.
+  // 입력(fetch 결과 + members + uid)이 안 바뀌면 결과는 같으므로 그 deps에만 묶는다.
+  // admin(app/admin/page.jsx)이 같은 계열 집계를 useMemo로 감싼 것과 같은 규율.
+  // ⚠️ 하위 헬퍼가 순수(입력만 읽고 부수효과 없음)라 안전. 훅은 early return 앞이라 순서 불변.
+  const {
+    ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
+    nameById, displayName, sessionRows, totalSessions, revRows, refundRows,
+    ptMemberIds, sessTotalAll, remAll, doneAll,
+  } = useMemo(() => {
+    const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
+    // 내 회원만(원장이 남의 회원 수업/클로징까지 세던 버그 수정 — 급여 스코프와 일치).
+    const memberIds = new Set(members.filter((m) => m.trainer_id === uid).map((m) => m.id));
+    const myOt = otRows.filter((r) => r && memberIds.has(r.user_id));
+    const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, refund: 0, total: 0, cntNew: 0, cntRe: 0 };
+    const goalRow = goals.find((g) => g.ym === ym) || null;
+    const target = goalRow?.target_revenue ?? null;
+    const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
+    const closing = closingStats(myOt);
+    const sessionCount = sessionCountByTrainer(logs, contracts, ym).get(uid) || 0;
+    const scheme = resolveScheme(schemes, uid);
+    const pay = payForScheme(scheme, { monthRevenue: rev.total, sessionCount, sessionPriceSum: priceSum });
+    const myRun = runs.find((r) => r.trainer_id === uid && r.ym === ym) || null;
+    const confirmed = myRun?.final_total != null;
+    const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
+    // P2 — drill-down 파생. memberIds·ym·uid·logs·contracts·members는 이미 있음.
+    const nameById = new Map(members.map((m) => [m.id, m.name]));
+    // hidden 회원은 members에 없으니 계약 이름 조회(contractNames)로 폴백.
+    const displayName = (id) => nameById.get(id) || contractNames.get(id) || "(알 수 없음)";
+    const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
+    const totalSessions = sessionRows.reduce((s, r) => s + r.count, 0);
+    const revRows = revenueContractsInMonth(contracts, uid, ym);        // session_log 행[]
+    const refundRows = refundsInMonth(contracts, uid, ym);              // 이달 처리 환불[]
 
-  // #1 — 내 활성 PT 회원(pt_active) 전체의 총/잔여 수업 합. inactive·OT·남의 회원 제외.
-  const ptMemberIds = new Set(
-    members.filter((m) => m.trainer_id === uid && viewFor(m) === "pt").map((m) => m.id)
-  );
-  const ptContracts = contracts.filter((c) => ptMemberIds.has(c.user_id));
-  const sessTotalAll = ptContracts.reduce(
-    (s, c) => s + (c.sessions_total ?? 0) + (c.service_sessions ?? 0), 0
-  );
-  const remAll = ptContracts.reduce((a, c) => {
-    const r = remainingSessions(c, logs);
-    a.paid += r.paid; a.service += r.service; a.total += r.total; return a;
-  }, { paid: 0, service: 0, total: 0 });
-  const doneAll = sessTotalAll - remAll.total; // 진행+노쇼(차감분). 총 상한·음수 없음.
+    // #1 — 내 활성 PT 회원(pt_active) 전체의 총/잔여 수업 합. inactive·OT·남의 회원 제외.
+    const ptMemberIds = new Set(
+      members.filter((m) => m.trainer_id === uid && viewFor(m) === "pt").map((m) => m.id)
+    );
+    const ptContracts = contracts.filter((c) => ptMemberIds.has(c.user_id));
+    const sessTotalAll = ptContracts.reduce(
+      (s, c) => s + (c.sessions_total ?? 0) + (c.service_sessions ?? 0), 0
+    );
+    const remAll = ptContracts.reduce((a, c) => {
+      const r = remainingSessions(c, logs);
+      a.paid += r.paid; a.service += r.service; a.total += r.total; return a;
+    }, { paid: 0, service: 0, total: 0 });
+    const doneAll = sessTotalAll - remAll.total; // 진행+노쇼(차감분). 총 상한·음수 없음.
+
+    return {
+      ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
+      nameById, displayName, sessionRows, totalSessions, revRows, refundRows,
+      ptMemberIds, sessTotalAll, remAll, doneAll,
+    };
+  }, [members, contracts, logs, otRows, schemes, runs, uid, goals, contractNames]);
 
   return (
     <div className="space-y-4">
