@@ -19,6 +19,7 @@ import MemberPhotoSummary from "@/components/views/MemberPhotoSummary";
 export default function PTView({ member, tab, onGoList, onMemberPatch, onMembersChanged }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
   const [logs, setLogs] = useState([]); // daily_workout_log (수업로그)
+  const [confirms, setConfirms] = useState([]); // workout_log_confirmation (회원 확인/이의 · 트레이너 SELECT 정책 스코프)
   const [loading, setLoading] = useState(false);
 
   // 회원 변경 시 계약·수업로그 로드. setState는 async IIFE 안에서만(set-state-in-effect 회피).
@@ -29,19 +30,23 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
         if (!cancelled) {
           setContracts([]);
           setLogs([]);
+          setConfirms([]);
           setLoading(false);
         }
         return;
       }
       setLoading(true);
       try {
-        const [{ data: cs }, { data: ls }] = await Promise.all([
+        const [{ data: cs }, { data: ls }, { data: cf }] = await Promise.all([
           supabase.from("session_log").select("*").eq("user_id", member.id),
           supabase.from("daily_workout_log").select("*").eq("user_id", member.id),
+          // 이 회원 일지들의 확인/이의 — 트레이너 SELECT 정책(account 스코프)로 이 회원 것만 온다.
+          supabase.from("workout_log_confirmation").select("log_id, result, content_hash, dispute_note, confirmed_at").eq("member_id", member.id),
         ]);
         if (cancelled) return;
         setContracts(cs || []);
         setLogs(ls || []);
+        setConfirms(cf || []);
         setLoading(false);
       } catch {
         // 조회 실패 — finally에서 로딩 해제.
@@ -80,6 +85,7 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
             setContracts={setContracts}
             logs={logs}
             setLogs={setLogs}
+            confirms={confirms}
             loading={loading}
             mode="record"
           >
@@ -96,6 +102,7 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
             setContracts={setContracts}
             logs={logs}
             setLogs={setLogs}
+            confirms={confirms}
             loading={loading}
             mode="view"
           >

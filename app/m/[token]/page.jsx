@@ -21,6 +21,13 @@ import Button from "@/components/ui/Button";
 import Sparkline from "@/components/ui/Sparkline";
 import ImageLightbox from "@/components/ui/ImageLightbox";
 import Card from "@/components/ui/Card";
+import Modal from "@/components/ui/Modal";
+import Badge from "@/components/ui/Badge";
+
+// 수업일지 확인 소프트 모달을 띄우는 미확인 건수 임계값(이 이상이면 로그인 직후 1회 모달 유도).
+const CONFIRM_MODAL_THRESHOLD = 3;
+// "나중에 할게요" 소프트 모달을 하루 1회로 제한하는 로컬 키(회원별 · 날짜 stamp).
+const CONFIRM_SNOOZE_KEY = "pt-member-confirm-snooze";
 
 // purge-safe delta 색 맵(PtInbodyTab 재사용 패턴 · 동적 조립 금지).
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
@@ -743,7 +750,157 @@ function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
   );
 }
 
-function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, rewards }) {
+/* 수업일지 회원 확인 — 소프트 유도(스펙 §4).
+   진실은 확인 레코드(서버)다. 이건 UX 유도일 뿐 — 회원을 절대 락아웃하지 않는다.
+   ⚠️ fail-open: member-confirm이 503(데모/키부재)이면 큐를 통째로 끈다(아래 disabledByServer).
+   ⚠️ pending 계산은 뷰가 주는 confirmed_at/confirm_result에 의존 — confirm 확정분·dispute분은 제외되고
+      '오늘 수업'은 유예(session_at < 오늘)라 안 뜬다. */
+function ConfirmFlow({ logs, onReload }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [disputeFor, setDisputeFor] = useState(null); // 이의 사유 입력 중인 log_id(null=아님)
+  const [disputeNote, setDisputeNote] = useState("");
+  const [serverOff, setServerOff] = useState(false);  // member-confirm 503 → 유도 전체 끔(fail-open)
+
+  const today = todayStr();
+  // ⚠️ 유예 비교는 KST 달력일 기준(buildActivityMap의 `ymd(new Date(session_at ?? created_at))`와 동일).
+  //    session_at은 timestamptz라 문자열을 그대로 today와 비교하면(예: "...T23:30+00:00" < "2026-07-21")
+  //    타임존·형식 차이로 어긋난다 → new Date→ymd로 로컬(KST) 날짜를 뽑아 비교.
+  const pending = useMemo(
+    () => (logs || []).filter((l) => {
+      if (l.confirmed_at || l.confirm_result === "dispute") return false;
+      const iso = l.session_at ?? l.created_at;
+      return iso && ymd(new Date(iso)) < today;    // 오늘 수업 유예(오늘분은 안 뜸)
+    }),
+    [logs, today]
+  );
+
+  // pending≥THRESHOLD면 로그인 직후 1회 소프트 모달(단, 오늘 이미 '나중에' 눌렀으면 스킵).
+  // ⚠️ setState는 async IIFE 안에서(레포 규율: react-hooks/set-state-in-effect 회피 · AuthGate 패턴).
+  const [autoShown, setAutoShown] = useState(false); // 진입 시 1회만 자동으로 뜨게(수동 배너 재열기와 별개)
+  useEffect(() => {
+    if (serverOff || autoShown) return;
+    if (pending.length < CONFIRM_MODAL_THRESHOLD) return;
+    let alive = true;
+    (async () => {
+      let snoozed = false;
+      try { snoozed = localStorage.getItem(CONFIRM_SNOOZE_KEY) === today; } catch { /* 접근 불가 무시 */ }
+      if (!alive) return;
+      setAutoShown(true);
+      if (!snoozed) setModalOpen(true);
+    })();
+    return () => { alive = false; };
+  }, [serverOff, autoShown, pending.length, today]);
+
+  const post = useCallback(async (log_id, result, note) => {
+    setBusy(true); setErr("");
+    try {
+      const { data: sess } = await memberSupabase.auth.getSession();
+      const token = sess?.session?.access_token;
+      if (!token) { setErr("세션이 만료됐어요. 다시 로그인해 주세요."); return false; }
+      const res = await fetch("/api/member-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ log_id, result, dispute_note: note || undefined }),
+      });
+      if (res.status === 503) { setServerOff(true); setModalOpen(false); return false; } // fail-open: 유도 끔
+      if (res.status === 409) { await onReload?.(); return true; } // 이미 확인됨 → 재조회로 정리, 성공 취급
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || "처리에 실패했어요."); return false; }
+      await onReload?.(); // 뷰 재조회 → confirmed_at 채워져 pending에서 빠짐
+      return true;
+    } catch {
+      setErr("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [onReload]);
+
+  // 확인/이의 성공 후 처리 — 큐 커서를 쓰지 않는다. onReload로 pending이 줄면 cur=pending[0]이 자연히 다음 건이 된다.
+  // (idx를 함께 올리면 onReload의 감소와 이중 전진 → 큐 건너뜀 버그). dispute 입력 상태만 리셋.
+  const advance = () => { setDisputeFor(null); setDisputeNote(""); };
+
+  const snooze = () => {
+    try { localStorage.setItem(CONFIRM_SNOOZE_KEY, today); } catch { /* 무시 */ }
+    setModalOpen(false);
+  };
+
+  if (serverOff || pending.length === 0) return null;
+
+  // 배너 = 항상. 앱 사용은 안 막는다(소프트).
+  const banner = (
+    <button
+      onClick={() => setModalOpen(true)}
+      className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-line bg-primary-soft px-4 py-3 text-left transition active:scale-[0.99]"
+    >
+      <CalendarCheck className="h-5 w-5 shrink-0 text-primary-strong" />
+      <span className="flex-1 text-sm font-semibold text-primary-strong">
+        확인 안 한 수업일지 {pending.length}건
+      </span>
+      <span className="shrink-0 text-[11px] font-bold text-primary-strong">확인하기 ›</span>
+    </button>
+  );
+
+  const cur = pending[0]; // 항상 맨 앞 1건만. onReload로 처리분이 빠지면 다음 건이 자동으로 앞으로 온다.
+
+  return (
+    <>
+      {banner}
+      {modalOpen && cur && (
+        <Modal variant="sheet" onClose={() => setModalOpen(false)} title="수업일지 확인" subtitle={`남은 ${pending.length}건`}>
+          <Card padding="md" className="bg-elevate">
+            <div className="text-xs font-semibold text-muted">
+              {cur.session_at ? new Date(cur.session_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }) : "날짜 미상"}
+            </div>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">
+              {cur.ai_summary || "기록 내용이 없어요."}
+            </p>
+          </Card>
+
+          {err && <p className="mt-3 text-[12px] text-danger-text">{err}</p>}
+
+          {disputeFor === cur.id ? (
+            <div className="mt-4 space-y-2">
+              <textarea
+                value={disputeNote}
+                onChange={(e) => setDisputeNote(e.target.value)}
+                disabled={busy}
+                rows={3}
+                placeholder="어떤 점이 다른지 알려주세요 (선택)"
+                className="w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                <Button variant="ghost" size="md" onClick={() => setDisputeFor(null)} disabled={busy}>뒤로</Button>
+                <Button variant="primary" size="md" fullWidth disabled={busy}
+                  onClick={async () => { if (await post(cur.id, "dispute", disputeNote.trim() || null)) advance(); }}>
+                  이의 접수
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              <Button variant="primary" size="md" fullWidth disabled={busy}
+                onClick={async () => { if (await post(cur.id, "confirm")) advance(); }}>
+                확인했어요
+              </Button>
+              <Button variant="ghost" size="md" fullWidth disabled={busy} onClick={() => { setErr(""); setDisputeFor(cur.id); }}>
+                이 수업 안 받았어요
+              </Button>
+              {pending.length >= CONFIRM_MODAL_THRESHOLD && (
+                <button onClick={snooze} disabled={busy} className="w-full py-1 text-center text-[12px] text-muted">
+                  나중에 할게요
+                </button>
+              )}
+            </div>
+          )}
+        </Modal>
+      )}
+    </>
+  );
+}
+
+function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, rewards, onReloadLogs }) {
   const [subTab, setSubTab] = useState("read"); // read=내 기록(첫 화면) · write=기록 남기기
   if (!me) {
     return (
@@ -827,6 +984,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {subTab === "read" && (
           <>
+        {/* 수업일지 확인 유도 — 배너(항상) + pending≥3 소프트 모달. onReload=loadHome(logs 재조회). */}
+        <ConfirmFlow logs={logs} onReload={onReloadLogs} />
+
         {/* 오운완 카드 — 최상단. 누적·연속은 RPC(ounwan) 값만 사용(§2 규칙).
             '오늘 했는지'만 로컬 파생 — 오늘은 항상 최근 조회 창 안이라 정확하다. */}
         <OunwanCard
@@ -857,6 +1017,12 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.created_at)}</span>
                           <span className="rounded-full bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub">{round}회차</span>
+                          {/* 확인 상태 뱃지 — 뷰의 confirm_result 파생. 확정=숨김(깔끔), 이의=danger, 미확인=neutral. */}
+                          {l.confirm_result === "dispute" ? (
+                            <Badge tone="danger">이의</Badge>
+                          ) : !l.confirmed_at ? (
+                            <Badge tone="neutral">미확인</Badge>
+                          ) : null}
                           {l.ai_summary && (
                             <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
                           )}
@@ -1091,5 +1257,5 @@ export default function MemberHome() {
   if (phase === "checking") return <ScreenMsg>불러오는 중…</ScreenMsg>;
   if (phase === "login")
     return <LoginCard last4={last4} setLast4={setLast4} onSubmit={submit} busy={busy} err={err} />;
-  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} ounwan={ounwan} rewards={rewards} />;
+  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} ounwan={ounwan} rewards={rewards} onReloadLogs={loadHome} />;
 }

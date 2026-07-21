@@ -6,8 +6,8 @@
    회원전환 리셋은 부모가 key로 리마운트(자동). 재등록 결과·브리핑은 PtReRegTab 소관.
    ========================================================================= */
 
-import { useState, useEffect } from "react";
-import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
@@ -29,6 +29,8 @@ import MemberCardioSummary from "@/components/views/MemberCardioSummary";
 import MemberPhotoSummary from "@/components/views/MemberPhotoSummary";
 import MemberScheduleSummary from "@/components/views/MemberScheduleSummary";
 import Card from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
+import { contentHashBrowser } from "@/lib/workoutHash";
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
 function fmtDT(iso) {
@@ -47,7 +49,7 @@ const SOURCE_TONE = {
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
 const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 
-export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, loading, mode, children }) {
+export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, confirms = [], loading, mode, children }) {
   const [body, setBody] = useState(""); // 손입력 수업 내용/피드백
   const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
@@ -102,6 +104,42 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const timeline = [...logs].sort(
     (a, b) => new Date(b.session_at ?? b.created_at ?? 0) - new Date(a.session_at ?? a.created_at ?? 0)
   );
+
+  // log_id → 확인 상태(확정/이의). 뷰와 동일 규칙: confirm 하나라도 있으면 확정(우선), 없고 dispute면 이의.
+  //   confirm 레코드의 content_hash를 보관 → 아래 해시 대조에 사용.
+  const confirmByLog = useMemo(() => {
+    const m = new Map();
+    for (const c of confirms || []) {
+      const prev = m.get(c.log_id);
+      if (c.result === "confirm") {
+        m.set(c.log_id, { result: "confirm", confirmed_at: c.confirmed_at, content_hash: c.content_hash }); // 확정 우선
+      } else if (!prev) {
+        m.set(c.log_id, { result: "dispute", confirmed_at: c.confirmed_at, dispute_note: c.dispute_note });
+      }
+    }
+    return m;
+  }, [confirms]);
+
+  // 해시 대조(비동기) — 확정된 일지의 '현재 내용' 해시를 다시 계산해 저장 해시와 비교.
+  //   다르면 트레이너가 확인 후 내용을 고친 것 → "확인 후 변경됨" 표시. 라우트와 같은 lib(contentHashBrowser).
+  //   log/confirm이 바뀔 때만 재계산. 계산 전에는 빈 Set(변경 뱃지 미표시 · 오탐 방지).
+  const [changedIds, setChangedIds] = useState(() => new Set());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const changed = new Set();
+      for (const log of logs || []) {
+        const c = confirmByLog.get(log.id);
+        if (c?.result !== "confirm" || !c.content_hash) continue;
+        try {
+          const now = await contentHashBrowser(log);
+          if (now !== c.content_hash) changed.add(log.id);
+        } catch { /* subtle 미지원 등 → 대조 스킵(변경 뱃지 없음, 안전측) */ }
+      }
+      if (!cancelled) setChangedIds(changed);
+    })();
+    return () => { cancelled = true; };
+  }, [logs, confirmByLog]);
   // ③ 종목별 무게 추이 — logs 클라 집계(추가 쿼리 0). 무게 데이터 있는 종목만 그래프.
   const exerciseSeries = buildExerciseSeries(logs).filter((s) =>
     s.points.some((p) => p.topWeight != null)
@@ -395,6 +433,22 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                       취소됨
                     </span>
                   )}
+                  {/* 회원 확인 상태 — 노쇼/취소는 확인 대상 아님(라우트가 400)이라 뱃지 안 붙임. */}
+                  {!log.voided && log.source !== "noshow" && (() => {
+                    const c = confirmByLog.get(log.id);
+                    if (c?.result === "confirm") {
+                      return (
+                        <>
+                          <Badge tone="primary"><CheckCircle2 className="h-3 w-3" />확인됨 {c.confirmed_at ? new Date(c.confirmed_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : ""}</Badge>
+                          {changedIds.has(log.id) && (
+                            <Badge tone="danger"><AlertTriangle className="h-3 w-3" />확인 후 변경됨</Badge>
+                          )}
+                        </>
+                      );
+                    }
+                    if (c?.result === "dispute") return <Badge tone="danger">이의제기</Badge>;
+                    return <Badge tone="neutral">미확인</Badge>;
+                  })()}
                 </div>
                 {log.source === "noshow" ? (
                   <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼 🚫</p>
@@ -422,6 +476,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                       </span>
                     ))}
                   </div>
+                )}
+                {/* 이의 사유 — 회원이 남긴 것(있을 때만). 트레이너가 무엇을 정정할지 참고. */}
+                {confirmByLog.get(log.id)?.result === "dispute" && confirmByLog.get(log.id)?.dispute_note && (
+                  <p className="mt-2 rounded-md border border-danger/40 bg-card px-2 py-1.5 text-[11px] leading-relaxed text-danger-text">
+                    회원 이의: {confirmByLog.get(log.id).dispute_note}
+                  </p>
                 )}
               </li>
             ))}
