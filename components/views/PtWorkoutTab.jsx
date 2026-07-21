@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useState, useEffect, useMemo } from "react";
-import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
@@ -55,6 +55,11 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
   const [sets, setSets] = useState([]); // 저장 대기 구조화 세트(음성 자동채움/손입력)
   const [saving, setSaving] = useState(false);
+  // 지난 수업 인라인 편집(ai_summary만) · 삭제(void) — 로그 id 기준 단일 대상.
+  const [editLogId, setEditLogId] = useState(null);   // 편집 중인 log.id(null=아님)
+  const [editText, setEditText] = useState("");
+  const [logBusy, setLogBusy] = useState(false);      // 수정/void 진행 중(버튼 잠금)
+  const [voidTarget, setVoidTarget] = useState(null); // 삭제 확인 모달 대상 log(null=닫힘)
   // 계약 등록 회복 모달(①/② 실패 회복 · ③ 재등록 씨앗) — 금액 4칸은 ContractAmountFields 재사용.
   const [showContract, setShowContract] = useState(false);
   const [cSessions, setCSessions] = useState("");
@@ -140,6 +145,55 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     })();
     return () => { cancelled = true; };
   }, [logs, confirmByLog]);
+
+  // 지난 수업 편집 시작 — 현재 ai_summary를 textarea로. 확정된 로그면 카드에서 경고를 이미 보여준다.
+  const startEdit = (log) => { setEditLogId(log.id); setEditText(log.ai_summary ?? ""); };
+  const cancelEdit = () => { setEditLogId(null); setEditText(""); };
+
+  // §1 수정 — ai_summary만 update. 교훈1: .select() 0행이면 실패. 데모는 로컬 갱신.
+  const saveEdit = async (log) => {
+    if (logBusy) return;
+    const next = editText.trim() || null;
+    setLogBusy(true);
+    if (!supabase) {
+      setLogs((p) => p.map((x) => (x.id === log.id ? { ...x, ai_summary: next } : x)));
+      cancelEdit(); showToast("수정됨(데모)"); setLogBusy(false); return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("daily_workout_log").update({ ai_summary: next }).eq("id", log.id).select();
+      if (error || !data || data.length === 0) { showToast("수정 실패 — 다시 시도하세요"); return; }
+      setLogs((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
+      cancelEdit(); showToast("수정됨");
+    } catch {
+      showToast("수정 실패 — 네트워크 확인");
+    } finally {
+      setLogBusy(false);
+    }
+  };
+
+  // §2 삭제=void(소프트) / 무르기 — 하드 DELETE 금지(workout_log_confirmation cascade로 서명 삭제됨).
+  //   void=true면 오운완 RPC(voided=false 필터)에서 자동 제외되고 잔여도 되돌아온다.
+  const setVoided = async (log, voided) => {
+    if (logBusy) return;
+    setLogBusy(true);
+    if (!supabase) {
+      setLogs((p) => p.map((x) => (x.id === log.id ? { ...x, voided } : x)));
+      setVoidTarget(null); showToast(voided ? "삭제됨(데모)" : "복구됨(데모)"); setLogBusy(false); return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("daily_workout_log").update({ voided }).eq("id", log.id).select();
+      if (error || !data || data.length === 0) { showToast(voided ? "삭제 실패 — 다시 시도" : "복구 실패 — 다시 시도"); return; }
+      setLogs((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
+      setVoidTarget(null); showToast(voided ? "삭제됨 · 출석·차감에서 제외" : "복구됨");
+    } catch {
+      showToast(voided ? "삭제 실패 — 네트워크 확인" : "복구 실패 — 네트워크 확인");
+    } finally {
+      setLogBusy(false);
+    }
+  };
+
   // ③ 종목별 무게 추이 — logs 클라 집계(추가 쿼리 0). 무게 데이터 있는 종목만 그래프.
   const exerciseSeries = buildExerciseSeries(logs).filter((s) =>
     s.points.some((p) => p.topWeight != null)
@@ -450,7 +504,27 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                     return <Badge tone="neutral">미확인</Badge>;
                   })()}
                 </div>
-                {log.source === "noshow" ? (
+                {editLogId === log.id ? (
+                  /* §1 인라인 편집 — ai_summary만. */
+                  <div className="mt-2">
+                    {confirmByLog.get(log.id)?.result === "confirm" && (
+                      <p className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] leading-relaxed text-amber-700">
+                        ⚠️ 이미 회원이 확인한 수업이에요. 수정하면 회원 화면에 &lsquo;변경됨&rsquo;으로 표시됩니다.
+                      </p>
+                    )}
+                    <textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      disabled={logBusy}
+                      rows={4}
+                      className="w-full rounded-lg border border-line bg-card px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
+                    />
+                    <div className="mt-2 flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={logBusy}>취소</Button>
+                      <Button variant="primary" size="sm" fullWidth onClick={() => saveEdit(log)} disabled={logBusy}>저장</Button>
+                    </div>
+                  </div>
+                ) : log.source === "noshow" ? (
                   <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼 🚫</p>
                 ) : log.ai_summary ? (
                   <details className="group mt-1.5">
@@ -482,6 +556,27 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                   <p className="mt-2 rounded-md border border-danger/40 bg-card px-2 py-1.5 text-[11px] leading-relaxed text-danger-text">
                     회원 이의: {confirmByLog.get(log.id).dispute_note}
                   </p>
+                )}
+                {/* §1·§2 수정/삭제 — 편집 중엔 자체 버튼이 있어 숨김. voided면 무르기(하드 DELETE 금지 — 서명 cascade). */}
+                {editLogId !== log.id && (
+                  <div className="mt-2.5 flex justify-end gap-1.5 border-t border-line pt-2">
+                    {log.voided ? (
+                      <Button variant="ghost" size="sm" onClick={() => setVoided(log, false)} disabled={logBusy}>
+                        <RotateCcw className="h-3.5 w-3.5" />무르기
+                      </Button>
+                    ) : (
+                      <>
+                        {log.source !== "noshow" && (
+                          <Button variant="ghost" size="sm" onClick={() => startEdit(log)} disabled={logBusy}>
+                            <Pencil className="h-3.5 w-3.5" />수정
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => setVoidTarget(log)} disabled={logBusy} className="text-danger-text">
+                          <Trash2 className="h-3.5 w-3.5" />삭제
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 )}
               </li>
             ))}
@@ -754,6 +849,36 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               </Button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* §2 삭제 확인 — 소프트(void). 하드 DELETE 아님(서명·확인 기록 보존). 오운완·차감에서 제외됨. */}
+      {voidTarget && (
+        <Modal
+          variant="center"
+          size="sm"
+          title="이 수업일지를 삭제할까요?"
+          onClose={() => !logBusy && setVoidTarget(null)}
+          footer={
+            <>
+              <Button variant="ghost" size="md" fullWidth onClick={() => setVoidTarget(null)} disabled={logBusy}>
+                취소
+              </Button>
+              <Button variant="danger" size="md" fullWidth onClick={() => setVoided(voidTarget, true)} disabled={logBusy}>
+                {logBusy ? "삭제 중…" : "삭제"}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm leading-relaxed text-sub">
+            <span className="font-mono text-xs text-muted">{fmtDT(voidTarget.session_at ?? voidTarget.created_at)}</span> 수업이 목록에서 흐려지고,
+            <b className="text-ink"> 오운완 출석·세션 차감에서 제외</b>됩니다. 기록은 남아 있어 <b className="text-ink">언제든 무르기</b>로 되돌릴 수 있어요.
+            {confirmByLog.get(voidTarget.id)?.result === "confirm" && (
+              <span className="mt-2 block rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-700">
+                ⚠️ 이미 회원이 확인한 수업이에요. 삭제해도 회원의 확인·서명 기록은 보존됩니다.
+              </span>
+            )}
+          </p>
         </Modal>
       )}
 
