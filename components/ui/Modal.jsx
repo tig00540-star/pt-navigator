@@ -66,10 +66,19 @@ export default function Modal({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  /* 열릴 때 포커스를 시트로, 닫을 때 트리거로 복원. ESC로 닫기(blocking 제외). */
+  /* ① 포커스 이동(마운트 시 시트로) + 언마운트 시 트리거로 복원 — deps []로 '마운트 1회'만.
+     ⚠️ canClose/onClose에 묶으면 안 된다: onClose가 인라인 함수인 부모(예: ConfirmFlow)가
+        모달 안 입력(textarea)으로 리렌더될 때마다 신원이 바뀌어 이 effect가 재실행되고,
+        ref.focus()가 입력에서 포커스를 뺏어 ★모바일 키보드가 닫힌다. 포커스 이동은 여는 순간 1회면 충분. */
   useEffect(() => {
     const trigger = document.activeElement;
     ref.current?.focus();
+    return () => { if (trigger instanceof HTMLElement) trigger.focus(); };
+  }, []);
+
+  /* ② keydown 리스너(ESC 닫기 + Tab 포커스 트랩) — canClose/onClose에 의존(최신 핸들러 필요).
+     리스너만 재부착하고 포커스는 건드리지 않으므로 리렌더 시 키보드가 안 닫힌다. */
+  useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape" && canClose) { e.stopPropagation(); onClose?.(); return; }
       if (e.key !== "Tab" || !ref.current) return;
@@ -83,10 +92,7 @@ export default function Modal({
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", onKey, true);
-    return () => {
-      document.removeEventListener("keydown", onKey, true);
-      if (trigger instanceof HTMLElement) trigger.focus();
-    };
+    return () => document.removeEventListener("keydown", onKey, true);
   }, [canClose, onClose]);
 
   if (!canPortal) return null;
