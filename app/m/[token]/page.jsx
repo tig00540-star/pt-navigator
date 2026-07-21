@@ -759,8 +759,6 @@ function ConfirmFlow({ logs, onReload }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [disputeFor, setDisputeFor] = useState(null); // 이의 사유 입력 중인 log_id(null=아님)
-  const [disputeNote, setDisputeNote] = useState("");
   const [serverOff, setServerOff] = useState(false);  // member-confirm 503 → 유도 전체 끔(fail-open)
 
   const today = todayStr();
@@ -793,33 +791,29 @@ function ConfirmFlow({ logs, onReload }) {
     return () => { alive = false; };
   }, [serverOff, autoShown, pending.length, today]);
 
-  const post = useCallback(async (log_id, result, note) => {
+  // 확인 전용 — result는 "confirm" 고정(이의 제거). 큐 커서를 쓰지 않는다:
+  // onReload로 pending이 줄면 cur=pending[0]이 자연히 다음 건이 된다(idx 이중 전진 버그 방지).
+  const confirmLog = useCallback(async (log_id) => {
     setBusy(true); setErr("");
     try {
       const { data: sess } = await memberSupabase.auth.getSession();
       const token = sess?.session?.access_token;
-      if (!token) { setErr("세션이 만료됐어요. 다시 로그인해 주세요."); return false; }
+      if (!token) { setErr("세션이 만료됐어요. 다시 로그인해 주세요."); return; }
       const res = await fetch("/api/member-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ log_id, result, dispute_note: note || undefined }),
+        body: JSON.stringify({ log_id, result: "confirm" }),
       });
-      if (res.status === 503) { setServerOff(true); setModalOpen(false); return false; } // fail-open: 유도 끔
-      if (res.status === 409) { await onReload?.(); return true; } // 이미 확인됨 → 재조회로 정리, 성공 취급
-      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || "처리에 실패했어요."); return false; }
+      if (res.status === 503) { setServerOff(true); setModalOpen(false); return; } // fail-open: 유도 끔
+      if (res.status === 409) { await onReload?.(); return; } // 이미 확인됨 → 재조회로 정리, 성공 취급
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || "처리에 실패했어요."); return; }
       await onReload?.(); // 뷰 재조회 → confirmed_at 채워져 pending에서 빠짐
-      return true;
     } catch {
       setErr("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
-      return false;
     } finally {
       setBusy(false);
     }
   }, [onReload]);
-
-  // 확인/이의 성공 후 처리 — 큐 커서를 쓰지 않는다. onReload로 pending이 줄면 cur=pending[0]이 자연히 다음 건이 된다.
-  // (idx를 함께 올리면 onReload의 감소와 이중 전진 → 큐 건너뜀 버그). dispute 입력 상태만 리셋.
-  const advance = () => { setDisputeFor(null); setDisputeNote(""); };
 
   const snooze = () => {
     try { localStorage.setItem(CONFIRM_SNOOZE_KEY, today); } catch { /* 무시 */ }
@@ -860,40 +854,17 @@ function ConfirmFlow({ logs, onReload }) {
 
           {err && <p className="mt-3 text-[12px] text-danger-text">{err}</p>}
 
-          {disputeFor === cur.id ? (
-            <div className="mt-4 space-y-2">
-              <textarea
-                value={disputeNote}
-                onChange={(e) => setDisputeNote(e.target.value)}
-                disabled={busy}
-                rows={3}
-                placeholder="어떤 점이 다른지 알려주세요 (선택)"
-                className="w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
-              />
-              <div className="flex gap-2">
-                <Button variant="ghost" size="md" onClick={() => setDisputeFor(null)} disabled={busy}>뒤로</Button>
-                <Button variant="primary" size="md" fullWidth disabled={busy}
-                  onClick={async () => { if (await post(cur.id, "dispute", disputeNote.trim() || null)) advance(); }}>
-                  이의 접수
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-4 space-y-2">
-              <Button variant="primary" size="md" fullWidth disabled={busy}
-                onClick={async () => { if (await post(cur.id, "confirm")) advance(); }}>
-                확인했어요
-              </Button>
-              <Button variant="ghost" size="md" fullWidth disabled={busy} onClick={() => { setErr(""); setDisputeFor(cur.id); }}>
-                이 수업 안 받았어요
-              </Button>
-              {pending.length >= CONFIRM_MODAL_THRESHOLD && (
-                <button onClick={snooze} disabled={busy} className="w-full py-1 text-center text-[12px] text-muted">
-                  나중에 할게요
-                </button>
-              )}
-            </div>
-          )}
+          <div className="mt-4 space-y-2">
+            <Button variant="primary" size="md" fullWidth disabled={busy}
+              onClick={() => confirmLog(cur.id)}>
+              확인했어요
+            </Button>
+            {pending.length >= CONFIRM_MODAL_THRESHOLD && (
+              <button onClick={snooze} disabled={busy} className="w-full py-1 text-center text-[12px] text-muted">
+                나중에 할게요
+              </button>
+            )}
+          </div>
         </Modal>
       )}
     </>
@@ -1017,10 +988,8 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.created_at)}</span>
                           <span className="rounded-full bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub">{round}회차</span>
-                          {/* 확인 상태 뱃지 — 뷰의 confirm_result 파생. 확정=숨김(깔끔), 이의=danger, 미확인=neutral. */}
-                          {l.confirm_result === "dispute" ? (
-                            <Badge tone="danger">이의</Badge>
-                          ) : !l.confirmed_at ? (
+                          {/* 확인 상태 뱃지 — 뷰의 confirmed_at 파생. 확정=숨김(깔끔), 미확인=neutral(이의 제거). */}
+                          {!l.confirmed_at ? (
                             <Badge tone="neutral">미확인</Badge>
                           ) : null}
                           {l.ai_summary && (
