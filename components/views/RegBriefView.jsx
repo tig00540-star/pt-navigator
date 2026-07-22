@@ -3,6 +3,7 @@
    highlightReason = 기록된 reg_reason(있으면 그 거절 강조). 구 스키마 캐시는 legacy 안내.
    시인성: 블록별 이모지 헤더 + 칩 라벨 + p-4 통일(2차 브리핑 톤). */
 import { labelOf, REG_REASON_OPTS } from "@/lib/labels";
+import ClosingSequence from "@/components/ui/ClosingSequence";
 
 export default function RegBriefView({ brief, highlightReason }) {
   if (!brief) return null;
@@ -71,13 +72,13 @@ export default function RegBriefView({ brief, highlightReason }) {
           {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
         </div>
       )}
-      {cline && (
-        <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
-          <div className="flex items-center gap-2"><span className="text-base">🔥</span><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">클로징 한마디</span></div>
-          <p className="mt-1.5 font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
-          {sw && <p className="mt-2 rounded-md bg-card px-2 py-1 text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">혜택(덤) · </span>{sw}</p>}
-        </div>
-      )}
+      {/* 클로징 흐름(4비트) + 혜택(덤). 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
+      <ClosingSequence
+        sequence={b.closing_sequence}
+        fallbackLine={cline}
+        sweetener={sw}
+        icon={<span className="text-base">🔥</span>}
+      />
       {obj.length > 0 && (
         <div>
           <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-sub"><span className="text-base">🛡</span> 거절 선제 방어 ({obj.length})</div>

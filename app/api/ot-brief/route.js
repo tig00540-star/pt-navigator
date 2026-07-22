@@ -33,7 +33,8 @@ const PREAMBLE = `너는 피트니스 트레이너의 파트너다. 도메인에
 
 [윤리 가드레일 — 세일즈는 강하게 가되 이것만은 금지]
 - 세일즈 강도 = '근거·책임의 세기'다(정당한 강조). 압박·조작의 세기가 아니다.
-- 허용(강하게 OK): 회원 '본인 데이터'로 말하기 / 사실 기반 손실 프레이밍("지금 멈추면 원점") /
+- 허용(강하게 OK): 회원 '본인 데이터'로 말하기 / 사실 기반 손실·가치 프레이밍(회원 목적별로 다르게 —
+  진행손실 / 유지·안전 / 효율·정확 / 습관형성. ⚠️"지금 멈추면 원점"은 진행손실형 한 축일 뿐, 기본값 아님) /
   "혼자서는 이 세팅을 못 잡는다"(사실인 책임의 말) / 확신 있는 단일 추천 · 가정 종결.
 - 금지(효과에도 역효과): 허위 긴급성("오늘만 이 가격"), FOMO 남발, 죄책감 유발, 회원 소진
   강요(지쳐서 등록), 의료·완치·치료 표현. — 신뢰가 깨지면 재등록·소개가 무너진다.
@@ -47,6 +48,37 @@ const PREAMBLE = `너는 피트니스 트레이너의 파트너다. 도메인에
 - 반드시 지정된 JSON 스키마만 출력. 설명·마크다운·코드펜스 금지.`;
 
 const g = (v) => (v == null || v === "" ? "없음" : v);
+
+// ── 클로징 시퀀스 공용 재료(클로징 재설계) — first/second/reregister 공유해 표현 흔들림 방지. ──
+// ① stakes 손실·가치 축 taxonomy(goal 유형별 · '원점' 일변도 금지 · 3케이스 검증).
+const STAKES_AXIS = `     · 외형/체중감량/바디라인 → 진행손실형: "지금 잡은 리듬 흩어지면 되돌아간다."
+     · 통증개선/재활/교정 → 유지·안전형: "오늘 풀린 감각, 관리 안 하면 다시 굳고 혼자 하면 잘못 써서 악화될 수 있다."(의료 단정 없이)
+     · 기구사용/근력/벌크업 → 효율·정확형: "혼자 하면 힘 쓰는 지점을 못 찾아 시간·부상 낭비 — 같은 시간에 제대로 느는 게 PT."(★'원점' 아님 · 헛수고 방지 축)
+     · 건강/체력/활력 → 습관형성형: "이 컨디션을 습관으로 굳히려면 초반이 관건."
+     ⚠️"지금 멈추면 원점"은 진행손실형(외형) 한 축일 뿐 모든 케이스의 기본값이 아니다 — goal에 맞는 축을 골라라.`;
+
+// ② 회원 대사 전문용어 금지(전 phase 공통 · 출력 규칙에 삽입).
+const MEMBER_LANG = `[회원 대사 용어] 회원에게 던지는 모든 대사(trial_close·ask·flush·point_it_out·opening 등)엔 트레이너
+ 전문용어 금지(세팅·견갑·흉추·힙힌지·둔근개입 등 ❌). 회원이 아는 말로 풀어라("자세 하나 잡아드렸더니 /
+ 힘이 제대로 들어가는 지점 / 각도만 살짝 바꿔드렸는데"). ★단 트레이너가 읽는 point(왜 시키나)·why 류엔 용어 OK.`;
+
+// ③ closing_sequence JSON 예시(스키마 · 3 프롬프트 공유).
+const CLOSING_SEQ_JSON = `"closing_sequence": { "trial_close": "떠보기 대사 + 끝에 (기다림)", "stakes": "goal 축에 맞는 손실·가치 근거", "ask": "구체 커밋 + 회피 어려운 질문형 요청", "hold": "요청 직후 침묵 — 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
+
+// ④ 클로징 4비트 지시(재료만 phase별 주입 · trial_close→stakes→ask→hold→flush).
+function closingSeqInstruction({ num, leverage, trialHint, askTarget, askExample, tone = "" }) {
+  return `${num} closing_sequence(클로징 흐름 — 한 줄이 아니라 4비트 시퀀스): ${leverage}를 지렛대로, 회원을
+   커밋까지 데려가는 흐름을 준다. 각 비트는 '바로 말할 완성 대사'로.${tone}
+   - trial_close: ${trialHint} + 끝에 (기다림). 작은 예스부터 받는다.
+   - stakes: 오늘/그동안 몸에서 일어난 일 + 안 하면 그게 어떻게 되는지를, 이 회원 goal 축으로(막연한
+     "좋아지실 거예요" 금지). 손실·가치는 goal 유형마다 다르게 —
+${STAKES_AXIS}
+   - ask: ★구체 커밋을 못 박는다 — ${askTarget} + 시작/시점을 담아 '회피 어려운 질문형'으로
+     (${askExample}). '등록하세요/재등록하세요' 명령형 판매동사, "등록해둘게요"처럼 결제 전 미리 등록하는 표현(결제=등록이라 비현실적), 가격(원) — 모두 쓰지 마라. 대신 '오늘 정하고 시작/스케줄 잡는' 결정으로 몰아라.
+   - hold: 요청 직후 '트레이너 행동 지시'(회원 대사 아님) — "여기서 먼저 말하지 말고 회원 답을 기다린다."
+   - flush: 회원이 "생각해볼게요"로 물러설 때, 진짜 이유를 꺼내는 재요청 대사("뭐가 제일 걸리세요 —
+     시간이에요, 비용이에요?"). 그 이유별 깊은 대응은 아래 objection_defense가 잇는다.`;
+}
 
 // ── ① firstPrompt — 사전무장 컨닝페이퍼(4블록). 세일즈 클로징 극대화 · 3분전 스캔용. ──
 function firstPrompt(member, packages) {
@@ -138,8 +170,13 @@ ${pkgBlock}
    안 하면/함께 하면'을 그림처럼. 운동·기계 클리셰("브레이크-액셀") 금지.
    - metaphor: 그대로 말할 비유 대사 1~2문장.  - bridge: 비유→등록 필요성으로 잇는 한 줄.
 
-⑤ closing_line(클로징 한마디): 오늘 체감을 근거로 한 '가정 종결' 한 문장. '등록하세요'(판매 동사) 금지 →
-   "다음 주부터 이렇게 가시죠" 결. 긴급성은 사실 기반 손실만.
+${closingSeqInstruction({
+    num: "⑤",
+    leverage: "오늘 target_exercise의 체감",
+    trialHint: "방금 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
+    askTarget: "추천 패키지 방향(회차·빈도)",
+    askExample: `"다음 주 화·목으로 잡을게요 — 화요일 저녁 괜찮으세요?"`,
+  })}
 
 ⑥ objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
    세일즈로 다시 끌기'. reason 키 고정(5개 전부 · 각 1개):
@@ -172,6 +209,7 @@ ${pkgBlock}
 
 [분량 — 외우기 쉽게] 각 대사는 짧고 입에 붙게. line류 1~2문장, why/bridge/so_what 1문장.
 [필드명 인용 금지] 값 텍스트에 스키마 키(point_it_out·so_what·objection_defense 등)를 쓰지 마라.
+${MEMBER_LANG}
 [출력 언어] 자연스러운 한국어. 영문 코드값·필드명 노출 금지. 아래 JSON만(설명·마크다운·코드펜스 금지). ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 {
   "member_read": "이 회원 한 줄 — 누구고/뭘 원하고/뭐가 걸리나 (3분전 각인 앵커)",
@@ -179,7 +217,7 @@ ${pkgBlock}
   "session_plan": [ { "exercise": "...", "point": "..." } ],
   "target_exercise": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
-  "closing_line": "가정 종결 한마디('등록' 단어 없이)",
+  ${CLOSING_SEQ_JSON},
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]
@@ -240,7 +278,7 @@ ${caseInputBlock}
 ${pkgBlock}
 
 [세일즈 강도] sales_intensity는 근거의 '선명도'다(압박·설득의 세기 아님). strong=사실 기반 손실·긴급성을
-더 또렷이 / soft=오늘 밀지 말고 다음 접점의 씨앗 톤(closing_line을 부드러운 가정으로) / standard=담백하게.
+더 또렷이 / soft=오늘 밀지 말고 다음 접점의 씨앗 톤(closing_sequence를 부드러운 가정으로) / standard=담백하게.
 
 [컨닝페이퍼 — 2차는 '증명 → 클로징']
 ① recall(지난 시간 소환): 1차의 체감·회원 한마디(memberQuote)를 되살려 문을 여는 완성 대사. "지난번
@@ -265,8 +303,14 @@ ${pkgBlock}
 
 ④ sales_metaphor: 회원 직업·일상·목표에서 끌어온 비유 하나(운동·기계 클리셰 금지). metaphor + bridge(등록 필요성으로).
 
-⑤ closing_line: '마지막 OT'급 강한 가정 종결 한마디. '등록하세요'(판매 동사) 금지 → "다음 주부터 이렇게
-   가시죠" 결. 긴급성은 사실 기반 손실만("지금 멈추면 오늘 이 감각 흩어져요"). 1차보다 확신 있게.
+${closingSeqInstruction({
+    num: "⑤",
+    leverage: "오늘 proof의 체감",
+    trialHint: "방금 증명된 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
+    askTarget: "추천 패키지 방향(회차·빈도)",
+    askExample: `"다음 주 화·목으로 잡을게요 — 화요일 저녁 괜찮으세요?"`,
+    tone: " ★2차는 1차 관찰로 '증명'까지 끝낸 국면 — trial_close는 proof의 체감을, ask는 1차보다 확신 있게(마지막 OT급).",
+  })}
 
 ⑥ objection_defense(거절 선제 방어 5종): price·hesitation·doubt·time·compare 각 1개. 1차 관찰·(있으면)
    회원 quit_reason을 근거로 더 날카롭게. 각: trigger(나올 신호) / defense(공감+세일즈 무브) /
@@ -290,6 +334,7 @@ ${pkgBlock}
 
 [member_read] 1차에서 확인된 것 + 지금 클로징 국면을 한 줄로(앵커).
 [data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
+${MEMBER_LANG}
 [출력 언어] 자연스러운 한국어. 영문 코드값·필드명(memberQuote·point_it_out 등) 값 텍스트 노출 금지. ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 아래 JSON만 출력(설명·마크다운·코드펜스 금지).
 {
@@ -298,7 +343,7 @@ ${pkgBlock}
   "session_plan": [ { "exercise": "...", "point": "..." } ],
   "proof": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
-  "closing_line": "마지막 OT급 강한 가정 종결 한마디",
+  ${CLOSING_SEQ_JSON},
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]${caseSchemaLine}
@@ -345,11 +390,13 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
 
 ③ sales_metaphor: 회원 직업·일상·목표에서 끌어온 비유 하나(운동·기계 클리셰 금지). metaphor + bridge(재등록 필요성으로).
 
-④ closing_line: 재등록을 '지금 결정'하게 만드는 클로징 한마디. ★단순히 "다음에도 이어가시죠"류(수업만
-   계속하자는 뜻)가 아니라, why_now의 근거를 짚고 '그러니 지금 재등록하는 게 맞다'로 착지해야 한다. 회원이
-   "아, 지금 재등록해야겠다"를 납득하게. '재등록하세요'(명령·판매 동사)는 피하되 대상은 분명히 재등록/연장
-   결제여야 한다(애매한 '이어가자' 금지). 가정 종결 톤 예: "그동안 ○○ 좋아지셨고 다음이 △△니까, 여기서
-   멈추지 말고 딱 이어서(재등록) 가시죠 — 지금이 흐름 안 끊고 갈 타이밍이에요." 긴급성은 사실 기반 손실만.
+${closingSeqInstruction({
+    num: "④",
+    leverage: "그동안의 변화(why_now의 근거)",
+    trialHint: `그동안의 변화를 회원이 스스로 인정하게 하는 떠보기 대사("그동안 ○○ 확실히 좋아진 거 느끼시죠?")`,
+    askTarget: "대상이 분명한 '재등록/연장 결제'(애매한 '이어가자' 금지)",
+    askExample: `"여기서 딱 이어서 가시죠 — 오늘 정하고 다음 주 스케줄까지 잡아요, 어떠세요?"`,
+  })}
 
 ⑤ sweetener(재등록 혜택 — '덤'으로만): 위 이유를 납득시킨 뒤 마지막에 얹을 가격/혜택 한 줄. PT 재등록은
    보통 가격 혜택이 있으니 활용하되, ★이게 재등록의 '이유'를 대체하면 안 된다(이유가 메인, 혜택은 덤).
@@ -363,6 +410,7 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
 
 [member_read] 이 회원 그동안 어땠고 지금 재등록 국면을 한 줄로(앵커).
 [data_gaps] 관리 기록이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
+${MEMBER_LANG}
 [출력 언어] 자연스러운 한국어. 영문 코드값·필드명 값 텍스트 노출 금지. 단 objection_defense.reason은 위 영문
 키 그대로 둔다(화면 매칭용). 아래 JSON만 출력(설명·마크다운·코드펜스 금지). ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 {
@@ -370,7 +418,7 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
   "why_now": { "proven": "...", "risk_if_stop": "...", "next_roadmap": "..." },
   "session_flow": { "gap_awareness": "...", "goal_raise": "...", "timing": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
-  "closing_line": "재등록 가정 종결 한마디",
+  ${CLOSING_SEQ_JSON},
   "sweetener": "재등록 혜택 한 줄(덤 · 구체 금액 없이) 또는 빈 문자열",
   "objection_defense": [ { "reason": "money|sessions_left|low_effect|time|schedule", "trigger": "...", "defense": "...", "line": "..." } ],
   "data_gaps": ["..."]
@@ -476,6 +524,13 @@ const FIELD_TERMS = [
   ["sales_metaphor", "세일즈 비유"],
   ["objection_defense", "거절 방어"],
   ["closing_line", "클로징 한마디"],
+  // 클로징 시퀀스 재설계 — 신규 키 누출 방어. ⚠️ closing_sequence는 아래 ["closing","클로징"]보다 먼저(긴 키 우선).
+  ["closing_sequence", "클로징 흐름"],
+  ["trial_close", "떠보기"],
+  ["stakes", "핵심 근거"],
+  ["ask", "요청"],
+  ["hold", "침묵"],
+  ["flush", "진짜 이유 꺼내기"],
   ["moves", "동작"],
   ["session_logic", "세션 근거"],
   ["frequency", "빈도"],
@@ -721,9 +776,9 @@ export async function POST(request) {
       .join("");
     // first는 필수 키를 넘겨 스키마 완전성까지 파서가 보장(부분객체·다중블록 방어).
     // second는 별도 스키마라 키 미지정(1순위 단일 파싱 — 기존 동작 유지, 회귀 없음).
-    const REQUIRED_FIRST = ["member_read", "opening", "session_plan", "target_exercise", "sales_metaphor", "closing_line", "objection_defense"];
-    const REQUIRED_SECOND = ["member_read", "recall", "session_plan", "proof", "sales_metaphor", "closing_line", "objection_defense"];
-    const REQUIRED_REREG = ["member_read", "why_now", "session_flow", "sales_metaphor", "closing_line", "objection_defense"];
+    const REQUIRED_FIRST = ["member_read", "opening", "session_plan", "target_exercise", "sales_metaphor", "closing_sequence", "objection_defense"];
+    const REQUIRED_SECOND = ["member_read", "recall", "session_plan", "proof", "sales_metaphor", "closing_sequence", "objection_defense"];
+    const REQUIRED_REREG = ["member_read", "why_now", "session_flow", "sales_metaphor", "closing_sequence", "objection_defense"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : [];
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
     return Response.json(brief);

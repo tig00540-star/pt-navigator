@@ -18,6 +18,7 @@ import {
   Flag,
 } from "lucide-react";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
+import ClosingSequence from "@/components/ui/ClosingSequence";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { won } from "@/lib/format";
@@ -341,16 +342,12 @@ export default function FirstOTAssist({ member }) {
             </div>
           ) : null}
 
-          {/* ④ 클로징 한마디 — 크게(L0) */}
-          {cline && (
-            <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
-              <div className="flex items-center gap-2">
-                <Flag className="h-4 w-4 text-primary-strong" />
-                <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">클로징 한마디</span>
-              </div>
-              <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
-            </div>
-          )}
+          {/* ④ 클로징 흐름(4비트) — 크게(L0). 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
+          <ClosingSequence
+            sequence={data?.closing_sequence}
+            fallbackLine={cline}
+            icon={<Flag className="h-4 w-4 text-primary-strong" />}
+          />
 
           {/* 거절 5방어 — 기본 펼침(현장 핵심) */}
           {obj.length > 0 && (

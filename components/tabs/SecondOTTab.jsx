@@ -27,6 +27,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import Eyebrow from "@/components/ui/Eyebrow";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
+import ClosingSequence from "@/components/ui/ClosingSequence";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
@@ -638,12 +639,12 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
           </div>
         ) : null}
-        {cline && (
-          <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
-            <div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary-strong" /><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">클로징 한마디</span></div>
-            <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{cline}&rdquo;</p>
-          </div>
-        )}
+        {/* 클로징 흐름(4비트) — 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
+        <ClosingSequence
+          sequence={b.closing_sequence}
+          fallbackLine={cline}
+          icon={<Flame className="h-4 w-4 text-primary-strong" />}
+        />
         {obj.length > 0 && (
           <details open className="rounded-xl border border-line bg-card">
             <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold tracking-label-ko text-sub"><ShieldCheck className="h-3.5 w-3.5 text-primary-strong" /> 거절 선제 방어 ({obj.length})</summary>
