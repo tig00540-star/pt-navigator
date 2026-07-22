@@ -290,7 +290,7 @@ ${JSON.stringify({
     sales_intensity: r.sales_intensity ?? "standard",
   }, null, 2)}
 ${caseInputBlock}
-이 1차 관찰을 유일 근거로 2차를 설계하라. 없는 관찰·수치·에피소드 창작 금지.
+이 1차 관찰을 유일 근거로 2차를 설계하라. 없는 관찰·수치·에피소드 창작 금지. ⚠️위 [1차 관찰]의 JSON 키(movements·reaction·memo·stimulus·attitudeTags·goal 등)는 내부 라벨이다 — 값 텍스트·대사에 그 영어 단어를 절대 쓰지 마라. 한국어로 풀어라("관찰된 동작에서…", "메모에 적으신…").
 
 [내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
 ${pkgBlock}
@@ -356,7 +356,7 @@ ${closingSeqInstruction({
 [member_read] 1차에서 확인된 것 + 지금 클로징 국면을 한 줄로(앵커).
 [data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 ${MEMBER_LANG}
-[출력 언어] 자연스러운 한국어. 영문 코드값·필드명(memberQuote·point_it_out 등) 값 텍스트 노출 금지. ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
+[출력 언어] 자연스러운 한국어. 영문 코드값·필드명(memberQuote·point_it_out·movements·reaction·memo·observation 등) 값 텍스트 노출 금지. ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 아래 JSON만 출력(설명·마크다운·코드펜스 금지).
 {
   "member_read": "1차 확인된 것 + 지금 클로징 국면 한 줄",
@@ -568,6 +568,16 @@ const FIELD_TERMS = [
   ["next_roadmap", "다음 단계"],
   ["sweetener", "혜택"],
   ["closing", "클로징"],
+  // 1차 관찰 원본 JSON 키 누출 방어(2차 브리핑에 movements·reaction.memo 등 영어 노출 제보).
+  // ⚠️ 순서: 복합·긴 키 먼저 — reaction.memo→memo, movements→movement, observations→observation.
+  //    (target_reaction·stimulus_response는 위쪽에 이미 있어 reaction/response보다 먼저 처리됨.)
+  ["reaction.memo", "관찰 메모"],
+  ["movements", "관찰 동작"],
+  ["movement", "동작"],
+  ["observations", "관찰"],
+  ["observation", "관찰"],
+  ["reaction", "반응"],
+  ["memo", "메모"],
 ];
 
 function sanitizeText(s) {
