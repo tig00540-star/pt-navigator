@@ -68,6 +68,10 @@ const SAMEDAY_PLAN = `   ★쉬운·머신 위주로 도망가지 마라. 회원
    굳은 데를 직접 풀어 '그날 몸이 가벼워지는 걸 체감'시키는 기능성·재활·교정 동작 위주로 짜라(머신은 보조).
    ⚠️보유 장비가 있어도 재활·교정 목적엔 기능성 동작이 우선 — 쉽고 무난한 동작은 체감이 안 나 클로징으로 안 이어진다.`;
 
+// 성별 반영(배치 A) — first/second session_plan 주입. goal 우선, 성별은 보조.
+const GENDER_HINT = `   ★성별(gender)이 주어지면 동작 선택·표현을 그에 맞춰라(흔한 목표·체형 경향 반영). 단 회원 goal이 항상
+   우선 — 성별은 보조 축이고, 고정관념으로 goal을 덮지 마라(성별 미입력이면 이 줄 무시).`;
+
 // ② target_exercise/proof(증거 동작) 삽입: 당일 체감 콕 집기.
 const SAMEDAY_PROOF = `   ★증거 동작은 '당일 체감'이 핵심이다. 거북목·라운드숄더·골반교정·무릎 등 불편·재활 목적이면, 그 부위를
    직접 겨냥해 그 자리에서 "어? 목이 트이네 / 엉덩이에 딱 들어오네"를 느끼게 하는 기능성 동작으로. 머신에
@@ -116,7 +120,7 @@ function firstPrompt(member, packages) {
  - 의료 단정(치료·완치·진단). 통증은 '불편/부담' 수준 표현까지만.
 
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, residence=${g(m.residence)},
-               mbti=${g(m.mbti)}, pain=${g(m.pain)}, goal=${g(m.goal)}, machines=${machines}
+               mbti=${g(m.mbti)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}, machines=${machines}
 [OT 사전 문진 — 회원이 등록 때 작성(있는 것만 활용, 없으면 무시)]
  목표시점/계기=${g(m.goal_deadline)}, 원하는페이스=${g(m.training_pace)}, 부상·수술=${g(m.injury_history)},
  운동경험=${g(m.exercise_level)}, 예전중단이유=${g(m.quit_reason)}, 받아본유료운동=${g(m.past_exercise)},
@@ -158,6 +162,7 @@ ${pkgBlock}
    ★각 운동은 '이름 있는 구체 동작 + 한 줄 큐/세팅'으로. 고정 구성 반복 금지, goal·pain으로 개인화(직업
    없어도). 숫자 처방(세트·횟수·각도·중량·템포) 금지 — 무엇을·어떤 방향으로·왜인지까지만.
 ${SAMEDAY_PLAN}
+${GENDER_HINT}
    각 항목: exercise(구체 동작 + 한 줄 세팅) / point(왜 시키나 or 핵심 큐 1문장).
 
 ③ target_exercise(타겟 운동 & 리액션 — 세일즈의 '증거' 만들기): 위 수업 구성 중/직후 터뜨릴 결정적 체감 순간이다. 목적은 운동 처방이 아니라, 회원이 '어? 되네/편해지네'를 그 자리에서 부인할 수 없이 체감해 'PT가 필요하구나'를 스스로 느끼게 하는 것.
@@ -278,7 +283,7 @@ ${validCases.map((c, i) => `${i + 1}. [${c.result}] 프로파일=${JSON.stringif
 [이 국면 특칙 — 대본 수위] 세일즈·운동 모두 '그대로 말할 실제 대사'까지. 단 숫자 처방(세트·횟수·각도·
 중량·템포)과 의료 단정(치료·완치·진단)은 절대 금지.
 
-[회원 기본정보] name=${g2(m.name)}, age=${g2(m.age)}, job=${g2(m.job)}, mbti=${g2(m.mbti)}, pain=${g2(m.pain)}, goal=${g2(m.goal)}
+[회원 기본정보] name=${g2(m.name)}, age=${g2(m.age)}, job=${g2(m.job)}, mbti=${g2(m.mbti)}, gender=${g2(m.gender)}, pain=${g2(m.pain)}, goal=${g2(m.goal)}
 
 [1차 관찰 기록 — 유일 근거(가설 아님, 트레이너가 실제 관찰)]
 ${JSON.stringify({
@@ -309,6 +314,7 @@ ${pkgBlock}
    ★각 운동은 '이름 있는 구체 동작 + 한 줄 큐/세팅'으로. 고정 구성 반복 금지, 회원 goal·pain으로 개인화.
    숫자 처방(세트·횟수·각도·중량·템포) 금지 — 무엇을·어떤 방향으로·왜인지까지만.
 ${SAMEDAY_PLAN}
+${GENDER_HINT}
    각 항목: exercise(구체 동작 + 한 줄 세팅) / point(왜 시키나 or 핵심 큐 1문장).
 
 ③ proof(증명 포인트 2개): 위 수업 구성 중/직후, 회원이 '어? 되네'를 부인 못 하게 터뜨릴 결정적 순간 2개.
@@ -387,7 +393,7 @@ function reregisterPrompt(member, ctx) {
 [이 국면 특칙 — 대본 수위] 세일즈·운동 모두 '그대로 말할 실제 대사'까지. 숫자 처방(세트·횟수·각도·중량·
 템포)·의료 단정 금지. 없는 성과·에피소드 창작 금지(관리 데이터에 있는 것만).
 
-[회원 기본정보] name=${g3(m.name)}, age=${g3(m.age)}, job=${g3(m.job)}, mbti=${g3(m.mbti)}, pain=${g3(m.pain)}, goal=${g3(m.goal)}
+[회원 기본정보] name=${g3(m.name)}, age=${g3(m.age)}, job=${g3(m.job)}, mbti=${g3(m.mbti)}, gender=${g3(m.gender)}, pain=${g3(m.pain)}, goal=${g3(m.goal)}
 [현재 PT 방향/목표] ${g3(m.pt_direction)}
 [PT 관리 데이터 — 유일 근거]
  계약 회차=${g3(c.contract_count)}, 잔여 유료=${g3(c.remaining?.paid)}, 서비스=${g3(c.remaining?.service)},
@@ -455,7 +461,7 @@ function acutePrompt(member, ctx) {
   const c = ctx || {};
   const recent = Array.isArray(c.recent_logs) ? c.recent_logs.filter(Boolean) : [];
   return `[상황] PT 회원에게 급변(부상·통증 급발생·컨디션 급변 등)이 생겨, 오늘 수업을 어떻게 조정할지 '수업 전'에 준비하는 자리다. 아래는 트레이너가 방금 입력한 '급변 상황'이다.
-[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, pain=${g(m.pain)}, goal=${g(m.goal)}
+[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
 [현재 PT 방향/목표] ${g(m.pt_direction)}
 [급변 상황(트레이너 입력)] ${g(c.situation)}
 [최근 수업 기록]

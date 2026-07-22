@@ -73,6 +73,7 @@ function mapMemberRow(r) {
     job: r.job ?? "-",
     residence: r.residence ?? "-",
     mbti: r.mbti ?? "-",
+    gender: r.gender ?? null, // AI 입력 재료(빈 값은 g()가 '없음' 처리) · 화면 렌더엔 미사용
     pain: r.pain ?? "-",
     goal: r.goal ?? "미설정",
     // OT 사전 문진 — firstPrompt 입력용(빈 값은 g()가 '없음' 처리). 화면 렌더엔 미사용.
@@ -146,6 +147,7 @@ function MemberForm({ onClose, onSaved }) {
     job: "",
     residence: "",
     mbti: "",
+    gender: "",
     pain: "",
     goal: "",
     goal_deadline: "",
@@ -193,6 +195,7 @@ function MemberForm({ onClose, onSaved }) {
         job: form.job || null,
         residence: form.residence || null,
         mbti: form.mbti || null,
+        gender: form.gender || null,
         pain: form.pain || null,
         goal: form.goal || null,
         goal_deadline: form.goal_deadline || null,
@@ -298,6 +301,20 @@ function MemberForm({ onClose, onSaved }) {
               />
             </div>
           ))}
+        </div>
+
+        {/* 성별 — AI가 동작을 성별에 맞춰 제시하는 재료(선택) */}
+        <div className="mt-3">
+          <label className="mb-1 block text-[11px] font-medium text-muted">성별 (선택)</label>
+          <select
+            value={form.gender}
+            onChange={set("gender")}
+            className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">선택 안 함</option>
+            <option value="female">여성</option>
+            <option value="male">남성</option>
+          </select>
         </div>
 
         {/* ② 진입 문(origin) — status는 여기서 파생. status 드롭다운은 만들지 않음(§7). */}
