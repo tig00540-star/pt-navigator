@@ -22,6 +22,8 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
+  BookOpen,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
@@ -122,6 +124,13 @@ const ROUTINE_2 = [
 // 2차 거절 5종 한글 라벨(purge-safe 정적 맵). objection_defense[].reason 키와 물림.
 const SECOND_OBJ_LABEL = { price: "가격 부담", hesitation: "생각해볼게요 (망설임)", doubt: "효과·필요성 의심", time: "시간 부족", compare: "타 센터 비교" };
 
+// S2 세일즈북 스테일 판정 — 소스 브리핑 recommended_program의 안정 스냅샷(회차·빈도·기간·논리·번호).
+//   세일즈북 생성 시점의 이 값을 salesbookMeta.rpSnapshot에 보관 → 브리핑 재생성으로 값이 바뀌면 '최신 아님'.
+function sbRpSnapshot(rp) {
+  const r = rp || {};
+  return JSON.stringify({ pick_ref: r.pick_ref ?? null, alt_ref: r.alt_ref ?? null, frequency: r.frequency ?? "", duration: r.duration ?? "", session_logic: r.session_logic ?? "" });
+}
+
 // D-3 개발용: URL에 ?d3=1 이면 게이트 무시 + 실 케이스 5건 미만이면 데모 케이스로 렌더/프롬프트 경로 점검.
 // 실사용자는 이 플래그를 안 쓰므로 영향 0. ⑦ 상용화 때 제거 권장.
 const D3_FORCE = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("d3") === "1";
@@ -145,6 +154,12 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   const [row2Report, setRow2Report] = useState(null); // round-2 report (브리핑 캐시)
   const [brief, setBrief] = useState(null); // ③ 브리핑 JSON (캐시 또는 생성)
   const [briefMeta, setBriefMeta] = useState(null); // { generatedAt, model }
+  // S2 세일즈북 — report.salesbook 캐시(브리핑과 별 키 · 스프레드로 공존). salesbookMeta.rpSnapshot으로 스테일 판정.
+  const [salesbook, setSalesbook] = useState(null);
+  const [salesbookMeta, setSalesbookMeta] = useState(null);
+  const [sbGenerating, setSbGenerating] = useState(false);
+  const [sbError, setSbError] = useState("");
+  const [photoLabels, setPhotoLabels] = useState([]); // member_photo distinct label — 사진 슬라이드 재료
   const [generating, setGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
   const [closingResult, setClosingResult] = useState("none"); // ㉠ 2차 클로징 결과
@@ -179,7 +194,28 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     return () => { cancelled = true; };
   }, []);
 
-  // ③ 생성 + round-2 report에 캐시 저장. report만 갱신 → 같은 행의 closing_* 컬럼 보존.
+  // 세일즈북 API 호출(phase=salesbook) — 1차 관찰(obs)·recommended_program·packages·photoLabels 주입.
+  //   성공 {data, meta}, 실패/키미설정/데모 null(브리핑 흐름 안 막음 · 세일즈북은 부가).
+  //   report는 ot_round=1 관찰 객체(obs) — {brief} 래퍼 아님(second phase와 동일 소스).
+  const callSalesbook = async (recommendedProgram) => {
+    try {
+      const res = await fetch("/api/ot-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ phase: "salesbook", member, report: obs, recommendedProgram, packages, photoLabels }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return { data, meta: { generatedAt: new Date().toISOString(), model: "claude-sonnet-5", rpSnapshot: sbRpSnapshot(recommendedProgram) } };
+    } catch {
+      return null;
+    }
+  };
+
+  // ③ 브리핑 생성 + round-2 report 캐시. ⚠️ report는 스프레드로 저장(salesbook·기존 키 보존) — jsonb 통째 교체 금지.
+  //   최초(캐시 세일즈북 없음)면 세일즈북을 동반 자동생성해 '한 번의 update'로 저장(하이브리드 ①).
+  //   이미 세일즈북 있으면 안 덮음(스프레드로 보존) → rp 바뀌면 렌더가 '최신 아님' 배지(하이브리드 ②).
+  //   ★세일즈북 생성 실패해도 브리핑은 {...prev, brief, briefMeta}로 그냥 저장(브리핑을 세일즈북에 인질 금지).
   const generateBrief = async (obsReport, row2Id) => {
     setGenerating(true);
     setAiError("");
@@ -209,28 +245,64 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         obsHash: otObsHash(obsReport), // 생성 시점 관찰 스냅샷 → 스테일 감지
         ...(useCases ? { caseTier: caseGate.tier } : {}), // 렌더 배지·캐시용
       };
-      const report2 = { brief: data, briefMeta: meta };
+      // 최초(세일즈북 미존재)면 동반 자동생성. 이미 있으면 재생성 안 함(스프레드로 보존 · 스테일 배지 유도).
+      const firstTime = !(row2Report && row2Report.salesbook);
+      const sbResult = firstTime ? await callSalesbook(data.recommended_program) : null;
+      // ⚠️ 스프레드 — 기존 report(특히 salesbook) 보존 + 이번 키만 덮기. closing_*는 top-level 컬럼이라 무관.
+      const reportToSave = {
+        ...(row2Report || {}),
+        brief: data,
+        briefMeta: meta,
+        ...(sbResult ? { salesbook: sbResult.data, salesbookMeta: sbResult.meta } : {}),
+      };
+      let savedOk = false;
       if (row2Id) {
-        const { data: up } = await supabase
-          .from("ot_log")
-          .update({ report: report2 })
-          .eq("id", row2Id)
-          .select();
+        const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", row2Id).select();
         if (!up || up.length === 0) setAiError("브리핑 저장 실패 — 권한/정책 확인 (0행).");
+        else savedOk = true;
       } else {
-        const { data: ins } = await supabase
-          .from("ot_log")
-          .insert({ user_id: member.id, ot_round: 2, report: report2 })
-          .select("id")
-          .single();
-        if (ins?.id) setExistingRow2Id(ins.id);
+        const { data: ins } = await supabase.from("ot_log").insert({ user_id: member.id, ot_round: 2, report: reportToSave }).select("id").single();
+        if (ins?.id) { setExistingRow2Id(ins.id); savedOk = true; }
       }
       setBrief(data);
       setBriefMeta(meta);
+      if (savedOk) {
+        setRow2Report(reportToSave); // 후속 저장이 최신 prevReport 참조(§5)
+        if (sbResult) { setSalesbook(sbResult.data); setSalesbookMeta(sbResult.meta); }
+      }
     } catch (e) {
       setAiError("네트워크 오류: " + (e?.message || "unknown"));
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // 세일즈북만 재생성(수동 '세일즈북 다시 만들기' · 하이브리드 ①). 현재 브리핑의 recommended_program 사용.
+  //   brief 보존(스프레드) · 교훈1 하드닝. 브리핑을 안 건드린다.
+  const generateSalesbook = async () => {
+    if (sbGenerating || !brief?.recommended_program) return;
+    setSbGenerating(true);
+    setSbError("");
+    try {
+      const sbResult = await callSalesbook(brief.recommended_program);
+      if (!sbResult) { setSbError("세일즈북 생성에 실패했어요. 잠시 후 다시 시도하세요."); return; }
+      const reportToSave = { ...(row2Report || {}), salesbook: sbResult.data, salesbookMeta: sbResult.meta };
+      if (existingRow2Id) {
+        const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", existingRow2Id).select();
+        if (!up || up.length === 0) { setSbError("세일즈북 저장 실패 — 권한/정책 확인 (0행)."); return; }
+      } else {
+        const { data: ins } = await supabase.from("ot_log").insert({ user_id: member.id, ot_round: 2, report: reportToSave }).select("id").single();
+        if (!ins?.id) { setSbError("세일즈북 저장 실패 (0행 — 권한/정책)."); return; }
+        setExistingRow2Id(ins.id);
+      }
+      setSalesbook(sbResult.data);
+      setSalesbookMeta(sbResult.meta);
+      setRow2Report(reportToSave);
+      showToast("세일즈북을 새로 만들었어요");
+    } catch {
+      setSbError("네트워크 오류예요. 잠시 후 다시 시도하세요.");
+    } finally {
+      setSbGenerating(false);
     }
   };
 
@@ -315,6 +387,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           setRow2Report(null);
           setBrief(null);
           setBriefMeta(null);
+          setSalesbook(null);
+          setSalesbookMeta(null);
+          setSbError("");
+          setPhotoLabels([]);
           setAiError("");
           setClosingResult("none");
           setClosingApproach("");
@@ -333,7 +409,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       setBrief(null); // 회원 전환 시 이전 브리핑 즉시 클리어
       setBriefMeta(null);
       setAiError("");
-      const [res1, res2] = await Promise.all([
+      const [res1, res2, res3] = await Promise.all([
         supabase
           .from("ot_log")
           .select("*")
@@ -348,6 +424,8 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           .eq("ot_round", 2)
           .order("created_at", { ascending: false })
           .limit(1),
+        // 세일즈북 사진 슬라이드 재료 — 이 회원의 member_photo 라벨(distinct는 클라 dedupe).
+        supabase.from("member_photo").select("label").eq("user_id", member.id),
       ]);
       if (cancelled) return;
       setLoading(false);
@@ -357,6 +435,10 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       setObs(r1?.report || null);
       setExistingRow2Id(r2?.id || null);
       setRow2Report(r2?.report || null);
+      setSalesbook(r2?.report?.salesbook || null);
+      setSalesbookMeta(r2?.report?.salesbookMeta || null);
+      setSbError("");
+      setPhotoLabels([...new Set((res3.data || []).map((p) => p.label).filter(Boolean))]);
       setClosingResult(r2?.closing_result || "none"); // 저장된 2차 클로징 결과 프리필
       setClosingApproach(r2?.closing_approach || "");
       setClosingReapproachAt(r2?.closing_reapproach_at || "");
@@ -678,6 +760,48 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         )}
 
         </AIBriefBlock>
+
+        {/* ── 회원 세일즈북(회원 대면 자료) · S2 자동생성/캐시 ──
+           브리핑(수업 전 트레이너용)과 별개 산출물 — 2차 수업 마친 뒤 회원에게 직접 보여줄 자료.
+           브리핑 최초 생성 시 자동 동반 생성됨. 브리핑만 재생성하면 여기 '최신 아님' 배지가 뜬다. */}
+        {(() => {
+          const sbStale = Boolean(
+            salesbook && salesbookMeta?.rpSnapshot && b?.recommended_program &&
+            salesbookMeta.rpSnapshot !== sbRpSnapshot(b.recommended_program)
+          );
+          return (
+            <section className="rounded-xl border border-line bg-card shadow-sm p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Eyebrow icon={BookOpen}>회원 세일즈북</Eyebrow>
+                {salesbook && (
+                  sbStale
+                    ? <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">최신 아님 · 추천 플랜 변경됨</span>
+                    : <span className="rounded-md border border-primary/30 bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">준비됨</span>
+                )}
+              </div>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+                {sbGenerating
+                  ? "회원에게 보여줄 세일즈북을 만들고 있어요…"
+                  : salesbook
+                    ? (sbStale
+                        ? "브리핑을 다시 만들어 추천 플랜이 바뀌었어요. 세일즈북도 새로 만들면 최신 내용으로 맞춰집니다."
+                        : "2차 수업을 마친 뒤 회원에게 그대로 보여줄 수 있어요.")
+                    : "아직 세일즈북이 없어요. 브리핑을 만들면 자동으로 함께 준비되고, 여기서 다시 만들 수도 있어요."}
+              </p>
+              {salesbookMeta?.generatedAt && !sbGenerating && (
+                <p className="mt-1 text-[11px] text-muted">생성: {new Date(salesbookMeta.generatedAt).toLocaleString("ko-KR")}</p>
+              )}
+              {sbError && <p className="mt-2 text-[12px] text-danger-text">{sbError}</p>}
+              <div className="mt-3">
+                <Button variant={salesbook && !sbStale ? "ghost" : "primary"} size="sm" onClick={generateSalesbook} disabled={sbGenerating || !b?.recommended_program}>
+                  <RefreshCw className={`h-3.5 w-3.5 ${sbGenerating ? "animate-spin" : ""}`} />
+                  {sbGenerating ? "만드는 중…" : salesbook ? "세일즈북 다시 만들기" : "세일즈북 만들기"}
+                </Button>
+                {/* '회원에게 세일즈북 보기'(present 뷰)는 S5에서 연결 */}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* ── 클로징 결과 기록 · 수업 후 ──
            ⚠️ AIBriefBlock 밖에 둔다. 브리핑(수업 전 읽는 것)과 결과 기록(수업 후 쓰는 것)은
