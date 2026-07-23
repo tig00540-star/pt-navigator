@@ -12,6 +12,10 @@ import { RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, latestContract } from "@/lib/memberStatus";
+import { buildExerciseSeries } from "@/lib/workout";
+import { INBODY_FIELDS } from "@/lib/labels";
+import RegSalesbookView from "@/components/views/RegSalesbookView";
+import { BookOpen, Eye } from "lucide-react";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
@@ -36,6 +40,11 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   const [regAiError, setRegAiError] = useState("");
   const { toast, showToast } = useToast();
   const [packages, setPackages] = useState([]); // 본인 active PT 패키지(recommended_program 재료)
+  const [inbodyRows, setInbodyRows] = useState([]); // 인바디 이력(변화량 표 재료)
+  const [regSb, setRegSb] = useState(null);         // 재등록 세일즈북 캐시(latest.report.reg_salesbook)
+  const [sbGenerating, setSbGenerating] = useState(false);
+  const [sbErr, setSbErr] = useState("");
+  const [sbOpen, setSbOpen] = useState(false);
 
   // 본인 active 패키지 로드(마운트 1회 · uid 기준 · 회원 무관).
   useEffect(() => {
@@ -52,6 +61,17 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     return () => { cancelled = true; };
   }, []);
 
+  // 인바디 이력 로드(변화량 표 재료 · measured_at 오름차순 = 첫→최신).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase || !member?.id) { if (!cancelled) setInbodyRows([]); return; }
+      const { data } = await supabase.from("inbody_log").select("*").eq("user_id", member.id).order("measured_at", { ascending: true });
+      if (!cancelled) setInbodyRows(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [member?.id]);
+
   // 파생 — 렌더마다 계산(순수함수). active null이면 rem {0,0,0}·due false.
   const active = activeContract(contracts, logs);
   const rem = remainingSessions(active, logs);
@@ -62,6 +82,36 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     (a, b) => new Date(b.session_at ?? b.created_at ?? 0) - new Date(a.session_at ?? a.created_at ?? 0)
   );
 
+  // 변화량 데이터(세일즈북 표 · 렌더/AI 공용). 숫자는 여기서만 — AI는 창작 금지.
+  const changeData = (() => {
+    const done = timeline.filter((l) => !l.voided);
+    const dts = done.map((l) => new Date(l.session_at ?? l.created_at)).filter((d) => !isNaN(+d));
+    let months = null, weekly = null;
+    if (dts.length >= 2) {
+      const spanW = (Math.max(...dts) - Math.min(...dts)) / (1000 * 60 * 60 * 24 * 7);
+      months = Math.max(1, Math.round(spanW / 4.345));
+      if (spanW > 0) weekly = Number((done.length / spanW).toFixed(1));
+    }
+    // 인바디 첫↔최신(지표별 non-null 첫/마지막). inbodyRows는 measured_at 오름차순.
+    const inbody = INBODY_FIELDS.map((f) => {
+      const withVal = inbodyRows.filter((r) => r[f.key] != null);
+      const first = withVal[0]?.[f.key] ?? null;
+      const latest = withVal.at(-1)?.[f.key] ?? null;
+      return (first != null && latest != null && withVal.length >= 2 && first !== latest)
+        ? { key: f.key, label: f.label, unit: f.unit, goodDir: f.goodDir, first, latest } : null;
+    }).filter(Boolean);
+    // 대표 무게 첫↔최신(sets_structured 기반 · 변화 있는 상위 5종목).
+    const exercises = buildExerciseSeries(logs)
+      .map((s) => ({ exercise: s.exercise, first: s.points[0]?.topWeight ?? null, latest: s.points.at(-1)?.topWeight ?? null }))
+      .filter((e) => e.first != null && e.latest != null && e.first !== e.latest)
+      .slice(0, 5);
+    return {
+      journey: { months, sessions_done: done.length, weekly_frequency: weekly, remaining_paid: rem.paid, remaining_service: rem.service },
+      inbody, exercises,
+    };
+  })();
+  const hasChange = changeData.inbody.length > 0 || changeData.exercises.length > 0;
+
   // 결과 폼 시드 — 대상 행(latest)이 바뀔 때만 그 행의 reg_* 반영.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -70,6 +120,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     setRegReapproachAt(latest?.reg_reapproach_at ?? "");
     setRegBrief(latest?.report?.reg_brief ?? null); // 캐시 시드(재방문 재호출 0)
     setRegBriefMeta(latest?.report?.regBriefMeta ?? null);
+    setRegSb(latest?.report?.reg_salesbook ?? null); // 재등록 세일즈북 캐시 시드
     setRegAiError("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latest?.id]);
@@ -159,6 +210,39 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     }
   };
 
+  // 재등록 세일즈북 생성 — phase:"reg_salesbook" + changeData·recommended_program·packages·photoLabels.
+  //   숫자는 changeData(앱 계산)로 렌더 · AI는 텍스트만. latest.report.reg_salesbook 캐시(spread-write 하드닝).
+  const generateRegSalesbook = async () => {
+    if (sbGenerating || !latest) return;
+    setSbGenerating(true); setSbErr("");
+    try {
+      const rp = regBrief?.recommended_program || null; // 재등록 브리핑의 추천 프로그램(작업 E) 재사용
+      let photoLabels = [];
+      if (supabase && member?.id) {
+        const { data: ph } = await supabase.from("member_photo").select("label").eq("user_id", member.id);
+        photoLabels = [...new Set((ph || []).map((p) => p.label).filter(Boolean))];
+      }
+      const res = await fetch("/api/ot-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ phase: "reg_salesbook", member, change: changeData, recommendedProgram: rp, packages, photoLabels }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setSbErr(d.error || "세일즈북 생성 실패"); return; }
+      const data = await res.json();
+      setRegSb(data);
+      if (supabase && latest?.id) {
+        const nextReport = { ...(latest.report || {}), reg_salesbook: data };
+        const { data: up } = await supabase.from("session_log").update({ report: nextReport }).eq("id", latest.id).select();
+        if (!up || up.length === 0) setSbErr("세일즈북 저장 실패(0행) — 이번 세션엔 표시됩니다.");
+        else setContracts((p) => p.map((c) => (c.id === up[0].id ? up[0] : c)));
+      }
+    } catch (e) {
+      setSbErr("네트워크 오류: " + (e?.message || "unknown"));
+    } finally {
+      setSbGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {!latest ? (
@@ -198,6 +282,32 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
           >
             {regBrief && <RegBriefView brief={regBrief} highlightReason={regReason} packages={packages} />}
           </AIBriefBlock>
+
+          {/* ── 재등록 세일즈북(회원 대면) · 그동안의 변화 → 앞으로 ── */}
+          <section className="rounded-xl border border-line bg-card shadow-sm p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Eyebrow icon={BookOpen}>재등록 세일즈북 (회원에게 보여주기)</Eyebrow>
+              {regSb && <span className="rounded-md border border-primary/30 bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">준비됨</span>}
+            </div>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+              {sbGenerating ? "그동안의 변화를 정리하고 있어요…"
+                : regSb ? "오늘 수업 중/후 회원에게 그대로 보여주세요 — 변화량·단계·앞으로의 방향."
+                : hasChange ? "인바디·수업 기록을 근거로 회원 대면 세일즈북을 만듭니다."
+                : "아직 변화 데이터(인바디/구조화 수업기록)가 얇아요. 그래도 만들 수 있지만, 인바디를 한 번 기록하면 표가 확 살아납니다."}
+            </p>
+            {sbErr && <p className="mt-2 text-[12px] text-danger-text">{sbErr}</p>}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {regSb && (
+                <Button variant="primary" size="sm" onClick={() => setSbOpen(true)}>
+                  <Eye className="h-3.5 w-3.5" /> 회원에게 보기
+                </Button>
+              )}
+              <Button variant={regSb ? "ghost" : "primary"} size="sm" onClick={generateRegSalesbook} disabled={sbGenerating}>
+                <RefreshCw className={`h-3.5 w-3.5 ${sbGenerating ? "animate-spin" : ""}`} />
+                {sbGenerating ? "만드는 중…" : regSb ? "다시 만들기" : "세일즈북 만들기"}
+              </Button>
+            </div>
+          </section>
 
           {/* ── 재등록 결과 기록 · 수업 후 ── */}
           <div className="rounded-lg border border-line bg-elevate px-3 py-1.5 text-xs font-bold text-sub">
@@ -249,6 +359,17 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             </div>
           </Card>
         </>
+      )}
+      {sbOpen && regSb && (
+        <RegSalesbookView
+          regSalesbook={regSb}
+          member={member}
+          trainer={null}
+          packages={packages}
+          recommendedProgram={regBrief?.recommended_program || null}
+          change={changeData}
+          onClose={() => setSbOpen(false)}
+        />
       )}
       <Toast message={toast} />
     </div>
