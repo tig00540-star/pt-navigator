@@ -12,7 +12,7 @@
    PDF: window.print() + @media print(A4 가로). present(editable=false)=회원에게 보이는 화면.
    ========================================================================= */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
@@ -115,6 +115,19 @@ export default function SalesbookView({
   const [idx, setIdx] = useState(0);
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({});
+  // 전체화면 — sb-root를 Fullscreen API로. 전체화면이면 100dvh=화면 전체라 stage 높이 캡이 더 큰 프레임 → 시원한 제시.
+  const sbRootRef = useRef(null);
+  const [isFs, setIsFs] = useState(false);
+  const fsEnabled = typeof document !== "undefined" && document.fullscreenEnabled; // 아이폰 Safari=false → 버튼 숨김
+  useEffect(() => {
+    const on = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+  const toggleFs = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else sbRootRef.current?.requestFullscreen?.();
+  };
   // 편집 드래프트 — editable일 때만 이걸로 렌더/수정.
   const [draft, setDraft] = useState(() => salesbook || {});
   const [saving, setSaving] = useState(false);
@@ -176,7 +189,8 @@ export default function SalesbookView({
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
       if (e.key === "ArrowRight") step(1);
       else if (e.key === "ArrowLeft") step(-1);
-      else if (e.key === "Escape") onClose?.();
+      // Esc 이중동작 방지 — 전체화면 중엔 브라우저가 Esc로 전체화면만 종료(닫기는 다음 Esc).
+      else if (e.key === "Escape") { if (document.fullscreenElement) return; onClose?.(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -198,7 +212,7 @@ export default function SalesbookView({
   const plans = Array.isArray(sb.plans) ? sb.plans.slice(0, 2) : [];
 
   return (
-    <div className="sb-root fixed inset-0 z-[120] flex flex-col bg-[rgb(19_21_27/0.82)] backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="회원 세일즈북">
+    <div ref={sbRootRef} className="sb-root fixed inset-0 z-[120] flex flex-col bg-[rgb(19_21_27/0.82)] backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="회원 세일즈북">
       <SalesbookStyle />
 
       {/* 상단 바 — present 컨트롤(인쇄엔 숨김). editable이면 '저장' 노출. */}
@@ -214,6 +228,12 @@ export default function SalesbookView({
           ) : (
             <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25">
               <Printer className="h-3.5 w-3.5" /> PDF·인쇄
+            </button>
+          )}
+          {fsEnabled && (
+            <button onClick={toggleFs} aria-label={isFs ? "전체화면 종료" : "전체화면"} className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25">
+              {isFs ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
+              {isFs ? "종료" : "전체화면"}
             </button>
           )}
           {onClose && (
@@ -498,7 +518,9 @@ function SalesbookStyle() {
   return (
     <style>{`
 .sb-viewport { display:flex; align-items:center; justify-content:center; overflow:hidden; padding:12px; }
-.sb-stage { width:100%; max-width:min(1180px, 96vw); }
+/* 폭 캡 + 높이 캡 — 넓고 짧은 뷰포트에서 16:9 프레임이 뷰포트 높이를 넘어 위아래 잘리던 것 방지.
+   130px = 상단 바(≈44) + 하단 네비(≈56) + 뷰포트 패딩(≈24). 전체화면이면 100dvh=화면 전체라 더 큰 프레임. */
+.sb-stage { width:100%; max-width:min(1180px, 96vw, calc((100dvh - 130px) * 16 / 9)); }
 .sb-track { display:flex; transform:translateX(var(--sb-tx,0)); transition:transform .32s cubic-bezier(.22,.9,.28,1); }
 .sb-slide { flex:0 0 100%; }
 /* 프레임은 고정 16:9 · overflow:hidden. 콘텐츠는 .sb-pad>.sb-fit로 감싸고 useFitScale이 넘치면 scale 다운. */
