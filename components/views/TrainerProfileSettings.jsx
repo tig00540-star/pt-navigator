@@ -2,8 +2,8 @@
 /* 내 프로필 — 성향·강한 방향·세일즈 스타일·mbti·소개. trainer_profile(본인 1행 · upsert onConflict trainer_id).
    자기완결(PtPricingSettings 패턴: 마운트 fetch·데모 가드·.select() 하드닝·Toast). MyStats 통계와 독립.
    지금은 저장만 — 이후 AI 브리핑 개인화·배정 매칭의 재료(별도 스프린트). */
-import { useEffect, useState } from "react";
-import { UserCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { UserCircle, PenLine } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
@@ -21,6 +21,14 @@ export default function TrainerProfileSettings() {
   const [salesStyle, setSalesStyle] = useState("");   // sales_style (단일)
   const [mbti, setMbti] = useState("");
   const [bio, setBio] = useState("");
+  // S4 세일즈북 표지·서명 재료.
+  const [displayName, setDisplayName] = useState("");
+  const [credentials, setCredentials] = useState("");
+  const [signature, setSignature] = useState(""); // PNG data URL(""=없음)
+  const canvasRef = useRef(null);
+  const drawing = useRef(false);
+  const last = useRef({ x: 0, y: 0 });
+  const painted = useRef(false); // 저장된 서명을 캔버스에 1회만 페인트
   const { toast, showToast } = useToast();
 
   useEffect(() => {
@@ -38,6 +46,9 @@ export default function TrainerProfileSettings() {
           setSalesStyle(data.sales_style ?? "");
           setMbti(data.mbti ?? "");
           setBio(data.bio ?? "");
+          setDisplayName(data.display_name ?? "");
+          setCredentials(data.credentials ?? "");
+          setSignature(data.signature_data_url ?? "");
         }
       } catch {
         /* 조회 실패 → 빈 폼 유지, 스피너만 해제 */
@@ -50,6 +61,37 @@ export default function TrainerProfileSettings() {
 
   const toggle = (v) => setApproaches((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]));
 
+  // 저장된 서명을 캔버스에 1회 페인트(로딩 완료 후 · 그린 뒤엔 재페인트 안 함 → 획마다 깜빡임 없음).
+  useEffect(() => {
+    if (loading || painted.current) return;
+    painted.current = true;
+    const c = canvasRef.current;
+    if (signature && c) {
+      const img = new Image();
+      img.onload = () => { const cc = canvasRef.current; if (cc) cc.getContext("2d").drawImage(img, 0, 0, cc.width, cc.height); };
+      img.src = signature;
+    }
+  }, [loading, signature]);
+
+  // 서명 드로잉 — pointer 이벤트(마우스+터치 통합). 캔버스 내부 해상도 320×96 고정(data URL 비대화 방지).
+  const posOf = (e) => {
+    const c = canvasRef.current;
+    const rect = c.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) * (c.width / rect.width), y: (e.clientY - rect.top) * (c.height / rect.height) };
+  };
+  const drawStart = (e) => { e.preventDefault(); drawing.current = true; last.current = posOf(e); canvasRef.current.setPointerCapture?.(e.pointerId); };
+  const drawMove = (e) => {
+    if (!drawing.current) return;
+    e.preventDefault();
+    const ctx = canvasRef.current.getContext("2d");
+    const p = posOf(e);
+    ctx.strokeStyle = "#13151b"; ctx.lineWidth = 2.2; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(last.current.x, last.current.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    last.current = p;
+  };
+  const drawEnd = () => { if (!drawing.current) return; drawing.current = false; setSignature(canvasRef.current.toDataURL("image/png")); };
+  const clearSig = () => { const c = canvasRef.current; c?.getContext("2d").clearRect(0, 0, c.width, c.height); setSignature(""); };
+
   const save = async () => {
     if (saving) return;
     const payload = {
@@ -58,6 +100,9 @@ export default function TrainerProfileSettings() {
       sales_style: salesStyle || null,
       mbti: mbti.trim() || null,
       bio: bio.trim() || null,
+      display_name: displayName.trim() || null,
+      credentials: credentials.trim() || null,
+      signature_data_url: signature || null,
       updated_at: new Date().toISOString(),
     };
     setSaving(true);
@@ -111,6 +156,39 @@ export default function TrainerProfileSettings() {
               <span className="mb-1 block text-[11px] font-medium text-muted">성향·한줄 소개 <span className="text-muted">(선택)</span></span>
               <textarea value={bio} onChange={(e) => setBio(e.target.value)} disabled={saving} rows={3} placeholder="예: 통증개선 특화, 공감형 상담, 초보자 편하게" className={inputCls} />
             </label>
+
+            {/* ── 회원 세일즈북 표지·서명(S4) — 회원에게 보이는 자료에 그대로 표시됨. ── */}
+            <div className="rounded-xl border border-line bg-elevate p-3.5">
+              <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-label-ko text-sub">
+                <PenLine className="h-3.5 w-3.5 text-primary-strong" /> 회원 세일즈북 표지·서명
+              </div>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-muted">표시 이름 <span className="text-muted">(표지에 표시)</span></span>
+                <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} disabled={saving} maxLength={30} placeholder="예: 김도현 트레이너" className={inputCls} />
+              </label>
+              <label className="mt-2.5 block">
+                <span className="mb-1 block text-[11px] font-medium text-muted">자격·경력 한 줄 <span className="text-muted">(표지에 표시)</span></span>
+                <input type="text" value={credentials} onChange={(e) => setCredentials(e.target.value)} disabled={saving} maxLength={80} placeholder="예: 생활체육지도사 · 교정운동 전문 · 8년차" className={inputCls} />
+              </label>
+              <div className="mt-2.5">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-muted">서명 <span className="text-muted">(마무리 슬라이드에 표시)</span></span>
+                  <button type="button" onClick={clearSig} disabled={saving} className="text-[11px] font-medium text-primary-strong hover:underline disabled:opacity-50">다시</button>
+                </div>
+                <canvas
+                  ref={canvasRef}
+                  width={320}
+                  height={96}
+                  onPointerDown={drawStart}
+                  onPointerMove={drawMove}
+                  onPointerUp={drawEnd}
+                  onPointerLeave={drawEnd}
+                  className="h-24 w-full touch-none rounded-lg border border-line bg-card"
+                />
+                <p className="mt-1 text-[10px] text-muted">여기에 손가락/펜으로 서명하세요. 한 번 저장하면 모든 세일즈북에 자동으로 들어갑니다.</p>
+              </div>
+            </div>
+
             <Button variant="primary" size="md" fullWidth onClick={save} disabled={saving}>
               {saving ? "저장 중…" : "프로필 저장"}
             </Button>
