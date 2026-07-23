@@ -2,10 +2,12 @@
 /* 재등록 브리핑 렌더(순수) — 4블록: 왜 지금 → 오늘 수업 흐름 → 비유 → 클로징 → 거절.
    highlightReason = 기록된 reg_reason(있으면 그 거절 강조). 구 스키마 캐시는 legacy 안내.
    시인성: 블록별 이모지 헤더 + 칩 라벨 + p-4 통일(2차 브리핑 톤). */
+import { CreditCard } from "lucide-react";
 import { labelOf, REG_REASON_OPTS } from "@/lib/labels";
+import { won } from "@/lib/format";
 import ClosingSequence from "@/components/ui/ClosingSequence";
 
-export default function RegBriefView({ brief, highlightReason }) {
+export default function RegBriefView({ brief, highlightReason, packages = [] }) {
   if (!brief) return null;
   const b = brief;
   const wn = b.why_now || {};
@@ -13,6 +15,10 @@ export default function RegBriefView({ brief, highlightReason }) {
   const sm = b.sales_metaphor || {};
   const cline = b.closing_line || "";
   const sw = b.sweetener || "";
+  const rp = b.recommended_program || {};
+  const pick = Number.isInteger(rp.pick_ref) ? (packages[rp.pick_ref] || null) : null;
+  const alt = Number.isInteger(rp.alt_ref) ? (packages[rp.alt_ref] || null) : null;
+  const perSession = (p) => (p && p.sessions ? won(Math.round(p.price / p.sessions)) : null);
   const obj = Array.isArray(b.objection_defense) ? b.objection_defense.filter(Boolean) : [];
   const gaps = Array.isArray(b.data_gaps) ? b.data_gaps.filter((g) => typeof g === "string" && g.trim()) : [];
   const legacy = !wn.proven && !sf.gap_awareness && obj.length === 0;
@@ -79,6 +85,38 @@ export default function RegBriefView({ brief, highlightReason }) {
         sweetener={sw}
         icon={<span className="text-base">🔥</span>}
       />
+      {/* 추천 프로그램 — 클로징 아래(1·2차와 동일 UI). 가격은 내 패키지 목록에서 채움. */}
+      {pick ? (
+        <div className="rounded-xl border border-primary/30 bg-card p-4">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-3.5 w-3.5 text-primary-strong" />
+            <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
+          </div>
+          <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm text-ink">
+            <span className="font-bold">{pick.name}</span>
+            <span className="font-mono font-semibold">{won(pick.price)}</span>
+            {pick.sessions != null && <span className="text-[11px] text-muted">· {pick.sessions}회</span>}
+            {perSession(pick) && <span className="text-[11px] text-muted">· {perSession(pick)}/회</span>}
+          </p>
+          {rp.why_fit && <p className="mt-1 text-[12px] leading-relaxed text-sub">{rp.why_fit}</p>}
+          {(rp.frequency || rp.duration || rp.session_logic) && (
+            <div className="mt-2 space-y-1 rounded-lg bg-elevate px-3 py-2">
+              {rp.frequency && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">빈도 · </span>{rp.frequency}</p>}
+              {rp.duration && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">기간 · </span>{rp.duration}</p>}
+              {rp.session_logic && <p className="text-[12px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">그래서 · </span>{rp.session_logic}</p>}
+            </div>
+          )}
+          {alt && (
+            <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              <span className="rounded bg-elevate px-1.5 py-0.5 font-semibold">대안</span> {alt.name} · {won(alt.price)}{rp.alt_why ? ` — ${rp.alt_why}` : ""}
+            </p>
+          )}
+        </div>
+      ) : packages.length === 0 ? (
+        <div className="rounded-xl border border-line bg-card p-4 text-[12px] leading-relaxed text-muted">
+          가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
+        </div>
+      ) : null}
       {obj.length > 0 && (
         <div>
           <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-sub"><span className="text-base">🛡</span> 거절 선제 방어 ({obj.length})</div>

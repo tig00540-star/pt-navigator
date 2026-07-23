@@ -404,11 +404,18 @@ ${MEMBER_LANG}
 
 // ④ phase="reregister" user 프롬프트 — 재등록 브리핑(OT 클로징의 PT 대칭).
 // ⚠️ origin 독립: ot_log에 의존하지 않는다(인계·외부 PT는 관찰이 없음). PT 관리 데이터만 근거.
-function reregisterPrompt(member, ctx) {
+function reregisterPrompt(member, ctx, packages = []) {
   const m = member || {};
   const c = ctx || {};
   const g3 = (v) => (v == null || v === "" ? "없음" : v);
   const recent = Array.isArray(c.recent_logs) ? c.recent_logs.filter(Boolean) : [];
+  const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
+  const pkgBlock = pkgs.length
+    ? pkgs.map((p, i) => {
+        const per = p.sessions ? Math.round(p.price / p.sessions) : null;
+        return `[${i}] name=${g3(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g3(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
+      }).join("\n")
+    : "등록된 패키지 없음";
   return `[상황·대전제] PT 재등록 대화 준비(재등록은 보통 '오늘 PT 수업 중'에 이뤄진다). 유일한 목적 =
 이 회원의 재등록 확률 극대화. 근거는 관찰(1차)이 아니라 '그동안의 PT 관리 데이터(운동 빈도·수업 일지)'다.
 재등록은 '새로 파는 것'이 아니라 '그동안 쌓은 만족·변화를 이어가는 것'. 트레이너가 30초에 훑어 외우고 오늘
@@ -424,6 +431,9 @@ function reregisterPrompt(member, ctx) {
  완료 수업수=${g3(c.sessions_done)}, 운동 빈도(주당 추정)=${g3(c.weekly_frequency)}
 [최근 수업 일지]
 ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
+
+[내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
+${pkgBlock}
 
 [컨닝페이퍼 — 재등록은 '그동안의 근거 → 오늘 수업으로 잇기 → 클로징']
 ① why_now(왜 지금 재등록 — 그동안의 근거): 운동 빈도·수업 일지에서 확인되는 것으로.
@@ -459,6 +469,18 @@ ${closingSeqInstruction({
    반박 아님) / line(그대로 말할 대사). ⚠️low_effect는 방어가 아니라 '왜 아직인지 + 앞으로 어떻게'의 정직한 방향.
    ⚠️허위 긴급성·공포·죄책감 금지.
 
+[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 가장 맞는
+   1개(pick_ref)를 확신 있게 골라라. 재등록은 그동안의 관리 데이터로 '이어갈 근거'가 이미 있는 국면이라,
+   세션수·기간을 회원 상황에서 역산해 '왜 이 횟수가 맞는지' 반박 안 되는 근거를 만든다.
+   - why_fit: 이 패키지가 이 회원에게 맞는 이유(목적·불편·그동안의 관리 데이터). 2문장 이내.
+   - frequency: 권장 주간 빈도와 '왜 그 빈도인지' 근거(현재 운동 빈도 기준). 1문장.
+   - duration: 권장 총 기간과 '왜 그 기간인지' 근거. 1문장.
+   - session_logic: frequency × duration으로 총 세션수를 역산해 pick_ref 패키지 회차가 왜 딱 맞는지 한 줄.
+     ★세션수는 pick_ref 패키지의 실제 sessions 값에 맞춰 역산(새 숫자 창작 금지). ★'가격(원)'은 값 텍스트에
+     절대 쓰지 마라 — 금액은 앱이 목록에서 채운다. ※기간제(세션수 없음)면 '왜 이 기간'으로 대체.
+   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내.
+   - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
+
 [member_read] 이 회원 그동안 어땠고 지금 재등록 국면을 한 줄로(앵커).
 [data_gaps] 관리 기록이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 ${MEMBER_LANG}
@@ -472,6 +494,7 @@ ${MEMBER_LANG}
   ${CLOSING_SEQ_JSON},
   "sweetener": "재등록 혜택 한 줄(덤 · 구체 금액 없이) 또는 빈 문자열",
   "objection_defense": [ { "reason": "money|sessions_left|low_effect|time|schedule", "trigger": "...", "defense": "...", "line": "..." } ],
+  "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]
 }
 ※ objection_defense 5개 각 1개.`;
@@ -933,7 +956,7 @@ export async function POST(request) {
   const basePrompt =
     phase === "first" ? firstPrompt(member, packages)
     : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages)
-    : phase === "reregister" ? reregisterPrompt(member, ptContext)
+    : phase === "reregister" ? reregisterPrompt(member, ptContext, packages)
     : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute·salesbook 제외(회원 대면엔 불필요).

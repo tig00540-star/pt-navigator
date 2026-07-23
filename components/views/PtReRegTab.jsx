@@ -35,6 +35,22 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   const [regGenerating, setRegGenerating] = useState(false);
   const [regAiError, setRegAiError] = useState("");
   const { toast, showToast } = useToast();
+  const [packages, setPackages] = useState([]); // 본인 active PT 패키지(recommended_program 재료)
+
+  // 본인 active 패키지 로드(마운트 1회 · uid 기준 · 회원 무관).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const { data: au } = await supabase.auth.getUser();
+      const uid = au?.user?.id ?? null;
+      const { data: pkgs } = await supabase.from("pt_package").select("*")
+        .eq("trainer_id", uid).eq("active", true)
+        .order("sort", { ascending: true }).order("created_at", { ascending: true });
+      if (!cancelled) setPackages(pkgs || []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // 파생 — 렌더마다 계산(순수함수). active null이면 rem {0,0,0}·due false.
   const active = activeContract(contracts, logs);
@@ -118,7 +134,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "reregister", member, ptContext }),
+        body: JSON.stringify({ phase: "reregister", member, ptContext, packages }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -180,7 +196,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               </span>
             }
           >
-            {regBrief && <RegBriefView brief={regBrief} highlightReason={regReason} />}
+            {regBrief && <RegBriefView brief={regBrief} highlightReason={regReason} packages={packages} />}
           </AIBriefBlock>
 
           {/* ── 재등록 결과 기록 · 수업 후 ── */}
