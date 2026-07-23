@@ -569,7 +569,7 @@ function SalesbookStyle() {
    순서대로 등장할 요소에만 .sb-stg + style={{--sb-i:N}} 부여(SlideHead=0부터). */
 .sb-build.sb-play .sb-stg {
   animation: sb-rise .5s cubic-bezier(.2,.7,.25,1) both;
-  animation-delay: calc(var(--sb-i, 0) * .09s);
+  animation-delay: calc(var(--sb-i, 0) * .14s);
 }
 
 /* 안전장치2: reduced-motion이면 애니 끄고 즉시 표시. */
