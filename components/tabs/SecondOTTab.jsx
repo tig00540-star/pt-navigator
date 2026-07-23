@@ -759,6 +759,18 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           fallbackLine={cline}
           icon={<Flame className="h-4 w-4 text-primary-strong" />}
         />
+        {/* 세일즈북 활용 안내(정적 · 트레이너 가이드) — 세일즈북은 아래 '회원 세일즈북' 섹션에 항상 있음.
+           클로징 흐름이 실제 렌더될 때만 노출(③ 요청 참조가 있으므로). 토글/state 없음. */}
+        {(b.closing_sequence || cline) && (
+          <div className="rounded-xl border border-line bg-elevate p-4">
+            <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-sub">
+              <BookOpen className="h-3.5 w-3.5 text-primary-strong" /> 세일즈북으로 클로징할 땐
+            </div>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-ink">
+              말로 <span className="font-semibold text-primary-strong">③ 요청</span>까지 끌고 온 다음, 아래 <span className="font-semibold">회원 세일즈북 → &lsquo;회원에게 보기&rsquo;</span>로 화면 같이 띄우세요. 추천 프로그램 슬라이드에서 &ldquo;그래서 이 횟수로 가는 거예요&rdquo; 짚고 바로 등록 제안으로 마무리. 세일즈북 없이 갈 땐 위 클로징 대사 그대로 말로 가세요.
+            </p>
+          </div>
+        )}
         {obj.length > 0 && (
           <details open className="rounded-xl border border-line bg-card">
             <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold tracking-label-ko text-sub"><ShieldCheck className="h-3.5 w-3.5 text-primary-strong" /> 거절 선제 방어 ({obj.length})</summary>
