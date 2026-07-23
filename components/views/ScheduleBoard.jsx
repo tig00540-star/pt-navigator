@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { viewFor, activeContract } from "@/lib/memberStatus";
+import { viewFor, activeContract, nextAction } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
@@ -62,7 +62,7 @@ async function copyToClipboard(text) {
   }
 }
 
-export default function ScheduleBoard({ members = [] }) {
+export default function ScheduleBoard({ members = [], onSelect }) {
   const [mode, setMode] = useState("week"); // 'week' | 'today'
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [startHour, setStartHour] = useState(6);
@@ -127,6 +127,32 @@ export default function ScheduleBoard({ members = [] }) {
 
   // 액션 모달 열 때 수업내용 입력 초기화(이전 회원 내용 오전송 방지 · effect 대신 핸들러에서).
   const openAction = (a) => { setNote(""); setRawText(""); setUsedVoice(false); setAction(a); };
+
+  // OT 회원 예약의 랜딩 탭 — 진행도(ot_log round1/2) 기반 nextAction 재사용. 데모/실패 시 1차 OT(1).
+  const otLandingTab = async (m) => {
+    if (!supabase) return 1;
+    try {
+      const { data } = await supabase.from("ot_log").select("*").eq("user_id", m.id);
+      const rows = data || [];
+      const round1 = rows.find((r) => r.ot_round === 1) || null;
+      const round2 = rows.find((r) => r.ot_round === 2) || null;
+      return nextAction(m, { round1, round2 }).tab ?? 1;
+    } catch {
+      return 1;
+    }
+  };
+
+  // 예약 탭 진입점 — OT 회원이면 OT 흐름으로 라우팅(음성일지/완료 모달 우회), 그 외는 기존 액션 모달.
+  // 명단 밖 회원(hidden/환불)·onSelect 미주입이면 라우팅 불가 → 액션 모달 폴백.
+  const handleApptTap = async (a) => {
+    const m = members.find((x) => x.id === a.user_id) || null;
+    if (m && onSelect && viewFor(m) === "ot") {
+      const toTab = await otLandingTab(m);
+      onSelect(a.user_id, toTab);
+      return;
+    }
+    openAction(a);
+  };
   // 음성 STT 결과 → 내용칸 채움(이후 손편집). PTView handleVoiceResult 미러.
   const handleVoiceResult = (raw, summaryText) => { setNote(summaryText || ""); setRawText(raw || ""); setUsedVoice(true); };
 
@@ -350,7 +376,7 @@ export default function ScheduleBoard({ members = [] }) {
                         ) : (
                           <div className="space-y-1">
                             {list.map((a) => (
-                              <button key={a.id} onClick={(e) => { e.stopPropagation(); openAction(a); }} className={chipCls(a)}>
+                              <button key={a.id} onClick={(e) => { e.stopPropagation(); handleApptTap(a); }} className={chipCls(a)}>
                                 {a.status === "done" ? "✓ " : ""}
                                 <span className={`${viewMeta(memberView(a.user_id)).dot} mr-1 inline-block h-1.5 w-1.5 rounded-full`} />
                                 {memberNameEl(a.user_id)}
@@ -388,7 +414,7 @@ export default function ScheduleBoard({ members = [] }) {
               {todayList.map((a) => (
                 <li key={a.id}>
                   <button
-                    onClick={() => openAction(a)}
+                    onClick={() => handleApptTap(a)}
                     className={`flex w-full items-center gap-3 overflow-hidden rounded-xl border p-3 text-left shadow-sm transition ${
                       a.status === "done" ? "border-line bg-card opacity-60" : "border-line bg-card hover:border-primary"
                     }`}

@@ -778,7 +778,10 @@ export default function OTNavigatorDashboard() {
             {/* 스케줄 보드는 자체 최상단 제목이 없어 Eyebrow로 섹션 헤더를 얹음(TodoTab은 자체 '오늘 할일' 제목 보유). */}
             <div ref={scheduleRef} className="scroll-mt-20">
               <Eyebrow icon={CalendarDays}>오늘 스케줄</Eyebrow>
-              <ScheduleBoard members={members} />
+              <ScheduleBoard
+                members={members}
+                onSelect={(id, toTab) => { setSelectedId(id); setTab(toTab ?? 1); }}
+              />
             </div>
             <div className="border-t border-line" />
             <ChurnRiskToday members={members} onSelect={(id, toTab) => { setSelectedId(id); setTab(toTab ?? 1); }} />
