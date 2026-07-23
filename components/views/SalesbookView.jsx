@@ -11,8 +11,8 @@
    손글씨(vow): --font-handwriting(self-host woff2 배선 후) · 미배선 시 cursive 폴백.
    PDF: window.print() + @media print(A4 가로). present(editable=false)=회원에게 보이는 화면.
    ========================================================================= */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Printer, X, Check, Camera } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
@@ -50,12 +50,36 @@ function pickPhotos(mode, rows, urls) {
   ];
 }
 
-/* ── 슬라이드 셸 — 공통 프레임(코너 브랜드칩 + 페이지 번호). ── */
+/* 콘텐츠를 프레임에 맞게 자동 축소(fit-to-scale) — 고정 16:9/9:16에 내용이 넘치면 잘리는 대신 scale 다운.
+   transform은 scrollHeight에 영향 없어 재측정 루프가 안 생김. 리사이즈+편집(콘텐츠 높이 변화) 둘 다 refit. */
+function useFitScale() {
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    const content = ref.current, pad = content?.parentElement, frame = pad?.parentElement;
+    if (!content || !pad || !frame) return;
+    const fit = () => {
+      const cs = getComputedStyle(pad);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const avail = frame.clientHeight - padY;
+      const natural = content.scrollHeight;
+      content.style.transform = natural > avail ? `scale(${avail / natural})` : "";
+    };
+    const ro = new ResizeObserver(fit);
+    ro.observe(frame); ro.observe(content);
+    window.addEventListener("resize", fit);   // 방향전환 등 뷰포트 변화 백업(RO가 못 잡는 케이스 대비)
+    fit();
+    return () => { ro.disconnect(); window.removeEventListener("resize", fit); };
+  }, []);
+  return ref;
+}
+
+/* ── 슬라이드 셸 — 프레임(overflow:hidden) · 패딩(.sb-pad) · fit 래퍼(.sb-fit) · 코너 마크. ── */
 function Slide({ n, children, className = "" }) {
+  const fitRef = useFitScale();
   return (
     <section className={`sb-slide ${className}`}>
       <div className="sb-slide-inner">
-        {children}
+        <div className="sb-pad"><div ref={fitRef} className="sb-fit">{children}</div></div>
         <div className="sb-corner">
           <BrandMark className="h-4 w-4" />
           <span className="text-[10px] font-semibold tracking-[0.02em] text-muted">{n} / {SLIDE_COUNT}</span>
@@ -204,9 +228,9 @@ export default function SalesbookView({
       <div className="sb-viewport flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="sb-stage">
           <div className="sb-track" style={{ "--sb-tx": `${-idx * 100}%` }}>
-            {/* ① 표지 */}
+            {/* ① 표지 — fit 래퍼는 자연 높이라 justify-between 대신 상단정렬 스택(간격으로 여백). */}
             <Slide n={1} className="sb-cover">
-              <div className="flex h-full flex-col justify-between">
+              <div className="flex flex-col gap-6 sm:gap-8">
                 <Wordmark className="text-[15px] font-extrabold" />
                 <div>
                   <p className="text-[13px] font-semibold text-primary-strong">TRAINING PLAN</p>
@@ -225,54 +249,83 @@ export default function SalesbookView({
               </div>
             </Slide>
 
-            {/* ② 목표 */}
+            {/* ② 목표 — 큰 목표 카드로 채움 + 지금 겪는 것. */}
             <Slide n={2}>
-              <SlideHead eyebrow="당신의 목표" />
-              <h2 className="text-[clamp(22px,3.4vw,36px)] font-extrabold leading-tight tracking-[-0.02em] text-ink">{sb.goal?.headline}</h2>
-              <p className="mt-3 max-w-[52ch] text-[clamp(13px,1.6vw,17px)] leading-relaxed text-sub">{sb.goal?.body}</p>
-              {Array.isArray(sb.goal?.current_issues) && sb.goal.current_issues.length > 0 && (
-                <div className="mt-5">
-                  <p className="mb-2 text-[12px] font-semibold text-muted">지금 겪고 계신 것</p>
-                  <div className="flex flex-wrap gap-2">{sb.goal.current_issues.map((t, i) => <Tag key={i}>{t}</Tag>)}</div>
+              <div className="flex h-full flex-col">
+                <SlideHead eyebrow="당신의 목표" />
+                <div className="flex flex-1 flex-col justify-center rounded-2xl border border-primary/25 bg-primary-soft p-5">
+                  <Target className="h-7 w-7 text-primary-strong" />
+                  <h2 className="mt-2 text-[clamp(22px,3.6vw,38px)] font-extrabold leading-tight tracking-[-0.02em] text-ink">{sb.goal?.headline}</h2>
+                  <p className="mt-3 max-w-[52ch] text-[clamp(13px,1.6vw,17px)] leading-relaxed text-sub">{sb.goal?.body}</p>
                 </div>
-              )}
+                {Array.isArray(sb.goal?.current_issues) && sb.goal.current_issues.length > 0 && (
+                  <div className="mt-3">
+                    <p className="mb-2 text-[12px] font-semibold text-muted">지금 겪고 계신 것</p>
+                    <div className="flex flex-wrap gap-2">{sb.goal.current_issues.map((t, i) => <Tag key={i}>{t}</Tag>)}</div>
+                  </div>
+                )}
+              </div>
             </Slide>
 
-            {/* ③ 오늘 확인한 것 */}
+            {/* ③ 오늘 확인한 것 — ★트레이너 전문가 시선(원인·접근)이 주인공. before/after는 작은 근거. */}
             <Slide n={3}>
-              <SlideHead eyebrow="오늘 함께 확인한 것" />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-line bg-elevate p-4">
-                  <div className="text-[11px] font-bold text-muted">처음</div>
-                  <EditField editable={editable} value={sb.confirmed?.before} onChange={(v) => setConfirmed("before", v)} multiline placeholder="처음 상태">
-                    <p className="mt-1 text-[14px] leading-relaxed text-ink">{sb.confirmed?.before}</p>
-                  </EditField>
-                </div>
-                <div className="rounded-2xl border border-primary/30 bg-primary-soft p-4">
-                  <div className="text-[11px] font-bold text-primary-strong">잡아드린 뒤</div>
-                  <EditField editable={editable} value={sb.confirmed?.after} onChange={(v) => setConfirmed("after", v)} multiline placeholder="잡아드린 뒤">
-                    <p className="mt-1 text-[14px] leading-relaxed text-ink">{sb.confirmed?.after}</p>
-                  </EditField>
-                </div>
-              </div>
-              {editable ? (
-                <div className="mt-4">
-                  <div className="mb-1 text-[11px] font-bold text-muted">회원 한마디 (선택)</div>
-                  <EditField editable value={sb.confirmed?.member_quote} onChange={(v) => setConfirmed("member_quote", v)} placeholder="회원이 한 말 그대로">{null}</EditField>
-                </div>
-              ) : sb.confirmed?.member_quote ? (
-                <blockquote className="mt-4 border-l-[3px] border-primary pl-3 text-[clamp(15px,2vw,20px)] font-semibold italic leading-snug text-ink">
-                  &ldquo;{sb.confirmed.member_quote}&rdquo;
-                </blockquote>
-              ) : null}
-              {editable ? (
-                <div className="mt-3">
-                  <div className="mb-1 text-[11px] font-bold text-muted">의미 한 줄</div>
-                  <EditField editable value={sb.confirmed?.bridge} onChange={(v) => setConfirmed("bridge", v)} multiline placeholder="그 변화의 의미">{null}</EditField>
-                </div>
-              ) : sb.confirmed?.bridge ? (
-                <p className="mt-3 text-[13px] leading-relaxed text-sub">{sb.confirmed.bridge}</p>
-              ) : null}
+              {(() => {
+                const cf = sb.confirmed || {};
+                // 옛 캐시 폴백: diagnosis/approach 없고 bridge만 있으면 bridge를 '원인' 박스에 표시(graceful).
+                const diagText = cf.diagnosis || (!cf.approach ? cf.bridge : "") || "";
+                return (
+                  <div className="flex h-full flex-col">
+                    <SlideHead eyebrow="오늘 함께 확인한 것" />
+                    {/* 상단 — before/after 작은 근거 2칸 */}
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <div className="rounded-xl border border-line bg-elevate px-3 py-2">
+                        <div className="text-[10px] font-bold text-muted">오늘 처음</div>
+                        <EditField editable={editable} value={cf.before} onChange={(v) => setConfirmed("before", v)} multiline placeholder="처음 상태">
+                          <p className="mt-0.5 text-[12px] leading-relaxed text-sub">{cf.before}</p>
+                        </EditField>
+                      </div>
+                      <div className="rounded-xl border border-primary/25 bg-primary-soft px-3 py-2">
+                        <div className="text-[10px] font-bold text-primary-strong">자세 하나 잡아드린 뒤</div>
+                        <EditField editable={editable} value={cf.after} onChange={(v) => setConfirmed("after", v)} multiline placeholder="잡아드린 뒤">
+                          <p className="mt-0.5 text-[12px] leading-relaxed text-ink">{cf.after}</p>
+                        </EditField>
+                      </div>
+                    </div>
+                    {/* 중앙 — 제가 본 원인(흰) + 그래서 이렇게(빨강). 크게, 세로 채움. */}
+                    <div className="mt-3 flex flex-1 flex-col justify-center gap-3">
+                      {(editable || diagText) && (
+                        <div className="rounded-2xl border border-line bg-card p-4">
+                          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-sub">
+                            <Search className="h-3.5 w-3.5 text-primary-strong" /> 제가 본 원인
+                          </div>
+                          <EditField editable={editable} value={cf.diagnosis} onChange={(v) => setConfirmed("diagnosis", v)} multiline placeholder="제가 보니 원인은 ~">
+                            <p className="text-[clamp(14px,1.9vw,18px)] font-semibold leading-snug text-ink">{diagText}</p>
+                          </EditField>
+                        </div>
+                      )}
+                      {(editable || cf.approach) && (
+                        <div className="rounded-2xl border border-primary bg-primary-soft p-4">
+                          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-primary-strong">
+                            <ArrowRight className="h-3.5 w-3.5" /> 그래서 이렇게 바꿔드려요
+                          </div>
+                          <EditField editable={editable} value={cf.approach} onChange={(v) => setConfirmed("approach", v)} multiline placeholder="닫힌 흉곽부터 열고 → 등 감각 심고 → 어깨 라인 올리는 순서로 잡아드려요">
+                            <p className="text-[clamp(14px,1.9vw,18px)] font-semibold leading-snug text-ink">{cf.approach}</p>
+                          </EditField>
+                        </div>
+                      )}
+                    </div>
+                    {/* 하단 — 회원 한마디 작은 보조 */}
+                    {editable ? (
+                      <div className="mt-2">
+                        <div className="mb-1 text-[10px] font-bold text-muted">회원 한마디 (보조 · 선택)</div>
+                        <EditField editable value={cf.member_quote} onChange={(v) => setConfirmed("member_quote", v)} placeholder="회원이 한 말 그대로">{null}</EditField>
+                      </div>
+                    ) : cf.member_quote ? (
+                      <p className="mt-2 text-[12px] italic leading-snug text-muted">회원 한마디 — &ldquo;{cf.member_quote}&rdquo;</p>
+                    ) : null}
+                  </div>
+                );
+              })()}
             </Slide>
 
             {/* ④ 사진 */}
@@ -306,93 +359,104 @@ export default function SalesbookView({
               )}
             </Slide>
 
-            {/* ⑤ 로드맵 + 현재 */}
+            {/* ⑤ 로드맵 + 현재 — 각 단계 '제 방법(how)' + '느낄 변화(feel)'. 카드 full-height 채움. */}
             <Slide n={5}>
-              <SlideHead eyebrow="여기까지 함께 갑니다" />
-              <div className="grid gap-3 sm:grid-cols-3">
-                {(Array.isArray(sb.roadmap?.steps) ? sb.roadmap.steps.slice(0, 3) : []).map((s, i) => {
-                  const here = (sb.roadmap?.current_step ?? 1) === i + 1;
-                  return (
-                    <div key={i} className={`relative rounded-2xl border p-4 ${here ? "border-primary/40 bg-primary-soft" : "border-line bg-elevate"}`}>
-                      {here && <span className="absolute -top-2 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">지금 여기</span>}
-                      <div className="text-[11px] font-bold text-muted">STEP {i + 1}</div>
-                      <div className="mt-0.5 text-[15px] font-bold text-ink">{s.title}</div>
-                      <p className="mt-1 text-[12px] leading-relaxed text-sub">{s.desc}</p>
-                      {s.feel && <p className="mt-2 text-[12px] font-semibold text-primary-strong">{s.feel}</p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </Slide>
-
-            {/* ⑥ 추천 플랜 */}
-            <Slide n={6}>
-              <SlideHead eyebrow="추천 플랜" />
-              <div className="grid gap-3 sm:grid-cols-2">
-                {plans.map((plan, i) => {
-                  const pkg = resolvePackage(i, plan, recommendedProgram, packages);
-                  const per = pkg && pkg.sessions ? Math.round(pkg.price / pkg.sessions) : null;
-                  const rec = plan.recommended;
-                  return (
-                    <div key={i} className={`relative flex flex-col rounded-2xl border p-4 ${rec ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`}>
-                      {rec && <span className="absolute -top-2 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">추천</span>}
-                      <div className="text-[16px] font-extrabold text-ink">{plan.name}</div>
-                      <div className="mt-0.5 text-[12px] text-muted">{plan.meta}{plan.sessions_label ? ` · ${plan.sessions_label}` : ""}</div>
-                      {pkg && (
-                        <div className="mt-2 flex items-baseline gap-2">
-                          <span className="font-mono text-[20px] font-extrabold text-primary-strong">{won(pkg.price)}</span>
-                          {per != null && <span className="text-[11px] text-muted">회당 {won(per)}</span>}
-                        </div>
-                      )}
-                      {plan.why && <p className="mt-2 text-[12px] leading-relaxed text-sub">{plan.why}</p>}
-                      {Array.isArray(plan.includes) && (
-                        <ul className="mt-3 space-y-1">
-                          {plan.includes.map((it, j) => (
-                            <li key={j} className="flex items-start gap-1.5 text-[12px] text-ink"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary-strong" />{it}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </Slide>
-
-            {/* ⑦ 마무리 */}
-            <Slide n={7}>
-              <SlideHead eyebrow="약속드릴게요" />
-              {Array.isArray(sb.closing?.services) && (
-                <div className="grid grid-cols-2 gap-2">
-                  {sb.closing.services.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 rounded-xl border border-line bg-elevate px-3 py-2 text-[12px] text-ink">
-                      <Check className="h-3.5 w-3.5 shrink-0 text-primary-strong" />
-                      <EditField editable={editable} value={s} onChange={(v) => setService(i, v)} placeholder={`서비스 ${i + 1}`}>
-                        <span>{s}</span>
-                      </EditField>
-                    </div>
-                  ))}
+              <div className="flex h-full flex-col">
+                <SlideHead eyebrow="여기까지 함께 갑니다" />
+                <div className="grid flex-1 gap-3 sm:grid-cols-3">
+                  {(Array.isArray(sb.roadmap?.steps) ? sb.roadmap.steps.slice(0, 3) : []).map((s, i) => {
+                    const here = (sb.roadmap?.current_step ?? 1) === i + 1;
+                    const how = s.how || s.desc || ""; // 옛 캐시 폴백(desc)
+                    return (
+                      <div key={i} className={`relative flex flex-col rounded-2xl border p-4 ${here ? "border-primary/40 bg-primary-soft" : "border-line bg-elevate"}`}>
+                        {here && <span className="absolute -top-2 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">지금 여기</span>}
+                        <div className="text-[11px] font-bold text-muted">STEP {i + 1}</div>
+                        <div className="mt-0.5 text-[15px] font-bold text-ink">{s.title}</div>
+                        {how && (
+                          <p className="mt-2 text-[12px] leading-relaxed text-sub">
+                            <span className="font-semibold text-ink">제 방법 · </span>{how}
+                          </p>
+                        )}
+                        {s.feel && <p className="mt-auto pt-2 text-[12px] font-semibold text-primary-strong">{s.feel}</p>}
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-              <div className="mt-4 rounded-2xl border border-primary/25 bg-primary-soft p-4">
-                {editable ? (
-                  <textarea
-                    value={sb.closing?.vow || ""}
-                    onChange={(e) => setClosing("vow", e.target.value)}
-                    rows={2}
-                    placeholder="회원에게 남길 다짐 (판매 권유 아닌 책임의 약속)"
-                    className="sb-handwriting w-full rounded-lg border border-primary/40 bg-card px-3 py-2 text-[clamp(20px,3vw,30px)] leading-snug text-ink outline-none focus:border-primary"
-                  />
-                ) : (
-                  <p className="sb-handwriting text-[clamp(20px,3vw,30px)] leading-snug text-ink">{sb.closing?.vow}</p>
+              </div>
+            </Slide>
+
+            {/* ⑥ 추천 플랜 — 카드 full-height · 가격 대형. */}
+            <Slide n={6}>
+              <div className="flex h-full flex-col">
+                <SlideHead eyebrow="추천 플랜" />
+                <div className="grid flex-1 gap-3 sm:grid-cols-2">
+                  {plans.map((plan, i) => {
+                    const pkg = resolvePackage(i, plan, recommendedProgram, packages);
+                    const per = pkg && pkg.sessions ? Math.round(pkg.price / pkg.sessions) : null;
+                    const rec = plan.recommended;
+                    return (
+                      <div key={i} className={`relative flex flex-col rounded-2xl border p-4 ${rec ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`}>
+                        {rec && <span className="absolute -top-2 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">추천</span>}
+                        <div className="text-[17px] font-extrabold text-ink">{plan.name}</div>
+                        <div className="mt-0.5 text-[12px] text-muted">{plan.meta}{plan.sessions_label ? ` · ${plan.sessions_label}` : ""}</div>
+                        {pkg && (
+                          <div className="mt-2 flex items-baseline gap-2">
+                            <span className="font-mono text-[clamp(24px,3.2vw,32px)] font-extrabold text-primary-strong">{won(pkg.price)}</span>
+                            {per != null && <span className="text-[11px] text-muted">회당 {won(per)}</span>}
+                          </div>
+                        )}
+                        {plan.why && <p className="mt-2 text-[12px] leading-relaxed text-sub">{plan.why}</p>}
+                        {Array.isArray(plan.includes) && (
+                          <ul className="mt-auto space-y-1 pt-3">
+                            {plan.includes.map((it, j) => (
+                              <li key={j} className="flex items-start gap-1.5 text-[12px] text-ink"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary-strong" />{it}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Slide>
+
+            {/* ⑦ 마무리 — 서비스 2×2 + 손글씨 다짐 넉넉하게 채움. */}
+            <Slide n={7}>
+              <div className="flex h-full flex-col">
+                <SlideHead eyebrow="약속드릴게요" />
+                {Array.isArray(sb.closing?.services) && (
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {sb.closing.services.map((s, i) => (
+                      <div key={i} className="flex items-center gap-2 rounded-xl border border-line bg-elevate px-3 py-2.5 text-[12px] text-ink">
+                        <Check className="h-3.5 w-3.5 shrink-0 text-primary-strong" />
+                        <EditField editable={editable} value={s} onChange={(v) => setService(i, v)} placeholder={`서비스 ${i + 1}`}>
+                          <span>{s}</span>
+                        </EditField>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <div className="mt-3 flex items-end justify-end gap-3">
-                  <span className="text-[12px] text-muted">{tr.display_name || "담당 트레이너"}</span>
-                  {tr.signature_data_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={tr.signature_data_url} alt="서명" className="h-12 max-w-[160px] object-contain" />
+                <div className="mt-3 flex flex-1 flex-col rounded-2xl border border-primary/25 bg-primary-soft p-5">
+                  {editable ? (
+                    <textarea
+                      value={sb.closing?.vow || ""}
+                      onChange={(e) => setClosing("vow", e.target.value)}
+                      rows={3}
+                      placeholder="회원에게 남길 다짐 (판매 권유 아닌 책임의 약속)"
+                      className="sb-handwriting flex-1 w-full rounded-lg border border-primary/40 bg-card px-3 py-2 text-[clamp(22px,3.4vw,34px)] leading-snug text-ink outline-none focus:border-primary"
+                    />
                   ) : (
-                    <span className="sb-handwriting text-[22px] text-ink/70">{tr.display_name || ""}</span>
+                    <p className="sb-handwriting flex flex-1 items-center text-[clamp(22px,3.4vw,34px)] leading-snug text-ink">{sb.closing?.vow}</p>
                   )}
+                  <div className="mt-3 flex items-end justify-end gap-3">
+                    <span className="text-[12px] text-muted">{tr.display_name || "담당 트레이너"}</span>
+                    {tr.signature_data_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={tr.signature_data_url} alt="서명" className="h-12 max-w-[160px] object-contain" />
+                    ) : (
+                      <span className="sb-handwriting text-[22px] text-ink/70">{tr.display_name || ""}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </Slide>
@@ -437,25 +501,26 @@ function SalesbookStyle() {
 .sb-stage { width:100%; max-width:min(1180px, 96vw); }
 .sb-track { display:flex; transform:translateX(var(--sb-tx,0)); transition:transform .32s cubic-bezier(.22,.9,.28,1); }
 .sb-slide { flex:0 0 100%; }
-/* ⚠️ overflow-y:auto(hidden 아님) — 16:9보다 긴 AI 콘텐츠도 절대 잘리지 않게(스크롤 안전망 · 클리핑=데이터 손실). */
-.sb-slide-inner { position:relative; aspect-ratio:16/9; overflow-y:auto; overflow-x:hidden; background:var(--color-card,#fff); border:1px solid var(--color-line,#e6e7eb); border-radius:16px; box-shadow:0 24px 48px -20px rgb(19 21 27/.5); padding:clamp(20px,3.4vw,40px); display:flex; flex-direction:column; }
+/* 프레임은 고정 16:9 · overflow:hidden. 콘텐츠는 .sb-pad>.sb-fit로 감싸고 useFitScale이 넘치면 scale 다운. */
+.sb-slide-inner { position:relative; aspect-ratio:16/9; overflow:hidden; background:var(--color-card,#fff); border:1px solid var(--color-line,#e6e7eb); border-radius:16px; box-shadow:0 24px 48px -20px rgb(19 21 27/.5); }
+.sb-pad { position:absolute; inset:0; padding:clamp(20px,3.4vw,40px); }
+/* min-height:100% — 콘텐츠가 짧으면 프레임을 채우고(flex 분배 가능), 넘치면 useFitScale이 축소(안전망). */
+.sb-fit { transform-origin:top center; width:100%; min-height:100%; }
 .sb-corner { position:absolute; right:14px; bottom:12px; display:flex; align-items:center; gap:6px; }
 .sb-cover .sb-corner { display:none; } /* 표지엔 트레이너 브랜드칩+Wordmark가 이미 있어 코너 마크는 중복 */
 /* 가로(16:9 · 짧은 프레임)에선 4:3로 낮춰 2장이 들어가게. 세로 폰에선 아래 미디어쿼리로 3:4(자연). */
 .sb-photo { aspect-ratio:4/3; }
 .sb-handwriting { font-family: var(--font-handwriting, "Nanum Pen Script"), "Gaegu", cursive; }
 
-/* 세로/좁은 폭 — 스택 카드(캐러셀 해제). transform override(인라인 아님이라 가능). */
+/* 세로/좁은 폭 — 캐러셀 유지(한 장씩 스와이프) · 프레임만 9:16 톨. 프레임이 뷰포트 높이를 안 넘게 stage 폭 캡. */
 @media (max-width:820px), (orientation:portrait) {
-  .sb-viewport { overflow:auto; }
-  .sb-track { display:block; transform:none; }
-  .sb-slide { margin-bottom:14px; }
-  .sb-slide-inner { aspect-ratio:auto; min-height:auto; overflow:visible; } /* 스택은 자연 높이라 스크롤 불필요 */
+  .sb-stage { max-width:min(96vw, calc((100dvh - 130px) * 9 / 16)); }
+  .sb-slide-inner { aspect-ratio:9/16; }
   .sb-photo { aspect-ratio:3/4; } /* 폰은 세로 여백 넉넉 → 인물 사진 세로비 유지 */
   .sb-nav-hint { display:none; }
 }
 
-/* 인쇄 — A4 가로 · sb-root만 · 슬라이드 페이지당 1장. */
+/* 인쇄 — A4 가로 · sb-root만 · 슬라이드 페이지당 1장. transform(스크린 16:9 scale) 그대로 두면 A4(더 세로긴)에 여유롭게 들어감. */
 @media print {
   body { background:#fff !important; }
   body * { visibility:hidden !important; }
@@ -467,7 +532,7 @@ function SalesbookStyle() {
   .sb-stage { max-width:none !important; width:100% !important; }
   .sb-track { display:block !important; transform:none !important; }
   .sb-slide { margin:0 !important; }
-  .sb-slide-inner { aspect-ratio:auto !important; height:100vh !important; overflow:visible !important; border:none !important; border-radius:0 !important; box-shadow:none !important; page-break-after:always; break-after:page; }
+  .sb-slide-inner { aspect-ratio:auto !important; height:100vh !important; overflow:hidden !important; border:none !important; border-radius:0 !important; box-shadow:none !important; page-break-after:always; break-after:page; }
   .sb-photo { aspect-ratio:4/3 !important; } /* 인쇄=가로 A4라 낮은 비율 유지 */
 }
 `}</style>
