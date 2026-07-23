@@ -753,7 +753,7 @@ function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
 /* 수업일지 회원 확인 — 소프트 유도(스펙 §4).
    진실은 확인 레코드(서버)다. 이건 UX 유도일 뿐 — 회원을 절대 락아웃하지 않는다.
    ⚠️ fail-open: member-confirm이 503(데모/키부재)이면 큐를 통째로 끈다(아래 disabledByServer).
-   ⚠️ pending 계산은 뷰가 주는 confirmed_at/confirm_result에 의존 — confirm 확정분·dispute분은 제외되고
+   ⚠️ pending 계산은 뷰가 주는 confirmed_at에 의존 — confirm 확정분은 제외되고(확인 전용 · dispute 제거),
       '오늘 수업'은 유예(session_at < 오늘)라 안 뜬다. */
 function ConfirmFlow({ logs, onReload }) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -767,7 +767,7 @@ function ConfirmFlow({ logs, onReload }) {
   //    타임존·형식 차이로 어긋난다 → new Date→ymd로 로컬(KST) 날짜를 뽑아 비교.
   const pending = useMemo(
     () => (logs || []).filter((l) => {
-      if (l.confirmed_at || l.confirm_result === "dispute") return false;
+      if (l.confirmed_at) return false;
       const iso = l.session_at ?? l.created_at;
       return iso && ymd(new Date(iso)) < today;    // 오늘 수업 유예(오늘분은 안 뜸)
     }),

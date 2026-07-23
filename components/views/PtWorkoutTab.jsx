@@ -110,16 +110,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     (a, b) => new Date(b.session_at ?? b.created_at ?? 0) - new Date(a.session_at ?? a.created_at ?? 0)
   );
 
-  // log_id → 확인 상태(확정/이의). 뷰와 동일 규칙: confirm 하나라도 있으면 확정(우선), 없고 dispute면 이의.
-  //   confirm 레코드의 content_hash를 보관 → 아래 해시 대조에 사용.
+  // log_id → 확인 상태(확정). confirm 레코드가 있으면 확정 · content_hash 보관(아래 해시 대조).
+  //   ※ 확인 전용 — dispute(이의)는 제거됨. 레거시 dispute 행이 있어도 무시(미확인으로 표시).
   const confirmByLog = useMemo(() => {
     const m = new Map();
     for (const c of confirms || []) {
-      const prev = m.get(c.log_id);
       if (c.result === "confirm") {
-        m.set(c.log_id, { result: "confirm", confirmed_at: c.confirmed_at, content_hash: c.content_hash }); // 확정 우선
-      } else if (!prev) {
-        m.set(c.log_id, { result: "dispute", confirmed_at: c.confirmed_at, dispute_note: c.dispute_note });
+        m.set(c.log_id, { result: "confirm", confirmed_at: c.confirmed_at, content_hash: c.content_hash });
       }
     }
     return m;
@@ -500,7 +497,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                         </>
                       );
                     }
-                    if (c?.result === "dispute") return <Badge tone="danger">이의제기</Badge>;
                     return <Badge tone="neutral">미확인</Badge>;
                   })()}
                 </div>
@@ -550,12 +546,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                       </span>
                     ))}
                   </div>
-                )}
-                {/* 이의 사유 — 회원이 남긴 것(있을 때만). 트레이너가 무엇을 정정할지 참고. */}
-                {confirmByLog.get(log.id)?.result === "dispute" && confirmByLog.get(log.id)?.dispute_note && (
-                  <p className="mt-2 rounded-md border border-danger/40 bg-card px-2 py-1.5 text-[11px] leading-relaxed text-danger-text">
-                    회원 이의: {confirmByLog.get(log.id).dispute_note}
-                  </p>
                 )}
                 {/* §1·§2 수정/삭제 — 편집 중엔 자체 버튼이 있어 숨김. voided면 무르기(하드 DELETE 금지 — 서명 cascade). */}
                 {editLogId !== log.id && (

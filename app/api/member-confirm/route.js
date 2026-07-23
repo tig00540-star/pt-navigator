@@ -1,8 +1,8 @@
-// app/api/member-confirm/route.js — 회원이 자기 수업일지(daily_workout_log)를 확인/이의. 서버전용.
+// app/api/member-confirm/route.js — 회원이 자기 수업일지(daily_workout_log)를 확인. 서버전용(확인 전용 · dispute 제거).
 //   증거력의 무결성·본인확인을 클라에 안 맡긴다:
 //   ① 회원 JWT 검증 → auth uid → member_auth_id로 user_table.id(member_id) 매핑
 //   ② service_role로 일지를 다시 읽어 소유·상태 검증(남의 일지·voided·noshow 차단)
-//   ③ content_hash를 서버가 DB 내용으로 계산(클라 위조 불가) — confirm/dispute 둘 다
+//   ③ content_hash를 서버가 DB 내용으로 계산(클라 위조 불가)
 //   ④ service_role로 insert(교훈1: .select() 0행이면 실패)
 //   ★IP·User-Agent 등은 수집하지 않음(테이블에 컬럼 없음 · 개인정보/저조 증거가치 회피).
 //   member-auth/member-revoke의 JWT 검증 패턴 재사용.
@@ -33,9 +33,8 @@ export async function POST(req) {
   const body = await req.json().catch(() => ({}));
   const logId = String(body.log_id || "").trim();
   const result = String(body.result || "").trim();
-  const disputeNote = body.dispute_note != null ? String(body.dispute_note).trim() || null : null;
   if (!UUID_RE.test(logId)) return Response.json({ error: "잘못된 요청" }, { status: 400 });
-  if (result !== "confirm") {
+  if (result !== "confirm") {   // 확인 전용 — 그 외 값(과거 dispute 포함)은 구조적 차단
     return Response.json({ error: "잘못된 요청" }, { status: 400 });
   }
 
@@ -71,7 +70,7 @@ export async function POST(req) {
   }
 
   // ③ content_hash = 확인 시점 일지 내용 동결(서버 계산). 나중에 트레이너가 내용을 고치면
-  //    저장된 해시와 어긋나 "확인 후 변경됨"을 감지한다(§5 대조 뱃지). confirm/dispute 둘 다 저장.
+  //    저장된 해시와 어긋나 "확인 후 변경됨"을 감지한다(§5 대조 뱃지).
   //    ★lib/workoutHash 공용 — 트레이너 뱃지(contentHashBrowser)와 반드시 같은 입력을 써야 오탐이 안 난다.
   const contentHash = contentHashNode(log, crypto);
 
@@ -84,7 +83,6 @@ export async function POST(req) {
       result,
       method: "tap",                 // 손서명(drawn)은 후속 — 서버가 tap 고정
       content_hash: contentHash,
-      dispute_note: result === "dispute" ? disputeNote : null,
     })
     .select("confirmed_at")
     .maybeSingle();
