@@ -337,22 +337,22 @@ export default function SalesbookView({
                     {/* 중앙 — 제가 본 원인(흰) + 그래서 이렇게(빨강). 크게, 세로 채움. */}
                     <div className="mt-3 flex flex-1 flex-col justify-center gap-3">
                       {(editable || diagText) && (
-                        <div className="sb-stg rounded-2xl border border-line bg-card p-4" style={{ "--sb-i": 1 }}>
+                        <div className="sb-stg flex flex-col justify-center rounded-2xl border border-line bg-card p-4" style={{ "--sb-i": 1 }}>
                           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-sub">
                             <Search className="h-3.5 w-3.5 text-primary-strong" /> 제가 본 원인
                           </div>
                           <EditField editable={editable} value={cf.diagnosis} onChange={(v) => setConfirmed("diagnosis", v)} multiline placeholder="제가 보니 원인은 ~">
-                            <p className="text-[clamp(14px,1.9vw,18px)] font-semibold leading-snug text-ink">{diagText}</p>
+                            <p className="text-[15px] font-normal leading-[1.7] tracking-[-0.01em] text-ink">{diagText}</p>
                           </EditField>
                         </div>
                       )}
                       {(editable || cf.approach) && (
-                        <div className="sb-stg rounded-2xl border border-primary bg-primary-soft p-4" style={{ "--sb-i": 2 }}>
+                        <div className="sb-stg flex flex-col justify-center rounded-2xl border border-primary bg-primary-soft p-4" style={{ "--sb-i": 2 }}>
                           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-primary-strong">
                             <ArrowRight className="h-3.5 w-3.5" /> 그래서 이렇게 바꿔드려요
                           </div>
                           <EditField editable={editable} value={cf.approach} onChange={(v) => setConfirmed("approach", v)} multiline placeholder="닫힌 흉곽부터 열고 → 등 감각 심고 → 어깨 라인 올리는 순서로 잡아드려요">
-                            <p className="text-[clamp(14px,1.9vw,18px)] font-semibold leading-snug text-ink">{cf.approach}</p>
+                            <p className="text-[15px] font-normal leading-[1.7] tracking-[-0.01em] text-ink">{cf.approach}</p>
                           </EditField>
                         </div>
                       )}
@@ -405,25 +405,46 @@ export default function SalesbookView({
             {/* ⑤ 로드맵 + 현재 — 각 단계 '제 방법(how)' + '느낄 변화(feel)'. 카드 full-height 채움. */}
             <Slide n={5} idx={idx} editable={editable}>
               <div className="flex h-full flex-col">
-                <SlideHead eyebrow="여기까지 함께 갑니다" className="sb-stg" style={{ "--sb-i": 0 }} />
-                <div className="grid flex-1 gap-3 sm:grid-cols-3">
-                  {(Array.isArray(sb.roadmap?.steps) ? sb.roadmap.steps.slice(0, 3) : []).map((s, i) => {
-                    const here = (sb.roadmap?.current_step ?? 1) === i + 1;
-                    const how = s.how || s.desc || ""; // 옛 캐시 폴백(desc)
-                    return (
-                      <div key={i} className={`sb-stg relative flex flex-col rounded-2xl border p-4 ${here ? "border-primary/40 bg-primary-soft" : "border-line bg-elevate"}`} style={{ "--sb-i": i + 1 }}>
-                        {here && <span className="absolute -top-2 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">지금 여기</span>}
-                        <div className="text-[11px] font-bold text-muted">STEP {i + 1}</div>
-                        <div className="mt-0.5 text-[15px] font-bold text-ink">{s.title}</div>
-                        {how && (
-                          <p className="mt-2 text-[12px] leading-relaxed text-sub">
-                            <span className="font-semibold text-ink">제 방법 · </span>{how}
-                          </p>
-                        )}
-                        {s.feel && <p className="mt-auto pt-2 text-[12px] font-semibold text-primary-strong">{s.feel}</p>}
-                      </div>
-                    );
-                  })}
+                <SlideHead eyebrow="여기까지 함께 갑니다" aux="지금부터 중장기까지" className="sb-stg" style={{ "--sb-i": 0 }} />
+                <div className="flex flex-1 flex-col gap-3">
+                  {/* 1행 — 근시일(지금 프로그램 · roadmap.steps) */}
+                  <div className="grid flex-1 grid-cols-3 gap-3">
+                    {(Array.isArray(sb.roadmap?.steps) ? sb.roadmap.steps.slice(0, 3) : []).map((s, i) => {
+                      const here = (sb.roadmap?.current_step ?? 1) === i + 1;
+                      const how = s.how || s.desc || ""; // 옛 캐시 폴백(desc)
+                      return (
+                        <div key={i} className={`sb-stg relative flex flex-col rounded-2xl border p-4 ${here ? "border-primary/40 bg-primary-soft" : "border-line bg-elevate"}`} style={{ "--sb-i": i + 1 }}>
+                          {here && <span className="absolute -top-2 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">지금 여기</span>}
+                          <div className="text-[11px] font-bold text-muted">STEP {i + 1}</div>
+                          <div className="mt-0.5 text-[15px] font-bold text-ink">{s.title}</div>
+                          {how && (
+                            <p className="mt-2 text-[12px] leading-relaxed text-sub">
+                              <span className="font-semibold text-ink">제 방법 · </span>{how}
+                            </p>
+                          )}
+                          {s.feel && <p className="mt-auto pt-2 text-[12px] font-semibold text-primary-strong">{s.feel}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* 2행 — 중장기(roadmap.longterm 있을 때만 · 옛 캐시엔 없음 → 1행이 전체 높이 채움) */}
+                  {Array.isArray(sb.roadmap?.longterm) && sb.roadmap.longterm.length > 0 && (
+                    <div className="grid flex-1 grid-cols-3 gap-3">
+                      {sb.roadmap.longterm.slice(0, 3).map((l, i) => {
+                        const stepNo = i + 4;
+                        return (
+                          <div key={i} className="sb-stg flex flex-col justify-center rounded-2xl border border-dashed border-line-strong bg-elevate p-4" style={{ "--sb-i": stepNo }}>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-bold text-muted">STEP {stepNo}</span>
+                              <span className="rounded-full bg-card px-1.5 py-0.5 text-[9px] font-bold text-sub">{stepNo === 6 ? "목표" : "중장기"}</span>
+                            </div>
+                            <div className="mt-0.5 text-[15px] font-bold text-ink">{l.title}</div>
+                            {l.goal && <p className="mt-1 text-[12px] leading-relaxed text-sub">{l.goal}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </Slide>
@@ -525,12 +546,13 @@ export default function SalesbookView({
   );
 }
 
-/* 슬라이드 상단 라벨 — 얇은 빨강 바 + 텍스트. className/style passthrough(빌드인 sb-stg·--sb-i 부여용). */
-function SlideHead({ eyebrow, className = "", style }) {
+/* 슬라이드 상단 라벨 — 얇은 빨강 바 + 텍스트(+선택 aux 보조라벨). className/style passthrough(빌드인 sb-stg·--sb-i 부여용). */
+function SlideHead({ eyebrow, aux, className = "", style }) {
   return (
     <div className={`mb-3 flex items-center gap-2 ${className}`} style={style}>
       <span className="h-4 w-1 rounded-full bg-primary" />
       <span className="text-[12px] font-bold tracking-[0.02em] text-primary-strong">{eyebrow}</span>
+      {aux && <span className="text-[11px] text-muted">{aux}</span>}
     </div>
   );
 }
@@ -546,7 +568,7 @@ function SalesbookStyle() {
    발표 모드는 chrome을 숨기니 이 값을 작게(24px) → 슬라이드가 더 커짐. */
 .sb-stage { width:100%; max-width:min(1180px, 96vw, calc((100dvh - var(--sb-chrome,130px)) * 16 / 9)); }
 .sb-track { display:flex; transform:translateX(var(--sb-tx,0)); transition:transform .32s cubic-bezier(.22,.9,.28,1); }
-.sb-slide { flex:0 0 100%; }
+.sb-slide { flex:0 0 100%; word-break:keep-all; } /* 한글 단어 중간 안 잘리고 띄어쓰기서만 접힘(폰 세로 6칸·PDF 이득) */
 /* 프레임은 고정 16:9 · overflow:hidden. 콘텐츠는 .sb-pad>.sb-fit로 감싸고 useFitScale이 넘치면 scale 다운. */
 .sb-slide-inner { position:relative; aspect-ratio:16/9; overflow:hidden; background:var(--color-card,#fff); border:1px solid var(--color-line,#e6e7eb); border-radius:16px; box-shadow:0 24px 48px -20px rgb(19 21 27/.5); }
 .sb-pad { position:absolute; inset:0; padding:clamp(20px,3.4vw,40px); }
