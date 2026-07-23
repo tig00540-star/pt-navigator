@@ -74,12 +74,18 @@ function useFitScale() {
 }
 
 /* ── 슬라이드 셸 — 프레임(overflow:hidden) · 패딩(.sb-pad) · fit 래퍼(.sb-fit) · 코너 마크. ── */
-function Slide({ n, children, className = "" }) {
+// 은은한 빌드인: 회원 화면(animate=!editable)에서만, 활성 슬라이드 내부를 .sb-build>.sb-play로 감싸 재생.
+//   ★.sb-fit/.sb-track엔 안 걸고 그 '내부 자식'에만(fit-scale scale·트랙 translateX와 무충돌).
+//   ★active 토글로 재생 — 넘길 때마다 .sb-play가 붙었다 떨어져 애니메이션이 다시 돈다(playNonce 불필요).
+//   편집(editable)이면 래퍼 없이 그대로 → EditField 리마운트/포커스 유실 방지.
+function Slide({ n, children, className = "", idx = 0, editable = false }) {
   const fitRef = useFitScale();
+  const active = idx === n - 1;
+  const inner = editable ? children : <div className={`sb-build ${active ? "sb-play" : ""}`}>{children}</div>;
   return (
     <section className={`sb-slide ${className}`}>
       <div className="sb-slide-inner">
-        <div className="sb-pad"><div ref={fitRef} className="sb-fit">{children}</div></div>
+        <div className="sb-pad"><div ref={fitRef} className="sb-fit">{inner}</div></div>
         <div className="sb-corner">
           <BrandMark className="h-4 w-4" />
           <span className="text-[10px] font-semibold tracking-[0.02em] text-muted">{n} / {SLIDE_COUNT}</span>
@@ -266,17 +272,17 @@ export default function SalesbookView({
         <div className="sb-stage">
           <div className="sb-track" style={{ "--sb-tx": `${-idx * 100}%` }}>
             {/* ① 표지 — fit 래퍼는 자연 높이라 justify-between 대신 상단정렬 스택(간격으로 여백). */}
-            <Slide n={1} className="sb-cover">
+            <Slide n={1} className="sb-cover" idx={idx} editable={editable}>
               <div className="flex flex-col gap-6 sm:gap-8">
-                <Wordmark className="text-[15px] font-extrabold" />
-                <div>
+                <Wordmark className="text-[15px] font-extrabold sb-stg" />
+                <div className="sb-stg" style={{ "--sb-i": 1 }}>
                   <p className="text-[13px] font-semibold text-primary-strong">TRAINING PLAN</p>
                   <h1 className="mt-1 text-[clamp(28px,5vw,52px)] font-extrabold leading-tight tracking-[-0.03em] text-ink">
                     {member?.name || "회원"} <span className="text-sub">님</span>
                   </h1>
                   <p className="mt-2 max-w-[42ch] text-[clamp(14px,1.8vw,19px)] leading-relaxed text-sub">{sb.cover?.subtitle}</p>
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl border border-line bg-elevate px-4 py-3">
+                <div className="sb-stg flex items-center gap-3 rounded-2xl border border-line bg-elevate px-4 py-3" style={{ "--sb-i": 2 }}>
                   <BrandMark className="h-9 w-9 shrink-0" />
                   <div className="min-w-0">
                     <div className="text-[14px] font-bold text-ink">{tr.display_name || "담당 트레이너"}</div>
@@ -287,16 +293,16 @@ export default function SalesbookView({
             </Slide>
 
             {/* ② 목표 — 큰 목표 카드로 채움 + 지금 겪는 것. */}
-            <Slide n={2}>
+            <Slide n={2} idx={idx} editable={editable}>
               <div className="flex h-full flex-col">
-                <SlideHead eyebrow="당신의 목표" />
-                <div className="flex flex-1 flex-col justify-center rounded-2xl border border-primary/25 bg-primary-soft p-5">
+                <SlideHead eyebrow="당신의 목표" className="sb-stg" style={{ "--sb-i": 0 }} />
+                <div className="sb-stg flex flex-1 flex-col justify-center rounded-2xl border border-primary/25 bg-primary-soft p-5" style={{ "--sb-i": 1 }}>
                   <Target className="h-7 w-7 text-primary-strong" />
                   <h2 className="mt-2 text-[clamp(22px,3.6vw,38px)] font-extrabold leading-tight tracking-[-0.02em] text-ink">{sb.goal?.headline}</h2>
                   <p className="mt-3 max-w-[52ch] text-[clamp(13px,1.6vw,17px)] leading-relaxed text-sub">{sb.goal?.body}</p>
                 </div>
                 {Array.isArray(sb.goal?.current_issues) && sb.goal.current_issues.length > 0 && (
-                  <div className="mt-3">
+                  <div className="sb-stg mt-3" style={{ "--sb-i": 2 }}>
                     <p className="mb-2 text-[12px] font-semibold text-muted">지금 겪고 계신 것</p>
                     <div className="flex flex-wrap gap-2">{sb.goal.current_issues.map((t, i) => <Tag key={i}>{t}</Tag>)}</div>
                   </div>
@@ -305,14 +311,14 @@ export default function SalesbookView({
             </Slide>
 
             {/* ③ 오늘 확인한 것 — ★트레이너 전문가 시선(원인·접근)이 주인공. before/after는 작은 근거. */}
-            <Slide n={3}>
+            <Slide n={3} idx={idx} editable={editable}>
               {(() => {
                 const cf = sb.confirmed || {};
                 // 옛 캐시 폴백: diagnosis/approach 없고 bridge만 있으면 bridge를 '원인' 박스에 표시(graceful).
                 const diagText = cf.diagnosis || (!cf.approach ? cf.bridge : "") || "";
                 return (
                   <div className="flex h-full flex-col">
-                    <SlideHead eyebrow="오늘 함께 확인한 것" />
+                    <SlideHead eyebrow="오늘 함께 확인한 것" className="sb-stg" style={{ "--sb-i": 0 }} />
                     {/* 상단 — before/after 작은 근거 2칸 */}
                     <div className="grid gap-2.5 sm:grid-cols-2">
                       <div className="rounded-xl border border-line bg-elevate px-3 py-2">
@@ -331,7 +337,7 @@ export default function SalesbookView({
                     {/* 중앙 — 제가 본 원인(흰) + 그래서 이렇게(빨강). 크게, 세로 채움. */}
                     <div className="mt-3 flex flex-1 flex-col justify-center gap-3">
                       {(editable || diagText) && (
-                        <div className="rounded-2xl border border-line bg-card p-4">
+                        <div className="sb-stg rounded-2xl border border-line bg-card p-4" style={{ "--sb-i": 1 }}>
                           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-sub">
                             <Search className="h-3.5 w-3.5 text-primary-strong" /> 제가 본 원인
                           </div>
@@ -341,7 +347,7 @@ export default function SalesbookView({
                         </div>
                       )}
                       {(editable || cf.approach) && (
-                        <div className="rounded-2xl border border-primary bg-primary-soft p-4">
+                        <div className="sb-stg rounded-2xl border border-primary bg-primary-soft p-4" style={{ "--sb-i": 2 }}>
                           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-primary-strong">
                             <ArrowRight className="h-3.5 w-3.5" /> 그래서 이렇게 바꿔드려요
                           </div>
@@ -358,7 +364,7 @@ export default function SalesbookView({
                         <EditField editable value={cf.member_quote} onChange={(v) => setConfirmed("member_quote", v)} placeholder="회원이 한 말 그대로">{null}</EditField>
                       </div>
                     ) : cf.member_quote ? (
-                      <p className="mt-2 text-[12px] italic leading-snug text-muted">회원 한마디 — &ldquo;{cf.member_quote}&rdquo;</p>
+                      <p className="sb-stg mt-2 text-[12px] italic leading-snug text-muted" style={{ "--sb-i": 3 }}>회원 한마디 — &ldquo;{cf.member_quote}&rdquo;</p>
                     ) : null}
                   </div>
                 );
@@ -366,10 +372,10 @@ export default function SalesbookView({
             </Slide>
 
             {/* ④ 사진 */}
-            <Slide n={4}>
-              <SlideHead eyebrow={sb.photo_slide?.title || "사진 기록"} />
-              {sb.photo_slide?.body && <p className="mb-3 max-w-[52ch] text-[13px] leading-relaxed text-sub">{sb.photo_slide.body}</p>}
-              <div className="grid grid-cols-2 gap-3">
+            <Slide n={4} idx={idx} editable={editable}>
+              <SlideHead eyebrow={sb.photo_slide?.title || "사진 기록"} className="sb-stg" style={{ "--sb-i": 0 }} />
+              {sb.photo_slide?.body && <p className="sb-stg mb-3 max-w-[52ch] text-[13px] leading-relaxed text-sub" style={{ "--sb-i": 1 }}>{sb.photo_slide.body}</p>}
+              <div className="sb-stg grid grid-cols-2 gap-3" style={{ "--sb-i": 2 }}>
                 {photos.map((ph, i) => (
                   <figure key={i} className="overflow-hidden rounded-2xl border border-line bg-elevate">
                     <div className="sb-photo flex items-center justify-center bg-bg">
@@ -388,7 +394,7 @@ export default function SalesbookView({
                 ))}
               </div>
               {Array.isArray(sb.photo_slide?.points) && (
-                <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                <ul className="sb-stg mt-3 flex flex-wrap gap-x-4 gap-y-1" style={{ "--sb-i": 3 }}>
                   {sb.photo_slide.points.map((p, i) => (
                     <li key={i} className="flex items-center gap-1.5 text-[12px] text-sub"><Check className="h-3.5 w-3.5 text-primary-strong" />{p}</li>
                   ))}
@@ -397,15 +403,15 @@ export default function SalesbookView({
             </Slide>
 
             {/* ⑤ 로드맵 + 현재 — 각 단계 '제 방법(how)' + '느낄 변화(feel)'. 카드 full-height 채움. */}
-            <Slide n={5}>
+            <Slide n={5} idx={idx} editable={editable}>
               <div className="flex h-full flex-col">
-                <SlideHead eyebrow="여기까지 함께 갑니다" />
+                <SlideHead eyebrow="여기까지 함께 갑니다" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="grid flex-1 gap-3 sm:grid-cols-3">
                   {(Array.isArray(sb.roadmap?.steps) ? sb.roadmap.steps.slice(0, 3) : []).map((s, i) => {
                     const here = (sb.roadmap?.current_step ?? 1) === i + 1;
                     const how = s.how || s.desc || ""; // 옛 캐시 폴백(desc)
                     return (
-                      <div key={i} className={`relative flex flex-col rounded-2xl border p-4 ${here ? "border-primary/40 bg-primary-soft" : "border-line bg-elevate"}`}>
+                      <div key={i} className={`sb-stg relative flex flex-col rounded-2xl border p-4 ${here ? "border-primary/40 bg-primary-soft" : "border-line bg-elevate"}`} style={{ "--sb-i": i + 1 }}>
                         {here && <span className="absolute -top-2 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">지금 여기</span>}
                         <div className="text-[11px] font-bold text-muted">STEP {i + 1}</div>
                         <div className="mt-0.5 text-[15px] font-bold text-ink">{s.title}</div>
@@ -423,16 +429,16 @@ export default function SalesbookView({
             </Slide>
 
             {/* ⑥ 추천 플랜 — 카드 full-height · 가격 대형. */}
-            <Slide n={6}>
+            <Slide n={6} idx={idx} editable={editable}>
               <div className="flex h-full flex-col">
-                <SlideHead eyebrow="추천 플랜" />
+                <SlideHead eyebrow="추천 플랜" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="grid flex-1 gap-3 sm:grid-cols-2">
                   {plans.map((plan, i) => {
                     const pkg = resolvePackage(i, plan, recommendedProgram, packages);
                     const per = pkg && pkg.sessions ? Math.round(pkg.price / pkg.sessions) : null;
                     const rec = plan.recommended;
                     return (
-                      <div key={i} className={`relative flex flex-col rounded-2xl border p-4 ${rec ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`}>
+                      <div key={i} className={`sb-stg relative flex flex-col rounded-2xl border p-4 ${rec ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`} style={{ "--sb-i": i + 1 }}>
                         {rec && <span className="absolute -top-2 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">추천</span>}
                         <div className="text-[17px] font-extrabold text-ink">{plan.name}</div>
                         <div className="mt-0.5 text-[12px] text-muted">{plan.meta}{plan.sessions_label ? ` · ${plan.sessions_label}` : ""}</div>
@@ -458,11 +464,11 @@ export default function SalesbookView({
             </Slide>
 
             {/* ⑦ 마무리 — 서비스 2×2 + 손글씨 다짐 넉넉하게 채움. */}
-            <Slide n={7}>
+            <Slide n={7} idx={idx} editable={editable}>
               <div className="flex h-full flex-col">
-                <SlideHead eyebrow="약속드릴게요" />
+                <SlideHead eyebrow="약속드릴게요" className="sb-stg" style={{ "--sb-i": 0 }} />
                 {Array.isArray(sb.closing?.services) && (
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="sb-stg grid grid-cols-2 gap-2.5" style={{ "--sb-i": 1 }}>
                     {sb.closing.services.map((s, i) => (
                       <div key={i} className="flex items-center gap-2 rounded-xl border border-line bg-elevate px-3 py-2.5 text-[12px] text-ink">
                         <Check className="h-3.5 w-3.5 shrink-0 text-primary-strong" />
@@ -473,7 +479,7 @@ export default function SalesbookView({
                     ))}
                   </div>
                 )}
-                <div className="mt-3 flex flex-1 flex-col rounded-2xl border border-primary/25 bg-primary-soft p-5">
+                <div className="sb-stg mt-3 flex flex-1 flex-col rounded-2xl border border-primary/25 bg-primary-soft p-5" style={{ "--sb-i": 2 }}>
                   {editable ? (
                     <textarea
                       value={sb.closing?.vow || ""}
@@ -519,10 +525,10 @@ export default function SalesbookView({
   );
 }
 
-/* 슬라이드 상단 라벨 — 얇은 빨강 바 + 텍스트. */
-function SlideHead({ eyebrow }) {
+/* 슬라이드 상단 라벨 — 얇은 빨강 바 + 텍스트. className/style passthrough(빌드인 sb-stg·--sb-i 부여용). */
+function SlideHead({ eyebrow, className = "", style }) {
   return (
-    <div className="mb-3 flex items-center gap-2">
+    <div className={`mb-3 flex items-center gap-2 ${className}`} style={style}>
       <span className="h-4 w-1 rounded-full bg-primary" />
       <span className="text-[12px] font-bold tracking-[0.02em] text-primary-strong">{eyebrow}</span>
     </div>
@@ -552,6 +558,25 @@ function SalesbookStyle() {
 .sb-photo { aspect-ratio:4/3; }
 .sb-handwriting { font-family: var(--font-handwriting, "Nanum Pen Script"), "Gaegu", cursive; }
 
+/* 은은한 빌드인 — 회원 화면 · 활성 슬라이드 내부 요소가 순서대로(스태거) 떠오름.
+   ⚠️ 안전장치3: 애니는 .sb-fit '내부 자식'에만 — .sb-fit/.sb-track엔 안 건다(fit-scale scale·트랙 translateX와 무충돌).
+      translateY/opacity는 scrollHeight에 영향 없어 fit 측정 안전.
+   ★전역 opacity:0을 안 쓴다: 그러면 캐러셀에서 '나가는(비활성)' 슬라이드가 빈 카드로 보인다.
+      대신 애니메이션 both-fill이 .sb-play일 때만 초기 은닉 → 비활성 슬라이드는 자연 opacity:1(정상 표시). */
+@keyframes sb-rise { from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:translateY(0)} }
+.sb-build { height:100%; }
+/* 스태거는 --sb-i 인덱스 변수로 — nth-child/nth-of-type은 flex 한 덩어리 래핑(로드맵·플랜)에 취약.
+   순서대로 등장할 요소에만 .sb-stg + style={{--sb-i:N}} 부여(SlideHead=0부터). */
+.sb-build.sb-play .sb-stg {
+  animation: sb-rise .5s cubic-bezier(.2,.7,.25,1) both;
+  animation-delay: calc(var(--sb-i, 0) * .09s);
+}
+
+/* 안전장치2: reduced-motion이면 애니 끄고 즉시 표시. */
+@media (prefers-reduced-motion: reduce){
+  .sb-build > *, .sb-build .sb-stg { opacity:1 !important; transform:none !important; animation:none !important; }
+}
+
 /* 발표 모드 — 앱 UI 숨기고 슬라이드를 뷰포트에 꽉. chrome을 지운 만큼 높이 캡 상수(--sb-chrome)를 24px로. */
 .sb-present { --sb-chrome:24px; }
 .sb-present .sb-chrome { display:none !important; }
@@ -579,6 +604,9 @@ function SalesbookStyle() {
   /* 화면 fit-scale의 인라인 transform 제거 + 확정 높이 부여 → 내부 flex(h-full·margin-top:auto)가 A4 한 장을 꽉 채움.
      ⚠️ min-height:100%만으론 높이 auto라 자식 height:100%가 무너져 세로가 안 채워짐 → height:100% 필수. */
   .sb-fit { transform:none !important; height:100% !important; }
+  /* 안전장치1: 빌드인 애니가 인쇄에 남으면(both-fill로 opacity:0) 활성 슬라이드가 백지 → 강제 표시.
+     ⚠️ .sb-build 자체는 안 건드림(height:100% 유지해야 내부 h-full 채움이 인쇄에서 안 무너짐 · 자식만 강제). */
+  .sb-build > *, .sb-build .sb-stg { opacity:1 !important; transform:none !important; animation:none !important; }
   .sb-slide { margin:0 !important; }
   .sb-slide-inner { aspect-ratio:auto !important; height:100vh !important; overflow:hidden !important; border:none !important; border-radius:0 !important; box-shadow:none !important; page-break-after:always; break-after:page; }
   .sb-photo { aspect-ratio:4/3 !important; } /* 인쇄=가로 A4라 낮은 비율 유지 */
