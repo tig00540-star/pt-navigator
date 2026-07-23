@@ -580,8 +580,14 @@ ${pkgBlock}
    - title·body: within_session이면 "눈으로도 달라졌어요"(세션 내 비포→애프터). baseline이면 "오늘을 시작점으로 — 3개월 뒤 비교 기준"(가짜 성장 금지).
    - points(3): within_session=함께 확인한 포인트 / baseline=우선 키울 타겟.
    - [회원 사진 라벨]이 '없음'이면 body에 '사진은 다음에 함께 남겨요' 톤 + points는 유지.
-⑤ roadmap: current_step(정수, 보통 1) · steps[3] 각 {title · how('제 방법' 1문장 · 이 단계에서 트레이너가 뭘
-   하는지 · 1인칭 순서 언어) · feel("느낄 변화 — …")}. goal 기반 단계. 숫자 처방·의료 단정 금지.
+⑤ roadmap: 근시일 3단계(steps) + 중장기 3단계(longterm).
+   - current_step(정수, 보통 1 · 근시일 steps 기준. longterm은 대상 아님).
+   - steps[3] 각 {title · how('제 방법' 1문장 · 이 단계에서 트레이너가 뭘 하는지 · 1인칭 순서 언어) ·
+     feel("느낄 변화 — …")}. 지금 등록 구간에 실제로 할 것. goal 기반.
+   - longterm[3] 각 {title(짧게) · goal(한 줄 · 회원 최종 목표를 향한 중장기 단계 · 회원 향한 약속 톤)}.
+     steps 이후의 중장기 여정. ★마지막(6번째)은 '혼자서도 유지'처럼 자립·장기 목표 톤.
+     longterm이 애매하면 무리해서 채우지 말고 goal에서 자연스럽게 이어지는 것만.
+   - 전체 숫자 처방(세트·중량·각도)·의료 단정(치료·완치·진단명)·없는 결과 창작 금지.
 ⑥ plans[2]: A=추천 프로그램의 pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 패키지 1개 선택). 각
    {ref(정수) · name(예 "집중 코스"/"기본 코스") · recommended(불린) · meta("주 N회 · 약 M개월" — A는 추천 프로그램의
    frequency·duration에서, B는 더 가벼운 빈도) · sessions_label("함께 K회" — 패키지 sessions에서) · why(2문장,
@@ -597,7 +603,7 @@ ${pkgBlock}
   "goal": { "headline": "...", "body": "...", "current_issues": ["...","...","..."] },
   "confirmed": { "before": "...", "after": "...", "diagnosis": "...", "approach": "...", "member_quote": "" },
   "photo_slide": { "mode": "within_session", "title": "...", "body": "...", "points": ["...","...","..."] },
-  "roadmap": { "current_step": 1, "steps": [ {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."} ] },
+  "roadmap": { "current_step": 1, "steps": [ {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."} ], "longterm": [ {"title":"...","goal":"..."}, {"title":"...","goal":"..."}, {"title":"...","goal":"..."} ] },
   "plans": [
     { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "주 2회 · 약 3개월", "sessions_label": "함께 24회", "why": "...", "includes": ["...","...","..."] },
     { "ref": 2, "name": "기본 코스", "recommended": false, "meta": "주 1회 · 약 3개월", "sessions_label": "함께 12회", "why": "...", "includes": ["...","...","..."] }
@@ -711,6 +717,7 @@ const FIELD_TERMS = [
   ["headline", "제목"],
   ["confirmed", "오늘 확인"],
   ["roadmap", "로드맵"],
+  ["longterm", "중장기"],
   ["includes", "포함 내역"],
   ["services", "제공 서비스"],
   ["recommended", "추천"],
