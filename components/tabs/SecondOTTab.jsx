@@ -722,6 +722,12 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
           </div>
         )}
+        {/* 클로징 흐름(4비트) — 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
+        <ClosingSequence
+          sequence={b.closing_sequence}
+          fallbackLine={cline}
+          icon={<Flame className="h-4 w-4 text-primary-strong" />}
+        />
         {pick ? (
           <div className="rounded-xl border border-primary/30 bg-card p-4">
             <div className="flex items-center gap-2">
@@ -753,12 +759,6 @@ export default function SecondOTTab({ member, onClosingSaved }) {
             가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
           </div>
         ) : null}
-        {/* 클로징 흐름(4비트) — 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
-        <ClosingSequence
-          sequence={b.closing_sequence}
-          fallbackLine={cline}
-          icon={<Flame className="h-4 w-4 text-primary-strong" />}
-        />
         {/* 세일즈북 활용 안내(정적 · 트레이너 가이드) — 세일즈북은 아래 '회원 세일즈북' 섹션에 항상 있음.
            클로징 흐름이 실제 렌더될 때만 노출(③ 요청 참조가 있으므로). 토글/state 없음. */}
         {(b.closing_sequence || cline) && (

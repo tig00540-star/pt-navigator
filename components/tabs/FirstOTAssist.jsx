@@ -309,7 +309,14 @@ export default function FirstOTAssist({ member }) {
             </div>
           )}
 
-          {/* 추천 프로그램 — 클로징 직전에 배치 · 왜 이 횟수 근거(가격은 내 목록에서) */}
+          {/* ④ 클로징 흐름(4비트) — 크게(L0). 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
+          <ClosingSequence
+            sequence={data?.closing_sequence}
+            fallbackLine={cline}
+            icon={<Flag className="h-4 w-4 text-primary-strong" />}
+          />
+
+          {/* 추천 프로그램 — 클로징 직후에 배치 · 왜 이 횟수 근거(가격은 내 목록에서) */}
           {pick ? (
             <div className="rounded-xl border border-primary/30 bg-card p-4">
               <div className="flex items-center gap-2">
@@ -341,13 +348,6 @@ export default function FirstOTAssist({ member }) {
               가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
             </div>
           ) : null}
-
-          {/* ④ 클로징 흐름(4비트) — 크게(L0). 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
-          <ClosingSequence
-            sequence={data?.closing_sequence}
-            fallbackLine={cline}
-            icon={<Flag className="h-4 w-4 text-primary-strong" />}
-          />
 
           {/* 거절 5방어 — 기본 펼침(현장 핵심) */}
           {obj.length > 0 && (
