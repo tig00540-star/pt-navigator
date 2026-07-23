@@ -637,6 +637,79 @@ ${pkgBlock}
 ※ mode는 within_session·baseline 중 하나. ref는 정수(패키지 참조번호). 금액 텍스트 금지.`;
 }
 
+// ⑦ phase="reg_salesbook" user 프롬프트 — 재등록 회원 대면 세일즈북. 독자=회원 본인.
+// ⚠️ 숫자(변화량·횟수·무게·금액)는 앱이 데이터에서 렌더한다. 너는 그 숫자를 '해석·프레이밍'하는 텍스트만.
+// ⚠️ 표에 나올 수치를 값 텍스트에 새 숫자로 만들지 마라(주어진 change 요약 범위에서만 언급). 금액 금지.
+function regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels) {
+  const m = member || {};
+  const ch = change || {};
+  const rp = recommendedProgram || {};
+  const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
+  const pkgBlock = pkgs.length
+    ? pkgs.map((p, i) => `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)}${p.note ? ` · note=${p.note}` : ""}`).join("\n")
+    : "등록된 패키지 없음";
+  const labels = Array.isArray(photoLabels) ? photoLabels.filter(Boolean) : [];
+  return `[상황] 이 회원의 '재등록 세일즈북'이다. 트레이너가 오늘 PT 수업 중/후에 회원에게 직접 보여준다.
+너는 회원이 볼 화면의 '텍스트'만 채운다. 숫자(변화량·횟수·무게·금액)는 앱이 데이터에서 직접 렌더하니 만들지 마라.
+회원이 직접 읽으니 따뜻한 구어체로. ★핵심: 그동안의 변화를 확실히 인정해주되, '다 됐다'가 아니라 '여기까지가 토대,
+지금부터가 본론'으로 프레이밍(멈추면 되돌아감 · 남은 단계가 진짜). 판매 압박·공포·죄책감·허위 긴급성 금지.
+
+[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
+[현재 PT 방향/목표] ${g(m.pt_direction)}
+
+[그동안의 변화 요약 — 앱이 표로 렌더할 실제 데이터(너는 해석만, 새 숫자 금지)]
+${JSON.stringify({
+    months: ch.journey?.months ?? null,
+    sessions_done: ch.journey?.sessions_done ?? null,
+    weekly_frequency: ch.journey?.weekly_frequency ?? null,
+    inbody: (ch.inbody || []).map((r) => ({ 지표: r.label, 처음: r.first, 지금: r.latest, 단위: r.unit })),
+    exercises: (ch.exercises || []).map((e) => ({ 종목: e.exercise, 처음: e.first, 지금: e.latest, 단위: "kg" })),
+  }, null, 2)}
+
+[추천 프로그램(이미 확정) — 이 값만, 새 숫자·금액 창작 금지]
+${JSON.stringify({ pick_ref: rp.pick_ref ?? null, alt_ref: rp.alt_ref ?? null, frequency: rp.frequency ?? "", duration: rp.duration ?? "", session_logic: rp.session_logic ?? "", why_fit: rp.why_fit ?? "", alt_why: rp.alt_why ?? "" }, null, 2)}
+
+[내 패키지 목록] (★이 목록에서만 참조 · [n]=참조번호 · ★금액 값 텍스트 금지 — 앱이 채움)
+${pkgBlock}
+
+[회원 사진 라벨] ${labels.length ? labels.join(", ") : "없음(사진 미등록)"}
+
+각 슬라이드 채우기:
+① cover.subtitle: 1줄(그동안의 변화 + 앞으로의 방향 톤). ※회원명·트레이너·서명은 앱이 채움.
+② journey: headline(그동안의 여정 1줄 · 위 기간/횟수 데이터 존중) · sub(꾸준함이 이미 몸에 남았다는 인정 1줄).
+③ change: title("숫자로 확인된 변화" 결) · sub(표를 보기 전 한 줄) · caption(★표 아래 프레이밍 1~2문장 —
+   위 변화 요약에서 가장 큰 성과 1개를 짚어 '이게 토대, 지금부터 본론'으로. 근육은 멈추면 먼저 빠진다는 사실 활용 가능.
+   ★표에 없는 새 숫자 만들지 말 것. 있는 값만 언급).
+④ photo: title·body(비포애프터 사진 대면용 1줄+1줄. 라벨 '없음'이면 body에 '사진 이제부터 함께 남겨요' 톤).
+⑤ roadmap: current_step(정수 · 지금 어느 단계인지 · 보통 2~3) · stages[4] 각 {title(짧게) · desc(1줄 · 이 단계에서
+   무엇을 · 회원 향한 톤)}. ★1~current는 '해온 것', current는 '진행중', 이후는 '앞으로'. 마지막은 '혼자서도 유지·자립'.
+   숫자 처방·의료 단정 금지.
+⑥ fork: stop[3](지금 멈추면 잃는 것 — 사실 기반 손실, 근육·감각·리듬 되돌아감) · go[3](이어가면 얻는 것 — 남은 단계 진입).
+   ⚠️허위 긴급성·공포 금지 · 정직한 사실로만.
+⑦ plans[2]: A=pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 1개). 각 {ref(정수) · name · recommended(불린) ·
+   meta("주 N회 · 약 M개월") · sessions_label("함께 K회") · why(2문장 · session_logic을 회원 언어로) · includes[3]}.
+   ★금액(원) 값 텍스트 금지 — 앱이 채움.
+⑧ closing: services[4](제공 서비스 · goal 톤) · vow(트레이너 약속 1~2문장 · 손글씨 렌더 · 판매 동사 금지).
+
+[data_gaps] 데이터 얇아도 위 전부 생성("정보 부족" 금지). 긍정 코칭. 충실하면 빈 배열.
+[출력 언어] 한국어만. 영문 키/코드값 값 텍스트 노출 금지. 아래 JSON만(설명·마크다운·코드펜스 금지).
+{
+  "cover": { "subtitle": "..." },
+  "journey": { "headline": "...", "sub": "..." },
+  "change": { "title": "...", "sub": "...", "caption": "..." },
+  "photo": { "title": "...", "body": "..." },
+  "roadmap": { "current_step": 2, "stages": [ {"title":"...","desc":"..."}, {"title":"...","desc":"..."}, {"title":"...","desc":"..."}, {"title":"...","desc":"..."} ] },
+  "fork": { "stop": ["...","...","..."], "go": ["...","...","..."] },
+  "plans": [
+    { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "주 2회 · 약 3개월", "sessions_label": "함께 24회", "why": "...", "includes": ["...","...","..."] },
+    { "ref": 2, "name": "기본 코스", "recommended": false, "meta": "주 1회 · 약 3개월", "sessions_label": "함께 12회", "why": "...", "includes": ["...","...","..."] }
+  ],
+  "closing": { "services": ["...","...","...","..."], "vow": "..." },
+  "data_gaps": []
+}
+※ ref는 정수. 금액 텍스트 금지. stages는 4개.`;
+}
+
 // 최종 안전망: 모델이 출력 텍스트에 흘린 필드명(코드값)을 한글로 치환.
 // 키/구조는 건드리지 않고 '문자열 값'만 재귀적으로 훑는다.
 const FIELD_TERMS = [
@@ -945,9 +1018,9 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
   }
 
-  const { phase, member, report, ptContext, acuteContext, packages, closingCases, caseTier, recommendedProgram, photoLabels } = body || {};
-  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook") {
-    return Response.json({ error: "phase는 'first'·'second'·'reregister'·'acute'·'salesbook' 중 하나여야 합니다." }, { status: 400 });
+  const { phase, member, report, ptContext, acuteContext, packages, closingCases, caseTier, recommendedProgram, photoLabels, change } = body || {};
+  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook") {
+    return Response.json({ error: "phase는 'first'·'second'·'reregister'·'acute'·'salesbook'·'reg_salesbook' 중 하나여야 합니다." }, { status: 400 });
   }
   // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
   const boundedCases = Array.isArray(closingCases) ? closingCases.slice(0, MAX_CLOSING_CASES) : closingCases;
@@ -958,9 +1031,10 @@ export async function POST(request) {
     : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages)
     : phase === "reregister" ? reregisterPrompt(member, ptContext, packages)
     : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
+    : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute·salesbook 제외(회원 대면엔 불필요).
-  const centerMachines = (phase === "acute" || phase === "salesbook") ? [] : await fetchCenterMachines(request);
+  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook") ? [] : await fetchCenterMachines(request);
   const prompt =
     (phase === "acute" || centerMachines.length === 0)
       ? basePrompt
@@ -970,7 +1044,7 @@ export async function POST(request) {
   // salesbook은 거절5·클로징시퀀스 없어 가볍지만 한국어 총량 은근 커 4096(꼬리 잘림 마진 · max는 상한이라 과금 무관).
   const maxTokens =
     phase === "first" ? 8192
-    : phase === "salesbook" ? 4096
+    : phase === "salesbook" || phase === "reg_salesbook" ? 4096
     : (phase === "second" && boundedCases?.length ? 6144 : 5120);
 
   try {
@@ -978,7 +1052,7 @@ export async function POST(request) {
     const req = {
       model,
       max_tokens: maxTokens,
-      system: phase === "salesbook" ? SALESBOOK_PREAMBLE : PREAMBLE,
+      system: (phase === "salesbook" || phase === "reg_salesbook") ? SALESBOOK_PREAMBLE : PREAMBLE,
       messages: [{ role: "user", content: prompt }],
     };
     // sonnet-5는 기본이 adaptive thinking이라 JSON 생성엔 불필요 → 전 phase 끔(1차도 Sonnet).
@@ -995,7 +1069,8 @@ export async function POST(request) {
     const REQUIRED_SECOND = ["member_read", "recall", "session_plan", "proof", "sales_metaphor", "closing_sequence", "objection_defense"];
     const REQUIRED_REREG = ["member_read", "why_now", "session_flow", "sales_metaphor", "closing_sequence", "objection_defense"];
     const REQUIRED_SALESBOOK = ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
-    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : [];
+    const REQUIRED_REG_SALESBOOK = ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"];
+    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : [];
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
     return Response.json(brief);
   } catch (e) {
