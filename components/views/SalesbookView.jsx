@@ -553,6 +553,9 @@ function SalesbookStyle() {
   .sb-viewport { overflow:visible !important; padding:0 !important; display:block !important; }
   .sb-stage { max-width:none !important; width:100% !important; }
   .sb-track { display:block !important; transform:none !important; }
+  /* 화면 fit-scale의 인라인 transform 제거 + 확정 높이 부여 → 내부 flex(h-full·margin-top:auto)가 A4 한 장을 꽉 채움.
+     ⚠️ min-height:100%만으론 높이 auto라 자식 height:100%가 무너져 세로가 안 채워짐 → height:100% 필수. */
+  .sb-fit { transform:none !important; height:100% !important; }
   .sb-slide { margin:0 !important; }
   .sb-slide-inner { aspect-ratio:auto !important; height:100vh !important; overflow:hidden !important; border:none !important; border-radius:0 !important; box-shadow:none !important; page-break-after:always; break-after:page; }
   .sb-photo { aspect-ratio:4/3 !important; } /* 인쇄=가로 A4라 낮은 비율 유지 */
