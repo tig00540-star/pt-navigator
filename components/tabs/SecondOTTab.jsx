@@ -24,12 +24,15 @@ import {
   Target,
   BookOpen,
   RefreshCw,
+  Eye,
+  Pencil,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import Eyebrow from "@/components/ui/Eyebrow";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import ClosingSequence from "@/components/ui/ClosingSequence";
+import SalesbookView from "@/components/views/SalesbookView";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import ReapproachDateField from "@/components/ui/ReapproachDateField";
@@ -174,22 +177,27 @@ export default function SecondOTTab({ member, onClosingSaved }) {
   const [caseData, setCaseData] = useState([]);
   const [caseGate, setCaseGate] = useState({ on: false, tier: "off" });
   const [packages, setPackages] = useState([]); // 내 active PT 패키지(recommended_program 실가격 재료)
+  const [trainer, setTrainer] = useState(null);  // trainer_profile 표지·서명(S4 컬럼) — SalesbookView 재료
+  const [sbOpen, setSbOpen] = useState(false);   // 세일즈북 풀스크린 오픈
+  const [sbEditable, setSbEditable] = useState(false); // 오픈 모드(present=false / 편집=true)
   const { toast, showToast } = useToast();
 
   const canAI = Boolean(supabase && member?.id);
 
-  // 본인 active 패키지 로드(마운트 1회) — recommended_program pick_ref로 실가격 조회.
+  // 본인 active 패키지 + 트레이너 프로필(표지·서명) 로드(마운트 1회) — 둘 다 uid 기준(회원 무관).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!supabase) return;
       const { data: au } = await supabase.auth.getUser();
       const uid = au?.user?.id ?? null;
-      const { data } = await supabase
-        .from("pt_package").select("*")
-        .eq("trainer_id", uid).eq("active", true)
-        .order("sort", { ascending: true }).order("created_at", { ascending: true });
-      if (!cancelled) setPackages(data || []);
+      const [{ data: pkgs }, { data: prof }] = await Promise.all([
+        supabase.from("pt_package").select("*")
+          .eq("trainer_id", uid).eq("active", true)
+          .order("sort", { ascending: true }).order("created_at", { ascending: true }),
+        supabase.from("trainer_profile").select("display_name, credentials, signature_data_url").eq("trainer_id", uid).maybeSingle(),
+      ]);
+      if (!cancelled) { setPackages(pkgs || []); setTrainer(prof || null); }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -303,6 +311,30 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       setSbError("네트워크 오류예요. 잠시 후 다시 시도하세요.");
     } finally {
       setSbGenerating(false);
+    }
+  };
+
+  // 세일즈북 편집 저장(SalesbookView editable → onSave) — 스프레드로 brief 보존.
+  //   ⚠️ salesbookMeta.rpSnapshot은 그대로 유지(편집은 recommended_program을 안 바꾸니 스테일 판정 계속 유효).
+  //      editedAt만 덧붙임. 교훈1 하드닝. 성공 시 state 갱신하고 편집 닫아 present로 전환.
+  const saveSalesbookEdits = async (edited) => {
+    if (!edited) return false;
+    const nextMeta = { ...(salesbookMeta || {}), editedAt: new Date().toISOString() };
+    if (!supabase || !existingRow2Id) {
+      // 데모/행 없음 — 로컬만 갱신(서버 저장 없음).
+      setSalesbook(edited); setSalesbookMeta(nextMeta);
+      showToast("수정됨(데모)"); return true;
+    }
+    const reportToSave = { ...(row2Report || {}), salesbook: edited, salesbookMeta: nextMeta };
+    try {
+      const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", existingRow2Id).select();
+      if (!up || up.length === 0) { showToast("세일즈북 저장 실패 — 권한/정책 확인 (0행)"); return false; }
+      setSalesbook(edited); setSalesbookMeta(nextMeta); setRow2Report(reportToSave);
+      showToast("세일즈북 수정 저장됨");
+      return true;
+    } catch {
+      showToast("세일즈북 저장 실패 — 네트워크 확인");
+      return false;
     }
   };
 
@@ -792,12 +824,21 @@ export default function SecondOTTab({ member, onClosingSaved }) {
                 <p className="mt-1 text-[11px] text-muted">생성: {new Date(salesbookMeta.generatedAt).toLocaleString("ko-KR")}</p>
               )}
               {sbError && <p className="mt-2 text-[12px] text-danger-text">{sbError}</p>}
-              <div className="mt-3">
-                <Button variant={salesbook && !sbStale ? "ghost" : "primary"} size="sm" onClick={generateSalesbook} disabled={sbGenerating || !b?.recommended_program}>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {salesbook && (
+                  <>
+                    <Button variant="primary" size="sm" onClick={() => { setSbEditable(false); setSbOpen(true); }}>
+                      <Eye className="h-3.5 w-3.5" /> 회원에게 보기
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setSbEditable(true); setSbOpen(true); }}>
+                      <Pencil className="h-3.5 w-3.5" /> 편집
+                    </Button>
+                  </>
+                )}
+                <Button variant={salesbook ? "ghost" : "primary"} size="sm" onClick={generateSalesbook} disabled={sbGenerating || !b?.recommended_program}>
                   <RefreshCw className={`h-3.5 w-3.5 ${sbGenerating ? "animate-spin" : ""}`} />
-                  {sbGenerating ? "만드는 중…" : salesbook ? "세일즈북 다시 만들기" : "세일즈북 만들기"}
+                  {sbGenerating ? "만드는 중…" : salesbook ? "다시 만들기" : "세일즈북 만들기"}
                 </Button>
-                {/* '회원에게 세일즈북 보기'(present 뷰)는 S5에서 연결 */}
               </div>
             </section>
           );
@@ -906,6 +947,20 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         </section>
 
         <Toast message={toast} />
+
+        {/* 회원 세일즈북 풀스크린 — present(보기) / 편집. salesbook 있을 때만 오픈됨. */}
+        {sbOpen && salesbook && (
+          <SalesbookView
+            salesbook={salesbook}
+            member={member}
+            trainer={trainer}
+            packages={packages}
+            recommendedProgram={b?.recommended_program}
+            editable={sbEditable}
+            onSave={saveSalesbookEdits}
+            onClose={() => setSbOpen(false)}
+          />
+        )}
       </div>
     );
   };

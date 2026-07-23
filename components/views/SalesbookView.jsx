@@ -69,19 +69,49 @@ function Tag({ children }) {
   return <span className="rounded-full border border-primary/25 bg-primary-soft px-2.5 py-1 text-[12px] font-semibold text-primary-strong">{children}</span>;
 }
 
+/* 인라인 편집 필드 — editable이면 input/textarea, 아니면 children(present 표시)을 그대로. */
+function EditField({ editable, value, onChange, multiline = false, placeholder = "", children }) {
+  if (!editable) return children;
+  const cls = "w-full rounded-lg border border-primary/40 bg-card px-2.5 py-1.5 text-[13px] leading-relaxed text-ink outline-none focus:border-primary";
+  return multiline
+    ? <textarea value={value || ""} onChange={(e) => onChange(e.target.value)} rows={2} placeholder={placeholder} className={cls} />
+    : <input value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={cls} />;
+}
+
 export default function SalesbookView({
   salesbook,
   member,
   trainer,
   packages = [],
   recommendedProgram = null,
-  editable = false, // present(false)=회원 대면 · S5에서 편집 UI 확장
+  editable = false, // present(false)=회원 대면(깨끗) · true=트레이너 인라인 편집
+  onSave,
   onClose,
 }) {
-  const sb = salesbook || {};
   const [idx, setIdx] = useState(0);
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({});
+  // 편집 드래프트 — editable일 때만 이걸로 렌더/수정.
+  const [draft, setDraft] = useState(() => salesbook || {});
+  const [saving, setSaving] = useState(false);
+  // salesbook이 바뀌면(재생성 등) 드래프트 리셋 — effect 대신 '렌더 중 조정'(React 권장 · set-state-in-effect 회피).
+  const [prevSb, setPrevSb] = useState(salesbook);
+  if (salesbook !== prevSb) { setPrevSb(salesbook); setDraft(salesbook || {}); }
+  const sb = editable ? draft : (salesbook || {});
+  // 중첩 필드 편집기(editable일 때만 소비). 예: setField("confirmed", "vow"…) 는 slice별로 아래에서.
+  const setConfirmed = (k, v) => setDraft((d) => ({ ...d, confirmed: { ...(d.confirmed || {}), [k]: v } }));
+  const setClosing = (k, v) => setDraft((d) => ({ ...d, closing: { ...(d.closing || {}), [k]: v } }));
+  const setService = (i, v) => setDraft((d) => {
+    const arr = Array.isArray(d.closing?.services) ? [...d.closing.services] : [];
+    arr[i] = v;
+    return { ...d, closing: { ...(d.closing || {}), services: arr } };
+  });
+  const doSave = async () => {
+    if (!onSave || saving) return;
+    setSaving(true);
+    try { const ok = await onSave(draft); if (ok) onClose?.(); }
+    finally { setSaving(false); }
+  };
 
   const go = useCallback((n) => setIdx(() => Math.max(0, Math.min(SLIDE_COUNT - 1, n))), []);      // 절대 이동(점 클릭)
   const step = useCallback((d) => setIdx((p) => Math.max(0, Math.min(SLIDE_COUNT - 1, p + d))), []); // 상대 이동(화살표·키·스와이프 · 함수형이라 stale idx 없음)
@@ -117,6 +147,9 @@ export default function SalesbookView({
   // 좌우 키 네비(present).
   useEffect(() => {
     const onKey = (e) => {
+      // 편집 입력 중이면 좌우/ESC가 커서·필드 조작이라 슬라이드 네비/닫기 가로채지 않음.
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
       if (e.key === "ArrowRight") step(1);
       else if (e.key === "ArrowLeft") step(-1);
       else if (e.key === "Escape") onClose?.();
@@ -144,13 +177,21 @@ export default function SalesbookView({
     <div className="sb-root fixed inset-0 z-[120] flex flex-col bg-[rgb(19_21_27/0.82)] backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="회원 세일즈북">
       <SalesbookStyle />
 
-      {/* 상단 바 — present 컨트롤(인쇄엔 숨김) */}
+      {/* 상단 바 — present 컨트롤(인쇄엔 숨김). editable이면 '저장' 노출. */}
       <div className="sb-chrome flex items-center justify-between px-4 py-2.5">
-        <span className="text-[12px] font-semibold text-white/80">{member?.name ? `${member.name} 님 자료` : "세일즈북"}</span>
+        <span className="text-[12px] font-semibold text-white/80">
+          {editable ? "세일즈북 편집" : (member?.name ? `${member.name} 님 자료` : "세일즈북")}
+        </span>
         <div className="flex items-center gap-2">
-          <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25">
-            <Printer className="h-3.5 w-3.5" /> PDF·인쇄
-          </button>
+          {editable ? (
+            <button onClick={doSave} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[12px] font-bold text-primary-strong transition hover:bg-white/90 disabled:opacity-60">
+              {saving ? "저장 중…" : "저장"}
+            </button>
+          ) : (
+            <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25">
+              <Printer className="h-3.5 w-3.5" /> PDF·인쇄
+            </button>
+          )}
           {onClose && (
             <button onClick={onClose} aria-label="닫기" className="rounded-lg bg-white/15 p-1.5 text-white transition hover:bg-white/25">
               <X className="h-4 w-4" />
@@ -203,19 +244,35 @@ export default function SalesbookView({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-line bg-elevate p-4">
                   <div className="text-[11px] font-bold text-muted">처음</div>
-                  <p className="mt-1 text-[14px] leading-relaxed text-ink">{sb.confirmed?.before}</p>
+                  <EditField editable={editable} value={sb.confirmed?.before} onChange={(v) => setConfirmed("before", v)} multiline placeholder="처음 상태">
+                    <p className="mt-1 text-[14px] leading-relaxed text-ink">{sb.confirmed?.before}</p>
+                  </EditField>
                 </div>
                 <div className="rounded-2xl border border-primary/30 bg-primary-soft p-4">
                   <div className="text-[11px] font-bold text-primary-strong">잡아드린 뒤</div>
-                  <p className="mt-1 text-[14px] leading-relaxed text-ink">{sb.confirmed?.after}</p>
+                  <EditField editable={editable} value={sb.confirmed?.after} onChange={(v) => setConfirmed("after", v)} multiline placeholder="잡아드린 뒤">
+                    <p className="mt-1 text-[14px] leading-relaxed text-ink">{sb.confirmed?.after}</p>
+                  </EditField>
                 </div>
               </div>
-              {sb.confirmed?.member_quote ? (
+              {editable ? (
+                <div className="mt-4">
+                  <div className="mb-1 text-[11px] font-bold text-muted">회원 한마디 (선택)</div>
+                  <EditField editable value={sb.confirmed?.member_quote} onChange={(v) => setConfirmed("member_quote", v)} placeholder="회원이 한 말 그대로">{null}</EditField>
+                </div>
+              ) : sb.confirmed?.member_quote ? (
                 <blockquote className="mt-4 border-l-[3px] border-primary pl-3 text-[clamp(15px,2vw,20px)] font-semibold italic leading-snug text-ink">
                   &ldquo;{sb.confirmed.member_quote}&rdquo;
                 </blockquote>
               ) : null}
-              {sb.confirmed?.bridge && <p className="mt-3 text-[13px] leading-relaxed text-sub">{sb.confirmed.bridge}</p>}
+              {editable ? (
+                <div className="mt-3">
+                  <div className="mb-1 text-[11px] font-bold text-muted">의미 한 줄</div>
+                  <EditField editable value={sb.confirmed?.bridge} onChange={(v) => setConfirmed("bridge", v)} multiline placeholder="그 변화의 의미">{null}</EditField>
+                </div>
+              ) : sb.confirmed?.bridge ? (
+                <p className="mt-3 text-[13px] leading-relaxed text-sub">{sb.confirmed.bridge}</p>
+              ) : null}
             </Slide>
 
             {/* ④ 사진 */}
@@ -308,13 +365,26 @@ export default function SalesbookView({
                 <div className="grid grid-cols-2 gap-2">
                   {sb.closing.services.map((s, i) => (
                     <div key={i} className="flex items-center gap-2 rounded-xl border border-line bg-elevate px-3 py-2 text-[12px] text-ink">
-                      <Check className="h-3.5 w-3.5 shrink-0 text-primary-strong" />{s}
+                      <Check className="h-3.5 w-3.5 shrink-0 text-primary-strong" />
+                      <EditField editable={editable} value={s} onChange={(v) => setService(i, v)} placeholder={`서비스 ${i + 1}`}>
+                        <span>{s}</span>
+                      </EditField>
                     </div>
                   ))}
                 </div>
               )}
               <div className="mt-4 rounded-2xl border border-primary/25 bg-primary-soft p-4">
-                <p className="sb-handwriting text-[clamp(20px,3vw,30px)] leading-snug text-ink">{sb.closing?.vow}</p>
+                {editable ? (
+                  <textarea
+                    value={sb.closing?.vow || ""}
+                    onChange={(e) => setClosing("vow", e.target.value)}
+                    rows={2}
+                    placeholder="회원에게 남길 다짐 (판매 권유 아닌 책임의 약속)"
+                    className="sb-handwriting w-full rounded-lg border border-primary/40 bg-card px-3 py-2 text-[clamp(20px,3vw,30px)] leading-snug text-ink outline-none focus:border-primary"
+                  />
+                ) : (
+                  <p className="sb-handwriting text-[clamp(20px,3vw,30px)] leading-snug text-ink">{sb.closing?.vow}</p>
+                )}
                 <div className="mt-3 flex items-end justify-end gap-3">
                   <span className="text-[12px] text-muted">{tr.display_name || "담당 트레이너"}</span>
                   {tr.signature_data_url ? (
