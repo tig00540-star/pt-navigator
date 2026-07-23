@@ -26,6 +26,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 }); /* font-mono 유틸 47곳 유지 — 숫자·코드용이라 라틴 전용으로 충분 */
 
+/* 손글씨 — 세일즈북 다짐·서명 전용(SalesbookView `.sb-handwriting`이 --font-handwriting 사용).
+   self-host woff2(CDN 아님 · Pretendard와 동일 패턴). 정성/사람 손길이 핵심이라 시스템 cursive로 떨어지면 안 됨. */
+const handwriting = localFont({
+  src: "../public/fonts/NanumPenScript.woff2",
+  variable: "--font-handwriting",
+  display: "swap",
+});
+
 export const metadata = {
   applicationName: "오직 트레이너",
   title: "오직 트레이너",
@@ -56,7 +64,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="ko"
-      className={`${pretendard.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${pretendard.variable} ${geistMono.variable} ${handwriting.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AuthGate>{children}</AuthGate>
