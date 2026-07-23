@@ -274,7 +274,10 @@ export default function SalesbookView({
             {/* ① 표지 — fit 래퍼는 자연 높이라 justify-between 대신 상단정렬 스택(간격으로 여백). */}
             <Slide n={1} className="sb-cover" idx={idx} editable={editable}>
               <div className="flex flex-col gap-6 sm:gap-8">
-                <Wordmark className="text-[15px] font-extrabold sb-stg" />
+                <div className="sb-stg flex items-center gap-2">
+                  <BrandMark accent="trainer" title="오직 트레이너" className="h-7 w-7 shrink-0 rounded-lg" />
+                  <Wordmark className="text-[15px] font-extrabold" />
+                </div>
                 <div className="sb-stg" style={{ "--sb-i": 1 }}>
                   <p className="text-[13px] font-semibold text-primary-strong">TRAINING PLAN</p>
                   <h1 className="mt-1 text-[clamp(28px,5vw,52px)] font-extrabold leading-tight tracking-[-0.03em] text-ink">
