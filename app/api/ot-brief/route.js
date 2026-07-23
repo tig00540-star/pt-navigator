@@ -568,13 +568,20 @@ ${pkgBlock}
 각 슬라이드 채우기:
 ① cover: subtitle 1줄(무엇을 정리한 자료인지, goal 톤). ※회원명·트레이너 정보·서명은 앱이 프로필에서 채우니 생성 금지.
 ② goal: headline(회원 목표를 회원 언어로 1줄) · body(왜 이 목표인지 배경 2문장, 관찰 기반) · current_issues(지금 겪는 것 3개, 짧은 명사구).
-③ confirmed(오늘 확인한 것): before(처음 상태 1줄) · after(잡아드린 뒤 1줄) · member_quote(1차 memberQuote가 있으면 그 말 그대로, 없으면 "") · bridge(그 변화의 의미 1줄 — '혼자선 매번 만들기 어렵지만 익히면 몸이 기억' 결. ★압박 아님, 사실).
+③ confirmed(오늘 확인한 것 — ★트레이너 전문가 시선이 주인공): before(오늘 처음 상태 1줄, 작게) · after(자세 하나
+   잡아드린 뒤 1줄, 작게) · diagnosis('제가 본 원인' 1~2문장 · 트레이너 1인칭 — 왜 이런지·뭐가 관건인지. "제가 보니
+   원인은 ~"결) · approach('그래서 이렇게 바꿔드려요' 1~2문장 · 트레이너 1인칭 · 순서 언어. "닫힌 흉곽부터 열고 →
+   등 감각 심고 → 어깨 라인 올리는 순서로 잡아드려요"결) · member_quote(1차 memberQuote 있으면 그 말 그대로, 짧은
+   보조 근거로만. 없으면 ""). ★diagnosis·approach는 회원 감상보다 '전문가 계획'을 앞세운다. "혼자선 못 잡는 지점을
+   제가 잡아드린다"는 사실·책임의 말이라 OK. 단 의료 단정(치료·완치·진단명)·숫자 처방(세트·중량·각도) 금지 —
+   자세·감각·순서 언어까지만.
 ④ photo_slide:
    - mode: goal이 자세교정·체중감량·체형처럼 '눈에 보이는 변화'면 "within_session"; 벌크업·근력·근비대처럼 '하루에 안 보이는 장기목표'면 "baseline".
    - title·body: within_session이면 "눈으로도 달라졌어요"(세션 내 비포→애프터). baseline이면 "오늘을 시작점으로 — 3개월 뒤 비교 기준"(가짜 성장 금지).
    - points(3): within_session=함께 확인한 포인트 / baseline=우선 키울 타겟.
    - [회원 사진 라벨]이 '없음'이면 body에 '사진은 다음에 함께 남겨요' 톤 + points는 유지.
-⑤ roadmap: current_step(정수, 보통 1) · steps[3] 각 {title · desc(1문장) · feel("느낄 변화 — …")}. goal 기반 단계.
+⑤ roadmap: current_step(정수, 보통 1) · steps[3] 각 {title · how('제 방법' 1문장 · 이 단계에서 트레이너가 뭘
+   하는지 · 1인칭 순서 언어) · feel("느낄 변화 — …")}. goal 기반 단계. 숫자 처방·의료 단정 금지.
 ⑥ plans[2]: A=추천 프로그램의 pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 패키지 1개 선택). 각
    {ref(정수) · name(예 "집중 코스"/"기본 코스") · recommended(불린) · meta("주 N회 · 약 M개월" — A는 추천 프로그램의
    frequency·duration에서, B는 더 가벼운 빈도) · sessions_label("함께 K회" — 패키지 sessions에서) · why(2문장,
@@ -588,9 +595,9 @@ ${pkgBlock}
 {
   "cover": { "subtitle": "..." },
   "goal": { "headline": "...", "body": "...", "current_issues": ["...","...","..."] },
-  "confirmed": { "before": "...", "after": "...", "member_quote": "", "bridge": "..." },
+  "confirmed": { "before": "...", "after": "...", "diagnosis": "...", "approach": "...", "member_quote": "" },
   "photo_slide": { "mode": "within_session", "title": "...", "body": "...", "points": ["...","...","..."] },
-  "roadmap": { "current_step": 1, "steps": [ {"title":"...","desc":"...","feel":"..."}, {"title":"...","desc":"...","feel":"..."}, {"title":"...","desc":"...","feel":"..."} ] },
+  "roadmap": { "current_step": 1, "steps": [ {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."} ] },
   "plans": [
     { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "주 2회 · 약 3개월", "sessions_label": "함께 24회", "why": "...", "includes": ["...","...","..."] },
     { "ref": 2, "name": "기본 코스", "recommended": false, "meta": "주 1회 · 약 3개월", "sessions_label": "함께 12회", "why": "...", "includes": ["...","...","..."] }
@@ -716,6 +723,10 @@ const FIELD_TERMS = [
   ["vow", "다짐"],
   ["before", "이전"],
   ["after", "이후"],
+  // salesbook 트레이너 관점 신규 키(diagnosis는 위 case_feedback 방어에 이미 있음).
+  //   ⚠️ approach는 closing_approach·approach_tag(위쪽)보다 뒤라 긴 키 먼저 처리됨.
+  ["approach", "접근"],
+  ["how", "방법"],
 ];
 
 function sanitizeText(s) {
