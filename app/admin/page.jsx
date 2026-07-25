@@ -8,6 +8,7 @@ import {
   Award,
   Camera,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Flame,
   Megaphone,
@@ -212,6 +213,7 @@ export default function AdminDashboard() {
   const [goals, setGoals] = useState([]);      // trainer_goal(목표매출 · 매출 탭 게이지 · 비차단 fetch)
   const [appts, setAppts] = useState([]);      // appointment(최근 90일 · 스케줄 탭 · 비차단 fetch)
   const [atab, setAtab] = useState("briefing"); // admin 섹션 탭(기본=브리핑 · #6 오늘 챙길 것)
+  const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
 
   useEffect(() => {
     (async () => {
@@ -461,7 +463,20 @@ export default function AdminDashboard() {
         {/* ===== KPI · 방향/사유 분포 (④) ===== */}
         {atab === "perf" && (
         <section className="mb-8">
-          <Eyebrow icon={TrendingUp}>클로징 · 재등록 분석</Eyebrow>
+          <button
+            type="button"
+            onClick={() => setPerfDetailOpen((v) => !v)}
+            aria-expanded={perfDetailOpen}
+            className="mb-4 flex w-full items-center gap-2 text-left"
+          >
+            <TrendingUp className="h-4 w-4 text-muted" />
+            <span className="text-xs font-semibold tracking-label-ko text-muted">클로징 · 재등록 상세 분석</span>
+            <span className="ml-1 text-[11px] font-normal text-muted">{perfDetailOpen ? "접기" : "펼치기"}</span>
+            {perfDetailOpen
+              ? <ChevronDown className="ml-auto h-4 w-4 text-muted" />
+              : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
+          </button>
+          {perfDetailOpen && (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {/* 방향별 강점 */}
             <div className="rounded-2xl border border-line bg-card p-5">
@@ -490,7 +505,7 @@ export default function AdminDashboard() {
             {/* 클로징 실패·보류 사유 분포 */}
             <div className="rounded-2xl border border-line bg-card p-5">
               <div className="text-[11px] font-semibold tracking-label-ko text-muted">클로징 실패·보류 사유</div>
-              <div className="mt-1 text-xs text-muted">OT 클로징 약점 진단 — 내가 주로 놓치는 이유</div>
+              <div className="mt-1 text-xs text-muted">OT 클로징 약점 진단 — 센터가 주로 놓치는 이유</div>
               <div className="mt-4 space-y-3">
                 {closingReasonDist.length === 0 ? (
                   <div className="text-xs text-muted">아직 클로징 실패·보류 사유 데이터가 없습니다.</div>
@@ -545,6 +560,7 @@ export default function AdminDashboard() {
               <div className="mt-1 text-xs text-muted">노쇼 취소분(voided) 제외 · 누적</div>
             </Card>
           </div>
+          )}
         </section>
         )}
 
