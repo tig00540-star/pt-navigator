@@ -142,17 +142,9 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     }
   };
 
-  // 예약 탭 진입점 — OT 회원이면 OT 흐름으로 라우팅(음성일지/완료 모달 우회), 그 외는 기존 액션 모달.
-  // 명단 밖 회원(hidden/환불)·onSelect 미주입이면 라우팅 불가 → 액션 모달 폴백.
-  const handleApptTap = async (a) => {
-    const m = members.find((x) => x.id === a.user_id) || null;
-    if (m && onSelect && viewFor(m) === "ot") {
-      const toTab = await otLandingTab(m);
-      onSelect(a.user_id, toTab);
-      return;
-    }
-    openAction(a);
-  };
+  // 예약 탭 진입점 — 모든 회원이 액션 모달을 연다(OT 준비 이동은 모달 안 'OT 준비 열기' 버튼으로).
+  //   구: OT 회원이면 즉시 준비 흐름으로 라우팅해 완료/취소 모달을 못 만나 완료 불가였다(버그) → 제거.
+  const handleApptTap = (a) => openAction(a);
   // 음성 STT 결과 → 내용칸 채움(이후 손편집). PTView handleVoiceResult 미러.
   const handleVoiceResult = (raw, summaryText) => { setNote(summaryText || ""); setRawText(raw || ""); setUsedVoice(true); };
 
@@ -263,6 +255,35 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     setAction(null); setActing(false);
     } catch {
       showToast("취소 실패 — 다시 시도하세요");
+    } finally {
+      setActing(false);
+    }
+  };
+
+  // OT 준비 열기 — 기존 탭 라우팅을 모달 버튼으로 이동(빠른 준비 유지).
+  const openOtPrep = async (appt) => {
+    const m = members.find((x) => x.id === appt.user_id) || null;
+    if (!m || !onSelect) { openAction(appt); return; } // 라우팅 불가면 모달 유지
+    const toTab = await otLandingTab(m);
+    setAction(null);
+    onSelect(appt.user_id, toTab);
+  };
+
+  // OT 수업 완료 — 예약 status='done'만(차감 X · daily_workout_log 생성 X · log_id null 유지). 교훈1 하드닝.
+  const completeOt = async (appt) => {
+    if (acting) return;
+    setActing(true);
+    if (!supabase) {
+      setAppts((p) => p.map((a) => (a.id === appt.id ? { ...a, status: "done" } : a)));
+      showToast("OT 수업 완료"); setAction(null); setActing(false); return;
+    }
+    try {
+      const { data, error } = await supabase.from("appointment").update({ status: "done" }).eq("id", appt.id).select();
+      if (error || !data || data.length === 0) { showToast("완료 실패 — 다시 시도하세요"); setActing(false); return; }
+      setAppts((p) => p.map((a) => (a.id === appt.id ? data[0] : a)));
+      showToast("OT 수업 완료"); setAction(null); setActing(false);
+    } catch {
+      showToast("완료 실패 — 다시 시도하세요");
     } finally {
       setActing(false);
     }
@@ -481,6 +502,14 @@ export default function ScheduleBoard({ members = [], onSelect }) {
 
             {action.status === "done" ? (
               <p className="text-sm text-sub">완료 처리된 수업입니다. (완료 취소는 후속)</p>
+            ) : actionMember && viewFor(actionMember) === "ot" ? (
+              /* OT 회원 — 차감/일지 없음. 준비 이동 · 완료(status done) · 취소 */
+              <div className="space-y-3">
+                <p className="text-xs text-muted">OT 상담 예약이에요. 준비 화면으로 가거나, 진행한 수업을 완료 처리하세요.</p>
+                <Button variant="primary" size="md" fullWidth onClick={() => openOtPrep(action)} disabled={acting}>OT 준비 열기</Button>
+                <Button variant="ghost" size="md" fullWidth onClick={() => completeOt(action)} disabled={acting}>{acting ? "처리 중…" : "수업 완료"}</Button>
+                <Button variant="danger" size="md" fullWidth onClick={() => cancelAppt(action)} disabled={acting}>예약 취소</Button>
+              </div>
             ) : (
               <div className="space-y-3">
                 <details className="rounded-lg border border-line bg-elevate p-2">
