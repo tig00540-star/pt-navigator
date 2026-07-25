@@ -27,6 +27,7 @@ import AddTrainerForm from "@/components/AddTrainerForm";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
+import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
 import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import ConversionFunnel from "@/components/admin/ConversionFunnel";
@@ -46,6 +47,7 @@ const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
 // admin 섹션 탭(7) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
+  { id: "briefing",  label: "브리핑" },    // ← 추가(#6) · 기본 랜딩
   { id: "perf",      label: "트레이너" },  // ← 개명(구 '실적'). ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
   { id: "revenue",   label: "매출" },      // ← 추가(#3)
   { id: "funnel",    label: "전환" },
@@ -209,7 +211,7 @@ export default function AdminDashboard() {
   const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
   const [goals, setGoals] = useState([]);      // trainer_goal(목표매출 · 매출 탭 게이지 · 비차단 fetch)
   const [appts, setAppts] = useState([]);      // appointment(최근 90일 · 스케줄 탭 · 비차단 fetch)
-  const [atab, setAtab] = useState("perf");    // admin 섹션 탭(기본=트레이너 · id는 "perf" 유지)
+  const [atab, setAtab] = useState("briefing"); // admin 섹션 탭(기본=브리핑 · #6 오늘 챙길 것)
 
   useEffect(() => {
     (async () => {
@@ -380,6 +382,16 @@ export default function AdminDashboard() {
       )}
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        {/* ===== 브리핑 — 오늘 챙길 것 (#6 · 기본 랜딩) ===== */}
+        {atab === "briefing" && (
+        <section className="mb-8">
+          <OwnerBriefing
+            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            appts={appts} goals={goals} trainers={trainers} ym={ym}
+            onGoTab={(id) => setAtab(id)} />
+        </section>
+        )}
+
         {/* ===== 트레이너 초대 온보딩 (A) ===== */}
         {atab === "ops" && (
         <section className="mb-8">
