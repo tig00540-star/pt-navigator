@@ -22,14 +22,14 @@ import {
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats, revenueByTrainer, closingStatsByTrainer, sessionPriceSumByTrainer, resolveScheme, payForScheme, sessionCountByTrainer } from "@/lib/memberStatus";
+import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
-import { won, personName } from "@/lib/format";
+import { won } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
-import PayrollConfirm from "@/components/PayrollConfirm";
+import TrainerScorecard from "@/components/admin/TrainerScorecard";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
 import BrandMark from "@/components/ui/BrandMark";
@@ -271,29 +271,7 @@ export default function AdminDashboard() {
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
   const closingReasonDist = useMemo(() => closingReasonStats(otRows), [otRows]);
   const totalSessions = useMemo(() => sessionsCount(logs), [logs]);
-  const memberTrainer = useMemo(() => {
-    const m = new Map();
-    for (const r of rows) if (r?.id) m.set(r.id, r.trainer_id ?? "unknown");
-    return m;
-  }, [rows]);
-  const revByTrainer = useMemo(() => revenueByTrainer(contracts, ym), [contracts, ym]);
-  const closingByTrainer = useMemo(() => closingStatsByTrainer(otRows, memberTrainer), [otRows, memberTrainer]);
-  const trainerName = (id) => personName(trainers.find((t) => t.id === id)?.name) || (id === "unknown" ? "미배정" : String(id).slice(0, 8));
-  const trainerPerf = useMemo(() => {
-    const revMap = new Map(revByTrainer.map((r) => [r.trainer_id, r]));
-    const closeMap = new Map(closingByTrainer.map((c) => [c.trainer_id, c]));
-    const ids = trainers.length ? trainers.map((t) => t.id) : [...new Set([...revMap.keys(), ...closeMap.keys()])];
-    return ids.map((id) => ({
-      id,
-      name: trainerName(id),
-      rev: revMap.get(id) || { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 },
-      close: closeMap.get(id) || { attempted: 0, success: 0, rate: null },
-    })).sort((a, b) => b.rev.total - a.rev.total);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trainers, revByTrainer, closingByTrainer]);
-  const sessPriceSum = useMemo(() => sessionPriceSumByTrainer(logs, contracts, ym), [logs, contracts, ym]);
-  const sessCount = useMemo(() => sessionCountByTrainer(logs, contracts, ym), [logs, contracts, ym]);
-  const runMap = useMemo(() => { const m = new Map(); for (const r of runs) if (r.ym === ym) m.set(r.trainer_id, r); return m; }, [runs, ym]);
+  // 트레이너별 파생은 TrainerScorecard(컴포넌트)가 자체 계산 — admin은 원배열만 prop으로 내려준다.
 
   if (role === null) {
     return (
@@ -439,50 +417,21 @@ export default function AdminDashboard() {
         </section>
         )}
 
-        {/* ===== 트레이너별 실적 (④) ===== */}
+        {/* ===== 트레이너 리더보드 / KPI 스코어카드 (#1) ===== */}
         {atab === "perf" && (
         <section className="mb-8">
-          <Eyebrow icon={Award}>트레이너별 실적 · {ym}</Eyebrow>
-          <div className="space-y-3">
-            {trainerPerf.length === 0 ? (
-              <div className="rounded-2xl border border-line bg-card p-5 text-xs text-muted">트레이너 데이터가 없습니다.</div>
-            ) : trainerPerf.map((t) => { const pay = payForScheme(resolveScheme(schemes, t.id), { monthRevenue: t.rev.total, sessionCount: sessCount.get(t.id) || 0, sessionPriceSum: sessPriceSum.get(t.id) || 0 }); const run = runMap.get(t.id) || null; return (
-              <div key={t.id} className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-elevate text-sm font-bold text-ink">{(t.name || "?").slice(0, 1)}</div>
-                    <div>
-                      <div className="text-sm font-semibold text-ink">{t.name}</div>
-                      <div className="text-[11px] text-muted">클로징 {rateText(t.close.rate)} · 시도 {t.close.attempted}명 중 {t.close.success}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] tracking-label-ko text-muted">이달 매출</div>
-                    <div className="font-mono text-2xl font-bold text-primary-strong">{won(t.rev.total)}</div>
-                  </div>
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-line bg-elevate p-3">
-                    <div className="flex items-center justify-between text-[10px] tracking-label-ko text-muted">
-                      <span>신규</span>
-                      <span>{t.rev.total > 0 ? Math.round((t.rev.newRev / t.rev.total) * 100) + "%" : "—"}</span>
-                    </div>
-                    <div className="mt-1 font-mono text-lg font-bold text-ink">{won(t.rev.newRev)}</div>
-                    <div className="text-[11px] text-muted">{t.rev.cntNew}건</div>
-                  </div>
-                  <div className="rounded-xl border border-line bg-elevate p-3">
-                    <div className="flex items-center justify-between text-[10px] tracking-label-ko text-muted">
-                      <span>재등록</span>
-                      <span>{t.rev.total > 0 ? Math.round((t.rev.reRev / t.rev.total) * 100) + "%" : "—"}</span>
-                    </div>
-                    <div className="mt-1 font-mono text-lg font-bold text-cyan-700">{won(t.rev.reRev)}</div>
-                    <div className="text-[11px] text-muted">{t.rev.cntRe}건</div>
-                  </div>
-                </div>
-                <PayrollConfirm trainerId={t.id} ym={ym} pay={pay} run={run} onSaved={(row) => setRuns((p) => [...p.filter((r) => r.id !== row.id), row])} />
-              </div>
-            ); })}
-          </div>
+          <Eyebrow icon={Award}>트레이너 리더보드 · {ym}</Eyebrow>
+          <TrainerScorecard
+            members={rows}
+            otRows={otRows}
+            contracts={contracts}
+            logs={logs}
+            trainers={trainers}
+            schemes={schemes}
+            runs={runs}
+            ym={ym}
+            onSaveRun={(row) => setRuns((p) => [...p.filter((r) => r.id !== row.id), row])}
+          />
         </section>
         )}
 
