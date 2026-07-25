@@ -19,17 +19,16 @@ import {
   Target,
   TrendingUp,
   Users,
-  Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingStats, reregisterStats, revenueInMonth, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
+import { closingStats, reregisterStats, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
-import { won } from "@/lib/format";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
+import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import ConversionFunnel from "@/components/admin/ConversionFunnel";
 import RetentionConsole from "@/components/admin/RetentionConsole";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
@@ -44,9 +43,10 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 // rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
 const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
-// admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
+// admin 섹션 탭(7) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
-  { id: "perf",      label: "실적" },
+  { id: "perf",      label: "트레이너" },  // ← 개명(구 '실적'). ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
+  { id: "revenue",   label: "매출" },      // ← 추가(#3)
   { id: "funnel",    label: "전환" },
   { id: "retention", label: "리텐션" },
   { id: "qc",        label: "QC" },
@@ -205,7 +205,8 @@ export default function AdminDashboard() {
   const [trainers, setTrainers] = useState([]);
   const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
   const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
-  const [atab, setAtab] = useState("perf");    // admin 섹션 탭(기본=실적)
+  const [goals, setGoals] = useState([]);      // trainer_goal(목표매출 · 매출 탭 게이지 · 비차단 fetch)
+  const [atab, setAtab] = useState("perf");    // admin 섹션 탭(기본=트레이너 · id는 "perf" 유지)
 
   useEffect(() => {
     (async () => {
@@ -228,7 +229,7 @@ export default function AdminDashboard() {
         setRole(myRole);
         if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
         // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
-        const [u, o, c, l, tr, ps, pr] = await Promise.all([
+        const [u, o, c, l, tr, ps, pr, tg] = await Promise.all([
           supabase.from("user_table").select("*"),
           supabase.from("ot_log").select("*"),
           // ⚠️ session_log·daily_workout_log는 센터 전체를 부른다 → 1000행 잘림 위험(P0-6).
@@ -239,6 +240,7 @@ export default function AdminDashboard() {
           supabase.from("trainer").select("id, name"),
           supabase.from("pay_scheme").select("*"),
           supabase.from("payroll_run").select("*"),
+          supabase.from("trainer_goal").select("*"),   // 매출 탭 게이지용 목표. 원장 RLS가 계정 전체 SELECT 허용.
         ]);
         const firstErr = u.error || o.error || c.error || l.error;
         if (firstErr) {
@@ -252,6 +254,7 @@ export default function AdminDashboard() {
         setTrainers(tr.data || []);
         setSchemes(ps.data || []);
         setRuns(pr.data || []);
+        setGoals(tg.data || []);   // 비차단 — trainer_goal 없거나 실패해도 []로 폴백(게이지만 "미설정")
       } catch {
         setDbNote("불러오기 실패 — 새로고침해 주세요.");
         setRole((r) => r ?? "denied"); // role 고착 방지(에러=잠금, 안전측)
@@ -270,7 +273,6 @@ export default function AdminDashboard() {
   const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
   const closing = useMemo(() => closingStats(otRows), [otRows]);
   const rereg = useMemo(() => reregisterStats(contracts), [contracts]);
-  const monthRevenue = useMemo(() => revenueInMonth(contracts, ym), [contracts, ym]);
   const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
   const closingReasonDist = useMemo(() => closingReasonStats(otRows), [otRows]);
@@ -389,16 +391,7 @@ export default function AdminDashboard() {
         {atab === "perf" && (
         <section className="mb-8">
           <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
-                <Wallet className="h-3.5 w-3.5" /> 이달 매출
-              </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">
-                {won(monthRevenue)}
-              </div>
-              <div className="mt-1 text-xs text-muted">{ym} · 인계·외부 제외</div>
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Card>
               <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
                 <Target className="h-3.5 w-3.5" /> 클로징률
@@ -533,6 +526,13 @@ export default function AdminDashboard() {
               <div className="mt-1 text-xs text-muted">노쇼 취소분(voided) 제외 · 누적</div>
             </Card>
           </div>
+        </section>
+        )}
+
+        {/* ===== 매출 파이프라인·예측 (매출 탭 · #3) ===== */}
+        {atab === "revenue" && (
+        <section className="mb-8">
+          <RevenuePipeline members={rows} contracts={contracts} logs={logs} otRows={otRows} trainers={trainers} goals={goals} ym={ym} />
         </section>
         )}
 
