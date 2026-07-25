@@ -64,10 +64,10 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
   }, [visible, otRows, todayISO, horizonISO]);
 
   const stages = [
-    { label: "유입", n: funnel.intake },
-    { label: "1차 클로징", n: funnel.first },
-    { label: "2차 클로징", n: funnel.second },
-    { label: "등록 확정", n: funnel.confirmed },
+    { label: "OT 상담 시작", n: funnel.intake },
+    { label: "1차 OT", n: funnel.first },
+    { label: "2차 OT", n: funnel.second },
+    { label: "PT 등록", n: funnel.confirmed },
   ];
   const convRate = funnel.intake ? funnel.confirmed / funnel.intake : null;
   const firstRate = funnel.firstAttempt ? funnel.firstSuccess / funnel.firstAttempt : null;
@@ -75,11 +75,14 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
 
   return (
     <div className="space-y-6">
+      <p className="text-[12px] leading-relaxed text-sub">
+        OT 상담이 <b className="text-ink">등록으로 이어지는 흐름</b> — 어디서 빠지고, 이번 주 누구를 챙길지.
+      </p>
       {/* 1) 깔때기 시각화 */}
       <Card>
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">OT → PT 전환 퍼널</span>
+          <span className="text-[11px] font-semibold tracking-label-ko text-muted">등록까지 흐름 · 어디서 빠지나</span>
         </div>
         {funnel.intake === 0 ? (
           <p className="mt-3 text-[12px] text-muted">OT 유입 회원이 없습니다.</p>
@@ -87,7 +90,7 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
           <>
             <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="font-mono text-4xl font-extrabold text-cyan-700">{rpct(convRate)}</span>
-              <span className="text-[13px] text-sub">유입 <b className="text-ink">{funnel.intake}명</b> → 등록 확정 <b className="text-cyan-700">{funnel.confirmed}명</b></span>
+              <span className="text-[13px] text-sub">OT 상담 <b className="text-ink">{funnel.intake}명</b> 중 <b className="text-cyan-700">{funnel.confirmed}명</b> 등록</span>
             </div>
             <div className="mt-4 space-y-2">
               {stages.map((s, i) => {
@@ -110,11 +113,11 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
               })}
             </div>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-sub">
-              <span>1차 성공률 <b className="text-ink">{rpct(firstRate)}</b> <span className="text-muted">({funnel.firstSuccess}/{funnel.firstAttempt})</span></span>
-              <span>2차 성공률 <b className="text-ink">{rpct(secondRate)}</b> <span className="text-muted">({funnel.secondSuccess}/{funnel.secondAttempt})</span></span>
+              <span>1차 OT 등록률 <b className="text-ink">{rpct(firstRate)}</b> <span className="text-muted">({funnel.firstSuccess}/{funnel.firstAttempt})</span></span>
+              <span>2차 OT 등록률 <b className="text-ink">{rpct(secondRate)}</b> <span className="text-muted">({funnel.secondSuccess}/{funnel.secondAttempt})</span></span>
             </div>
             <p className="mt-2 text-[10px] leading-relaxed text-muted">
-              현재 각 단계 분포(시점 스냅샷 · 코호트 아님) · 확정은 status(pt_active) 기준. ②③④는 엄밀 단조 아님(즉등록 가능).
+              지금 각 단계에 있는 회원 수예요. 상담 시기가 다른 회원이 섞여 있어 참고용입니다. (1차 OT에서 바로 등록하기도 해요.)
             </p>
           </>
         )}
@@ -124,21 +127,21 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
       <Card>
         <div className="mb-3 flex items-center gap-2">
           <Users className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 퍼널 · 어디서 새는지</span>
+          <span className="text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 등록 흐름 · 어디가 약한지</span>
         </div>
         {byTrainer.length === 0 ? (
           <p className="text-[12px] text-muted">OT 유입 데이터가 없습니다.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr className="text-[11px] tracking-label-ko text-muted">
                   <th className="border-b border-line px-2.5 py-2 text-left font-semibold">트레이너</th>
-                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">유입</th>
-                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">1차</th>
-                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">2차</th>
-                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">확정</th>
-                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">전환율</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">OT 상담</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">1차 OT</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">2차 OT</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">등록</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">등록률</th>
                   <th className="border-b border-line px-2.5 py-2 text-left font-semibold">약점</th>
                 </tr>
               </thead>
@@ -146,8 +149,8 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
                 {byTrainer.map((t) => {
                   const g = convGrade(t.convRate, t.intake);
                   const weak = [];
-                  if (t.intake >= 3 && t.first / t.intake < 0.5) weak.push("1차 시도율↓");
-                  if (t.second >= 3 && t.secondSuccess / t.second < 0.5) weak.push("2차 성공률↓");
+                  if (t.intake >= 3 && t.first / t.intake < 0.5) weak.push("첫 상담서 등록권유 적음");
+                  if (t.second >= 3 && t.secondSuccess / t.second < 0.5) weak.push("2차서 등록 놓침");
                   return (
                     <tr key={t.trainer_id} className="border-b border-line">
                       <td className="px-2.5 py-2 text-left font-semibold text-ink">{nameOf(t.trainer_id)}</td>
@@ -176,11 +179,11 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
       <ToneCard tone="unclosed">
         <div className="mb-2 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-danger-text" />
-          <h3 className="text-sm font-bold text-ink">이번 주 클로징 임박</h3>
+          <h3 className="text-sm font-bold text-ink">이번 주 챙길 등록 (임박)</h3>
           <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-danger-text">{due.length}</span>
         </div>
         {due.length === 0 ? (
-          <p className="text-[12px] text-muted">이번 주 임박한 클로징이 없습니다.</p>
+          <p className="text-[12px] text-muted">이번 주 챙길 등록 건이 없습니다.</p>
         ) : (
           <ul className="space-y-1.5">
             {due.map((d) => {
@@ -190,9 +193,9 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
                   <span className="text-sm font-semibold text-ink">{meta.name}</span>
                   <span className="text-[11px] text-muted">{meta.trainer}</span>
                   {d.kind === "unclosed" ? (
-                    <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger-text">2차 미마감 · 결정 필요</span>
+                    <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger-text">2차 OT 후 미결정</span>
                   ) : (
-                    <span className="rounded-md bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-700">재접근 {d.date}{d.ot_round ? ` · ${d.ot_round}차` : ""}</span>
+                    <span className="rounded-md bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-700">재상담 {d.date}{d.ot_round ? ` · ${d.ot_round}차` : ""}</span>
                   )}
                 </li>
               );

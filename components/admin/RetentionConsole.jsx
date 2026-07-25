@@ -60,6 +60,9 @@ export default function RetentionConsole({ members = [], contracts = [], logs = 
 
   return (
     <div className="space-y-6">
+      <p className="text-[12px] leading-relaxed text-sub">
+        놓치면 아까운 매출 — <b className="text-ink">재등록 챙길 회원</b>과 <b className="text-danger-text">떠나려는 회원</b>을 미리.
+      </p>
       {/* 1) 요약 타일 4개 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryTile icon={RefreshCw} label="만료 임박" value={`${expiring.length}명`} accent="cyan"

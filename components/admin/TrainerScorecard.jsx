@@ -47,11 +47,11 @@ const payText = (t) => (t.run?.final_total != null ? won(t.run.final_total) : t.
 // 정렬 옵션 — 이탈은 '문제 큰 순'(높은 이탈 먼저).
 const SORTS = [
   { key: "rev",   label: "매출" },
-  { key: "r1",    label: "1차" },
-  { key: "r2",    label: "2차" },
+  { key: "r1",    label: "1차 등록" },
+  { key: "r2",    label: "2차 등록" },
   { key: "rereg", label: "재등록" },
-  { key: "burn",  label: "소진" },
-  { key: "churn", label: "이탈" },
+  { key: "burn",  label: "출석" },
+  { key: "churn", label: "이탈위험" },
 ];
 
 const EMPTY_REV = { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 };
@@ -200,6 +200,9 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
 
   return (
     <div>
+      <p className="mb-3 text-[12px] leading-relaxed text-sub">
+        트레이너 성적표 — 누가 <b className="text-ink">등록·관리·매출</b>을 잘 내는지 한눈에.
+      </p>
       {/* 정렬 토글(표·카드 공용) */}
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
         <span className="mr-1 text-[11px] text-muted">정렬</span>
@@ -209,7 +212,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
             {s.label}
           </button>
         ))}
-        {sortKey === "churn" && <span className="text-[10px] text-muted">· 이탈 높은 순</span>}
+        {sortKey === "churn" && <span className="text-[10px] text-muted">· 이탈위험 높은 순</span>}
       </div>
 
       {/* 데스크톱(sm+) — 표 */}
@@ -221,12 +224,12 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                 <th className="px-2.5 py-2.5 text-left font-semibold">#</th>
                 <th className="px-2.5 py-2.5 text-left font-semibold">트레이너</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">담당</th>
-                <th className="px-2.5 py-2.5 text-right font-semibold">1차</th>
-                <th className="px-2.5 py-2.5 text-right font-semibold">2차</th>
+                <th className="px-2.5 py-2.5 text-right font-semibold">1차 등록</th>
+                <th className="px-2.5 py-2.5 text-right font-semibold">2차 등록</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">재등록</th>
-                <th className="px-2.5 py-2.5 text-right font-semibold">소진</th>
+                <th className="px-2.5 py-2.5 text-right font-semibold">출석</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">일지</th>
-                <th className="px-2.5 py-2.5 text-right font-semibold">이탈</th>
+                <th className="px-2.5 py-2.5 text-right font-semibold">이탈위험</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">이달매출</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">성과급</th>
                 <th className="px-2.5 py-2.5" />
@@ -272,6 +275,9 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
             </tbody>
           </table>
         </div>
+        <p className="mt-2 px-1 text-[11px] leading-relaxed text-muted">
+          1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 수업 수 · 이탈위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
+        </p>
       </div>
 
       {/* 모바일(<sm) — 트레이너별 카드 */}
@@ -294,10 +300,10 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <MetricTile label="담당" value={`${t.cnt.all} · PT ${t.cnt.pt}`} />
-                <MetricTile label="1차 클로징" value={pct(t.close.r1.rate)} g={g.r1} />
-                <MetricTile label="2차 클로징" value={pct(t.close.r2.rate)} g={g.r2} />
+                <MetricTile label="1차 등록률" value={pct(t.close.r1.rate)} g={g.r1} />
+                <MetricTile label="2차 등록률" value={pct(t.close.r2.rate)} g={g.r2} />
                 <MetricTile label="재등록" value={pct(t.rereg.rate)} g={g.re} />
-                <MetricTile label="소진(회/월)" value={burnText(t.burn)} g={g.burn} />
+                <MetricTile label="출석(월 수업)" value={burnText(t.burn)} g={g.burn} />
                 <MetricTile label="일지 작성" value={pct(t.logRate.rate)} g={g.log} />
                 <MetricTile label="이탈위험" value={pct(t.churn.rate)} g={g.churn} />
                 <MetricTile label="성과급" value={payText(t)} />
