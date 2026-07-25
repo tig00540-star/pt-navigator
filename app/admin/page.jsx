@@ -30,6 +30,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
+import ConversionFunnel from "@/components/admin/ConversionFunnel";
 import RetentionConsole from "@/components/admin/RetentionConsole";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
@@ -46,6 +47,7 @@ const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 // admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
   { id: "perf",      label: "실적" },
+  { id: "funnel",    label: "전환" },
   { id: "retention", label: "리텐션" },
   { id: "qc",        label: "QC" },
   { id: "payroll",   label: "급여" },
@@ -531,6 +533,13 @@ export default function AdminDashboard() {
               <div className="mt-1 text-xs text-muted">노쇼 취소분(voided) 제외 · 누적</div>
             </Card>
           </div>
+        </section>
+        )}
+
+        {/* ===== OT→PT 전환 퍼널 (전환 탭 · #2) ===== */}
+        {atab === "funnel" && (
+        <section className="mb-8">
+          <ConversionFunnel members={rows} otRows={otRows} trainers={trainers} />
         </section>
         )}
 
