@@ -31,6 +31,7 @@ import TrainerScorecard from "@/components/admin/TrainerScorecard";
 import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import ConversionFunnel from "@/components/admin/ConversionFunnel";
 import RetentionConsole from "@/components/admin/RetentionConsole";
+import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
 import BrandMark from "@/components/ui/BrandMark";
@@ -49,6 +50,7 @@ const ATABS = [
   { id: "revenue",   label: "매출" },      // ← 추가(#3)
   { id: "funnel",    label: "전환" },
   { id: "retention", label: "리텐션" },
+  { id: "schedule",  label: "스케줄" },   // ← 추가(#5)
   { id: "qc",        label: "QC" },
   { id: "payroll",   label: "급여" },
   { id: "ops",       label: "운영" },
@@ -206,6 +208,7 @@ export default function AdminDashboard() {
   const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
   const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
   const [goals, setGoals] = useState([]);      // trainer_goal(목표매출 · 매출 탭 게이지 · 비차단 fetch)
+  const [appts, setAppts] = useState([]);      // appointment(최근 90일 · 스케줄 탭 · 비차단 fetch)
   const [atab, setAtab] = useState("perf");    // admin 섹션 탭(기본=트레이너 · id는 "perf" 유지)
 
   useEffect(() => {
@@ -229,7 +232,8 @@ export default function AdminDashboard() {
         setRole(myRole);
         if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
         // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
-        const [u, o, c, l, tr, ps, pr, tg] = await Promise.all([
+        const apptCutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString(); // 스케줄 분석 최근 90일 창
+        const [u, o, c, l, tr, ps, pr, tg, ap] = await Promise.all([
           supabase.from("user_table").select("*"),
           supabase.from("ot_log").select("*"),
           // ⚠️ session_log·daily_workout_log는 센터 전체를 부른다 → 1000행 잘림 위험(P0-6).
@@ -241,6 +245,8 @@ export default function AdminDashboard() {
           supabase.from("pay_scheme").select("*"),
           supabase.from("payroll_run").select("*"),
           supabase.from("trainer_goal").select("*"),   // 매출 탭 게이지용 목표. 원장 RLS가 계정 전체 SELECT 허용.
+          // 스케줄 분석: 최근 90일 예약(canceled 포함=취소율). 창은 좁지만 다트레이너면 1000행 넘을 수 있어 페이지네이션.
+          fetchAllRows(() => supabase.from("appointment").select("*").gte("start_at", apptCutoff)),
         ]);
         const firstErr = u.error || o.error || c.error || l.error;
         if (firstErr) {
@@ -255,6 +261,7 @@ export default function AdminDashboard() {
         setSchemes(ps.data || []);
         setRuns(pr.data || []);
         setGoals(tg.data || []);   // 비차단 — trainer_goal 없거나 실패해도 []로 폴백(게이지만 "미설정")
+        setAppts(ap.data || []);   // 비차단 — appointment 없거나 실패해도 []로 폴백(스케줄 탭만 빈상태)
       } catch {
         setDbNote("불러오기 실패 — 새로고침해 주세요.");
         setRole((r) => r ?? "denied"); // role 고착 방지(에러=잠금, 안전측)
@@ -547,6 +554,13 @@ export default function AdminDashboard() {
         {atab === "retention" && (
         <section className="mb-8">
           <RetentionConsole members={rows} contracts={contracts} logs={logs} trainers={trainers} ym={ym} />
+        </section>
+        )}
+
+        {/* ===== 가동률·스케줄 (스케줄 탭 · #5) ===== */}
+        {atab === "schedule" && (
+        <section className="mb-8">
+          <ScheduleAnalytics appts={appts} logs={logs} members={rows} trainers={trainers} />
         </section>
         )}
 
