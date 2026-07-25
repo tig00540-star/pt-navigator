@@ -30,6 +30,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
+import RetentionConsole from "@/components/admin/RetentionConsole";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
 import BrandMark from "@/components/ui/BrandMark";
@@ -44,10 +45,11 @@ const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
 // admin 섹션 탭(4) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
-  { id: "perf",    label: "실적" },
-  { id: "qc",      label: "QC" },
-  { id: "payroll", label: "급여" },
-  { id: "ops",     label: "운영" },
+  { id: "perf",      label: "실적" },
+  { id: "retention", label: "리텐션" },
+  { id: "qc",        label: "QC" },
+  { id: "payroll",   label: "급여" },
+  { id: "ops",       label: "운영" },
 ];
 
 // 트레이너 QC 모니터링
@@ -529,6 +531,13 @@ export default function AdminDashboard() {
               <div className="mt-1 text-xs text-muted">노쇼 취소분(voided) 제외 · 누적</div>
             </Card>
           </div>
+        </section>
+        )}
+
+        {/* ===== 재등록·이탈 관제 (리텐션 탭 · #4) ===== */}
+        {atab === "retention" && (
+        <section className="mb-8">
+          <RetentionConsole members={rows} contracts={contracts} logs={logs} trainers={trainers} ym={ym} />
         </section>
         )}
 
