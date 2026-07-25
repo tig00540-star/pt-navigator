@@ -147,7 +147,7 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
                   const g = convGrade(t.convRate, t.intake);
                   const weak = [];
                   if (t.intake >= 3 && t.first / t.intake < 0.5) weak.push("1차 시도율↓");
-                  if (t.second > 0 && t.confirmed / t.second < 0.5) weak.push("마감 전환↓");
+                  if (t.second >= 3 && t.secondSuccess / t.second < 0.5) weak.push("2차 성공률↓");
                   return (
                     <tr key={t.trainer_id} className="border-b border-line">
                       <td className="px-2.5 py-2 text-left font-semibold text-ink">{nameOf(t.trainer_id)}</td>
