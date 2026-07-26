@@ -11,16 +11,13 @@ import {
   ChevronRight,
   Percent,
   ShieldCheck,
-  Star,
   Target,
   TrendingUp,
-  Users,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { closingStats, reregisterStats, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
-import Badge from "@/components/ui/Badge";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
@@ -48,51 +45,9 @@ const ATABS = [
   { id: "funnel",    label: "전환" },
   { id: "retention", label: "리텐션" },
   { id: "schedule",  label: "스케줄" },   // ← 추가(#5)
-  { id: "qc",        label: "QC" },
   { id: "payroll",   label: "급여" },
   { id: "ops",       label: "운영" },
 ];
-
-// 트레이너 QC 모니터링
-const TRAINERS = [
-  {
-    name: "박준형",
-    role: "수석 트레이너",
-    views: 96, // 네비게이터 조회율
-    reading: 92, // 대본 리딩률
-    adherence: 94, // 수업 이행률
-    grade: "A+",
-    members: ["김철수", "황대수"],
-    comment: "MBTI·통증 데이터 조회 후 대본 리딩 우수. 클로징 전환율 지점 최상위.",
-  },
-  {
-    name: "이서준",
-    role: "트레이너",
-    views: 81,
-    reading: 74,
-    adherence: 78,
-    grade: "B+",
-    members: ["황대수"],
-    comment: "루틴 매칭은 정확하나 세일즈 대본 리딩 빈도 낮음. 클로징 코칭 권장.",
-  },
-  {
-    name: "최민지",
-    role: "트레이너",
-    views: 64,
-    reading: 52,
-    adherence: 58,
-    grade: "C",
-    members: ["김철수"],
-    comment: "네비게이터 조회율 저조. 통증 정보 미확인 상태로 수업 진행 사례 감지.",
-  },
-];
-
-const gradeColor = (g) =>
-  g.startsWith("A")
-    ? "text-primary-strong border-primary/30 bg-primary-soft"
-    : g.startsWith("B")
-    ? "text-cyan-700 border-cyan-500/40 bg-cyan-500/10"
-    : "text-amber-700 border-amber-500/40 bg-amber-500/10";
 
 /* =========================================================================
    재사용 UI 조각
@@ -528,94 +483,6 @@ export default function AdminDashboard() {
         {atab === "schedule" && (
         <section className="mb-8">
           <ScheduleAnalytics appts={appts} logs={logs} members={rows} trainers={trainers} />
-        </section>
-        )}
-
-        {/* ===== Trainer Activity & QC ===== */}
-        {atab === "qc" && (
-        <section className="mb-8">
-          <Eyebrow icon={Users}>트레이너 세일즈 QC 모니터링</Eyebrow>
-
-          {/* ⚠️ 데모 고지 — 이 섹션의 숫자는 전부 하드코딩(TRAINERS 상수)이다.
-              소스 주석에만 "데모"라고 적혀 있고 화면에는 표시가 없어서, 원장에게
-              시연할 때 실측으로 오인될 수 있었다. 가짜 숫자가 실측처럼 읽히는 건
-              기능 결함이 아니라 신뢰 사고다(PRD §7.2).
-              실데이터화는 조회율·리딩률 같은 '행동 계측' 수집이 선행돼야 해서
-              단기간에 안 된다 — 그때까지 이 배너를 지우지 말 것. */}
-          <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-ot-soft px-3.5 py-2.5">
-            <Badge tone="ot" className="mt-px shrink-0">예시</Badge>
-            <p className="text-[12px] leading-relaxed text-ot-text">
-              아래 지표는 <b>실제 데이터가 아닙니다.</b> 화면 형태를 보기 위한 예시 숫자예요 —
-              조회율·대본 리딩률 같은 행동 기록을 모으기 시작하면 실측으로 바뀝니다.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {TRAINERS.map((t) => (
-              <div
-                key={t.name}
-                className="rounded-2xl border border-line bg-card p-4 sm:p-5"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-elevate text-sm font-bold text-ink">
-                      {t.name.slice(0, 1)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-ink">{t.name}</span>
-                        <span
-                          className={`rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${gradeColor(
-                            t.grade
-                          )}`}
-                        >
-                          {t.grade}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-muted">{t.role}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] tracking-label-ko text-muted">
-                      수업 이행률
-                    </div>
-                    <div className="font-mono text-2xl font-bold text-primary-strong">
-                      {t.adherence}%
-                    </div>
-                  </div>
-                </div>
-
-                {/* 세부 지표 */}
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <div className="mb-1 flex justify-between text-[11px] text-muted">
-                      <span>네비게이터 조회율</span>
-                      <span className="font-mono text-sub">{t.views}%</span>
-                    </div>
-                    <Bar pct={t.views} tone="cyan" />
-                  </div>
-                  <div>
-                    <div className="mb-1 flex justify-between text-[11px] text-muted">
-                      <span>AI 대본 리딩률</span>
-                      <span className="font-mono text-sub">{t.reading}%</span>
-                    </div>
-                    <Bar pct={t.reading} tone={t.reading >= 70 ? "lime" : "amber"} />
-                  </div>
-                </div>
-
-                {/* 코멘트 */}
-                <div className="mt-3 flex gap-2 rounded-xl border border-line bg-elevate p-3">
-                  <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
-                  <p className="text-xs leading-relaxed text-sub">
-                    {t.comment}
-                    <span className="ml-1 text-muted">
-                      (담당: {t.members.join(", ")})
-                    </span>
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
         </section>
         )}
 
