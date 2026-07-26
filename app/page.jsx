@@ -774,6 +774,18 @@ export default function OTNavigatorDashboard() {
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         <div key={tab} className="tab-anim">
         {tab === 9 ? (
+          members.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-line bg-card p-6 text-center shadow-sm">
+              <User className="mx-auto h-8 w-8 text-line" />
+              <h2 className="mt-3 text-base font-bold text-ink">첫 회원을 등록해 시작하세요</h2>
+              <p className="mt-1 text-sm leading-relaxed text-sub">
+                회원을 등록하면 오늘 스케줄·이탈 위험·할 일이 여기 채워져요.
+              </p>
+              <Button variant="primary" size="sm" onClick={() => setShowForm(true)} className="mt-4">
+                첫 회원 등록하기
+              </Button>
+            </div>
+          ) : (
           <div className="space-y-8">
             {/* 스케줄 보드는 자체 최상단 제목이 없어 Eyebrow로 섹션 헤더를 얹음(TodoTab은 자체 '오늘 할일' 제목 보유). */}
             <div ref={scheduleRef} className="scroll-mt-20">
@@ -791,6 +803,7 @@ export default function OTNavigatorDashboard() {
               onSelect={(id, toTab) => { setSelectedId(id); if (toTab === 9) scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); else setTab(toTab ?? 1); }}
             />
           </div>
+          )
         ) : tab === 7 ? (
           <div><SettingsView isSolo={isSolo} sub={settingsSub} /></div>
         ) : tab === 8 ? (
