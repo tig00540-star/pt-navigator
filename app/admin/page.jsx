@@ -6,16 +6,11 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Award,
-  Camera,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Flame,
-  Megaphone,
   Percent,
-  RefreshCw,
   ShieldCheck,
-  Sparkles,
   Star,
   Target,
   TrendingUp,
@@ -26,7 +21,6 @@ import { closingStats, reregisterStats, closingApproachStats, reregisterReasonSt
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
@@ -101,71 +95,6 @@ const gradeColor = (g) =>
     : "text-amber-700 border-amber-500/40 bg-amber-500/10";
 
 /* =========================================================================
-   회원 빅데이터 → 마케팅 카피 조합
-   ========================================================================= */
-
-function aggregate(rows) {
-  const tally = (arr) => {
-    const m = {};
-    arr.forEach((v) => {
-      if (v) m[v] = (m[v] || 0) + 1;
-    });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  };
-  const res = tally(rows.map((r) => r.residence));
-  const pain = tally(rows.map((r) => r.pain));
-  const job = tally(rows.map((r) => r.job));
-  return {
-    total: rows.length,
-    topResidence: res[0]?.[0] || "센터 인근 오피스텔",
-    topPain: pain[0]?.[0] || "무릎 통증",
-    topJob: job[0]?.[0] || "IT 개발자",
-    residenceTop: res.slice(0, 3),
-    painTop: pain.slice(0, 3),
-  };
-}
-
-function buildCopies(a) {
-  return [
-    {
-      platform: "Instagram 피드",
-      icon: Camera,
-      tag: "오피스텔 직장인 타겟",
-      headline: `퇴근길 5분, ${a.topResidence} 사시는 분만 보세요`,
-      body: `하루 종일 앉아있는 몸, 그대로 두면 ${a.topPain}으로 돌아옵니다. 통증 우회 세팅으로 무리 없이 시작하는 1:1 OT — 이번 주 3명 한정 무료 체험.`,
-    },
-    {
-      platform: "전단지 / 엘리베이터 광고",
-      icon: Megaphone,
-      tag: `${a.topPain} 소구`,
-      headline: `${a.topPain}, 피하지 말고 '우회'하세요`,
-      body: `아파서 운동을 미뤄온 분들을 위한 통증 우회 프로그램. 첫 OT에서 통증 0으로 자극 들어가는 걸 직접 느껴보세요. 데이터 기반 맞춤 세팅.`,
-    },
-    {
-      platform: "Instagram 릴스",
-      icon: Sparkles,
-      tag: `${a.topJob} 타겟`,
-      headline: `하루 10시간 앉아있는 ${a.topJob}님께`,
-      body: `거북목·${a.topPain} 방치하면 3년 뒤 병원비가 PT비보다 비쌉니다. 오늘 몸 상태 무료 인바디 + 가동성 측정부터.`,
-    },
-    {
-      platform: "Instagram 스토리",
-      icon: Flame,
-      tag: "바디프로필 시즌",
-      headline: "예식·프로필 D-84, 지금 시작해야 맞습니다",
-      body: `결혼·바디프로필 데드라인 있는 분? 주 2회 × 12주 역산 스케줄로 예식날 컨디션 피크. 부담 낮춘 분납도 가능.`,
-    },
-    {
-      platform: "네이버 플레이스 소식",
-      icon: Target,
-      tag: "지역 상권 공략",
-      headline: `${a.topResidence} 1인 가구, 저녁 루틴 만들어드립니다`,
-      body: `혼자 살수록 흐트러지는 저녁 시간. 센터에서 40분, 통증 없이 몸 만드는 루틴으로 하루를 마무리하세요. 첫 방문 인바디 무료.`,
-    },
-  ];
-}
-
-/* =========================================================================
    재사용 UI 조각
    ========================================================================= */
 
@@ -200,7 +129,6 @@ function Bar({ pct, tone = "lime" }) {
 export default function AdminDashboard() {
   const [rows, setRows] = useState([]);
   const [dbNote, setDbNote] = useState("");
-  const [copyOffset, setCopyOffset] = useState(0);
   const [otRows, setOtRows] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -274,10 +202,6 @@ export default function AdminDashboard() {
     // router는 next/navigation에서 안정 참조 — 마운트 1회 게이트만. deps 불필요.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const agg = useMemo(() => aggregate(rows), [rows]);
-  const copies = useMemo(() => buildCopies(agg), [agg]);
-  const shown = [0, 1, 2].map((i) => copies[(copyOffset + i) % copies.length]);
 
   // ④ 실데이터 파생 — 기준월(KST 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
   // KST(UTC+9) 이달 — memberStatus.kstYm과 경계 통일. Date.now()는 react 룰상 impure라 new Date().getTime() 사용.
@@ -695,72 +619,6 @@ export default function AdminDashboard() {
         </section>
         )}
 
-        {/* ===== AI Marketing 카피봇 ===== */}
-        {atab === "ops" && (
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <Eyebrow icon={Megaphone}>AI 상권 공략 카피봇 · 이번 주 광고</Eyebrow>
-            <Button variant="ghost" accent="owner" size="sm" onClick={() => setCopyOffset((o) => o + 1)} className="mb-4">
-              <RefreshCw className="h-3.5 w-3.5" /> 새로 뽑기
-            </Button>
-          </div>
-
-          {/* 빅데이터 요약 */}
-          <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
-              회원 <span className="font-semibold text-ink">{agg.total}명</span> 분석
-            </span>
-            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
-              주 거주 <span className="font-semibold text-primary-strong">{agg.topResidence}</span>
-            </span>
-            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
-              주 통증 <span className="font-semibold text-fuchsia-700">{agg.topPain}</span>
-            </span>
-            <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
-              주 직군 <span className="font-semibold text-cyan-700">{agg.topJob}</span>
-            </span>
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-3">
-            {shown.map((c, i) => {
-              const Icon = c.icon;
-              return (
-                <div
-                  key={i}
-                  className="flex flex-col rounded-2xl border border-line bg-card shadow-sm p-5"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500/20 to-fuchsia-600/20">
-                      <Icon className="h-4 w-4 text-fuchsia-700" />
-                    </div>
-                    <div className="text-[11px] font-semibold text-sub">{c.platform}</div>
-                  </div>
-
-                  <div className="mt-3">
-                    <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
-                      {c.tag}
-                    </span>
-                  </div>
-
-                  <h3 className="mt-2 text-base font-bold leading-snug text-ink">
-                    “{c.headline}”
-                  </h3>
-                  <p className="mt-2 flex-1 text-xs leading-relaxed text-sub">{c.body}</p>
-
-                  <div className="mt-4 flex items-center gap-1 text-[11px] text-muted">
-                    <Sparkles className="h-3 w-3" /> DB 빅데이터 기반 자동 생성
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <p className="mt-4 text-[10px] leading-relaxed text-muted">
-            ※ 카피는 현재 회원 데이터 분포를 바탕으로 조합한 초안입니다. 광고 집행 전 과장·의료
-            표현(치료·완치 등) 여부를 검토하세요.
-          </p>
-        </section>
-        )}
       </main>
     </div>
   );
