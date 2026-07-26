@@ -43,7 +43,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
         <Card>
           <div className="flex items-center gap-2 py-4 text-sub">
             <CheckCircle2 className="h-5 w-5 text-cyan-700" />
-            <span className="text-sm">지금 급히 챙길 건 없어요. 지표가 안정적이에요.</span>
+            <span className="text-sm">지금 급히 챙길 건 없어요. 챙길 게 생기면 여기 떠요.</span>
           </div>
         </Card>
       ) : (

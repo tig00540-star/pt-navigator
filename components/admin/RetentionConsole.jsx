@@ -68,11 +68,11 @@ export default function RetentionConsole({ members = [], contracts = [], logs = 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryTile icon={RefreshCw} label="만료 임박" value={`${expiring.length}명`} accent="cyan"
           sub="유료 잔여 10회 미만" />
-        <SummaryTile icon={Wallet} label="예상 재등록 매출" value={expectedReRev != null ? won(expectedReRev) : "표본 부족"} accent="cyan"
+        <SummaryTile icon={Wallet} label="예상 재등록 매출" value={expectedReRev != null ? won(expectedReRev) : "추정 전"} accent="cyan"
           sub={avgRe != null ? `추정 · 과거 재등록 평균 ${won(avgRe)} 기준` : "재등록 이력 쌓이면 표시"} />
         <SummaryTile icon={AlertTriangle} label="이탈 위험" value={`${churn.length}명`} accent="rose"
           sub="14일+ 무수업 (잔여 있음)" />
-        <SummaryTile icon={TrendingDown} label="방치 잔여세션" value={`${idleSessions}회`} accent="rose"
+        <SummaryTile icon={TrendingDown} label="안 쓰고 남은 세션" value={`${idleSessions}회`} accent="rose"
           sub="이탈위험 회원 잔여 합" />
       </div>
 
