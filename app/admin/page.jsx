@@ -20,6 +20,7 @@ import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } 
 import AddTrainerForm from "@/components/AddTrainerForm";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
+import AdminEmptyOnboarding from "@/components/admin/AdminEmptyOnboarding";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
 import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import ConversionFunnel from "@/components/admin/ConversionFunnel";
@@ -263,6 +264,9 @@ export default function AdminDashboard() {
       )}
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        {/* 빈상태 온보딩 — 회원 0명일 때만 · 모든 탭 위 · 탭별 안내 + 현재 트레이너/회원 수 */}
+        <AdminEmptyOnboarding members={rows} trainers={trainers} atab={atab} />
+
         {/* ===== 브리핑 — 오늘 챙길 것 (#6 · 기본 랜딩) ===== */}
         {atab === "briefing" && (
         <section className="mb-8">
