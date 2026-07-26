@@ -220,14 +220,30 @@ export default function ScheduleBoard({ members = [], onSelect }) {
       ]);
       contractId = activeContract(cs || [], ls || [])?.id ?? null; // 활성 없으면 null(차감 안 됨)
     }
-    const { data: logIns, error: logErr } = await supabase
+    // 멱등 가드(이중차감 방지) — 이전 시도에서 로그 insert 성공 후 appointment update 실패 시,
+    // 재시도가 로그를 다시 만들지 않도록 이 예약의 완료 로그가 이미 있으면 재사용한다.
+    // 키: (user_id, session_at=appt.start_at, source∈voice/manual) — 한 회원이 같은 시각 두 세션일 수 없어 사실상 유일.
+    let logId = null;
+    const { data: dupLog } = await supabase
       .from("daily_workout_log")
-      .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: usedVoice ? "voice" : "manual", ai_summary: body || null, raw_voice_text: usedVoice ? (rawText || null) : null, sent_at: sentAt })
-      .select();
-    if (logErr || !logIns || logIns.length === 0) { showToast("완료 실패 — 다시 시도하세요"); setActing(false); return; }
+      .select("id")
+      .eq("user_id", appt.user_id)
+      .eq("session_at", appt.start_at)
+      .in("source", ["voice", "manual"])
+      .limit(1);
+    if (dupLog && dupLog.length > 0) {
+      logId = dupLog[0].id;
+    } else {
+      const { data: logIns, error: logErr } = await supabase
+        .from("daily_workout_log")
+        .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: usedVoice ? "voice" : "manual", ai_summary: body || null, raw_voice_text: usedVoice ? (rawText || null) : null, sent_at: sentAt })
+        .select();
+      if (logErr || !logIns || logIns.length === 0) { showToast("완료 실패 — 다시 시도하세요"); setActing(false); return; }
+      logId = logIns[0].id;
+    }
     const { data: up, error: upErr } = await supabase
       .from("appointment")
-      .update({ status: "done", log_id: logIns[0].id })
+      .update({ status: "done", log_id: logId })
       .eq("id", appt.id)
       .select();
     if (upErr || !up || up.length === 0) { showToast("완료 저장 실패 — 다시 시도하세요"); setActing(false); return; }
