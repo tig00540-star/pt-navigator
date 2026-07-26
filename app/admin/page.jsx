@@ -449,6 +449,7 @@ export default function AdminDashboard() {
             runs={runs}
             ym={ym}
             onSaveRun={(row) => setRuns((p) => [...p.filter((r) => r.id !== row.id), row])}
+            onGoPayroll={() => setAtab("payroll")}
           />
         </section>
         )}
@@ -456,6 +457,20 @@ export default function AdminDashboard() {
         {/* ===== 급여 정책 설정 (페이롤 C1) — 계정 기본 스킴 편집. pay_policy 표시는 D에서 전환. ===== */}
         {atab === "payroll" && (
         <section className="mb-8">
+          {/* 브릿지 — 이달 급여 계산·확정은 트레이너 탭. 여긴 급여 규칙(스킴) 설정만(발견성). */}
+          <button
+            type="button"
+            onClick={() => setAtab("perf")}
+            className="mb-4 flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-elevate px-4 py-3 text-left transition hover:bg-card"
+          >
+            <span className="text-[13px] leading-relaxed text-sub">
+              이달 <b className="text-ink">트레이너별 급여 계산·확정</b>은 <b className="text-ink">트레이너 탭</b>에서 해요.
+              여기선 급여 규칙(스킴)만 설정합니다.
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-primary-strong">
+              트레이너 탭 <ChevronRight className="h-3.5 w-3.5" />
+            </span>
+          </button>
           <AdminPayrollSettings trainers={trainers} />
         </section>
         )}
