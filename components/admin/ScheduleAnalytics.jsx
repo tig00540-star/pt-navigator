@@ -7,7 +7,7 @@
    색: 좋음 cyan · 주의 rose · 밀도 primary(불투명도). emerald 금지. KST 보정 일관(히트맵·리스트).
    ========================================================================= */
 import { useMemo, useState } from "react";
-import { CalendarClock, AlertTriangle, UserX, LayoutGrid } from "lucide-react";
+import { CalendarClock, AlertTriangle, UserX, LayoutGrid, ChevronDown, ChevronRight } from "lucide-react";
 import { apptWeekdayHourGrid, apptOutcomeByTrainer, noshowByTrainer, pastDueAppointments } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
@@ -45,6 +45,7 @@ function SummaryTile({ icon: Icon, label, value, sub, accent = "ink" }) {
 
 export default function ScheduleAnalytics({ appts = [], logs = [], members = [], trainers = [] }) {
   const [nowISO] = useState(() => new Date().toISOString()); // 마운트 1회 고정
+  const [detailOpen, setDetailOpen] = useState(false); // 히트맵·트레이너표 접기(기본 닫힘 · 표시만)
   const grid = useMemo(() => apptWeekdayHourGrid(appts, { startHour: START_HOUR, endHour: END_HOUR }), [appts]);
   const outcome = useMemo(() => apptOutcomeByTrainer(appts, nowISO), [appts, nowISO]);
   const memberTrainer = useMemo(() => new Map(members.map((m) => [m.id, m.trainer_id])), [members]); // 전체(hidden 포함 · 트레이너 이력)
@@ -80,6 +81,17 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
         <SummaryTile icon={AlertTriangle} label="미처리 예약" value={`${pastDueCount}건`} accent="rose" sub="시간 지났는데 완료·취소 안 함" />
       </div>
 
+      {/* 근거(접기 · 기본 닫힘) — 밀도 히트맵 · 트레이너 스케줄표 */}
+      <div className="space-y-4">
+        <button type="button" onClick={() => setDetailOpen((v) => !v)} aria-expanded={detailOpen}
+          className="flex w-full items-center gap-2 text-left">
+          <LayoutGrid className="h-4 w-4 text-muted" />
+          <span className="text-[11px] font-semibold tracking-label-ko text-muted">예약 밀도 · 트레이너 스케줄 상세</span>
+          <span className="ml-1 text-[11px] font-normal text-muted">{detailOpen ? "접기" : "펼치기"}</span>
+          {detailOpen ? <ChevronDown className="ml-auto h-4 w-4 text-muted" /> : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
+        </button>
+        {detailOpen && (
+        <>
       {/* 2) 요일×시간 밀도 히트맵 */}
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -164,6 +176,9 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
         )}
         <p className="mt-2 px-1 text-[10px] leading-relaxed text-muted">완료율 = 완료 ÷ (완료+취소) · 노쇼율 = 수업일지 노쇼 ÷ 전체 수업(예약과 별개 집계).</p>
       </Card>
+        </>
+        )}
+      </div>
 
       {/* 4) 미처리 예약 리스트 */}
       <ToneCard tone="danger">
