@@ -7,7 +7,7 @@
    ⚠️ 시점 스냅샷(코호트 아님) · 확정=status pt_active 기준. 색: 긍정 cyan·위험 rose, 단계막대만 OT흐름(amber→primary).
    ========================================================================= */
 import { useMemo, useState } from "react";
-import { Filter, AlertTriangle, Users } from "lucide-react";
+import { Filter, AlertTriangle, Users, ChevronDown, ChevronRight } from "lucide-react";
 import { otFunnel, otFunnelByTrainer, closingDueSoon, viewFor } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
@@ -35,6 +35,7 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
       horizonISO: new Date(kstMs + 7 * 86400000).toISOString().slice(0, 10),
     };
   });
+  const [detailOpen, setDetailOpen] = useState(false); // 트레이너별 퍼널 표 접기(기본 닫힘 · 표시만)
 
   // ★hidden 제외 — 퍼널·임박 함수엔 전부 visible을 넘긴다.
   const visible = useMemo(() => members.filter((m) => m && !m.hidden), [members]);
@@ -123,8 +124,17 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
         )}
       </Card>
 
-      {/* 2) 트레이너별 퍼널 비교 */}
-      <Card>
+      {/* 근거(접기 · 기본 닫힘) — 트레이너별 퍼널 비교 */}
+      <div className="space-y-4">
+        <button type="button" onClick={() => setDetailOpen((v) => !v)} aria-expanded={detailOpen}
+          className="flex w-full items-center gap-2 text-left">
+          <Users className="h-4 w-4 text-muted" />
+          <span className="text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 등록 흐름 상세</span>
+          <span className="ml-1 text-[11px] font-normal text-muted">{detailOpen ? "접기" : "펼치기"}</span>
+          {detailOpen ? <ChevronDown className="ml-auto h-4 w-4 text-muted" /> : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
+        </button>
+        {detailOpen && (
+        <Card>
         <div className="mb-3 flex items-center gap-2">
           <Users className="h-4 w-4 text-muted" />
           <span className="text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 등록 흐름 · 어디가 약한지</span>
@@ -174,6 +184,8 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
           </div>
         )}
       </Card>
+        )}
+      </div>
 
       {/* 3) 이번 주 클로징 임박 (unclosed = 우선순위 red) */}
       <ToneCard tone="unclosed">
