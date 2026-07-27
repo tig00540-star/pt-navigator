@@ -167,7 +167,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
                   <div className="space-y-2">
                     {cases.map((c) => (
                       <div key={c.user_id} className="rounded-xl border border-line bg-card px-4 py-3">
-                        <div className="text-sm font-medium text-ink">{nameById.get(c.user_id) || "회원"}</div>
+                        <div className="text-sm font-medium text-ink">{personName(nameById.get(c.user_id)) || "회원"}</div>
                         <SignalChips signals={c.signals} />
                       </div>
                     ))}
@@ -281,7 +281,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
                           <div className="mt-1 space-y-1">
                             {o.thinList.map((m) => (
                               <div key={m.user_id} className="flex flex-wrap items-center gap-1.5 text-[12px]">
-                                <span className="font-medium text-sub">{nameById.get(m.user_id) || "회원"}</span>
+                                <span className="font-medium text-sub">{personName(nameById.get(m.user_id)) || "회원"}</span>
                                 <span className="text-danger-text">{pct(m.score)}</span>
                                 {Array.isArray(m.missing) && m.missing.length > 0 && (
                                   <span className="text-[11px] text-muted">빠짐 {m.missing.map((k) => OBS_MISSING_LABEL[k] || k).join("·")}</span>
@@ -299,7 +299,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
                             {g.gapItems.map((it, i) => (
                               <div key={i} className="flex flex-wrap items-center gap-1.5 text-[12px]">
                                 <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">{it.scope === "reg" ? "재등록" : "OT"}</span>
-                                <span className="font-medium text-sub">{nameById.get(it.user_id) || "회원"}</span>
+                                <span className="font-medium text-sub">{personName(nameById.get(it.user_id)) || "회원"}</span>
                                 <span className="text-[11px] text-muted">{it.gaps.join(" / ")}</span>
                               </div>
                             ))}
@@ -313,7 +313,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
                           <div className="mt-1 space-y-1">
                             {otFails.map((r) => (
                               <div key={r.id} className="flex flex-wrap items-center gap-1.5 text-[12px]">
-                                <span className="font-medium text-sub">{nameById.get(r.user_id) || "회원"}</span>
+                                <span className="font-medium text-sub">{personName(nameById.get(r.user_id)) || "회원"}</span>
                                 <span className="text-danger-text">{r.closing_result === "hold" ? "보류" : "실패"}</span>
                                 {r.closing_reason && <span className="text-[11px] text-muted">{labelOf(CLOSING_REASON_OPTS, r.closing_reason)}</span>}
                                 {(r.closing_detail?.reaction || r.closing_detail?.outcome) && (
@@ -331,7 +331,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
                           <div className="mt-1 space-y-1">
                             {regFails.map((r) => (
                               <div key={r.id} className="flex flex-wrap items-center gap-1.5 text-[12px]">
-                                <span className="font-medium text-sub">{nameById.get(r.user_id) || "회원"}</span>
+                                <span className="font-medium text-sub">{personName(nameById.get(r.user_id)) || "회원"}</span>
                                 <span className="text-danger-text">{r.reg_result === "hold" ? "보류" : "실패"}</span>
                                 {r.reg_reason && <span className="text-[11px] text-muted">{labelOf(REG_REASON_OPTS, r.reg_reason)}</span>}
                               </div>
