@@ -7,7 +7,7 @@
    ⚠️ 시점 스냅샷(코호트 아님) · 확정=status pt_active 기준. 색: 긍정 cyan·위험 rose, 단계막대만 OT흐름(amber→primary).
    ========================================================================= */
 import { useMemo, useState } from "react";
-import { Filter, AlertTriangle, Users, ChevronDown, ChevronRight } from "lucide-react";
+import { Filter, AlertTriangle, Users } from "lucide-react";
 import { otFunnel, otFunnelByTrainer, closingDueSoon, viewFor } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
@@ -35,8 +35,6 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
       horizonISO: new Date(kstMs + 7 * 86400000).toISOString().slice(0, 10),
     };
   });
-  const [detailOpen, setDetailOpen] = useState(false); // 트레이너별 퍼널 표 접기(기본 닫힘 · 표시만)
-
   // ★hidden 제외 — 퍼널·임박 함수엔 전부 visible을 넘긴다.
   const visible = useMemo(() => members.filter((m) => m && !m.hidden), [members]);
 
@@ -65,9 +63,9 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
   }, [visible, otRows, todayISO, horizonISO]);
 
   const stages = [
-    { label: "OT 상담 시작", n: funnel.intake },
-    { label: "1차 OT", n: funnel.first },
-    { label: "2차 OT", n: funnel.second },
+    { label: "OT 회원 (전체)", n: funnel.intake },
+    { label: "1차 OT 진행", n: funnel.first },
+    { label: "2차 OT 진행", n: funnel.second },
     { label: "PT 등록", n: funnel.confirmed },
   ];
   const convRate = funnel.intake ? funnel.confirmed / funnel.intake : null;
@@ -91,7 +89,7 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
           <>
             <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="font-mono text-4xl font-extrabold text-cyan-700">{rpct(convRate)}</span>
-              <span className="text-[13px] text-sub">OT 상담 <b className="text-ink">{funnel.intake}명</b> 중 <b className="text-cyan-700">{funnel.confirmed}명</b> 등록</span>
+              <span className="text-[13px] text-sub">OT 회원 <b className="text-ink">{funnel.intake}명</b> 중 <b className="text-cyan-700">{funnel.confirmed}명</b> 등록</span>
             </div>
             <div className="mt-4 space-y-2">
               {stages.map((s, i) => {
@@ -118,22 +116,13 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
               <span>2차 OT 등록률 <b className="text-ink">{rpct(secondRate)}</b> <span className="text-muted">({funnel.secondSuccess}/{funnel.secondAttempt})</span></span>
             </div>
             <p className="mt-2 text-[10px] leading-relaxed text-muted">
-              지금 각 단계에 있는 회원 수예요. 상담 시기가 다른 회원이 섞여 있어 참고용입니다. (1차 OT에서 바로 등록하기도 해요.)
+              각 단계는 앞 단계에 포함돼요 — 2차 진행 회원은 1차에도 포함. &lsquo;OT 회원&rsquo;은 OT로 유입된 전체(분모)이고, 아직 1차 안 한 회원도 들어가요. PT 등록은 1차에서 바로 등록한 경우도 있어 별도 집계.
             </p>
           </>
         )}
       </Card>
 
-      {/* 근거(접기 · 기본 닫힘) — 트레이너별 퍼널 비교 */}
-      <div className="space-y-4">
-        <button type="button" onClick={() => setDetailOpen((v) => !v)} aria-expanded={detailOpen}
-          className="flex w-full items-center gap-2 text-left">
-          <Users className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 등록 흐름 상세</span>
-          <span className="ml-1 text-[11px] font-normal text-muted">{detailOpen ? "접기" : "펼치기"}</span>
-          {detailOpen ? <ChevronDown className="ml-auto h-4 w-4 text-muted" /> : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
-        </button>
-        {detailOpen && (
+      {/* 트레이너별 등록 흐름 — 상시 노출(카드 자체 헤더가 섹션 제목) */}
         <Card>
         <div className="mb-3 flex items-center gap-2">
           <Users className="h-4 w-4 text-muted" />
@@ -147,7 +136,7 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
               <thead>
                 <tr className="text-[11px] tracking-label-ko text-muted">
                   <th className="border-b border-line px-2.5 py-2 text-left font-semibold">트레이너</th>
-                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">OT 상담</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">OT 회원</th>
                   <th className="border-b border-line px-2.5 py-2 text-right font-semibold">1차 OT</th>
                   <th className="border-b border-line px-2.5 py-2 text-right font-semibold">2차 OT</th>
                   <th className="border-b border-line px-2.5 py-2 text-right font-semibold">등록</th>
@@ -184,8 +173,6 @@ export default function ConversionFunnel({ members = [], otRows = [], trainers =
           </div>
         )}
       </Card>
-        )}
-      </div>
 
       {/* 3) 이번 주 클로징 임박 (unclosed = 우선순위 red) */}
       <ToneCard tone="unclosed">
