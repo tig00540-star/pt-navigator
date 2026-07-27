@@ -7,7 +7,7 @@
    색: 긍정 cyan · 위험/환불 rose · 게이지 primary(red). emerald 금지. 예측은 '추정' 명시.
    ========================================================================= */
 import { useMemo, useState } from "react";
-import { Wallet, TrendingUp, PieChart, LineChart, ChevronDown, ChevronRight } from "lucide-react";
+import { Wallet, TrendingUp, PieChart, LineChart } from "lucide-react";
 import {
   revenueInMonth, revenueCompositionInMonth, revenueTrendByMonth, revenueForecastNextMonth,
 } from "@/lib/memberStatus";
@@ -20,7 +20,6 @@ const manLabel = (n) => { const man = Math.round((n ?? 0) / 10000); return man =
 
 export default function RevenuePipeline({ members = [], contracts = [], logs = [], otRows = [], trainers = [], goals = [], ym }) {
   const [nowISO] = useState(() => new Date().toISOString()); // 마운트 1회 고정(렌더 순수)
-  const [detailOpen, setDetailOpen] = useState(false); // 구성·추이 상세 접기(기본 닫힘 · 표시만)
 
   // ★hidden 제외 — 회원기반(forecast)만.
   const visible = useMemo(() => members.filter((m) => m && !m.hidden), [members]);
@@ -106,17 +105,12 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
         </Card>
       </div>
 
-      {/* 근거(접기 · 기본 닫힘) — 구성비 · 추이 */}
+      {/* 매출 구성 · 추이 — 상시 노출 */}
       <div className="space-y-4">
-        <button type="button" onClick={() => setDetailOpen((v) => !v)} aria-expanded={detailOpen}
-          className="flex w-full items-center gap-2 text-left">
+        <div className="flex items-center gap-2">
           <PieChart className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">매출 구성 · 추이 상세</span>
-          <span className="ml-1 text-[11px] font-normal text-muted">{detailOpen ? "접기" : "펼치기"}</span>
-          {detailOpen ? <ChevronDown className="ml-auto h-4 w-4 text-muted" /> : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
-        </button>
-        {detailOpen && (
-        <>
+          <span className="text-[11px] font-semibold tracking-label-ko text-muted">매출 구성 · 추이</span>
+        </div>
       {/* 블록③ 신규/재등록 구성비 */}
       <Card>
         <div className="mb-3 flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><PieChart className="h-3.5 w-3.5" /> 이달 매출 구성 · 신규 vs 재등록</div>
@@ -163,8 +157,6 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
         })()}
         <p className="mt-3 text-[10px] leading-relaxed text-muted">막대=월 순매출(환불 차감) · 빨강=환불 · 숫자는 만원 단위(막대에 마우스 올리면 원 단위). ※ 미수금(미납) 추이는 준비 중이에요.</p>
       </Card>
-        </>
-        )}
       </div>
     </div>
   );
