@@ -11,6 +11,7 @@ import RegisterReapproachToday from "@/components/views/RegisterReapproachToday"
 import TodoManual from "@/components/views/TodoManual";
 import UnclosedClosingToday from "@/components/views/UnclosedClosingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
+import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
 
 export default function TodoTab({ members, uid, onSelect }) {
@@ -31,6 +32,7 @@ export default function TodoTab({ members, uid, onSelect }) {
       {/* 자동 4~5 — 신규 파생 섹션(미확정 클로징=2차 OT, 미처리 예약=스케줄) */}
       <UnclosedClosingToday members={scoped} onSelect={(id) => onSelect(id, 2)} />
       <PastDueAppointments members={scoped} uid={uid} onSelect={(id) => onSelect(id, 9)} />
+      <NoNextBookingToday members={scoped} uid={uid} onSelect={(id) => onSelect(id, 9)} />
 
       {/* 자동 6 — 미확인 수업 확인 요청(오늘 오는 회원 · 회원자료 열어 그 자리에서 확인/void) */}
       <UnconfirmedConfirmToday members={scoped} uid={uid} onSelect={(id) => onSelect(id, 10)} />
