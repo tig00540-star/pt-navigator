@@ -7,8 +7,8 @@
    색: 좋음 cyan · 주의 rose · 밀도 primary(불투명도). emerald 금지. KST 보정 일관(히트맵·리스트).
    ========================================================================= */
 import { useMemo, useState } from "react";
-import { CalendarClock, AlertTriangle, UserX, LayoutGrid, ChevronDown, ChevronRight } from "lucide-react";
-import { apptWeekdayHourGrid, apptOutcomeByTrainer, noshowByTrainer, pastDueAppointments } from "@/lib/memberStatus";
+import { CalendarClock, AlertTriangle, UserX, LayoutGrid } from "lucide-react";
+import { apptWeekdayHourGrid, apptOutcomeByTrainer, noshowByTrainer, pastDueAppointments, sessionsThisMonthByTrainer, otSessionsThisMonthByTrainer } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
 import ToneCard from "@/components/ui/ToneCard";
@@ -43,14 +43,19 @@ function SummaryTile({ icon: Icon, label, value, sub, accent = "ink" }) {
   );
 }
 
-export default function ScheduleAnalytics({ appts = [], logs = [], members = [], trainers = [] }) {
+export default function ScheduleAnalytics({ appts = [], logs = [], members = [], trainers = [], otRows = [], ym }) {
   const [nowISO] = useState(() => new Date().toISOString()); // 마운트 1회 고정
-  const [detailOpen, setDetailOpen] = useState(false); // 히트맵·트레이너표 접기(기본 닫힘 · 표시만)
   const grid = useMemo(() => apptWeekdayHourGrid(appts, { startHour: START_HOUR, endHour: END_HOUR }), [appts]);
   const outcome = useMemo(() => apptOutcomeByTrainer(appts, nowISO), [appts, nowISO]);
   const memberTrainer = useMemo(() => new Map(members.map((m) => [m.id, m.trainer_id])), [members]); // 전체(hidden 포함 · 트레이너 이력)
   const noshow = useMemo(() => noshowByTrainer(logs, memberTrainer, {}), [logs, memberTrainer]); // 전체기간(ym 생략)
   const pastDue = useMemo(() => pastDueAppointments(appts, nowISO), [appts, nowISO]);
+
+  // 이번 달 진행 수업(OT=ot_log 1·2차 · PT=완료 수업). 90일 히트맵과 창이 다름 → 블록 제목에 '이번 달' 명시.
+  const otSess = useMemo(() => otSessionsThisMonthByTrainer(otRows, memberTrainer, ym), [otRows, memberTrainer, ym]);
+  const ptSess = useMemo(() => sessionsThisMonthByTrainer(logs, memberTrainer, ym), [logs, memberTrainer, ym]);
+  const otMonthTotal = useMemo(() => [...otSess.values()].reduce((s, n) => s + n, 0), [otSess]);
+  const ptMonthTotal = useMemo(() => [...ptSess.values()].reduce((s, n) => s + n, 0), [ptSess]);
   const nameOf = (tid) => personName(trainers.find((t) => t.id === tid)?.name) || (tid === "unknown" ? "미배정" : String(tid).slice(0, 8));
   const memberName = (uid) => personName(members.find((m) => m.id === uid)?.name) || String(uid).slice(0, 8);
 
@@ -81,17 +86,51 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
         <SummaryTile icon={AlertTriangle} label="미처리 예약" value={`${pastDueCount}건`} accent="rose" sub="시간 지났는데 완료·취소 안 함" />
       </div>
 
-      {/* 근거(접기 · 기본 닫힘) — 밀도 히트맵 · 트레이너 스케줄표 */}
+      {/* 이번 달 진행 수업 (OT/PT) — 실제 진행 기록(예약과 별개) · 90일 히트맵과 창 다름 */}
+      <Card>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <CalendarClock className="h-4 w-4 text-muted" />
+          <span className="text-[11px] font-semibold tracking-label-ko text-muted">이번 달 진행 수업 · 트레이너별 OT / PT</span>
+          <span className="text-[11px] text-muted">· 센터 합계 OT {otMonthTotal} · PT {ptMonthTotal}</span>
+        </div>
+        {trainers.length === 0 ? (
+          <p className="text-[12px] text-muted">트레이너 데이터가 없습니다.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[420px] border-collapse text-sm">
+              <thead>
+                <tr className="text-[11px] tracking-label-ko text-muted">
+                  <th className="border-b border-line px-2.5 py-2 text-left font-semibold">트레이너</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">OT 진행</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">PT 진행</th>
+                  <th className="border-b border-line px-2.5 py-2 text-right font-semibold">합계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trainers.map((t) => {
+                  const ot = otSess.get(t.id) || 0, pt = ptSess.get(t.id) || 0;
+                  return (
+                    <tr key={t.id} className="border-b border-line">
+                      <td className="px-2.5 py-2 text-left font-semibold text-ink">{personName(t.name)}</td>
+                      <td className="px-2.5 py-2 text-right font-mono text-amber-700">{ot}</td>
+                      <td className="px-2.5 py-2 text-right font-mono text-sky-700">{pt}</td>
+                      <td className="px-2.5 py-2 text-right font-mono font-semibold text-ink">{ot + pt}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="mt-2 text-[10px] leading-relaxed text-muted">OT = ot_log(1·2차 관찰) · PT = 완료 수업(노쇼 제외) · 이번 달({ym}) 기준. 실제 진행 기록이라 예약과 별개예요.</p>
+      </Card>
+
+      {/* 예약 밀도 · 트레이너 스케줄 — 상시 노출 */}
       <div className="space-y-4">
-        <button type="button" onClick={() => setDetailOpen((v) => !v)} aria-expanded={detailOpen}
-          className="flex w-full items-center gap-2 text-left">
+        <div className="flex items-center gap-2">
           <LayoutGrid className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">예약 밀도 · 트레이너 스케줄 상세</span>
-          <span className="ml-1 text-[11px] font-normal text-muted">{detailOpen ? "접기" : "펼치기"}</span>
-          {detailOpen ? <ChevronDown className="ml-auto h-4 w-4 text-muted" /> : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
-        </button>
-        {detailOpen && (
-        <>
+          <span className="text-[11px] font-semibold tracking-label-ko text-muted">예약 밀도 · 트레이너 스케줄</span>
+        </div>
       {/* 2) 요일×시간 밀도 히트맵 */}
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -176,8 +215,6 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
         )}
         <p className="mt-2 px-1 text-[10px] leading-relaxed text-muted">완료율 = 완료 ÷ (완료+취소) · 노쇼율 = 수업일지 노쇼 ÷ 전체 수업(예약과 별개 집계).</p>
       </Card>
-        </>
-        )}
       </div>
 
       {/* 4) 미처리 예약 리스트 */}
