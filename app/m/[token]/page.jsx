@@ -23,6 +23,8 @@ import ImageLightbox from "@/components/ui/ImageLightbox";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
 import Badge from "@/components/ui/Badge";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 
 // 수업일지 확인 소프트 모달을 띄우는 미확인 건수 임계값(이 이상이면 로그인 직후 1회 모달 유도).
 const CONFIRM_MODAL_THRESHOLD = 3;
@@ -147,6 +149,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const { toast, showToast } = useToast();
 
   const inputCls =
     "mt-1 w-full min-w-0 rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
@@ -174,6 +177,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
       return;
     }
     setKind(""); setMinutes(""); setNote(""); // 날짜는 유지(연속 입력 편의)
+    showToast("유산소 기록을 저장했어요");
     await onReload();
     setBusy(false);
   };
@@ -192,6 +196,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
       setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
       return;
     }
+    showToast("기록을 삭제했어요");
     await onReload();
     setBusy(false);
   };
@@ -257,6 +262,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
           ))}
         </ul>
       ))}
+      <Toast message={toast} />
     </section>
   );
 }
@@ -270,6 +276,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
   const [err, setErr] = useState("");
   const [urls, setUrls] = useState({}); // storage_path -> signed url (1h)
   const [lightbox, setLightbox] = useState(null);
+  const { toast, showToast } = useToast();
 
   // photos 변경 시 서명 URL 일괄 재생성(만료 1h · 재조회마다 갱신).
   useEffect(() => {
@@ -324,6 +331,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
       setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
       return;
     }
+    showToast("사진을 저장했어요");
     await onReload();
     setBusy(false);
   };
@@ -343,6 +351,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
       return;
     }
     await memberSupabase.storage.from("member-photos").remove([photo.storage_path]); // 스토리지 파일도 정리
+    showToast("사진을 삭제했어요");
     await onReload();
     setBusy(false);
   };
@@ -423,6 +432,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
       ))}
     </section>
     <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
+    <Toast message={toast} />
     </>
   );
 }
@@ -434,6 +444,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const { toast, showToast } = useToast();
 
   const inputCls =
     "mt-1 w-full min-w-0 rounded-lg border border-line bg-elevate px-3 py-2.5 text-base text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50";
@@ -455,6 +466,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
       return;
     }
     setNote(""); // 날짜는 유지(연속 입력 편의)
+    showToast("기록을 저장했어요");
     await onReload();
     setBusy(false);
   };
@@ -473,6 +485,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
       setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
       return;
     }
+    showToast("기록을 삭제했어요");
     await onReload();
     setBusy(false);
   };
@@ -526,6 +539,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
           ))}
         </ul>
       ))}
+      <Toast message={toast} />
     </section>
   );
 }
