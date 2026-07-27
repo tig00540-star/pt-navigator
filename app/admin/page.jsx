@@ -31,6 +31,7 @@ import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import ConversionFunnel from "@/components/admin/ConversionFunnel";
 import RetentionConsole from "@/components/admin/RetentionConsole";
 import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
+import TrainerQualityReport from "@/components/admin/TrainerQualityReport";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
 import BrandMark from "@/components/ui/BrandMark";
@@ -529,6 +530,13 @@ export default function AdminDashboard() {
             </Card>
           </div>
           )}
+        </section>
+        )}
+
+        {/* ===== 오늘의 리포트 (트레이너 탭 하단 · 원장 코칭용·읽기전용) ===== */}
+        {atab === "perf" && (
+        <section className="mb-8">
+          <TrainerQualityReport members={rows} otRows={otRows} contracts={contracts} logs={logs} trainers={trainers} ym={ym} />
         </section>
         )}
 
