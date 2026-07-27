@@ -7,6 +7,7 @@
    ========================================================================= */
 
 import { useState, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
@@ -16,7 +17,6 @@ import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/hooks/useToast";
-import VoiceLogTab from "@/components/tabs/VoiceLogTab";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 import AcuteBriefView from "@/components/views/AcuteBriefView";
 import { SOURCE_OPTS, labelOf } from "@/lib/labels";
@@ -31,6 +31,12 @@ import MemberScheduleSummary from "@/components/views/MemberScheduleSummary";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { contentHashBrowser } from "@/lib/workoutHash";
+
+// 음성일지는 '자료남기기'(record)의 접이식 서브 UI라 지연로드(무게 위생). ssr:false — MediaRecorder 브라우저 전용.
+const VoiceLogTab = dynamic(() => import("@/components/tabs/VoiceLogTab"), {
+  ssr: false,
+  loading: () => <div className="py-4 text-center text-xs text-sub">불러오는 중…</div>,
+});
 
 // 날짜·시간 (session_at ?? created_at). 로컬 헬퍼 — fmt 의존 안 만듦(단일 파일 유지).
 function fmtDT(iso) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Bell,
   CalendarDays,
@@ -15,8 +16,6 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAccount } from "@/lib/useAccount";
 import { won, hasVal } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
-import ObservationTab from "@/components/tabs/ObservationTab";
-import SecondOTTab from "@/components/tabs/SecondOTTab";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import MemberEditForm from "@/components/views/MemberEditForm";
@@ -38,6 +37,25 @@ import Wordmark from "@/components/ui/Wordmark";
 import MemberForm from "@/components/MemberForm";
 import { viewFor, toPtActive, buildContract } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
+
+// 무게 위생 — OT 워크플로우 탭은 초기 "/" 번들에서 빼고 해당 탭 진입 시 청크 로드.
+// MemberViewShell의 PTView 패턴과 동일(ssr:false + loading). page.jsx는 이미 "use client".
+// FirstOTTab(tab 1, OT 기본 진입 탭)은 첫 진입 플래시 유발이라 static 유지(범위 밖).
+function TabLoading() {
+  return (
+    <div className="flex items-center justify-center py-16 text-sm text-sub">
+      불러오는 중…
+    </div>
+  );
+}
+const SecondOTTab = dynamic(() => import("@/components/tabs/SecondOTTab"), {
+  ssr: false,
+  loading: () => <TabLoading />,
+});
+const ObservationTab = dynamic(() => import("@/components/tabs/ObservationTab"), {
+  ssr: false,
+  loading: () => <TabLoading />,
+});
 
 /* =========================================================================
    HARDCODED DATA  —  1차 OT 세일즈 네비게이터
