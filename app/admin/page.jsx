@@ -10,14 +10,12 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Percent,
   ShieldCheck,
-  Target,
   TrendingUp,
   UserPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingStats, reregisterStats, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
+import { closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import MemberForm from "@/components/MemberForm";
@@ -31,6 +29,7 @@ import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import ConversionFunnel from "@/components/admin/ConversionFunnel";
 import RetentionConsole from "@/components/admin/RetentionConsole";
 import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
+import CenterMonthSummary from "@/components/admin/CenterMonthSummary";
 import TrainerQualityReport from "@/components/admin/TrainerQualityReport";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import Card from "@/components/ui/Card";
@@ -41,16 +40,13 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
    가상 지표 (데모) — 실제 결제/세션 테이블이 붙기 전까지 사용
    ========================================================================= */
 
-// rate(0..1|null) → "NN%" · 데이터 0(null)이면 "—"(빈상태 가드).
-const rateText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
-
 // admin 섹션 탭(7) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
   { id: "briefing",  label: "브리핑" },    // ← 추가(#6) · 기본 랜딩
   { id: "perf",      label: "트레이너" },  // ← 개명(구 '실적'). ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
   { id: "revenue",   label: "매출" },      // ← 추가(#3)
-  { id: "funnel",    label: "전환" },
-  { id: "retention", label: "리텐션" },
+  { id: "funnel",    label: "OT회원 현황" },   // ← 개명(구 '전환'). id는 그대로.
+  { id: "retention", label: "PT회원 현황" },   // ← 개명(구 '리텐션'). id는 그대로.
   { id: "schedule",  label: "스케줄" },   // ← 추가(#5)
   { id: "payroll",   label: "급여" },
   { id: "ops",       label: "운영" },
@@ -193,8 +189,6 @@ export default function AdminDashboard() {
   // ④ 실데이터 파생 — 기준월(KST 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
   // KST(UTC+9) 이달 — memberStatus.kstYm과 경계 통일. Date.now()는 react 룰상 impure라 new Date().getTime() 사용.
   const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
-  const closing = useMemo(() => closingStats(otRows), [otRows]);
-  const rereg = useMemo(() => reregisterStats(contracts), [contracts]);
   const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
   const closingReasonDist = useMemo(() => closingReasonStats(otRows), [otRows]);
@@ -362,30 +356,11 @@ export default function AdminDashboard() {
         </section>
         )}
 
-        {/* ===== 실데이터 요약 (④) ===== */}
+        {/* ===== 이번 달 센터 요약 (구 '실데이터 요약' 교체 · 클로징/재등록률은 OT/PT 현황 탭 소유) ===== */}
         {atab === "perf" && (
         <section className="mb-8">
-          <Eyebrow icon={TrendingUp}>실데이터 요약</Eyebrow>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Card>
-              <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
-                <Target className="h-3.5 w-3.5" /> 클로징률
-              </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-ink">
-                {rateText(closing.rate)}
-              </div>
-              <div className="mt-1 text-xs text-muted">누적 · 시도 {closing.attempted}명 중 {closing.success}</div>
-            </Card>
-            <Card>
-              <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
-                <Percent className="h-3.5 w-3.5" /> 재등록률
-              </div>
-              <div className="mt-2 font-mono text-4xl font-extrabold text-cyan-700">
-                {rateText(rereg.rate)}
-              </div>
-              <div className="mt-1 text-xs text-muted">누적 · 시도 {rereg.attempted}건 중 {rereg.success}</div>
-            </Card>
-          </div>
+          <Eyebrow icon={TrendingUp}>이번 달 센터 요약</Eyebrow>
+          <CenterMonthSummary members={rows} otRows={otRows} logs={logs} contracts={contracts} trainers={trainers} ym={ym} />
         </section>
         )}
 
@@ -564,7 +539,7 @@ export default function AdminDashboard() {
         {/* ===== 가동률·스케줄 (스케줄 탭 · #5) ===== */}
         {atab === "schedule" && (
         <section className="mb-8">
-          <ScheduleAnalytics appts={appts} logs={logs} members={rows} trainers={trainers} />
+          <ScheduleAnalytics appts={appts} logs={logs} members={rows} trainers={trainers} otRows={otRows} ym={ym} />
         </section>
         )}
 
