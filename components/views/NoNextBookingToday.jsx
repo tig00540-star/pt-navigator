@@ -5,7 +5,7 @@
    self-fetch: session_log·daily_workout_log(계정) + appointment(booked·미래·트레이너 스코프). 빈배열 null.
    ⚠️ write 0 · 새 저장 0 — 순수 파생.
    ========================================================================= */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { unbookedActiveMembers } from "@/lib/memberStatus";
@@ -14,7 +14,11 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
 
 export default function NoNextBookingToday({ members, uid, onSelect }) {
-  const [rows, setRows] = useState([]);
+  // ChurnRiskToday 패턴: fetch는 effect([uid])에서 한 번, 파생은 useMemo로 분리.
+  // → members 신원이 매 렌더 바뀌어도(scoped 새 배열) 순수 재파생만, DB 재조회 X.
+  const [appts, setAppts] = useState([]);
+  const [cons, setCons] = useState([]);
+  const [lgs, setLgs] = useState([]);
 
   useEffect(() => {
     if (!supabase) return;               // 데모: 집계 데이터 없음 → 빈 채로 숨김
@@ -32,14 +36,21 @@ export default function NoNextBookingToday({ members, uid, onSelect }) {
           supabase.from("daily_workout_log").select("user_id, contract_id, session_at, created_at, voided, source"),
         ]);
         if (cancelled) return;
-        setRows(unbookedActiveMembers(members || [], cs.data || [], ls.data || [], ap.data || [], { nowISO }));
+        setAppts(ap.data || []);
+        setCons(cs.data || []);
+        setLgs(ls.data || []);
       } catch {
         // 조회 실패 — 빈 채로 숨김 degrade.
       }
     })();
     return () => { cancelled = true; };
-    // members 신원 바뀔 때 재계산(page.jsx가 loadMembers 후 새 배열).
-  }, [uid, members]);
+  }, [uid]);
+
+  // members 바뀌면 순수 재파생만(재조회 없음). nowISO는 파생 시점 기준.
+  const rows = useMemo(
+    () => unbookedActiveMembers(members || [], cons, lgs, appts, { nowISO: new Date().toISOString() }),
+    [members, cons, lgs, appts]
+  );
 
   if (!rows.length) return null;
 
