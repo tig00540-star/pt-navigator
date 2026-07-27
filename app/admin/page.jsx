@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowLeftRight,
   Award,
   CheckCircle2,
   ChevronDown,
@@ -20,6 +21,7 @@ import { closingStats, reregisterStats, closingApproachStats, reregisterReasonSt
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import MemberForm from "@/components/MemberForm";
+import MemberReassign from "@/components/admin/MemberReassign";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
@@ -102,6 +104,7 @@ export default function AdminDashboard() {
   const [atab, setAtab] = useState("briefing"); // admin 섹션 탭(기본=브리핑 · #6 오늘 챙길 것)
   const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
   const [showMemberCreate, setShowMemberCreate] = useState(false); // 운영 탭 회원 등록·배정 모달
+  const [showReassign, setShowReassign] = useState(false); // 운영 탭 회원 재배정(인계) 모달
 
   useEffect(() => {
     (async () => {
@@ -169,6 +172,21 @@ export default function AdminDashboard() {
     if (!supabase) return;
     const { data } = await supabase.from("user_table").select("*");
     setRows(data || []);
+  };
+
+  // 재배정(인계) 후 — 담당·계약·예약 세 곳이 바뀌므로 rows·contracts·appts 재조회(원본 로더와 동일 방식).
+  const handleReassigned = async () => {
+    setShowReassign(false);
+    if (!supabase) return;
+    const cutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
+    const [u, c, ap] = await Promise.all([
+      supabase.from("user_table").select("*"),
+      fetchAllRows(() => supabase.from("session_log").select("*")),
+      fetchAllRows(() => supabase.from("appointment").select("*").gte("start_at", cutoff)),
+    ]);
+    setRows(u.data || []);
+    setContracts(c.data || []);
+    setAppts(ap.data || []);
   };
 
   // ④ 실데이터 파생 — 기준월(KST 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
@@ -305,6 +323,26 @@ export default function AdminDashboard() {
           )}
           {showMemberCreate && (
             <MemberForm assignTrainers={trainers} onClose={() => setShowMemberCreate(false)} onSaved={handleMemberCreated} />
+          )}
+        </section>
+        )}
+
+        {/* ===== 회원 재배정(트레이너 인계) — PT 전용 · 잔여 이월계약 ===== */}
+        {atab === "ops" && (
+        <section className="mb-8">
+          <Eyebrow icon={ArrowLeftRight}>회원 재배정 (트레이너 인계)</Eyebrow>
+          <p className="mb-3 text-[12px] leading-relaxed text-muted">PT 회원을 다른 트레이너에게 넘겨요. 잔여 세션은 이어지고, 그 잔여분 급여는 새 담당이 받습니다(과거 수업·매출은 그대로).</p>
+          {trainers.length < 2 ? (
+            <p className="rounded-xl border border-line bg-elevate px-4 py-3 text-[12px] text-muted">
+              인계하려면 트레이너가 2명 이상 필요해요.
+            </p>
+          ) : (
+            <Button variant="primary" size="sm" onClick={() => setShowReassign(true)}>
+              <ArrowLeftRight className="h-3.5 w-3.5" /> 회원 재배정
+            </Button>
+          )}
+          {showReassign && (
+            <MemberReassign members={rows} trainers={trainers} contracts={contracts} logs={logs} onDone={handleReassigned} />
           )}
         </section>
         )}
