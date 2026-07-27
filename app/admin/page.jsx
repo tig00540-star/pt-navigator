@@ -13,11 +13,14 @@ import {
   ShieldCheck,
   Target,
   TrendingUp,
+  UserPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { closingStats, reregisterStats, closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
+import MemberForm from "@/components/MemberForm";
+import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import AdminEmptyOnboarding from "@/components/admin/AdminEmptyOnboarding";
@@ -98,6 +101,7 @@ export default function AdminDashboard() {
   const [appts, setAppts] = useState([]);      // appointment(최근 90일 · 스케줄 탭 · 비차단 fetch)
   const [atab, setAtab] = useState("briefing"); // admin 섹션 탭(기본=브리핑 · #6 오늘 챙길 것)
   const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
+  const [showMemberCreate, setShowMemberCreate] = useState(false); // 운영 탭 회원 등록·배정 모달
 
   useEffect(() => {
     (async () => {
@@ -158,6 +162,14 @@ export default function AdminDashboard() {
     // router는 next/navigation에서 안정 참조 — 마운트 1회 게이트만. deps 불필요.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 회원 등록·배정 후 — 모달 닫고 회원목록(rows)만 재조회(기존 로드 쿼리 재사용 · 다른 배열 무변).
+  const handleMemberCreated = async () => {
+    setShowMemberCreate(false);
+    if (!supabase) return;
+    const { data } = await supabase.from("user_table").select("*");
+    setRows(data || []);
+  };
 
   // ④ 실데이터 파생 — 기준월(KST 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
   // KST(UTC+9) 이달 — memberStatus.kstYm과 경계 통일. Date.now()는 react 룰상 impure라 new Date().getTime() 사용.
@@ -274,6 +286,26 @@ export default function AdminDashboard() {
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
             appts={appts} goals={goals} trainers={trainers} ym={ym}
             onGoTab={(id) => setAtab(id)} />
+        </section>
+        )}
+
+        {/* ===== 회원 등록·배정 — 대표가 트레이너 지정해 신규 회원 생성 ===== */}
+        {atab === "ops" && (
+        <section className="mb-8">
+          <Eyebrow icon={UserPlus}>회원 등록·배정</Eyebrow>
+          <p className="mb-3 text-[12px] leading-relaxed text-muted">상담으로 받은 회원 정보를 입력하고 담당 트레이너를 지정해 등록해요.</p>
+          {trainers.length === 0 ? (
+            <p className="rounded-xl border border-line bg-elevate px-4 py-3 text-[12px] text-muted">
+              먼저 트레이너를 초대하세요 — 배정할 트레이너가 있어야 회원을 등록할 수 있어요.
+            </p>
+          ) : (
+            <Button variant="primary" size="sm" onClick={() => setShowMemberCreate(true)}>
+              <UserPlus className="h-3.5 w-3.5" /> 새 회원 등록·배정
+            </Button>
+          )}
+          {showMemberCreate && (
+            <MemberForm assignTrainers={trainers} onClose={() => setShowMemberCreate(false)} onSaved={handleMemberCreated} />
+          )}
         </section>
         )}
 
