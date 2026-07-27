@@ -7,7 +7,7 @@
    색: 긍정=cyan · 위험=rose(danger) — DS 초록제거 정책. 예상 재등록매출은 '추정' 명시(허위 긴급성 금지).
    ========================================================================= */
 import { useMemo, useState } from "react";
-import { TrendingDown, AlertTriangle, RefreshCw, Wallet, ChevronDown, ChevronRight } from "lucide-react";
+import { TrendingDown, AlertTriangle, RefreshCw, Wallet } from "lucide-react";
 import {
   churnRiskMembers, expiringMembers, avgReregisterAmount, reregisterStatsByTrainer,
 } from "@/lib/memberStatus";
@@ -33,7 +33,6 @@ function SummaryTile({ icon: Icon, label, value, sub, accent = "ink" }) {
 
 export default function RetentionConsole({ members = [], contracts = [], logs = [], trainers = [], ym }) {
   const [nowISO] = useState(() => new Date().toISOString());
-  const [detailOpen, setDetailOpen] = useState(false); // 트레이너별 재등록률 접기(기본 닫힘 · 표시만)
   const [showAllExp, setShowAllExp] = useState(false);
   const [showAllChurn, setShowAllChurn] = useState(false);
 
@@ -141,17 +140,7 @@ export default function RetentionConsole({ members = [], contracts = [], logs = 
         )}
       </ToneCard>
 
-      {/* 근거(접기 · 기본 닫힘) — 트레이너별 재등록률 */}
-      <div className="space-y-4">
-        <button type="button" onClick={() => setDetailOpen((v) => !v)} aria-expanded={detailOpen}
-          className="flex w-full items-center gap-2 text-left">
-          <RefreshCw className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 재등록률 상세</span>
-          <span className="ml-1 text-[11px] font-normal text-muted">{detailOpen ? "접기" : "펼치기"}</span>
-          {detailOpen ? <ChevronDown className="ml-auto h-4 w-4 text-muted" /> : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
-        </button>
-        {detailOpen && (
-      /* 4) 트레이너별 재등록률 비교 (#1 리더보드 재등록 열과 값 일치) */
+      {/* 4) 트레이너별 재등록률 비교 (#1 리더보드 재등록 열과 값 일치) — 상시 노출(카드 자체 헤더가 섹션 제목) */}
       <Card>
         <div className="mb-3 flex items-center gap-2">
           <RefreshCw className="h-4 w-4 text-muted" />
@@ -182,8 +171,6 @@ export default function RetentionConsole({ members = [], contracts = [], logs = 
           </div>
         )}
       </Card>
-        )}
-      </div>
     </div>
   );
 }
