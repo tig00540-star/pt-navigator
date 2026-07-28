@@ -4,7 +4,7 @@
    ownerBriefing(기존 파생 조립)의 top 3을 카드로. 룰 기반·결정적(AI 서술은 후속).
    회원신호=visible · 노쇼 트레이너 귀속=전체 회원맵. 색: 기회 cyan · 위험 rose · 위생 muted.
    ========================================================================= */
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { RefreshCw, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
 import { ownerBriefing, ownerReportData } from "@/lib/memberStatus";
 import { won, personName } from "@/lib/format";
@@ -41,6 +41,38 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
   const nameById = useMemo(() => new Map((members || []).filter((m) => m?.id).map((m) => [m.id, m.name])), [members]);
   const memberName = (id) => personName(nameById.get(id)) || "회원";
 
+  // ── 하루 캐시(localStorage) + AI 1회/일 제한 ──
+  const LS_KEY = "owner-report-v1";
+  function loadCache() { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
+  function saveCache(o) { try { localStorage.setItem(LS_KEY, JSON.stringify(o)); } catch { /* 프라이빗·용량 = 무시 */ } }
+
+  const [generatedAt, setGeneratedAt] = useState(""); // 생성 시각 ISO(표시용)
+  const [locked, setLocked] = useState(false);        // 오늘 캐시 존재 = AI 1회 소진(다시 생성 차단)
+  const todayYmd = useMemo(() => new Date(new Date(nowISO).getTime() + 9 * 3600000).toISOString().slice(0, 10), [nowISO]);
+
+  // 생성시각 라벨: "오전 9시 12분 생성"
+  function genLabel(iso) {
+    if (!iso) return "";
+    const k = new Date(new Date(iso).getTime() + 9 * 3600000);
+    const h = k.getUTCHours(), m = k.getUTCMinutes(), h12 = h % 12 || 12;
+    return `${h < 12 ? "오전" : "오후"} ${h12}시 ${String(m).padStart(2, "0")}분 생성`;
+  }
+
+  // 마운트 1회: 오늘(KST) 캐시가 있으면 보고서 복원(버튼 없이 종일 유지 · AI 호출 0). nowISO는 마운트 고정이라 stable.
+  // localStorage 외부 저장소 sync라 마운트 후(effect) 복원 — 지연 초기화는 SSR 하이드레이션 불일치 유발이라 회피.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const c = loadCache();
+    if (c && c.ymd === todayYmd && c.report) {
+      setReport(c.report);
+      setAi(c.ai || null);
+      setAiState(c.aiState === "premium" ? "premium" : "ready");
+      setGeneratedAt(c.generatedAt || "");
+      setLocked(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   // 날짜 라벨(결정적 · AI에 안 맡김). 예: 2026년 7월 28일 월요일
   const dateLabel = useMemo(() => {
     const kst = new Date(new Date(nowISO).getTime() + 9 * 3600000);
@@ -54,10 +86,11 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
   }
 
   async function genReport() {
-    if (!supabase) return;
+    if (!supabase || locked) return;   // ★ 하루 1회: 잠기면 무시(오늘 캐시 존재 시)
     const d = ownerReportData({ members, otRows, contracts, logs, appts, goals, ym, nowISO });
     setReport(d);                       // ★ 결정적 4블록 즉시 노출(AI 성패와 무관)
     setAi(null); setAiErr(""); setAiState("loading");
+    const gAt = new Date().toISOString();  // 표시용 실시각(순수함수 아님 · 컴포넌트 UI)
     try {
       const aiInput = {
         ym: d.ym, yesterday: d.yesterday, today: d.today, month: d.month, members: d.members, watch: d.watch,
@@ -74,13 +107,18 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        if (res.status === 403 && body?.code === "premium_required") { setAiState("premium"); return; }  // ★ report 유지
-        setAiErr(body?.error || "AI 요약 생성 실패"); setAiState("failed"); return;                        // ★ report 유지
+        if (res.status === 403 && body?.code === "premium_required") {
+          setAiState("premium"); setGeneratedAt(gAt); setLocked(true);
+          saveCache({ ymd: todayYmd, report: d, ai: null, aiState: "premium", generatedAt: gAt }); // 결정적 보고서 종일 유지
+          return;
+        }
+        setAiErr(body?.error || "AI 요약 생성 실패"); setAiState("failed"); return;  // 실패=캐시 안 함·재시도 허용
       }
-      setAi({ headline: body?.headline || "", coaching: Array.isArray(body?.coaching) ? body.coaching : [] });
-      setAiState("ready");
+      const aiVal = { headline: body?.headline || "", coaching: Array.isArray(body?.coaching) ? body.coaching : [] };
+      setAi(aiVal); setAiState("ready"); setGeneratedAt(gAt); setLocked(true);
+      saveCache({ ymd: todayYmd, report: d, ai: aiVal, aiState: "ready", generatedAt: gAt });  // ★ AI 1회/일 소진
     } catch {
-      setAiErr("네트워크 오류"); setAiState("failed");                                                     // ★ report 유지
+      setAiErr("네트워크 오류"); setAiState("failed");  // 캐시 안 함
     }
   }
 
@@ -144,7 +182,11 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                 <div className="text-[12px] text-sub">{dateLabel}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button type="button" onClick={genReport} className="text-[11px] font-semibold text-muted underline underline-offset-2">다시 생성</button>
+                {locked ? (
+                  <span className="text-[11px] text-muted">{genLabel(generatedAt)} · 내일 새 보고서</span>
+                ) : (
+                  <button type="button" onClick={genReport} className="text-[11px] font-semibold text-muted underline underline-offset-2">다시 생성</button>
+                )}
                 <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted"><Printer className="h-3.5 w-3.5" /> 인쇄</button>
               </div>
             </div>
@@ -241,7 +283,9 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
               )}
             </div>
 
-            <p className="text-[10px] leading-relaxed text-muted">숫자·회원·금액은 실측 파생, 총평·코칭만 AI예요. 금액은 추정입니다.</p>
+            <p className="text-[10px] leading-relaxed text-muted">
+              {generatedAt ? `${genLabel(generatedAt).replace(" 생성", "")} 기준 스냅샷 · ` : ""}숫자·회원·금액은 실측 파생, 총평·코칭만 AI예요. 금액은 추정입니다.
+            </p>
           </div>
         </Card>
       )}
