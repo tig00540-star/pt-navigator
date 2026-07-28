@@ -32,53 +32,52 @@ async function accountIsPremium(request) {
 
 const won = (n) => (typeof n === "number" ? Math.round(n).toLocaleString("ko-KR") + "원" : "—");
 
-// digest 숫자 → 프롬프트(라벨된 근거만 · AI는 이 숫자만 서술).
+// input 숫자·신호 → 프롬프트(라벨된 근거만 · AI는 총평+코칭만). 회원명 없음(파이프라인·주의는 클라 렌더).
 function factsBlock(d) {
-  const m = d?.month || {}, y = d?.yesterday || {}, t = d?.today || {}, mem = d?.members || {}, w = d?.watch || {};
+  const m = d?.month || {}, y = d?.yesterday || {}, t = d?.today || {}, w = d?.watch || {}, p = d?.pipeline || {};
   const top = Array.isArray(d?.top3) ? d.top3 : [];
-  const topLines = top.length
-    ? top.map((it, i) => `  ${i + 1}) ${[it?.title, it?.detail, typeof it?.amount === "number" ? "추정 임팩트 약 " + won(it.amount) : null].filter(Boolean).join(" · ")}`).join("\n")
-    : "  (오늘 급히 챙길 항목 없음)";
+  const coach = Array.isArray(d?.trainerCoaching) ? d.trainerCoaching : [];
+  const topLines = top.length ? top.map((it, i) => `  ${i + 1}) ${[it?.title, it?.detail].filter(Boolean).join(" · ")}`).join("\n") : "  (없음)";
+  const coachLines = coach.length ? coach.map((c) => `  - ${c.trainer}: ${c.msg}`).join("\n") : "  (약점 신호 없음)";
   return [
-    `[어제] 진행 수업 ${y.sessions ?? 0}건 · 노쇼 ${y.noshows ?? 0}건`,
-    `[오늘] 예약(booked) ${t.bookings ?? 0}건`,
-    `[이번 달 ${d?.ym || ""}] 매출 ${won(m.revenueNet)}${m.revenueTarget ? ` / 목표 ${won(m.revenueTarget)} (진도 ${m.progressPct ?? "—"}%)` : " (목표 미설정)"} · 진행수업 OT ${m.sessionsOT ?? 0}·PT ${m.sessionsPT ?? 0} · 신규등록 ${m.newRegs ?? 0}건(재등록 ${m.reRegs ?? 0}건)`,
-    `[회원] 활성 ${mem.activeTotal ?? 0}명(PT ${mem.activePt ?? 0}·OT ${mem.ot ?? 0})`,
-    `[주의] 이탈위험 ${w.churnRisk ?? 0}명 · 만료임박 ${w.expiring ?? 0}명 · 이번주 클로징 임박 ${w.closingSoon ?? 0}명 · 미처리 예약 ${w.pastDue ?? 0}건`,
+    `[어제] 수업 ${y.sessions ?? 0}건·노쇼 ${y.noshows ?? 0} / [오늘] 예약 ${t.bookings ?? 0}`,
+    `[이번 달] 매출 ${won(m.revenueNet)}${m.revenueTarget ? ` (목표 대비 ${m.progressPct ?? "—"}%)` : ""} · 신규등록 ${m.newRegs ?? 0}건`,
+    `[매출 파이프라인] 신규 후보 ${p.newCount ?? 0}명 · 재등록 후보 ${p.reCount ?? 0}명 · 성사 시 합계 ${won(p.grandTotal)}(추정)`,
+    `[주의] 이탈위험 ${w.churnRisk ?? 0}명 · 만료임박 ${w.expiring ?? 0}명 · 미처리 ${w.pastDue ?? 0}건`,
     `[오늘 챙길 것 top3]\n${topLines}`,
+    `[트레이너 약점 신호]\n${coachLines}`,
   ].join("\n");
 }
 
-const PREAMBLE = `너는 피트니스 센터 원장의 운영 참모다. 매일 아침 원장이 30초 안에 센터 상황을 파악하도록, 주어진 숫자만 근거로 담백한 보고서를 쓴다. 없는 사실(회원 이름·구체 수치·에피소드)을 지어내지 않고, 금액은 과거 평균 기반 추정이라 단정하지 않는다. 재촉·과장·감탄사·업계 은어·의료 단정을 쓰지 않는다.`;
+const PREAMBLE = `너는 피트니스 센터 원장의 운영 참모다. 주어진 숫자·약점 신호만 근거로, 원장이 오늘 뭘 할지 콕 집어준다. 없는 사실(회원 이름·구체 수치·에피소드)을 지어내지 않고, 금액은 추정이라 단정하지 않는다. 재촉·과장·감탄사·업계 은어·의료 단정을 쓰지 않는다.`;
 
 function buildPrompt(d) {
-  return `아래는 오늘 아침 우리 센터의 실측 숫자다. 이 숫자만 근거로 원장용 "오늘의 보고서"를 써라.
+  return `아래는 오늘 아침 우리 센터 실측 요약이다. 이 숫자·신호만 근거로 원장 브리핑을 써라.
 
 ${factsBlock(d)}
 
-아래 JSON만 출력(코드블록·설명·군더더기 금지):
-{"headline":"오늘 상황 한 문장 총평","sections":{"yesterday":"어제 마감 1~2문장","month":"이번 달 진행 상황 1~3문장(매출 진도·수업·신규 중심)","watch":"지금 주의할 회원 1~2문장(이탈·만료·클로징·미처리)","today":"오늘 우선 챙길 것 2~3문장(top3를 행동 지시로)"},"closing":"짧은 마무리 1문장"}
-- 각 섹션은 준 숫자를 자연스러운 실무 문장으로. 숫자를 새로 지어내지 마라.
-- 매출·임팩트 금액은 '추정'이다. "확실히 X원"이 아니라 "목표 대비 ~%", "성사되면 대략" 식으로.
-- 데이터가 0이거나 없으면 억지로 부풀리지 말고 담백히("어제 진행 수업은 없었습니다").`;
+아래 JSON만 출력(코드블록·설명 금지):
+{"headline":"오늘 상황·우선순위 한 문장","coaching":["실행 지시 1","실행 지시 2","..."]}
+- headline: 오늘 가장 중요한 것 한 문장(예: 재등록 우선·특정 코치 코칭 필요).
+- coaching: 3~5개. 각 항목은 '누가·무엇을·오늘 어떻게'가 담긴 구체 실행 지시.
+  · [트레이너 약점 신호]가 있으면 그 코치를 지목해 오늘 할 개인 교육을 구체적으로(예: "박코치 2차 클로징이 낮으니 오늘 '가격·생각해볼게요' 거절 롤플레이 10분").
+  · top3의 재등록·신규·이탈 항목은 오늘의 액션으로(예: "재등록 임박 회원부터 오늘 연락").
+- 준 숫자를 새로 지어내거나 부풀리지 마라. 신호가 거의 없으면 담백하게 1~2개만.`;
 }
 
-function parseReport(text) {
+function parseOwnerReport(text) {
   if (typeof text !== "string" || !text.trim()) return null;
   const cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
   let obj = null;
   const s = cleaned.indexOf("{"), e = cleaned.lastIndexOf("}");
   try { if (s !== -1 && e > s) obj = JSON.parse(cleaned.slice(s, e + 1)); } catch { obj = null; }
   if (!obj || typeof obj !== "object") return null;
-  const str = (v) => (typeof v === "string" ? v.trim() : "");
-  const sec = obj.sections && typeof obj.sections === "object" ? obj.sections : {};
-  const out = {
-    headline: str(obj.headline),
-    sections: { yesterday: str(sec.yesterday), month: str(sec.month), watch: str(sec.watch), today: str(sec.today) },
-    closing: str(obj.closing),
-  };
-  const any = out.headline || out.closing || Object.values(out.sections).some(Boolean);
-  return any ? out : null;
+  const headline = typeof obj.headline === "string" ? obj.headline.trim() : "";
+  const coaching = Array.isArray(obj.coaching)
+    ? obj.coaching.filter((c) => typeof c === "string" && c.trim()).map((c) => c.trim()).slice(0, 6)
+    : [];
+  if (!headline && coaching.length === 0) return null;
+  return { headline, coaching };
 }
 
 export async function POST(request) {
@@ -100,8 +99,8 @@ export async function POST(request) {
   try { bodyBytes = JSON.stringify(body).length; } catch { bodyBytes = MAX_BODY_BYTES + 1; }
   if (bodyBytes > MAX_BODY_BYTES) return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
 
-  const digest = body?.digest;
-  if (!digest || typeof digest !== "object") {
+  const d = body?.input;
+  if (!d || typeof d !== "object") {
     return Response.json({ error: "보고서 데이터가 없습니다.", fallback: "rule" }, { status: 400 });
   }
 
@@ -109,13 +108,13 @@ export async function POST(request) {
     const anthropic = new Anthropic({ apiKey });
     const msg = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2048,
+      max_tokens: 1024,
       system: PREAMBLE,
-      messages: [{ role: "user", content: buildPrompt(digest) }],
+      messages: [{ role: "user", content: buildPrompt(d) }],
       thinking: { type: "disabled" },
     });
     const textOut = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-    const parsed = parseReport(textOut);
+    const parsed = parseOwnerReport(textOut);
     if (!parsed) return Response.json({ error: "AI 응답 파싱 실패.", fallback: "rule" }, { status: 502 });
     return Response.json(parsed);
   } catch (e) {
