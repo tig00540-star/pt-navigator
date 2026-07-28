@@ -60,18 +60,23 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
 
   // 마운트 1회: 오늘(KST) 캐시가 있으면 보고서 복원(버튼 없이 종일 유지 · AI 호출 0). nowISO는 마운트 고정이라 stable.
   // localStorage 외부 저장소 sync라 마운트 후(effect) 복원 — 지연 초기화는 SSR 하이드레이션 불일치 유발이라 회피.
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
+    if (!supabase) return;
     const c = loadCache();
-    if (c && c.ymd === todayYmd && c.report) {
+    if (!c || c.ymd !== todayYmd || !c.report) return;
+    let cancelled = false;
+    (async () => {
+      let uid = null;
+      try { const { data: { session } } = await supabase.auth.getSession(); uid = session?.user?.id ?? null; } catch { /* 세션 실패 = 복원 안 함 */ }
+      if (cancelled || !c.uid || c.uid !== uid) return;
       setReport(c.report);
       setAi(c.ai || null);
       setAiState(c.aiState === "premium" ? "premium" : "ready");
       setGeneratedAt(c.generatedAt || "");
       setLocked(true);
-    }
+    })();
+    return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // 날짜 라벨(결정적 · AI에 안 맡김). 예: 2026년 7월 28일 월요일
   const dateLabel = useMemo(() => {
@@ -100,6 +105,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
       };
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+      const uid = session?.user?.id ?? null;   // 계정 스코프
       const res = await fetch("/api/owner-report", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -109,14 +115,14 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
       if (!res.ok) {
         if (res.status === 403 && body?.code === "premium_required") {
           setAiState("premium"); setGeneratedAt(gAt); setLocked(true);
-          saveCache({ ymd: todayYmd, report: d, ai: null, aiState: "premium", generatedAt: gAt }); // 결정적 보고서 종일 유지
+          saveCache({ ymd: todayYmd, report: d, ai: null, aiState: "premium", generatedAt: gAt, uid }); // 결정적 보고서 종일 유지
           return;
         }
         setAiErr(body?.error || "AI 요약 생성 실패"); setAiState("failed"); return;  // 실패=캐시 안 함·재시도 허용
       }
       const aiVal = { headline: body?.headline || "", coaching: Array.isArray(body?.coaching) ? body.coaching : [] };
       setAi(aiVal); setAiState("ready"); setGeneratedAt(gAt); setLocked(true);
-      saveCache({ ymd: todayYmd, report: d, ai: aiVal, aiState: "ready", generatedAt: gAt });  // ★ AI 1회/일 소진
+      saveCache({ ymd: todayYmd, report: d, ai: aiVal, aiState: "ready", generatedAt: gAt, uid });  // ★ AI 1회/일 소진
     } catch {
       setAiErr("네트워크 오류"); setAiState("failed");  // 캐시 안 함
     }
