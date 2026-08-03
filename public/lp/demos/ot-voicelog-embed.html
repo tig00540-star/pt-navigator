@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오직 트레이너 · 운동일지 흐름 모션</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#f1f2f6; --card:#ffffff; --elevate:#e8eaf0; --line:#dfe2ea; --line-strong:#cbd2dd;
+    --ink:#13151b; --sub:#475569; --muted:#5b6675;
+    --primary:#dc2626; --primary-strong:#b91c1c; --primary-soft:#fef2f2;
+    --ot:#f59e0b; --ot-text:#b45309; --ot-soft:#fffbeb;
+    --pt:#0ea5e9; --pt-text:#0369a1; --pt-soft:#f0f9ff;
+    --shadow-sm:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+    --shadow-pop:0 4px 12px rgba(19,21,27,.08), 0 24px 48px -20px rgba(19,21,27,.4);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{ font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-weight:450; letter-spacing:-.011em; color:var(--ink); background:transparent;
+    min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px 16px; -webkit-font-smoothing:antialiased; }
+  .layout{ display:flex; align-items:center; justify-content:center; }
+  .phonecol{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .caption{ text-align:center; font-size:16.5px; color:var(--sub); white-space:nowrap; line-height:1.55; min-height:24px; transition:opacity .4s var(--ease); }
+  .caption b{ color:var(--primary-strong); font-weight:700; }
+
+  .phone{ width:344px; height:724px; border-radius:46px; background:#0b0c10; padding:11px; position:relative;
+    box-shadow:var(--shadow-pop), 0 2px 6px rgba(0,0,0,.3); flex:0 0 auto; }
+  .phone::after{ content:""; position:absolute; top:20px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#0b0c10; border-radius:0 0 16px 16px; z-index:60; }
+  .screen{ width:100%; height:100%; border-radius:35px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+
+  .statusbar{ height:42px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 5px; font-size:12px; font-weight:600; }
+  .hdr{ flex:0 0 auto; background:rgba(255,255,255,.8); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); }
+  .hdr .row1{ display:flex; align-items:center; justify-content:space-between; padding:9px 14px; }
+  .lockup{ display:flex; align-items:center; gap:9px; }
+  .lockup svg{ width:34px; height:34px; border-radius:9px; }
+  .wm{ font-size:16.5px; font-weight:800; letter-spacing:-.04em; line-height:1; white-space:nowrap; }
+  .wm .b{ color:var(--ink); } .wm .r{ color:var(--primary); }
+  .tname{ margin-top:4px; font-size:11.5px; font-weight:500; color:var(--muted); line-height:1; }
+  .hbtns{ display:flex; gap:7px; }
+  .hbtn{ display:flex; align-items:center; gap:5px; border:1px solid var(--line); background:var(--elevate); color:var(--sub); font-size:11px; font-weight:500; padding:6px 8px; border-radius:9px; position:relative; }
+  .hbtn svg{ width:14px; height:14px; }
+  .hbtn .badge-n{ position:absolute; top:-4px; right:-4px; min-width:15px; height:15px; padding:0 3px; border-radius:999px; background:#f43f5e; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .otabs{ display:flex; gap:2px; padding:0 12px; overflow:hidden; }
+  .otab{ position:relative; padding:9px 11px; font-size:12px; font-weight:700; color:rgba(3,105,161,.5); white-space:nowrap; }
+  .otab.on{ color:#0284c7; }
+  .otab.on::after{ content:""; position:absolute; left:8px; right:8px; bottom:0; height:2px; border-radius:2px; background:var(--pt); }
+
+  .body{ flex:1 1 auto; position:relative; overflow:hidden; }
+  .scene{ position:absolute; inset:0; padding:14px; overflow:hidden; opacity:0; transform:translateY(12px); transition:opacity .5s var(--ease), transform .5s var(--ease); pointer-events:none; }
+  .scene::-webkit-scrollbar{ display:none; }
+  .scene.on{ opacity:1; transform:translateY(0); }
+  .repwrap{ will-change:transform; }
+  .mscroll{ will-change:transform; }
+
+  .eyerow2{ display:flex; align-items:center; gap:7px; margin-bottom:12px; }
+  .eyerow2 svg{ width:15px; height:15px; color:var(--primary-strong); flex:0 0 auto; }
+  .eyerow2 span{ font-size:12px; font-weight:700; letter-spacing:.02em; color:var(--sub); }
+
+  /* 녹음기 */
+  .recbox{ border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:16px; text-align:center; }
+  .rectop{ font-size:11.5px; color:var(--muted); line-height:1.5; }
+  .wave{ margin-top:14px; display:flex; height:46px; align-items:center; justify-content:center; gap:4px; }
+  .wave i{ width:5px; border-radius:5px; background:var(--primary); height:100%; transform-origin:center; animation:voicewave .9s ease-in-out infinite; }
+  .rectime{ margin-top:10px; font-family:"Geist Mono",monospace; font-size:22px; font-weight:800; color:var(--ink); }
+  .recbtn{ margin:14px auto 0; display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,#ef4444,#e11d48);
+    color:#fff; font-weight:800; font-size:13px; padding:11px 20px; border-radius:999px; border:none; box-shadow:0 10px 22px -8px rgba(225,29,72,.55); }
+  .recbtn svg{ width:16px; height:16px; }
+  .recdot{ margin-top:10px; display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#f43f5e; }
+  .recdot i{ width:6px; height:6px; border-radius:50%; background:#f43f5e; animation:blink 1s infinite; }
+
+  /* 음성 인식(말하는 중) — 입력창이 아니라 받아쓰는 자막 */
+  .vr{ margin-top:14px; border:1px solid var(--line); background:var(--card); border-radius:14px; padding:14px; box-shadow:var(--shadow-sm); }
+  .vrhead{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+  .vrmic{ width:24px; height:24px; border-radius:50%; background:var(--primary-soft); color:var(--primary-strong); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .vrmic svg{ width:13px; height:13px; }
+  .vrlab{ font-size:11.5px; font-weight:800; color:var(--sub); }
+  .vreq{ display:flex; align-items:center; gap:2px; }
+  .vreq i{ width:2.5px; height:13px; background:var(--primary); border-radius:2px; transform-origin:center; animation:voicewave .8s ease-in-out infinite; }
+  .vreq i:nth-child(2){ animation-delay:.15s } .vreq i:nth-child(3){ animation-delay:.3s } .vreq i:nth-child(4){ animation-delay:.45s }
+  .vrquote{ font-size:13.5px; line-height:1.75; color:var(--ink); min-height:80px; }
+  .vrquote::before{ content:'“'; color:var(--primary-strong); font-weight:800; margin-right:1px; }
+  .vrquote.done::after{ content:'”'; color:var(--primary-strong); font-weight:800; margin-left:1px; }
+  .vrword{ opacity:0; transition:opacity .28s ease; }
+
+  /* AI 정제 스켈레톤 */
+  .procnote{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:14px; }
+  .procnote .spin{ width:15px; height:15px; color:var(--primary); animation:spin 1s linear infinite; flex:0 0 auto; }
+  .skcard{ border:1px solid var(--line); background:var(--card); border-radius:14px; box-shadow:var(--shadow-sm); padding:16px; }
+  .sk{ height:12px; border-radius:6px; background:var(--elevate); animation:blink 1.3s var(--ease) infinite; }
+  .sk+.sk{ margin-top:10px; }
+
+  /* 운동일지 리포트 */
+  .repwrap{ border:1px solid rgba(220,38,38,.3); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:16px; }
+  .rephead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .rephead .ok{ border-radius:7px; background:var(--primary-soft); color:var(--primary-strong); font-size:10px; font-weight:800; padding:3px 8px; }
+  .rephead .ti{ font-size:13px; font-weight:700; color:var(--ink); }
+  .rephead .rd2{ margin-left:auto; border-radius:999px; background:var(--elevate); color:var(--sub); font-size:10.5px; font-weight:800; padding:3px 9px; white-space:nowrap; }
+  .repnote{ display:flex; align-items:center; gap:6px; margin-bottom:13px; font-size:11px; color:var(--pt-text); font-weight:700; }
+  .repnote svg{ width:13px; height:13px; flex:0 0 auto; }
+  .mcard{ border:1px solid var(--line); background:var(--card); border-radius:12px; padding:13px; box-shadow:var(--shadow-sm); }
+  .mcard+.mcard{ margin-top:10px; }
+  .mtop{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .mtop .nm{ display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:800; color:var(--ink); }
+  .mtop .nm svg{ width:15px; height:15px; color:var(--primary-strong); flex:0 0 auto; }
+  .mtop .det{ font-family:"Geist Mono",monospace; font-size:12px; font-weight:700; color:var(--pt-text); background:var(--pt-soft); border-radius:7px; padding:3px 8px; white-space:nowrap; }
+  .sets{ margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; }
+  .setchip{ font-family:"Geist Mono",monospace; font-size:11.5px; font-weight:700; color:var(--ink); background:var(--elevate);
+    border:1px solid var(--line); border-radius:8px; padding:4px 8px; opacity:0; transform:translateY(6px); transition:all .35s var(--ease); }
+  .setchip.on{ opacity:1; transform:translateY(0); }
+  .setchip .s{ color:var(--muted); font-weight:600; margin-right:4px; }
+  .mmeta{ margin-top:11px; padding-top:11px; border-top:1px dashed var(--line); }
+  .mmhead{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; letter-spacing:.02em; margin:12px 0 3px;
+    opacity:0; transform:translateY(5px); transition:all .35s var(--ease); }
+  .mmhead:first-child{ margin-top:0; }
+  .mmhead.on{ opacity:1; transform:translateY(0); }
+  .mmhead svg{ width:14px; height:14px; flex:0 0 auto; }
+  .mmhead.method{ color:var(--ink); } .mmhead.method svg{ color:var(--primary-strong); }
+  .mmhead.warn{ color:#be123c; } .mmhead.warn svg{ color:#e11d48; }
+  .mmli{ display:flex; gap:7px; align-items:flex-start; margin-top:6px; opacity:0; transform:translateY(5px); transition:all .35s var(--ease); }
+  .mmli.on{ opacity:1; transform:translateY(0); }
+  .mmli .d{ width:5px; height:5px; border-radius:50%; background:var(--line-strong); margin-top:6px; flex:0 0 auto; }
+  .mmli .x{ flex:1; font-size:11.5px; line-height:1.55; color:var(--sub); }
+  .savebtn{ width:100%; margin-top:14px; display:flex; align-items:center; justify-content:center; gap:7px;
+    background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-weight:800; font-size:14px; padding:12px; border-radius:10px; border:none; box-shadow:0 8px 18px -8px rgba(220,38,38,.55); transition:all .3s var(--ease); }
+  .savebtn svg{ width:15px; height:15px; flex:0 0 auto; }
+  .savebtn.done{ background:var(--pt-soft); color:var(--pt-text); box-shadow:none; }
+
+  .btmnav{ flex:0 0 auto; display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line); background:rgba(255,255,255,.96); backdrop-filter:blur(14px); }
+  .bnitem{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0 10px; font-size:10px; font-weight:700; color:var(--muted); }
+  .bnitem svg{ width:20px; height:20px; }
+  .bnitem.on{ color:var(--primary-strong); }
+
+  .cursor{ position:absolute; width:26px; height:26px; z-index:80; left:50%; top:60%; pointer-events:none; transition:left .8s var(--ease), top .8s var(--ease); filter:drop-shadow(0 3px 5px rgba(0,0,0,.35)); }
+  .cursor svg{ width:100%; height:100%; }
+  .ripple{ position:absolute; z-index:79; width:34px; height:34px; border-radius:50%; border:2px solid rgba(220,38,38,.7); left:0; top:0; opacity:0; pointer-events:none; }
+  .ripple.go{ animation:ripple .55s var(--ease); }
+
+  /* 전송 중 오버레이 */
+  .sendfx{ position:absolute; inset:0; z-index:75; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    background:rgba(19,21,27,.64); backdrop-filter:blur(4px); opacity:0; pointer-events:none; transition:opacity .4s var(--ease); }
+  .sendfx.on{ opacity:1; }
+  .sfx-ic{ width:56px; height:56px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-pop); animation:sendpop 1s var(--ease) infinite; }
+  .sfx-ic svg{ width:26px; height:26px; color:var(--primary-strong); }
+  .sfx-t{ font-size:13.5px; font-weight:800; color:#fff; }
+  .sfx-s{ margin-top:-6px; font-size:11.5px; color:rgba(255,255,255,.7); }
+
+  /* ===== 회원 전용 페이지(별도 제공) ===== */
+  .mApp{ position:absolute; inset:0; z-index:70; display:flex; flex-direction:column;
+    background:linear-gradient(180deg,#fdecec 0%, var(--bg) 200px);
+    opacity:0; transform:translateY(34px); pointer-events:none; transition:opacity .55s var(--ease), transform .55s var(--ease); }
+  .mApp.on{ opacity:1; transform:translateY(0); }
+  .mstatus{ height:42px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 5px; font-size:12px; font-weight:600; }
+  .mbrandbar{ flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:9px 16px; border-bottom:1px solid rgba(220,38,38,.18); background:rgba(255,255,255,.75); backdrop-filter:blur(12px); }
+  .mbrandbar .wm{ font-size:14px; }
+  .mtag2{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:var(--primary-strong); background:var(--primary-soft); border:1px solid rgba(220,38,38,.35); border-radius:999px; padding:4px 10px; }
+  .mtag2 svg{ width:11px; height:11px; }
+  .mbody{ flex:1 1 auto; overflow:hidden; padding:16px; }
+  .mbody::-webkit-scrollbar{ display:none; }
+  .mtitle{ font-size:25px; font-weight:800; letter-spacing:-.02em; color:var(--ink); }
+  .mtitle span{ font-size:15px; font-weight:700; color:var(--muted); }
+  .mwelcome{ margin-top:7px; font-size:12px; line-height:1.55; color:var(--sub); }
+  .msub{ margin-top:14px; display:flex; gap:6px; }
+  .msub div{ font-size:12px; font-weight:700; padding:7px 12px; border-radius:9px; }
+  .msub .a{ background:var(--primary-soft); color:var(--primary-strong); box-shadow:inset 0 0 0 1px rgba(220,38,38,.3); }
+  .msub .b{ color:var(--muted); background:var(--elevate); }
+  .mbanner{ margin-top:14px; display:flex; align-items:center; gap:8px; border:1px solid rgba(220,38,38,.3); background:var(--primary-soft); border-radius:12px; padding:11px 13px; }
+  .mbanner svg{ width:16px; height:16px; color:var(--primary-strong); flex:0 0 auto; }
+  .mbanner b{ font-size:12.5px; font-weight:800; color:var(--primary-strong); }
+  .meye{ margin-top:18px; display:flex; align-items:center; gap:7px; margin-bottom:11px; }
+  .meye svg{ width:15px; height:15px; color:var(--primary-strong); }
+  .meye span{ font-size:12px; font-weight:700; letter-spacing:.02em; color:var(--sub); }
+  .mlog{ position:relative; border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:15px; }
+  .mlog.fresh{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(220,38,38,.12), var(--shadow-sm); }
+  .mnew{ position:absolute; top:-9px; left:14px; display:inline-flex; align-items:center; gap:4px; background:var(--primary); color:#fff; font-size:10px; font-weight:800; padding:3px 9px; border-radius:999px; box-shadow:0 6px 14px -4px rgba(220,38,38,.6); }
+  .mnew i{ width:5px; height:5px; border-radius:50%; background:#fff; animation:blink 1s infinite; }
+  .mlogtop{ display:flex; align-items:center; gap:7px; }
+  .mlogtop .dt{ font-size:12px; font-weight:800; color:var(--primary-strong); }
+  .mlogtop .rd{ border-radius:999px; background:var(--elevate); color:var(--sub); font-size:10.5px; font-weight:700; padding:2px 8px; }
+  .mlogtop .uc{ border-radius:6px; background:var(--elevate); color:var(--muted); font-size:10px; font-weight:800; padding:2px 7px; }
+  .mline{ margin-top:11px; display:flex; gap:8px; align-items:flex-start; }
+  .mline .dot{ width:6px; height:6px; border-radius:50%; background:var(--primary); margin-top:6px; flex:0 0 auto; }
+  .mline .t{ flex:1; font-size:13px; line-height:1.55; color:var(--ink); }
+  .mline .t b{ font-weight:800; } .mline .t .g{ font-family:"Geist Mono",monospace; color:var(--primary-strong); font-weight:700; }
+  .msub2{ margin-top:9px; padding-top:9px; border-top:1px dashed var(--line); font-size:11.5px; line-height:1.55; color:var(--sub); }
+  .msub2 b{ color:var(--primary-strong); font-weight:800; }
+  .mtaphint{ margin-top:10px; text-align:center; font-size:11px; font-weight:700; color:var(--primary-strong); transition:opacity .3s var(--ease); }
+  .mdetail{ max-height:0; overflow:hidden; opacity:0; transition:max-height .65s var(--ease), opacity .4s var(--ease); }
+  .mdetail.open{ max-height:1700px; opacity:1; margin-top:12px; }
+  .mdetail .mmhead, .mdetail .mmli{ opacity:1 !important; transform:none !important; }
+  .mex{ margin-top:13px; padding-top:12px; border-top:1px solid var(--line); }
+  .mex:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .mexh{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:800; color:var(--ink); margin-bottom:4px; }
+  .mexh svg{ width:15px; height:15px; color:var(--primary-strong); flex:0 0 auto; }
+  .chart{ border:1px solid var(--line); background:var(--card); border-radius:12px; padding:12px 13px; box-shadow:var(--shadow-sm); }
+  .chart+.chart{ margin-top:9px; }
+  .chh{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .chn{ font-size:12px; font-weight:800; color:var(--ink); }
+  .chd{ font-size:11px; font-weight:800; color:var(--primary-strong); background:var(--primary-soft); border-radius:6px; padding:2px 7px; white-space:nowrap; }
+  .spark{ width:100%; height:auto; display:block; }
+  .spark .area{ fill:rgba(220,38,38,.10); stroke:none; }
+  .spark .ln{ fill:none; stroke:var(--primary); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+  .spark circle{ fill:var(--primary); }
+  .chx{ display:flex; justify-content:space-between; margin-top:6px; font-size:10.5px; font-weight:600; color:var(--muted); }
+
+  @keyframes voicewave{ 0%,100%{transform:scaleY(.22)} 50%{transform:scaleY(1)} }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.25} }
+  @keyframes spin{ to{transform:rotate(360deg)} }
+  @keyframes ripple{ 0%{opacity:.9; transform:scale(.5)} 100%{opacity:0; transform:scale(1.5)} }
+  @keyframes sendpop{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <div class="layout">
+    <div class="phonecol">
+      <div class="phone" id="phone">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+
+          <div class="hdr">
+            <div class="row1">
+              <div class="lockup">
+                <svg viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#dc2626"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
+                <div><div class="wm"><span class="b">오직 </span><span class="r">트레이너</span></div><div class="tname">박준형 트레이너</div></div>
+              </div>
+              <div class="hbtns">
+                <div class="hbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="hbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="badge-n">2</span></div>
+              </div>
+            </div>
+            <div class="otabs" id="otabs">
+              <div class="otab">회원자료</div>
+              <div class="otab on">자료 남기기</div>
+              <div class="otab">재등록 준비</div>
+            </div>
+          </div>
+
+          <div class="body" id="body">
+            <!-- 씬1: 음성 녹음(말하는 걸 받아쓴다) -->
+            <div class="scene" data-s="0">
+              <div class="eyerow2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3" stroke-linecap="round"/></svg><span>실시간 AI 음성 일지 생성기</span></div>
+              <div class="recbox">
+                <div class="rectop">이지은 회원 · 수업 끝에 <b style="color:var(--ink)">말로만</b> 남기세요. 타이핑 없이 받아써요.</div>
+                <div class="wave" id="wave"></div>
+                <div class="rectime" id="rectime">00:00</div>
+                <button class="recbtn" id="stopBtn"><span style="display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>녹음 중지</button>
+                <div class="recdot"><i></i>녹음 중</div>
+              </div>
+              <div class="vr">
+                <div class="vrhead"><span class="vrmic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3" stroke-linecap="round"/></svg></span><span class="vrlab">트레이너가 말하는 중</span><span class="vreq"><i></i><i></i><i></i><i></i></span></div>
+                <div class="vrquote" id="sttTxt"></div>
+              </div>
+            </div>
+
+            <!-- 씬2: AI 정제 중 -->
+            <div class="scene" data-s="1">
+              <div class="eyerow2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3" stroke-linecap="round"/></svg><span>실시간 AI 음성 일지 생성기</span></div>
+              <div class="skcard">
+                <div class="procnote"><svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.6" stroke-linecap="round"/></svg>말한 내용을 알아듣고 운동일지로 정리하는 중… 방법·주의사항까지</div>
+                <div class="sk" style="width:40%"></div>
+                <div class="sk"></div>
+                <div class="sk" style="width:85%"></div>
+                <div class="sk" style="width:35%; margin-top:16px"></div>
+                <div class="sk"></div>
+                <div class="sk" style="width:60%"></div>
+              </div>
+            </div>
+
+            <!-- 씬3: 운동일지 완성(방법·주의 자동 기입) → 저장 -->
+            <div class="scene" data-s="2">
+              <div class="repwrap">
+                <div class="rephead"><span class="ok">AI 요약 완료</span><span class="ti">이지은 회원 · 오늘의 운동 일지</span><span class="rd2">12회차</span></div>
+                <div class="repnote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="m12 3 1.9 4.8L19 9.5l-4.8 1.9L12 16l-1.9-4.6L5 9.5l5.1-1.7z" stroke-linejoin="round"/></svg>말만 했는데 세트·운동 방법·주의사항까지 자동으로 채워졌어요</div>
+                <div class="mcard">
+                  <div class="mtop"><span class="nm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5 17.5 17.5M4 12l4-4M16 16l4-4M2 14l3 3M17 5l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>덤벨 숄더프레스</span><span class="det">6~14kg · 12회 · 5세트</span></div>
+                  <div class="sets">
+                    <span class="setchip"><span class="s">1세트</span>6kg×12</span>
+                    <span class="setchip"><span class="s">2세트</span>8kg×12</span>
+                    <span class="setchip"><span class="s">3세트</span>10kg×12</span>
+                    <span class="setchip"><span class="s">4세트</span>12kg×12</span>
+                    <span class="setchip"><span class="s">5세트</span>14kg×12</span>
+                  </div>
+                  <div class="mmeta">
+                    <div class="mmhead method"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round"/></svg>운동 방법</div>
+                    <div class="mmli"><span class="d"></span><span class="x">덤벨을 어깨 앞쪽에서 손등이 정면을 보게 잡고 시작</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">팔꿈치가 어깨 높이(약 90°)에서 출발해 머리 위로 곧게 밀어올리기 — 반동 없이</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">정점에서 덤벨이 귀 옆 라인을 지나되 팔꿈치는 완전히 잠그지 않기</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">내릴 때 2초에 걸쳐 천천히, 팔꿈치가 어깨 아래로 처지지 않게 통제</span></div>
+                    <div class="mmhead warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>주의할 점</div>
+                    <div class="mmli"><span class="d"></span><span class="x">허리가 젖혀지지 않게 코어를 고정하고 갈비뼈 닫기</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">무게를 올릴수록 반동 유혹이 커짐 — 폼이 무너지면 즉시 감량</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">어깨 앞쪽에 찌릿한 통증이 오면 그립을 좁히고 중량 낮추기</span></div>
+                  </div>
+                </div>
+                <div class="mcard">
+                  <div class="mtop"><span class="nm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5 17.5 17.5M4 12l4-4M16 16l4-4M2 14l3 3M17 5l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>사이드 레터럴 레이즈</span><span class="det">2kg · 20회 · 3세트</span></div>
+                  <div class="sets">
+                    <span class="setchip"><span class="s">1세트</span>2kg×20</span>
+                    <span class="setchip"><span class="s">2세트</span>2kg×20</span>
+                    <span class="setchip"><span class="s">3세트</span>2kg×20</span>
+                  </div>
+                  <div class="mmeta">
+                    <div class="mmhead method"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round"/></svg>운동 방법</div>
+                    <div class="mmli"><span class="d"></span><span class="x">덤벨을 몸 옆에 두고 팔꿈치를 살짝(약 10~15°) 굽힌 각도로 고정</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">새끼손가락이 먼저 올라간다는 느낌으로, 어깨 높이까지만 들어올리기</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">정점에서 1초 멈춰 삼각근 측면 자극을 확실히 주기</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">물을 붓듯 천천히 내리며 마지막까지 삼각근 긴장 유지</span></div>
+                    <div class="mmhead warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>주의할 점</div>
+                    <div class="mmli"><span class="d"></span><span class="x">반동이나 상체 흔들기 금지 — 무게보다 자극이 우선</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">승모근·목에 힘이 들어가 어깨가 으쓱 올라가면 중량 낮추기</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">어깨 통증이 있으면 각도를 낮추고 횟수로 대체</span></div>
+                  </div>
+                </div>
+                <div class="mcard" style="border-color:rgba(220,38,38,.28);background:var(--primary-soft)">
+                  <div class="mmhead method" style="color:var(--primary-strong);margin-top:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 4.8L19 9.5l-4.8 1.9L12 16l-1.9-4.6L5 9.5l5.1-1.7z" stroke-linejoin="round"/></svg>트레이너 핵심 피드백</div>
+                  <div class="mmli"><span class="d"></span><span class="x">어깨 앞쪽 통증 없이 폼이 안정적이었어요. 반동 없이 통제력이 좋아졌습니다.</span></div>
+                  <div class="mmli"><span class="d"></span><span class="x">다음 시간엔 숄더프레스 시작 중량을 8kg로 올려볼게요.</span></div>
+                </div>
+                <button class="savebtn" id="saveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8" stroke-linecap="round" stroke-linejoin="round"/></svg>저장하고 회원에게 전송</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ripple" id="ripple"></div>
+          <div class="cursor" id="cursor"><svg viewBox="0 0 24 24" fill="#fff" stroke="#111" stroke-width="1.4"><path d="M5 3l14 8-6 1.5L9.5 19z" stroke-linejoin="round"/></svg></div>
+
+          <div class="btmnav" id="btmnav">
+            <div class="bnitem" data-nav="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></svg>오늘</div>
+            <div class="bnitem on" data-nav="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>회원</div>
+            <div class="bnitem" data-nav="2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg>내 실적</div>
+            <div class="bnitem" data-nav="3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1"/></svg>설정</div>
+          </div>
+
+          <!-- 전송 중 -->
+          <div class="sendfx" id="sendFx">
+            <div class="sfx-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4z M22 2 11 13" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="sfx-t">회원 앱으로 전송 중…</div>
+            <div class="sfx-s">이지은 회원님 전용 페이지로 전달돼요</div>
+          </div>
+
+          <!-- ===== 회원 전용 페이지(별도 제공) ===== -->
+          <div class="mApp" id="mApp">
+            <div class="mstatus"><span>9:42</span><span>● ● ●</span></div>
+            <div class="mbrandbar">
+              <span class="wm"><span class="b">오직 </span><span class="r">트레이너</span></span>
+              <span class="mtag2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" stroke-linecap="round" stroke-linejoin="round"/></svg>회원 전용 페이지</span>
+            </div>
+            <div class="mbody" id="mBody">
+              <div class="mscroll" id="mScroll">
+              <div class="mtitle">이지은 <span>회원님 공간</span></div>
+              <div class="mwelcome">트레이너가 남긴 기록이 실시간으로 도착하는, 회원님만의 페이지예요.</div>
+              <div class="msub"><div class="a">내 기록</div><div class="b">기록 남기기</div></div>
+              <div class="mbanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke-linecap="round" stroke-linejoin="round"/></svg><b>방금 새 수업일지가 도착했어요 · 1건</b></div>
+              <div class="meye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" stroke-linecap="round" stroke-linejoin="round"/></svg><span>내 수업일지</span></div>
+              <div class="mlog fresh" id="mLog">
+                <span class="mnew"><i></i>방금 도착</span>
+                <div class="mlogtop"><span class="dt">오늘</span><span class="rd">12회차</span><span class="uc">미확인</span></div>
+                <div class="mline"><span class="dot"></span><span class="t"><b>덤벨 숄더프레스</b> · <span class="g">6~14kg · 12회 · 5세트</span></span></div>
+                <div class="mline"><span class="dot"></span><span class="t"><b>사이드 레터럴 레이즈</b> · <span class="g">2kg · 20회 · 3세트</span></span></div>
+                <div class="mtaphint" id="mTapHint">탭하면 운동 방법 · 주의사항 · 변화 그래프를 볼 수 있어요 ▾</div>
+
+                <div class="mdetail" id="mDetail">
+                  <!-- 종목별 운동 방법·주의 -->
+                  <div class="mex">
+                    <div class="mexh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5 17.5 17.5M4 12l4-4M16 16l4-4M2 14l3 3M17 5l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>덤벨 숄더프레스</div>
+                    <div class="mmhead method"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round"/></svg>운동 방법</div>
+                    <div class="mmli"><span class="d"></span><span class="x">팔꿈치 어깨 높이(90°)에서 머리 위로 곧게, 반동 없이</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">정점에서 팔꿈치는 완전히 잠그지 않기</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">내릴 때 2초에 걸쳐 천천히 통제</span></div>
+                    <div class="mmhead warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>주의할 점</div>
+                    <div class="mmli"><span class="d"></span><span class="x">허리 젖혀지지 않게 코어 고정</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">어깨 앞쪽 통증이 오면 중량 낮추기</span></div>
+                  </div>
+                  <div class="mex">
+                    <div class="mexh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5 17.5 17.5M4 12l4-4M16 16l4-4M2 14l3 3M17 5l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>사이드 레터럴 레이즈</div>
+                    <div class="mmhead method"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round"/></svg>운동 방법</div>
+                    <div class="mmli"><span class="d"></span><span class="x">새끼손가락이 먼저 올라가듯, 어깨 높이까지만</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">정점에서 1초 멈춰 측면 자극 주기</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">물 붓듯 천천히 내리며 긴장 유지</span></div>
+                    <div class="mmhead warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>주의할 점</div>
+                    <div class="mmli"><span class="d"></span><span class="x">반동·상체 흔들기 금지 — 무게보다 자극</span></div>
+                    <div class="mmli"><span class="d"></span><span class="x">목·승모근에 힘 들어가면 중량 낮추기</span></div>
+                  </div>
+
+                  <!-- 종목별 변화량 그래프 -->
+                  <div class="meye" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>종목별 변화량</span></div>
+                  <div class="chart">
+                    <div class="chh"><span class="chn">덤벨 숄더프레스 · 최고 중량</span><span class="chd">▲ +6kg</span></div>
+                    <svg class="spark" viewBox="0 0 260 64"><polyline class="area" points="8,56 69,41.3 130,41.3 191,26.7 252,12 252,64 8,64"/><polyline class="ln" points="8,56 69,41.3 130,41.3 191,26.7 252,12"/><circle cx="8" cy="56" r="3"/><circle cx="252" cy="12" r="3.5"/></svg>
+                    <div class="chx"><span>8회차 8kg</span><span>오늘 14kg</span></div>
+                  </div>
+                  <div class="chart">
+                    <div class="chh"><span class="chn">사이드 레터럴 · 세트 볼륨</span><span class="chd">▲ +20회</span></div>
+                    <svg class="spark" viewBox="0 0 260 64"><polyline class="area" points="8,56 69,38.4 130,29.6 191,16.4 252,12 252,64 8,64"/><polyline class="ln" points="8,56 69,38.4 130,29.6 191,16.4 252,12"/><circle cx="8" cy="56" r="3"/><circle cx="252" cy="12" r="3.5"/></svg>
+                    <div class="chx"><span>8회차 40회</span><span>오늘 60회</span></div>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="caption" id="caption"><b>음성 녹음</b> — 말로만 남기면 받아써요</div>
+    </div>
+  </div>
+
+<script>
+  const scenes=[...document.querySelectorAll('.scene')];
+  const caption=document.getElementById('caption');
+  const cursor=document.getElementById('cursor');
+  const ripple=document.getElementById('ripple');
+  const otabs=document.getElementById('otabs');
+  const btmnav=document.getElementById('btmnav');
+  const mApp=document.getElementById('mApp');
+  const mBody=document.getElementById('mBody');
+  const mLog=document.getElementById('mLog');
+  const mDetail=document.getElementById('mDetail');
+  const mTapHint=document.getElementById('mTapHint');
+  const sendFx=document.getElementById('sendFx');
+  const screenEl=document.querySelector('.screen');
+  const stopBtn=document.getElementById('stopBtn');
+  const saveBtn=document.getElementById('saveBtn');
+  const sttTxt=document.getElementById('sttTxt');
+  const wave=document.getElementById('wave');
+  const rectime=document.getElementById('rectime');
+  const reveal=[...document.querySelectorAll('.repwrap .setchip, .repwrap .mmhead, .repwrap .mmli')];
+  const scene2El=document.querySelector('.scene[data-s="2"]');
+  const repwrap=document.querySelector('.repwrap');
+  const mScroll=document.getElementById('mScroll');
+  const QUOTE="회원님 오늘은 덤벨숄더프레스 6kg로 시작해서 14kg 까지 2kg씩 올리면서 운동했어요. 12개씩 총 5세트. 그리고 이어서 사이드레터럴레이즈 2kg로 고정해서 20개씩 3세트 진행했어요.";
+
+  for(let i=0;i<28;i++){ const b=document.createElement('i'); b.style.animationDelay=((i%7)*0.08)+'s'; wave.appendChild(b); }
+
+  const captions=[
+    '<b>음성 녹음</b> — 말로만 남기면 받아써요',
+    '<b>AI 정제</b> — 말한 걸 알아듣고 운동일지로',
+    '<b>자동 기입</b> — 세트·방법·주의사항까지 정리·저장',
+    '<b>회원 전용 페이지</b> — 회원님께 따로 도착해요'
+  ];
+
+  function setCaption(h){ caption.style.opacity=0; setTimeout(()=>{ caption.innerHTML=h; caption.style.opacity=1; },260); }
+  function moveCursor(x,y){ cursor.style.left=x+'px'; cursor.style.top=y+'px'; }
+  function targetXY(el){ const s=screenEl.getBoundingClientRect(), b=el.getBoundingClientRect(); return { x:b.left-s.left+b.width/2, y:b.top-s.top+b.height/2 }; }
+  function cursorTo(el){ const p=targetXY(el); moveCursor(p.x-6,p.y-4); }
+  function tapEl(el){ cursorTo(el);
+    setTimeout(()=>{ cursor.style.transform='scale(.85)'; const p=targetXY(el);
+      ripple.style.left=(p.x-17)+'px'; ripple.style.top=(p.y-17)+'px'; ripple.classList.remove('go'); void ripple.offsetWidth; ripple.classList.add('go');
+      setTimeout(()=>cursor.style.transform='scale(1)',160);
+    },820);
+  }
+  // 말하는 걸 받아쓰기 — 단어 단위로 나타남(입력 캐럿 없음)
+  function speakInto(el, text, per, done){
+    el.classList.remove('done'); el.innerHTML='';
+    text.split(' ').forEach((w,k)=>{ const s=document.createElement('span'); s.className='vrword'; s.textContent=(k?' ':'')+w; el.appendChild(s); });
+    const spans=[...el.children]; let i=0; clearInterval(window._sv);
+    window._sv=setInterval(()=>{ if(spans[i]) spans[i].style.opacity='1'; i++;
+      if(i>=spans.length){ clearInterval(window._sv); el.classList.add('done'); done&&done(); } }, per);
+  }
+  // 콘텐츠를 transform으로 한 번에 부드럽게 밀어 올림 — GPU 합성이라 스케일·임베드에도 안 끊김
+  function panContent(container, inner, pad, dur){
+    inner.style.transition='none'; inner.style.transform='translateY(0)'; void inner.offsetWidth;
+    const overflow = inner.offsetHeight - (container.clientHeight - pad*2);
+    if(overflow<=2) return;
+    inner.style.transition='transform '+dur+'ms cubic-bezier(.4,0,.25,1)';
+    inner.style.transform='translateY(-'+overflow+'px)';
+  }
+  function resetPan(inner){ inner.style.transition='none'; inner.style.transform='translateY(0)'; }
+
+  function showScene(i){
+    const m=(i===3);
+    mApp.classList.toggle('on', m);
+    if(!m){ scenes.forEach((s,k)=>s.classList.toggle('on',k===i)); }
+    setCaption(captions[i]);
+    otabs.style.display=m?'none':'flex';
+    btmnav.style.opacity=m?0:1;
+    cursor.style.opacity=(i===0||i===2)?1:0;
+  }
+
+  function run(){
+    // 씬1: 음성 녹음 + 받아쓰기
+    showScene(0);
+    sttTxt.textContent=''; sttTxt.classList.remove('done');
+    sendFx.classList.remove('on');
+    saveBtn.classList.remove('done'); saveBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8" stroke-linecap="round" stroke-linejoin="round"/></svg>저장하고 회원에게 전송';
+    reveal.forEach(c=>c.classList.remove('on'));
+    let n=0; rectime.textContent='00:00'; clearInterval(window._rt);
+    window._rt=setInterval(()=>{ n++; rectime.textContent='00:'+String(n).padStart(2,'0'); },1000);
+    setTimeout(()=>speakInto(sttTxt, QUOTE, 215),700);
+    setTimeout(()=>cursorTo(stopBtn),6400);
+    setTimeout(()=>{ tapEl(stopBtn); clearInterval(window._rt); },7000);
+
+    // 씬2: AI 정제
+    setTimeout(()=>showScene(1),8000);
+
+    // 씬3: 운동일지 완성(세트·방법·주의 자동 기입) → 스크롤 → 저장
+    setTimeout(()=>{
+      showScene(2);
+      resetPan(repwrap);
+      reveal.forEach(c=>c.classList.remove('on'));
+      reveal.forEach((c,k)=>setTimeout(()=>c.classList.add('on'), 350+k*95));    // 세트·방법·주의 순차 기입
+      setTimeout(()=>panContent(scene2El, repwrap, 14, 3400),1200);             // 채워지며 부드럽게 밀려 올라감
+    },10500);
+    setTimeout(()=>cursorTo(saveBtn),15200);
+    setTimeout(()=>tapEl(saveBtn),16000);
+    setTimeout(()=>{ saveBtn.classList.add('done'); saveBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>저장 완료 · 회원에게 전송됨'; },16850);
+
+    // 전송 중
+    setTimeout(()=>{ sendFx.classList.add('on'); cursor.style.opacity='0'; },18000);
+    // 씬4: 회원 전용 페이지
+    setTimeout(()=>{ sendFx.classList.remove('on'); showScene(3);
+      mDetail.classList.remove('open'); mTapHint.style.opacity='1'; resetPan(mScroll); },19100);
+    // 회원이 운동일지를 탭 → 방법·주의·변화 그래프 펼침
+    setTimeout(()=>{ cursor.style.opacity='1'; cursorTo(mLog); },20500);
+    setTimeout(()=>tapEl(mLog),21300);
+    setTimeout(()=>{ mDetail.classList.add('open'); mTapHint.style.opacity='0'; },21600);
+    setTimeout(()=>{ cursor.style.opacity='0'; panContent(mBody, mScroll, 16, 3400); },22800);
+
+    // 반복
+    setTimeout(run,29200);
+  }
+  run();
+</script>
+</body>
+</html>

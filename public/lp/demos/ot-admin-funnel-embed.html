@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오직 트레이너 · OT→PT 전환 퍼널 모션</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#f1f2f6; --card:#ffffff; --elevate:#e8eaf0; --line:#dfe2ea; --line-strong:#cbd2dd;
+    --ink:#13151b; --sub:#475569; --muted:#5b6675;
+    --primary:#dc2626; --primary-strong:#b91c1c; --primary-soft:#fef2f2;
+    --adm:#c026d3; --adm-text:#a21caf; --adm-soft:#fdf4ff;
+    --cyan:#0ea5e9; --cyan-text:#0369a1; --cyan-soft:#f0f9ff;
+    --rose:#e11d48; --rose-text:#be123c; --rose-soft:#fff1f3;
+    --amber4:#fbbf24; --amber5:#f59e0b; --orange5:#f97316; --red5:#ef4444;
+    --shadow-sm:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+    --shadow-pop:0 4px 12px rgba(19,21,27,.08), 0 24px 48px -20px rgba(19,21,27,.4);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{ font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-weight:450; letter-spacing:-.011em; color:var(--ink); background:transparent;
+    min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px 16px; -webkit-font-smoothing:antialiased; }
+  .phonecol{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .caption{ text-align:center; font-size:16.5px; color:var(--sub); white-space:nowrap; line-height:1.55; min-height:24px; transition:opacity .4s var(--ease); }
+  .caption b{ color:var(--adm-text); font-weight:700; }
+
+  .phone{ width:344px; height:724px; border-radius:46px; background:#0b0c10; padding:11px; position:relative; box-shadow:var(--shadow-pop), 0 2px 6px rgba(0,0,0,.3); flex:0 0 auto; }
+  .phone::after{ content:""; position:absolute; top:20px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#0b0c10; border-radius:0 0 16px 16px; z-index:60; }
+  .screen{ width:100%; height:100%; border-radius:35px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .statusbar{ height:42px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 5px; font-size:12px; font-weight:600; }
+
+  .hdr{ flex:0 0 auto; background:rgba(255,255,255,.82); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); }
+  .hdr .row1{ display:flex; align-items:center; justify-content:space-between; padding:9px 14px; }
+  .lockup{ display:flex; align-items:center; gap:9px; }
+  .lockup svg{ width:34px; height:34px; border-radius:9px; }
+  .cname{ font-size:15.5px; font-weight:800; letter-spacing:-.03em; color:var(--ink); line-height:1; }
+  .crole{ margin-top:4px; font-size:11.5px; font-weight:700; color:var(--adm-text); line-height:1; }
+  .live{ display:flex; align-items:center; gap:5px; border:1px solid rgba(220,38,38,.3); background:var(--primary-soft); color:var(--primary-strong); font-size:10px; font-weight:800; letter-spacing:.14em; padding:5px 9px; border-radius:999px; }
+  .live i{ width:6px; height:6px; border-radius:999px; background:var(--primary); animation:blink 1.6s infinite; }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.3} }
+  .atabs{ display:flex; gap:2px; padding:0 10px; overflow-x:auto; scrollbar-width:none; }
+  .atabs::-webkit-scrollbar{ display:none; }
+  .atab{ position:relative; padding:9px 10px; font-size:12px; font-weight:700; color:rgba(162,28,175,.5); white-space:nowrap; flex:0 0 auto; }
+  .atab.on{ color:var(--adm-text); }
+  .atab.on::after{ content:""; position:absolute; left:6px; right:6px; bottom:0; height:2px; border-radius:2px; background:var(--adm); }
+
+  .body{ flex:1 1 auto; position:relative; overflow:hidden; padding:14px; }
+  .pan{ will-change:transform; }
+  .intro{ font-size:12.5px; line-height:1.55; color:var(--sub); margin-bottom:13px; }
+  .intro b{ color:var(--ink); font-weight:800; }
+  .card{ border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:15px; margin-bottom:13px; }
+  .clab{ display:flex; align-items:center; gap:6px; font-size:11px; letter-spacing:.02em; color:var(--muted); font-weight:600; }
+  .clab svg{ width:14px; height:14px; }
+
+  .convrow{ margin-top:11px; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
+  .convrow .big{ font-family:"Geist Mono",monospace; font-size:36px; font-weight:900; color:var(--cyan-text); line-height:1; }
+  .convrow .desc{ font-size:12.5px; color:var(--sub); }
+  .convrow .desc b{ color:var(--ink); font-weight:800; } .convrow .desc b.c{ color:var(--cyan-text); }
+
+  .stages{ margin-top:16px; display:flex; flex-direction:column; gap:11px; }
+  .stg .stop{ display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:5px; }
+  .stg .sl{ font-weight:700; color:var(--ink); } .stg .sl .cnt{ color:var(--muted); font-weight:500; margin-left:3px; }
+  .stg .sp{ font-family:"Geist Mono",monospace; color:var(--muted); }
+  .stg .sp .drop{ color:var(--rose-text); margin-left:6px; }
+  .track{ height:11px; width:100%; border-radius:999px; background:var(--line); overflow:hidden; }
+  .track i{ display:block; height:100%; border-radius:999px; width:0; transition:width .85s var(--ease); }
+  .s0 i{ background:var(--amber4);} .s1 i{ background:var(--amber5);} .s2 i{ background:var(--orange5);} .s3 i{ background:var(--red5); }
+
+  .subrate{ margin-top:14px; display:flex; flex-wrap:wrap; gap:5px 16px; font-size:12px; color:var(--sub); }
+  .subrate b{ color:var(--ink); font-weight:800; } .subrate .m{ color:var(--muted); font-size:11px; }
+  .fnote{ margin-top:10px; font-size:9.5px; line-height:1.5; color:var(--muted); }
+
+  .duecard{ border:1px solid rgba(225,29,72,.3); background:var(--rose-soft); border-radius:16px; box-shadow:var(--shadow-sm); padding:15px; }
+  .dueh{ display:flex; align-items:center; gap:7px; margin-bottom:11px; }
+  .dueh svg{ width:16px; height:16px; color:var(--rose-text); }
+  .dueh h3{ font-size:14px; font-weight:800; color:var(--ink); }
+  .dueh .cnt{ border-radius:999px; background:rgba(225,29,72,.15); color:var(--rose-text); font-size:10px; font-weight:800; padding:2px 8px; }
+  .drow{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; border:1px solid var(--line); background:var(--card); border-radius:11px; padding:10px 12px; margin-bottom:8px;
+    opacity:0; transform:translateY(7px); transition:all .45s var(--ease); }
+  .drow:last-child{ margin-bottom:0; } .drow.on{ opacity:1; transform:translateY(0); }
+  .drow .dn{ font-size:14px; font-weight:800; color:var(--ink); }
+  .drow .dt{ font-size:11px; color:var(--muted); }
+  .tag{ border-radius:7px; font-size:10px; font-weight:800; padding:3px 8px; }
+  .tag.miss{ background:rgba(225,29,72,.1); color:var(--rose-text); }
+  .tag.re{ background:var(--cyan-soft); color:var(--cyan-text); }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <div class="phonecol">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+
+        <div class="hdr">
+          <div class="row1">
+            <div class="lockup">
+              <svg viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#c026d3"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
+              <div><div class="cname">강남 피트니스</div><div class="crole">Admin · 총괄 경영</div></div>
+            </div>
+            <div class="live"><i></i>LIVE</div>
+          </div>
+          <div class="atabs">
+            <div class="atab">브리핑</div><div class="atab">트레이너</div><div class="atab">매출</div>
+            <div class="atab on">OT회원</div><div class="atab">PT회원</div><div class="atab">스케줄</div><div class="atab">급여</div><div class="atab">운영</div>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="pan" id="pan">
+            <div class="intro">OT 상담이 <b>등록으로 이어지는 흐름</b> — 어디서 빠지고, 이번 주 누구를 챙길지.</div>
+
+            <!-- 깔때기 -->
+            <div class="card" id="c1">
+              <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h18l-7 8v6l-4 2v-8z" stroke-linecap="round" stroke-linejoin="round"/></svg> 등록까지 흐름 · 어디서 빠지나</div>
+              <div class="convrow">
+                <span class="big" id="conv">0%</span>
+                <span class="desc">OT 회원 <b>32명</b> 중 <b class="c">14명</b> 등록</span>
+              </div>
+              <div class="stages">
+                <div class="stg s0"><div class="stop"><span class="sl">OT 회원 (전체) <span class="cnt">32명</span></span><span class="sp">100%</span></div><div class="track"><i data-w="100"></i></div></div>
+                <div class="stg s1"><div class="stop"><span class="sl">1차 OT 진행 <span class="cnt">24명</span></span><span class="sp">75%<span class="drop">↓25%</span></span></div><div class="track"><i data-w="75"></i></div></div>
+                <div class="stg s2"><div class="stop"><span class="sl">2차 OT 진행 <span class="cnt">18명</span></span><span class="sp">56%<span class="drop">↓25%</span></span></div><div class="track"><i data-w="56"></i></div></div>
+                <div class="stg s3"><div class="stop"><span class="sl">PT 등록 <span class="cnt">14명</span></span><span class="sp">44%<span class="drop">↓22%</span></span></div><div class="track"><i data-w="44"></i></div></div>
+              </div>
+              <div class="subrate">
+                <span>1차 OT 등록률 <b>62%</b> <span class="m">(8/13)</span></span>
+                <span>2차 OT 등록률 <b>56%</b> <span class="m">(6/11)</span></span>
+              </div>
+              <div class="fnote">각 단계는 앞 단계에 포함돼요 — 2차 진행 회원은 1차에도 포함. ‘OT 회원’은 OT로 유입된 전체(분모)예요.</div>
+            </div>
+
+            <!-- 이번 주 임박 -->
+            <div class="duecard" id="c2">
+              <div class="dueh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>이번 주 챙길 등록 (임박)</h3><span class="cnt">3</span></div>
+              <div class="drow" data-d="0"><span class="dn">정하늘</span><span class="dt">박준형</span><span class="tag miss">2차 OT 후 미결정</span></div>
+              <div class="drow" data-d="1"><span class="dn">오세훈</span><span class="dt">김서연</span><span class="tag re">재상담 7/30 · 2차</span></div>
+              <div class="drow" data-d="2"><span class="dn">한지민</span><span class="dt">이도현</span><span class="tag miss">2차 OT 후 미결정</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption" id="caption"><b>OT → PT 전환 퍼널</b> — 어디서 새는지 한눈에</div>
+  </div>
+
+<script>
+  const pan=document.getElementById('pan');
+  const caption=document.getElementById('caption');
+  const c2=document.getElementById('c2');
+  const bars=[...document.querySelectorAll('.track i')];
+  const drows=[...document.querySelectorAll('.drow')];
+
+  function setCaption(h){ caption.style.opacity=0; setTimeout(()=>{ caption.innerHTML=h; caption.style.opacity=1; },240); }
+  function panTo(y){ pan.style.transition='transform .95s cubic-bezier(.4,0,.25,1)'; pan.style.transform='translateY(-'+Math.max(0,y)+'px)'; }
+  function resetPan(){ pan.style.transition='none'; pan.style.transform='translateY(0)'; }
+  function countUp(el,to,dur,suf){ const s=performance.now();
+    (function step(t){ const p=Math.min(1,(t-s)/dur), e=1-Math.pow(1-p,3), v=Math.round(to*e);
+      el.textContent=v+(suf||''); if(p<1) requestAnimationFrame(step); })(s); }
+
+  const timers=[]; const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
+
+  function reset(){
+    timers.forEach(clearTimeout); timers.length=0; resetPan();
+    document.getElementById('conv').textContent='0%';
+    bars.forEach(b=>b.style.width='0');
+    drows.forEach(d=>d.classList.remove('on'));
+  }
+
+  function run(){
+    reset();
+    // 1) 깔때기 — conv 카운트 + 단계 막대 stagger
+    setCaption('<b>OT → PT 전환 퍼널</b> — 어디서 새는지 한눈에');
+    later(()=> countUp(document.getElementById('conv'),46,1100,'%'), 500);
+    bars.forEach((b,k)=> later(()=>b.style.width=b.dataset.w+'%', 700+k*230));
+
+    // 2) 이번 주 임박
+    later(()=>{ panTo(c2.offsetTop-8); setCaption('<b>이번 주 챙길 등록</b> — 관리자가 직접 챙길 3명'); }, 3600);
+    drows.forEach((d,k)=> later(()=>d.classList.add('on'), 4100+k*320));
+
+    later(run, 7200);
+  }
+  run();
+</script>
+</body>
+</html>

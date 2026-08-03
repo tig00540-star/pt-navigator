@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오직 트레이너 · 관리자 브리핑(오늘 챙길 것) 모션</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#f1f2f6; --card:#ffffff; --elevate:#e8eaf0; --line:#dfe2ea; --line-strong:#cbd2dd;
+    --ink:#13151b; --sub:#475569; --muted:#5b6675;
+    --primary:#dc2626; --primary-strong:#b91c1c; --primary-soft:#fef2f2;
+    --adm:#c026d3; --adm-text:#a21caf; --adm-soft:#fdf4ff;
+    --cyan:#0ea5e9; --cyan-text:#0369a1; --cyan-soft:#f0f9ff;
+    --rose:#e11d48; --rose-text:#be123c; --rose-soft:#fff1f3;
+    --shadow-sm:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+    --shadow-pop:0 4px 12px rgba(19,21,27,.08), 0 24px 48px -20px rgba(19,21,27,.4);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{ font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-weight:450; letter-spacing:-.011em; color:var(--ink); background:transparent;
+    min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px 16px; -webkit-font-smoothing:antialiased; }
+  .phonecol{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .caption{ text-align:center; font-size:16.5px; color:var(--sub); white-space:nowrap; line-height:1.55; min-height:24px; transition:opacity .4s var(--ease); }
+  .caption b{ color:var(--adm-text); font-weight:700; }
+
+  .phone{ width:344px; height:724px; border-radius:46px; background:#0b0c10; padding:11px; position:relative; box-shadow:var(--shadow-pop), 0 2px 6px rgba(0,0,0,.3); flex:0 0 auto; }
+  .phone::after{ content:""; position:absolute; top:20px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#0b0c10; border-radius:0 0 16px 16px; z-index:60; }
+  .screen{ width:100%; height:100%; border-radius:35px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .statusbar{ height:42px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 5px; font-size:12px; font-weight:600; }
+
+  .hdr{ flex:0 0 auto; background:rgba(255,255,255,.82); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); }
+  .hdr .row1{ display:flex; align-items:center; justify-content:space-between; padding:9px 14px; }
+  .lockup{ display:flex; align-items:center; gap:9px; }
+  .lockup svg{ width:34px; height:34px; border-radius:9px; }
+  .cname{ font-size:15.5px; font-weight:800; letter-spacing:-.03em; color:var(--ink); line-height:1; }
+  .crole{ margin-top:4px; font-size:11.5px; font-weight:700; color:var(--adm-text); line-height:1; }
+  .live{ display:flex; align-items:center; gap:5px; border:1px solid rgba(220,38,38,.3); background:var(--primary-soft); color:var(--primary-strong); font-size:10px; font-weight:800; letter-spacing:.14em; padding:5px 9px; border-radius:999px; }
+  .live i{ width:6px; height:6px; border-radius:999px; background:var(--primary); animation:blink 1.6s infinite; }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.3} }
+  .atabs{ display:flex; gap:2px; padding:0 10px; overflow-x:auto; scrollbar-width:none; }
+  .atabs::-webkit-scrollbar{ display:none; }
+  .atab{ position:relative; padding:9px 10px; font-size:12px; font-weight:700; color:rgba(162,28,175,.5); white-space:nowrap; flex:0 0 auto; }
+  .atab.on{ color:var(--adm-text); }
+  .atab.on::after{ content:""; position:absolute; left:6px; right:6px; bottom:0; height:2px; border-radius:2px; background:var(--adm); }
+
+  .body{ flex:1 1 auto; position:relative; overflow:hidden; padding:14px; }
+  .pan{ will-change:transform; }
+  .h2{ font-size:18px; font-weight:900; letter-spacing:-.02em; color:var(--ink); }
+  .sub{ margin-top:3px; font-size:12px; color:var(--sub); }
+  .sub b{ color:var(--ink); font-weight:800; }
+
+  /* top3 카드 */
+  .t3{ margin-top:13px; display:flex; flex-direction:column; gap:10px; }
+  .tcard{ border:1px solid var(--line); background:var(--card); border-radius:14px; box-shadow:var(--shadow-sm); padding:13px;
+    display:flex; align-items:flex-start; gap:11px; opacity:0; transform:translateY(10px); transition:opacity .5s var(--ease), transform .5s var(--ease); }
+  .tcard.on{ opacity:1; transform:translateY(0); }
+  .trank{ width:30px; height:30px; border-radius:10px; background:var(--elevate); color:var(--muted); font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .tmid{ min-width:0; flex:1; }
+  .thead{ display:flex; align-items:center; gap:6px; }
+  .thead svg{ width:15px; height:15px; flex:0 0 auto; }
+  .thead .tt{ font-size:14px; font-weight:800; color:var(--ink); }
+  .tdetail{ margin-top:3px; font-size:11.5px; line-height:1.5; color:var(--sub); }
+  .tright{ flex:0 0 auto; text-align:right; }
+  .tamt{ font-family:"Geist Mono",monospace; font-size:14px; font-weight:900; }
+  .tgo{ margin-top:3px; display:inline-flex; align-items:center; gap:1px; font-size:11px; color:var(--muted); }
+  .tgo svg{ width:12px; height:12px; }
+  .c-cyan{ color:var(--cyan-text); } .c-rose{ color:var(--rose-text); }
+
+  /* 오늘의 운영 보고서 */
+  .report{ margin-top:16px; border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:15px; }
+  .rhead{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; border-bottom:1px solid var(--line); padding-bottom:9px; }
+  .rhead .rt{ font-size:11px; font-weight:800; letter-spacing:.02em; color:var(--muted); }
+  .rhead .rd{ margin-top:2px; font-size:12px; color:var(--sub); }
+  .rhead .rgen{ font-size:10px; color:var(--muted); text-align:right; flex:0 0 auto; max-width:96px; line-height:1.4; }
+  .rline{ margin-top:12px; font-size:13.5px; font-weight:800; color:var(--ink); line-height:1.5; opacity:0; transition:opacity .5s var(--ease); }
+  .rline.on{ opacity:1; }
+
+  .blk{ margin-top:14px; }
+  .blkh{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; letter-spacing:.02em; color:var(--muted); margin-bottom:8px; }
+  .blkh svg{ width:14px; height:14px; }
+  .prow{ border:1px solid var(--line); border-radius:10px; padding:9px 11px; margin-bottom:6px; opacity:0; transform:translateY(6px); transition:all .45s var(--ease); }
+  .prow.on{ opacity:1; transform:translateY(0); }
+  .ptop{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .pname{ font-size:13px; font-weight:800; color:var(--ink); }
+  .psub-amt{ font-family:"Geist Mono",monospace; font-size:13px; font-weight:900; color:var(--cyan-text); }
+  .pmeta{ margin-top:2px; font-size:10.5px; color:var(--sub); }
+  .pchips{ margin-top:5px; display:flex; flex-wrap:wrap; gap:3px 10px; font-size:10.5px; color:var(--muted); }
+  .pchips .re{ color:var(--rose-text); font-weight:700; } .pchips .nw{ color:var(--cyan-text); font-weight:700; }
+  .ptotal{ display:flex; align-items:center; justify-content:space-between; padding-top:6px; }
+  .ptotal .l{ font-size:12px; font-weight:800; color:var(--ink); }
+  .ptotal .v{ font-family:"Geist Mono",monospace; font-size:15px; font-weight:900; color:var(--cyan-text); }
+  .pnote{ margin-top:5px; font-size:9.5px; color:var(--muted); line-height:1.4; }
+
+  .tiles{ margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .tile{ border-radius:10px; background:var(--elevate); padding:9px 10px; }
+  .tile .l{ font-size:9.5px; letter-spacing:.02em; color:var(--muted); }
+  .tile .n{ margin-top:2px; font-family:"Geist Mono",monospace; font-size:15px; font-weight:900; color:var(--ink); }
+  .tile .s{ margin-top:1px; font-size:9.5px; color:var(--muted); }
+
+  .wrow{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:12px; margin-bottom:5px; opacity:0; transform:translateY(5px); transition:all .4s var(--ease); }
+  .wrow.on{ opacity:1; transform:translateY(0); }
+  .wtag{ border-radius:5px; font-size:9.5px; font-weight:700; padding:2px 6px; }
+  .wtag.churn{ background:var(--rose-soft); color:var(--rose-text); }
+  .wtag.exp{ background:var(--elevate); color:var(--sub); }
+  .wrow .wn{ font-weight:700; color:var(--sub); }
+  .wrow .wm{ font-size:11px; color:var(--muted); }
+
+  .coach{ margin-top:6px; }
+  .cli{ display:flex; gap:8px; font-size:13px; line-height:1.55; color:var(--sub); margin-bottom:5px; opacity:0; transform:translateY(5px); transition:all .4s var(--ease); }
+  .cli.on{ opacity:1; transform:translateY(0); }
+  .cli i{ margin-top:7px; width:4px; height:4px; border-radius:999px; background:var(--cyan); flex:0 0 auto; }
+  .foot{ margin-top:13px; font-size:10px; line-height:1.5; color:var(--muted); }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <div class="phonecol">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+
+        <div class="hdr">
+          <div class="row1">
+            <div class="lockup">
+              <svg viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#c026d3"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
+              <div><div class="cname">강남 피트니스</div><div class="crole">Admin · 총괄 경영</div></div>
+            </div>
+            <div class="live"><i></i>LIVE</div>
+          </div>
+          <div class="atabs">
+            <div class="atab on">브리핑</div><div class="atab">트레이너</div><div class="atab">매출</div>
+            <div class="atab">OT회원</div><div class="atab">PT회원</div><div class="atab">스케줄</div><div class="atab">급여</div><div class="atab">운영</div>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="pan" id="pan">
+            <!-- SEC0: 오늘 챙길 것 -->
+            <div id="sec0">
+              <div class="h2">오늘 챙길 것</div>
+              <div class="sub">지표에서 <b>돈과 급한 순서</b>로 3가지만 뽑았어요.</div>
+              <div class="t3">
+                <div class="tcard" data-i="0">
+                  <div class="trank">1</div>
+                  <div class="tmid">
+                    <div class="thead">
+                      <svg class="c-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <span class="tt">만료 임박 재등록 5명</span>
+                    </div>
+                    <div class="tdetail">이번 주 계약 종료 — 지금이 재등록 브리핑 돌릴 타이밍</div>
+                  </div>
+                  <div class="tright">
+                    <div class="tamt c-cyan">≈ 750만원</div>
+                    <div class="tgo">리텐션 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  </div>
+                </div>
+
+                <div class="tcard" data-i="1">
+                  <div class="trank">2</div>
+                  <div class="tmid">
+                    <div class="thead">
+                      <svg class="c-rose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8a5 5 0 1 0-10 0M3 21v-1a5 5 0 0 1 5-5M16 16l5 5m0-5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <span class="tt">이도현 — 관리 필요</span>
+                    </div>
+                    <div class="tdetail">2차 클로징 놓침 · 네비게이터 조회율 저조</div>
+                  </div>
+                  <div class="tright">
+                    <div class="tgo">트레이너 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  </div>
+                </div>
+
+                <div class="tcard" data-i="2">
+                  <div class="trank">3</div>
+                  <div class="tmid">
+                    <div class="thead">
+                      <svg class="c-rose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8M21 7v5h-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <span class="tt">정하늘 외 2명 이탈 위험</span>
+                    </div>
+                    <div class="tdetail">14일 넘게 무수업 · 잔여 세션이 남아있어요</div>
+                  </div>
+                  <div class="tright">
+                    <div class="tgo">리텐션 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEC1: 오늘의 운영 보고서 -->
+            <div id="sec1">
+              <div class="report">
+                <div class="rhead">
+                  <div>
+                    <div class="rt">오늘의 운영 보고서</div>
+                    <div class="rd">2026년 7월 28일 화요일</div>
+                  </div>
+                  <div class="rgen">오전 9시 06분 생성 · 내일 새 보고서</div>
+                </div>
+
+                <div class="rline" id="rline">재등록 5명이 이번 주 매출을 좌우해요 — 오전에 브리핑부터 돌리세요.</div>
+
+                <!-- 매출 파이프라인 -->
+                <div class="blk">
+                  <div class="blkh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/><path d="M6 12h.01M18 12h.01"/></svg>오늘의 매출 파이프라인</div>
+                  <div class="prow" data-p="0">
+                    <div class="ptop"><span class="pname">박준형</span><span class="psub-amt">≈ 520만원</span></div>
+                    <div class="pmeta">신규 2 · 재등록 3</div>
+                    <div class="pchips"><span>김민재<span class="re">(재등록)</span> ≈180만</span><span>서지우<span class="re">(재등록)</span> ≈150만</span><span>이한결<span class="nw">(신규)</span> ≈95만</span></div>
+                  </div>
+                  <div class="prow" data-p="1">
+                    <div class="ptop"><span class="pname">김서연</span><span class="psub-amt">≈ 310만원</span></div>
+                    <div class="pmeta">신규 1 · 재등록 2</div>
+                    <div class="pchips"><span>박도윤<span class="re">(재등록)</span> ≈160만</span><span>최유나<span class="nw">(신규)</span> ≈90만</span></div>
+                  </div>
+                  <div class="prow" data-p="2">
+                    <div class="ptop"><span class="pname">이도현</span><span class="psub-amt">≈ 150만원</span></div>
+                    <div class="pmeta">신규 1 · 재등록 1</div>
+                  </div>
+                  <div class="ptotal"><span class="l">총 예상 매출</span><span class="v" id="ptot">≈ 0원</span></div>
+                  <div class="pnote">성사 시 합계 · 재등록=회원 현재 계약 기준 · 신규=센터 평균 추정.</div>
+                </div>
+
+                <!-- 어제·이번달 4타일 -->
+                <div class="tiles" id="tblk">
+                  <div class="tile"><div class="l">어제 수업</div><div class="n" id="tl0">0건</div><div class="s">노쇼 2</div></div>
+                  <div class="tile"><div class="l">오늘 예약</div><div class="n" id="tl1">0건</div><div class="s">&nbsp;</div></div>
+                  <div class="tile"><div class="l">이달 매출</div><div class="n" id="tl2">0</div><div class="s">목표 96%</div></div>
+                  <div class="tile"><div class="l">이달 신규등록</div><div class="n" id="tl3">0건</div><div class="s">재등록 12</div></div>
+                </div>
+
+                <!-- 주의 회원 -->
+                <div class="blk" id="wblk">
+                  <div class="blkh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>지금 주의할 회원</div>
+                  <div class="wrow" data-w="0"><span class="wtag churn">이탈위험</span><span class="wn">정하늘</span><span class="wm">박준형 · 잔여 6회 · 18일 무수업</span></div>
+                  <div class="wrow" data-w="1"><span class="wtag churn">이탈위험</span><span class="wn">오세훈</span><span class="wm">김서연 · 잔여 4회 · 16일 무수업</span></div>
+                  <div class="wrow" data-w="2"><span class="wtag exp">만료임박</span><span class="wn">김민재</span><span class="wm">박준형 · 잔여 2회</span></div>
+                </div>
+
+                <!-- 오늘 챙길 코칭 -->
+                <div class="blk" id="cblk">
+                  <div class="blkh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 4.8L19 9.5l-4.8 1.9L12 16l-1.9-4.6L5 9.5l5.1-1.7z" stroke-linejoin="round"/></svg><span style="color:var(--cyan-text)">오늘 챙길 코칭</span></div>
+                  <div class="coach">
+                    <div class="cli" data-c="0"><i></i>박준형: 2차 OT 앞둔 회원 2명 — 오늘 사전무장부터 확인</div>
+                    <div class="cli" data-c="1"><i></i>이도현: 대본 리딩률이 낮아요 — 클로징 코칭 한 번</div>
+                    <div class="cli" data-c="2"><i></i>정하늘 이탈 위험 — 담당에게 안부 연락 요청</div>
+                  </div>
+                </div>
+
+                <div class="foot">9시 06분 기준 스냅샷 · 숫자·회원·금액은 실측 파생, 총평·코칭만 AI예요. 금액은 추정입니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption" id="caption"><b>오늘 챙길 것</b> — 돈·긴급도 순으로 3가지</div>
+  </div>
+
+<script>
+  const pan=document.getElementById('pan');
+  const caption=document.getElementById('caption');
+  const sec1=document.getElementById('sec1');
+  const tcards=[...document.querySelectorAll('.tcard')];
+  const prows=[...document.querySelectorAll('.prow')];
+  const wrows=[...document.querySelectorAll('.wrow')];
+  const clis=[...document.querySelectorAll('.cli')];
+  const rline=document.getElementById('rline');
+
+  function setCaption(h){ caption.style.opacity=0; setTimeout(()=>{ caption.innerHTML=h; caption.style.opacity=1; },240); }
+  function panTo(y){ pan.style.transition='transform .95s cubic-bezier(.4,0,.25,1)'; pan.style.transform='translateY(-'+Math.max(0,y)+'px)'; }
+  function resetPan(){ pan.style.transition='none'; pan.style.transform='translateY(0)'; }
+
+  function countUp(el, to, dur, opt){
+    opt=opt||{}; const start=performance.now();
+    (function step(t){ const p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,3), v=Math.round(to*e);
+      el.textContent=(opt.pre||'')+(opt.money?v.toLocaleString():v)+(opt.suf||''); if(p<1) requestAnimationFrame(step); })(start);
+  }
+
+  const timers=[];
+  const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
+
+  function reset(){
+    timers.forEach(clearTimeout); timers.length=0;
+    resetPan();
+    tcards.forEach(c=>c.classList.remove('on'));
+    prows.forEach(p=>p.classList.remove('on'));
+    wrows.forEach(w=>w.classList.remove('on'));
+    clis.forEach(c=>c.classList.remove('on'));
+    rline.classList.remove('on');
+    document.getElementById('ptot').textContent='≈ 0원';
+    document.getElementById('tl0').textContent='0건';
+    document.getElementById('tl1').textContent='0건';
+    document.getElementById('tl2').textContent='0';
+    document.getElementById('tl3').textContent='0건';
+  }
+
+  const tblk=document.getElementById('tblk');
+  const wblk=document.getElementById('wblk');
+  const cblk=document.getElementById('cblk');
+
+  function run(){
+    reset();
+    // 1) 오늘 챙길 것 카드 stagger
+    setCaption('<b>오늘 챙길 것</b> — 돈·긴급도 순으로 3가지');
+    tcards.forEach((c,k)=> later(()=>c.classList.add('on'), 400+k*440));
+
+    // 2) 운영 보고서로 팬
+    later(()=>{ panTo(sec1.offsetTop-4); setCaption('<b>오늘의 운영 보고서</b> — AI가 지표를 대신 읽어요'); }, 3100);
+    later(()=> rline.classList.add('on'), 3900);
+
+    // 3) 매출 파이프라인
+    later(()=>{ setCaption('<b>오늘의 매출 파이프라인</b> — 들어올 돈, 트레이너별로'); }, 4700);
+    prows.forEach((p,k)=> later(()=>p.classList.add('on'), 4800+k*380));
+    later(()=> countUp(document.getElementById('ptot'),980,1100,{money:true,pre:'≈ ',suf:'만원'}), 6000);
+
+    // 4) 4타일 — 팬 후 count-up
+    later(()=>{ panTo(tblk.offsetTop-14); setCaption('<b>어제·이번 달</b> — 수업·예약·매출 한눈에'); }, 7200);
+    later(()=>{
+      countUp(document.getElementById('tl0'),18,900,{suf:'건'});
+      countUp(document.getElementById('tl1'),22,900,{suf:'건'});
+      countUp(document.getElementById('tl2'),4820,1100,{money:true});
+      countUp(document.getElementById('tl3'),8,800,{suf:'건'});
+    }, 7700);
+
+    // 5) 주의 회원 — 팬
+    later(()=>{ panTo(wblk.offsetTop-14); setCaption('<b>지금 주의할 회원</b> — 이탈위험·만료임박'); }, 9300);
+    wrows.forEach((w,k)=> later(()=>w.classList.add('on'), 9700+k*300));
+
+    // 6) 오늘 챙길 코칭 — 팬
+    later(()=>{ panTo(cblk.offsetTop-14); setCaption('<b>오늘 챙길 코칭</b> — 트레이너별 할 일'); }, 11300);
+    clis.forEach((c,k)=> later(()=>c.classList.add('on'), 11700+k*400));
+
+    // 반복
+    later(run, 15200);
+  }
+  run();
+</script>
+</body>
+</html>

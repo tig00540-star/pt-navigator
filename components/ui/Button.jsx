@@ -19,6 +19,9 @@ const BASE =
 const SIZE = {
   sm: "rounded-lg px-3 py-[7px] text-[13px] gap-1.5",
   md: "rounded-lg px-4 py-[11px] text-[14.5px] gap-2",
+  // lg(16px / 14×20) — DS Button 명세에 있으나 앱 본체엔 쓰임이 0이라 미도입 상태였다.
+  // 마케팅 랜딩(/lp) 히어로·최종 CTA가 이 큰 버튼이 필요한 첫 화면 → DS 값 그대로 도입.
+  lg: "rounded-lg px-5 py-[14px] text-[16px] gap-2",
 };
 
 // variant → 색. accent 있는 variant는 {trainer, owner}, 없는 것(danger)은 문자열.

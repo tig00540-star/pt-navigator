@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오직 트레이너 · 매출 파이프라인·예측 모션</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#f1f2f6; --card:#ffffff; --elevate:#e8eaf0; --line:#dfe2ea; --line-strong:#cbd2dd;
+    --ink:#13151b; --sub:#475569; --muted:#5b6675;
+    --primary:#dc2626; --primary-strong:#b91c1c; --primary-soft:#fef2f2;
+    --adm:#c026d3; --adm-text:#a21caf; --adm-soft:#fdf4ff;
+    --cyan:#0ea5e9; --cyan-text:#0369a1; --cyan-soft:#f0f9ff;
+    --rose:#e11d48; --rose-text:#be123c;
+    --shadow-sm:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+    --shadow-pop:0 4px 12px rgba(19,21,27,.08), 0 24px 48px -20px rgba(19,21,27,.4);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{ font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-weight:450; letter-spacing:-.011em; color:var(--ink); background:transparent;
+    min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px 16px; -webkit-font-smoothing:antialiased; }
+  .phonecol{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .caption{ text-align:center; font-size:16.5px; color:var(--sub); white-space:nowrap; line-height:1.55; min-height:24px; transition:opacity .4s var(--ease); }
+  .caption b{ color:var(--adm-text); font-weight:700; }
+
+  .phone{ width:344px; height:724px; border-radius:46px; background:#0b0c10; padding:11px; position:relative; box-shadow:var(--shadow-pop), 0 2px 6px rgba(0,0,0,.3); flex:0 0 auto; }
+  .phone::after{ content:""; position:absolute; top:20px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#0b0c10; border-radius:0 0 16px 16px; z-index:60; }
+  .screen{ width:100%; height:100%; border-radius:35px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .statusbar{ height:42px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 5px; font-size:12px; font-weight:600; }
+
+  .hdr{ flex:0 0 auto; background:rgba(255,255,255,.82); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); }
+  .hdr .row1{ display:flex; align-items:center; justify-content:space-between; padding:9px 14px; }
+  .lockup{ display:flex; align-items:center; gap:9px; }
+  .lockup svg{ width:34px; height:34px; border-radius:9px; }
+  .cname{ font-size:15.5px; font-weight:800; letter-spacing:-.03em; color:var(--ink); line-height:1; }
+  .crole{ margin-top:4px; font-size:11.5px; font-weight:700; color:var(--adm-text); line-height:1; }
+  .live{ display:flex; align-items:center; gap:5px; border:1px solid rgba(220,38,38,.3); background:var(--primary-soft); color:var(--primary-strong); font-size:10px; font-weight:800; letter-spacing:.14em; padding:5px 9px; border-radius:999px; }
+  .live i{ width:6px; height:6px; border-radius:999px; background:var(--primary); animation:blink 1.6s infinite; }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.3} }
+  .atabs{ display:flex; gap:2px; padding:0 10px; overflow-x:auto; scrollbar-width:none; }
+  .atabs::-webkit-scrollbar{ display:none; }
+  .atab{ position:relative; padding:9px 10px; font-size:12px; font-weight:700; color:rgba(162,28,175,.5); white-space:nowrap; flex:0 0 auto; }
+  .atab.on{ color:var(--adm-text); }
+  .atab.on::after{ content:""; position:absolute; left:6px; right:6px; bottom:0; height:2px; border-radius:2px; background:var(--adm); }
+
+  .body{ flex:1 1 auto; position:relative; overflow:hidden; padding:14px; }
+  .pan{ will-change:transform; }
+  .intro{ font-size:12.5px; line-height:1.55; color:var(--sub); margin-bottom:13px; }
+  .intro b{ color:var(--ink); font-weight:800; }
+  .card{ border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:15px; margin-bottom:13px; }
+  .clab{ display:flex; align-items:center; gap:6px; font-size:11px; letter-spacing:.02em; color:var(--muted); font-weight:600; }
+  .clab svg{ width:14px; height:14px; }
+
+  .big{ margin-top:8px; font-family:"Geist Mono",monospace; font-size:34px; font-weight:900; color:var(--primary-strong); line-height:1; }
+  .bigc{ color:var(--cyan-text); }
+  .csub{ margin-top:5px; font-size:11px; color:var(--muted); }
+  .badge{ display:inline-block; margin-left:7px; vertical-align:middle; border-radius:5px; background:var(--elevate); color:var(--muted); font-size:10px; font-weight:800; padding:2px 6px; }
+
+  .goalrow{ margin-top:15px; }
+  .goaltop{ display:flex; align-items:baseline; justify-content:space-between; font-size:12px; }
+  .goaltop .l{ color:var(--sub); }
+  .goaltop .r{ font-family:"Geist Mono",monospace; font-weight:800; color:var(--ink); }
+  .goaltop .r small{ font-family:inherit; font-weight:400; color:var(--muted); font-size:10.5px; margin-left:3px; }
+  .gbar{ margin-top:7px; height:8px; border-radius:999px; background:var(--line); overflow:hidden; }
+  .gbar i{ display:block; height:100%; border-radius:999px; background:var(--primary); width:0; transition:width 1.15s var(--ease); }
+  .gmeta{ margin-top:7px; font-size:11px; color:var(--muted); }
+
+  .fbox{ margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .fb{ border:1px solid var(--line); background:var(--elevate); border-radius:12px; padding:11px; }
+  .fb .l{ font-size:11px; font-weight:700; color:var(--sub); }
+  .fb .n{ margin-top:4px; font-family:"Geist Mono",monospace; font-size:17px; font-weight:900; color:var(--ink); }
+  .fb .f{ margin-top:4px; font-size:9.5px; line-height:1.5; color:var(--muted); }
+  .fnote{ margin-top:11px; font-size:9.5px; line-height:1.5; color:var(--muted); }
+
+  .stack{ margin-top:3px; display:flex; height:13px; width:100%; border-radius:999px; overflow:hidden; background:var(--line); }
+  .stack i{ height:100%; width:0; transition:width 1.05s var(--ease); }
+  .stack .s-new{ background:var(--primary); } .stack .s-re{ background:var(--cyan); }
+  .legend{ margin-top:13px; display:flex; flex-direction:column; gap:6px; font-size:12px; }
+  .lg{ display:flex; align-items:center; gap:7px; }
+  .dot{ width:9px; height:9px; border-radius:999px; flex:0 0 auto; }
+  .dot.n{ background:var(--primary); } .dot.r{ background:var(--cyan); }
+  .lg .nm{ color:var(--sub); } .lg .amt{ font-family:"Geist Mono",monospace; font-weight:800; color:var(--ink); }
+  .lg .meta{ color:var(--muted); font-size:11px; }
+  .refline{ margin-top:10px; font-size:11px; font-weight:700; color:var(--rose-text); }
+
+  .chart{ margin-top:6px; display:flex; align-items:flex-end; justify-content:space-between; gap:7px; height:132px; }
+  .col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; }
+  .colbar{ flex:1; width:100%; display:flex; align-items:flex-end; }
+  .colbar i{ margin:0 auto; width:20px; border-radius:5px 5px 0 0; background:var(--primary); height:0; transition:height .8s var(--ease); }
+  .colv{ font-family:"Geist Mono",monospace; font-size:10px; font-weight:700; color:var(--ink); }
+  .colr{ font-family:"Geist Mono",monospace; font-size:9px; color:var(--rose-text); margin-top:-2px; }
+  .colm{ font-size:10px; color:var(--muted); }
+  .chnote{ margin-top:11px; font-size:9.5px; line-height:1.5; color:var(--muted); }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <div class="phonecol">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+
+        <div class="hdr">
+          <div class="row1">
+            <div class="lockup">
+              <svg viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#c026d3"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
+              <div><div class="cname">강남 피트니스</div><div class="crole">Admin · 총괄 경영</div></div>
+            </div>
+            <div class="live"><i></i>LIVE</div>
+          </div>
+          <div class="atabs">
+            <div class="atab">브리핑</div><div class="atab">트레이너</div><div class="atab on">매출</div>
+            <div class="atab">OT회원</div><div class="atab">PT회원</div><div class="atab">스케줄</div><div class="atab">급여</div><div class="atab">운영</div>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="pan" id="pan">
+            <div class="intro">이달 <b>번 돈과 목표</b>, 다음달 <b>들어올 돈 예상</b>을 한눈에.</div>
+
+            <!-- ① 이달 순매출 + 목표 게이지 -->
+            <div class="card" id="c1">
+              <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/></svg> 이달 순매출</div>
+              <div class="big"><span id="net">0</span>만원</div>
+              <div class="csub">2026.07 · 환불 차감 · 인계·외부 제외</div>
+              <div class="goalrow">
+                <div class="goaltop"><span class="l">목표 달성</span><span class="r"><span id="gpct">0%</span> <small>(4,820만 / 5,000만)</small></span></div>
+                <div class="gbar"><i id="gbar"></i></div>
+                <div class="gmeta">트레이너 3/3명 목표 설정</div>
+              </div>
+            </div>
+
+            <!-- ② 다음달 예측 -->
+            <div class="card" id="c2">
+              <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8M21 7v5h-5" stroke-linecap="round" stroke-linejoin="round"/></svg> 다음달 예상 매출 · 추정</div>
+              <div class="big bigc">≈ <span id="fc">0</span>만원<span class="badge">추정</span></div>
+              <div class="fbox">
+                <div class="fb"><div class="l">신규 유입에서</div><div class="n">≈ <span id="fnew">0</span>만</div><div class="f">OT 진행 12명 × 전환율 46% × 평균 580만</div></div>
+                <div class="fb"><div class="l">재등록에서</div><div class="n">≈ <span id="fre">0</span>만</div><div class="f">만료임박 5명 × 재등록률 82% × 평균 476만</div></div>
+              </div>
+              <div class="fnote">과거 전환율·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있습니다.</div>
+            </div>
+
+            <!-- ③ 구성비 -->
+            <div class="card" id="c3">
+              <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v9l7.5 4.3A9 9 0 1 0 12 3z" stroke-linejoin="round"/></svg> 이달 매출 구성 · 신규 vs 재등록</div>
+              <div class="stack" style="margin-top:12px"><i class="s-new" id="snew"></i><i class="s-re" id="sre"></i></div>
+              <div class="legend">
+                <div class="lg"><span class="dot n"></span><span class="nm">신규</span><span class="amt">3,150만</span><span class="meta">(8건 · 64%)</span></div>
+                <div class="lg"><span class="dot r"></span><span class="nm">재등록</span><span class="amt">1,790만</span><span class="meta">(12건 · 36%)</span></div>
+              </div>
+              <div class="refline">환불 −120만 · 순매출 4,820만</div>
+            </div>
+
+            <!-- ④ 6개월 추이 -->
+            <div class="card" id="c4">
+              <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg> 매출·환불 추이 · 최근 6개월</div>
+              <div class="chart">
+                <div class="col"><div class="colbar"><i data-h="81"></i></div><div class="colv">3,900만</div><div class="colm">2월</div></div>
+                <div class="col"><div class="colbar"><i data-h="85"></i></div><div class="colv">4,100만</div><div class="colm">3월</div></div>
+                <div class="col"><div class="colbar"><i data-h="78"></i></div><div class="colv">3,750만</div><div class="colr">−80만</div><div class="colm">4월</div></div>
+                <div class="col"><div class="colbar"><i data-h="91"></i></div><div class="colv">4,400만</div><div class="colm">5월</div></div>
+                <div class="col"><div class="colbar"><i data-h="95"></i></div><div class="colv">4,600만</div><div class="colm">6월</div></div>
+                <div class="col"><div class="colbar"><i data-h="100"></i></div><div class="colv">4,820만</div><div class="colm">7월</div></div>
+              </div>
+              <div class="chnote">막대=월 순매출(환불 차감) · 빨강=환불 · 숫자는 만원 단위.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption" id="caption"><b>이달 순매출</b> — 목표 대비 한눈에</div>
+  </div>
+
+<script>
+  const pan=document.getElementById('pan');
+  const caption=document.getElementById('caption');
+  const c2=document.getElementById('c2'), c3=document.getElementById('c3'), c4=document.getElementById('c4');
+  const bars=[...document.querySelectorAll('.colbar i')];
+
+  function setCaption(h){ caption.style.opacity=0; setTimeout(()=>{ caption.innerHTML=h; caption.style.opacity=1; },240); }
+  function panTo(y){ pan.style.transition='transform .95s cubic-bezier(.4,0,.25,1)'; pan.style.transform='translateY(-'+Math.max(0,y)+'px)'; }
+  function resetPan(){ pan.style.transition='none'; pan.style.transform='translateY(0)'; }
+  function countUp(el,to,dur,opt){ opt=opt||{}; const s=performance.now();
+    (function step(t){ const p=Math.min(1,(t-s)/dur), e=1-Math.pow(1-p,3), v=Math.round(to*e);
+      el.textContent=(opt.money?v.toLocaleString():v)+(opt.suf||''); if(p<1) requestAnimationFrame(step); })(s); }
+
+  const timers=[]; const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
+
+  function reset(){
+    timers.forEach(clearTimeout); timers.length=0; resetPan();
+    document.getElementById('net').textContent='0';
+    document.getElementById('gpct').textContent='0%';
+    document.getElementById('gbar').style.width='0';
+    document.getElementById('fc').textContent='0';
+    document.getElementById('fnew').textContent='0';
+    document.getElementById('fre').textContent='0';
+    document.getElementById('snew').style.width='0';
+    document.getElementById('sre').style.width='0';
+    bars.forEach(b=>b.style.height='0');
+  }
+
+  function run(){
+    reset();
+    // ① 순매출 + 게이지
+    setCaption('<b>이달 순매출</b> — 목표 대비 한눈에');
+    later(()=>{
+      countUp(document.getElementById('net'),4820,1200,{money:true});
+      document.getElementById('gbar').style.width='96%';
+      countUp(document.getElementById('gpct'),96,1100,{suf:'%'});
+    }, 500);
+
+    // ② 예측
+    later(()=>{ panTo(c2.offsetTop-8); setCaption('<b>다음달 예상 매출</b> — 번 돈 + 들어올 돈'); }, 2900);
+    later(()=>{
+      countUp(document.getElementById('fc'),5150,1200,{money:true});
+      countUp(document.getElementById('fnew'),3200,1100,{money:true});
+      countUp(document.getElementById('fre'),1950,1100,{money:true});
+    }, 3500);
+
+    // ③ 구성비
+    later(()=>{ panTo(c3.offsetTop-8); setCaption('<b>신규 vs 재등록</b> — 매출 구성비'); }, 5900);
+    later(()=>{ document.getElementById('snew').style.width='64%'; document.getElementById('sre').style.width='36%'; }, 6400);
+
+    // ④ 6개월 추이
+    later(()=>{ panTo(c4.offsetTop-8); setCaption('<b>최근 6개월 추이</b> — 우상향 흐름'); }, 8000);
+    bars.forEach((b,k)=> later(()=>b.style.height=b.dataset.h+'%', 8500+k*130));
+
+    later(run, 11800);
+  }
+  run();
+</script>
+</body>
+</html>

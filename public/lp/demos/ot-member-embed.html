@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오직 트레이너 · 회원 전용 페이지 모션</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#f1f2f6; --card:#ffffff; --elevate:#e8eaf0; --line:#dfe2ea; --line-strong:#cbd2dd;
+    --ink:#13151b; --sub:#475569; --muted:#5b6675;
+    --primary:#dc2626; --primary-strong:#b91c1c; --primary-soft:#fef2f2;
+    --pt:#0ea5e9; --pt-text:#0369a1; --pt-soft:#f0f9ff; --amber:#f59e0b;
+    --shadow-sm:0 1px 2px rgba(19,21,27,.05), 0 12px 32px -18px rgba(19,21,27,.32);
+    --shadow-pop:0 4px 12px rgba(19,21,27,.08), 0 24px 48px -20px rgba(19,21,27,.4);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{ font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-weight:450; letter-spacing:-.011em; color:var(--ink); background:transparent;
+    min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px 16px; -webkit-font-smoothing:antialiased; }
+  .phonecol{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .caption{ text-align:center; font-size:16.5px; color:var(--sub); white-space:nowrap; line-height:1.55; min-height:24px; transition:opacity .4s var(--ease); }
+  .caption b{ color:var(--primary-strong); font-weight:700; }
+
+  .phone{ width:344px; height:724px; border-radius:46px; background:#0b0c10; padding:11px; position:relative; box-shadow:var(--shadow-pop), 0 2px 6px rgba(0,0,0,.3); flex:0 0 auto; }
+  .phone::after{ content:""; position:absolute; top:20px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#0b0c10; border-radius:0 0 16px 16px; z-index:60; }
+  .screen{ width:100%; height:100%; border-radius:35px; background:linear-gradient(180deg,#fdecec 0%, var(--bg) 230px); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .statusbar{ height:42px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 5px; font-size:12px; font-weight:600; }
+
+  .mhead{ flex:0 0 auto; }
+  .mbrandbar{ display:flex; align-items:center; justify-content:space-between; padding:9px 16px; border-bottom:1px solid rgba(220,38,38,.16); background:rgba(255,255,255,.72); backdrop-filter:blur(12px); }
+  .wm{ font-size:14px; font-weight:800; letter-spacing:-.04em; white-space:nowrap; } .wm .b{ color:var(--ink); } .wm .r{ color:var(--primary); }
+  .mtag2{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:var(--primary-strong); background:var(--primary-soft); border:1px solid rgba(220,38,38,.35); border-radius:999px; padding:4px 10px; }
+  .mtag2 svg{ width:11px; height:11px; }
+  .mtitlebar{ padding:13px 16px 0; }
+  .mtitle{ font-size:23px; font-weight:800; letter-spacing:-.02em; color:var(--ink); }
+  .mtitle span{ font-size:14px; font-weight:700; color:var(--muted); }
+  .mchips{ margin-top:9px; display:flex; flex-wrap:wrap; gap:5px; }
+  .mchip{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--sub); background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px 9px; }
+  .mchip svg{ width:11px; height:11px; color:var(--primary-strong); }
+  .msub{ margin-top:11px; display:flex; gap:6px; }
+  .msub div{ font-size:12.5px; font-weight:700; padding:8px 13px; border-radius:9px; }
+  .msub .on{ background:var(--primary-soft); color:var(--primary-strong); box-shadow:inset 0 0 0 1px rgba(220,38,38,.3); }
+  .msub .off{ color:var(--muted); background:var(--elevate); }
+
+  .stage{ flex:1 1 auto; position:relative; overflow:hidden; }
+  .scene{ position:absolute; inset:0; overflow:hidden; padding:16px; opacity:0; transform:translateY(12px); transition:opacity .5s var(--ease), transform .5s var(--ease); pointer-events:none; }
+  .scene.on{ opacity:1; transform:translateY(0); }
+  .pan{ will-change:transform; }
+
+  /* 로그인 */
+  .login{ height:100%; display:flex; align-items:center; justify-content:center; }
+  .logincard{ width:100%; border:1px solid var(--line); background:var(--card); border-radius:18px; box-shadow:var(--shadow-sm); padding:24px 20px; text-align:center; }
+  .loginlogo{ width:46px; height:46px; margin:0 auto 14px; }
+  .logint{ font-size:18px; font-weight:800; color:var(--ink); }
+  .logins{ margin-top:4px; font-size:12.5px; color:var(--muted); }
+  .loginlab{ margin-top:22px; text-align:left; font-size:12.5px; font-weight:600; color:var(--sub); margin-bottom:7px; }
+  .pin{ width:100%; border:1px solid var(--line-strong); background:var(--elevate); border-radius:10px; padding:14px; text-align:center; font-family:"Geist Mono",monospace; font-size:26px; font-weight:800; letter-spacing:.42em; color:var(--ink); transition:border-color .2s; }
+  .pin.focus{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(220,38,38,.12); }
+  .pin:empty::before{ content:'0000'; color:var(--muted); }
+  .loginbtn{ width:100%; margin-top:14px; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-weight:800; font-size:14.5px; padding:13px; border-radius:10px; border:none; box-shadow:0 8px 18px -8px rgba(220,38,38,.55); }
+  .loginnote{ margin-top:16px; font-size:10.5px; line-height:1.6; color:var(--muted); }
+
+  /* 미확인 수업일지 소프트 배너 */
+  .ucbanner{ display:flex; align-items:center; gap:11px; border:1px solid rgba(220,38,38,.28); background:var(--primary-soft); border-radius:14px; padding:13px 14px; margin-bottom:14px; transition:opacity .4s, transform .4s; }
+  .ucbanner .ic{ width:34px; height:34px; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center; flex:0 0 auto; box-shadow:var(--shadow-sm); }
+  .ucbanner .ic svg{ width:18px; height:18px; color:var(--primary-strong); }
+  .ucbanner .tx{ flex:1; min-width:0; }
+  .ucbanner .tx .t{ font-size:13px; font-weight:800; color:var(--ink); }
+  .ucbanner .tx .s{ margin-top:2px; font-size:11px; color:var(--sub); }
+  .ucbanner .go{ font-size:11.5px; font-weight:800; color:var(--primary-strong); flex:0 0 auto; }
+  .ucbanner.done{ border-color:var(--line); background:var(--card); }
+  .ucbanner.done .ic svg{ color:#16a34a; }
+  .okbanner .t{ color:var(--sub) !important; font-weight:700 !important; }
+
+  /* 오운완 + 트레이너 포상 */
+  .oun{ border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:16px; }
+  .ounh{ display:flex; align-items:center; gap:8px; }
+  .ounh .fl{ font-size:19px; }
+  .ounh .t{ font-size:15px; font-weight:800; color:var(--ink); }
+  .ouns{ margin-top:5px; font-size:12.5px; color:var(--sub); }
+  .ounstat{ margin-top:13px; display:flex; gap:20px; border-top:1px solid var(--line); padding-top:13px; }
+  .ounstat .l{ font-size:10.5px; color:var(--muted); }
+  .ounstat .v{ font-size:19px; font-weight:800; color:var(--ink); } .ounstat .v small{ font-size:12px; font-weight:700; color:var(--muted); margin-left:1px; }
+  .ounbadges{ margin-top:13px; display:flex; flex-wrap:wrap; gap:6px; }
+  .obadge{ display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700; }
+  .obadge.on{ background:var(--primary-soft); color:var(--primary-strong); box-shadow:inset 0 0 0 1px rgba(220,38,38,.3); }
+  .obadge.off{ background:var(--elevate); color:var(--muted); font-weight:500; }
+  .obadge svg{ width:11px; height:11px; }
+  .reward{ margin-top:14px; border-top:1px solid var(--line); padding-top:13px; }
+  .rewardh{ display:flex; align-items:center; gap:6px; margin-bottom:11px; }
+  .rewardh svg{ width:15px; height:15px; color:var(--primary-strong); }
+  .rewardh span{ font-size:12px; font-weight:800; color:var(--sub); }
+  .ritem+.ritem{ margin-top:12px; }
+  .rtop{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .rtop .rt{ font-size:13px; font-weight:700; color:var(--ink); }
+  .rtop .rc{ flex:0 0 auto; font-size:11px; font-weight:700; color:var(--muted); }
+  .rbar{ margin-top:7px; height:7px; border-radius:999px; background:var(--elevate); overflow:hidden; }
+  .rbar i{ display:block; height:100%; border-radius:999px; background:var(--primary); width:0; transition:width 1s var(--ease); }
+  .rdone{ margin-top:6px; font-size:11px; font-weight:800; color:var(--primary-strong); }
+
+  /* 운동 달력 */
+  .cal{ border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:14px; }
+  .calhead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:11px; }
+  .calhead .m{ font-size:14px; font-weight:800; color:var(--ink); }
+  .calhead svg{ width:17px; height:17px; color:var(--muted); }
+  .caldow{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; text-align:center; font-size:10.5px; font-weight:600; color:var(--muted); margin-bottom:4px; }
+  .caldow .sun{ color:#e11d48; } .caldow .sat{ color:#0ea5e9; }
+  .calgrid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .cell{ aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border-radius:8px; font-size:12px; color:var(--ink); }
+  .cell.act{ background:var(--elevate); }
+  .cell.today{ box-shadow:inset 0 0 0 1.6px var(--primary); font-weight:800; color:var(--primary-strong); }
+  .cell.sun{ color:#e11d48; } .cell.sat{ color:#0ea5e9; }
+  .cell .dots{ display:flex; gap:2px; height:5px; align-items:center; }
+  .cell .dot{ width:5px; height:5px; border-radius:50%; }
+  .dot.pt{ background:var(--primary); } .dot.pe{ background:var(--amber); } .dot.ca{ background:#0ea5e9; }
+  .callegend{ margin-top:12px; display:flex; gap:14px; font-size:11px; color:var(--muted); }
+  .callegend span{ display:flex; align-items:center; gap:5px; }
+  .lgd{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .lgd.pt{ background:var(--primary); } .lgd.pe{ background:var(--amber); } .lgd.ca{ background:#0ea5e9; }
+
+  /* 변화 그래프 */
+  .chart{ border:1px solid var(--line); background:var(--card); border-radius:14px; box-shadow:var(--shadow-sm); padding:12px 13px; }
+  .chart+.chart{ margin-top:9px; }
+  .chh{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .chn{ font-size:12px; font-weight:800; color:var(--ink); }
+  .chd{ font-size:11px; font-weight:800; border-radius:6px; padding:2px 7px; white-space:nowrap; }
+  .chd.up{ color:var(--pt-text); background:var(--pt-soft); }
+  .chd.dn{ color:var(--primary-strong); background:var(--primary-soft); }
+  .spark{ width:100%; height:auto; display:block; }
+  .spark .area{ fill:rgba(220,38,38,.10); stroke:none; }
+  .spark .ln{ fill:none; stroke:var(--primary); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+  .spark circle{ fill:var(--primary); }
+  .chx{ display:flex; justify-content:space-between; margin-top:6px; font-size:10.5px; font-weight:600; color:var(--muted); }
+
+  .eyerow{ margin-top:18px; display:flex; align-items:center; gap:7px; margin-bottom:10px; }
+  .eyerow svg{ width:15px; height:15px; color:var(--primary-strong); }
+  .eyerow span{ font-size:12px; font-weight:700; letter-spacing:.02em; color:var(--sub); }
+
+  /* 내 수업일지(요약 텍스트 + 회차) */
+  .logcard{ border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:14px; }
+  .logtop{ display:flex; align-items:center; gap:7px; }
+  .logtop .dt{ font-size:12px; font-weight:800; color:var(--primary-strong); }
+  .logtop .rd{ border-radius:999px; background:var(--elevate); color:var(--sub); font-size:10.5px; font-weight:700; padding:2px 8px; }
+  .badge-uc{ margin-left:auto; border-radius:6px; background:var(--elevate); color:var(--muted); font-size:10px; font-weight:800; padding:2px 7px; }
+  .badge-ok{ margin-left:auto; border-radius:6px; background:var(--primary-soft); color:var(--primary-strong); font-size:10px; font-weight:800; padding:2px 7px; display:inline-flex; align-items:center; gap:3px; }
+  .badge-ok svg{ width:10px; height:10px; }
+  .logsum{ margin-top:10px; font-size:12.5px; line-height:1.65; color:var(--ink); }
+  .logmeta{ margin-top:9px; padding-top:9px; border-top:1px dashed var(--line); font-size:11px; color:var(--muted); }
+
+  /* 비포애프터 사진 */
+  .photos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .pcard{ border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--card); box-shadow:var(--shadow-sm); }
+  .pimg{ height:118px; display:flex; align-items:flex-end; padding:9px; }
+  .pimg.before{ background:linear-gradient(150deg,#cbd2dd,#aab3c2); }
+  .pimg.after{ background:linear-gradient(150deg,#fca5a5,#dc2626); }
+  .plabel{ font-size:11px; font-weight:800; color:#fff; background:rgba(0,0,0,.32); border-radius:7px; padding:3px 9px; }
+  .pdate{ padding:8px 10px; font-size:10.5px; color:var(--muted); }
+
+  /* 기록 남기기 폼 */
+  .formcard{ border:1px solid var(--line); background:var(--card); border-radius:16px; box-shadow:var(--shadow-sm); padding:15px; }
+  .formcard+.formcard{ margin-top:13px; }
+  .feye{ display:flex; align-items:center; gap:7px; margin-bottom:12px; }
+  .feye svg{ width:16px; height:16px; color:var(--primary-strong); }
+  .feye span{ font-size:13px; font-weight:800; color:var(--ink); }
+  .ffield{ margin-bottom:11px; } .ffield:last-of-type{ margin-bottom:0; }
+  .flabel{ font-size:12px; font-weight:600; color:var(--sub); margin-bottom:5px; }
+  .finp{ border:1px solid var(--line-strong); background:var(--elevate); border-radius:10px; padding:11px 12px; font-size:14px; min-height:42px; transition:border-color .3s, background .3s, box-shadow .3s; }
+  .finp .ph{ color:var(--muted); } .finp .vv{ display:none; color:var(--ink); font-weight:700; }
+  .finp .u{ color:var(--muted); font-weight:500; font-size:12px; margin-left:2px; }
+  .finp.on{ border-color:var(--primary); background:#fff; box-shadow:0 0 0 3px rgba(220,38,38,.1); }
+  .finp.on .ph{ display:none; } .finp.on .vv{ display:inline; }
+  .frow{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .savebtn{ width:100%; margin-top:13px; display:flex; align-items:center; justify-content:center; gap:7px;
+    background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-weight:800; font-size:13.5px; padding:12px; border-radius:10px; border:none; box-shadow:0 8px 18px -8px rgba(220,38,38,.55); transition:all .3s var(--ease); }
+  .savebtn svg{ width:15px; height:15px; }
+  .savebtn.done{ background:var(--primary-soft); color:var(--primary-strong); box-shadow:none; }
+  .photoup{ border:1.5px dashed var(--line-strong); border-radius:12px; padding:20px; display:flex; flex-direction:column; align-items:center; gap:7px; color:var(--muted); transition:border-color .3s, background .3s; }
+  .photoup.on{ border-color:var(--primary); background:var(--primary-soft); color:var(--primary-strong); }
+  .photoup svg{ width:26px; height:26px; }
+  .photoup .pt{ font-size:12.5px; font-weight:700; }
+
+  /* 수업일지 확인 바텀시트 */
+  .sheetdim{ position:absolute; inset:0; z-index:74; background:rgba(19,21,27,.32); opacity:0; pointer-events:none; transition:opacity .4s; }
+  .sheetdim.on{ opacity:1; }
+  .sheet{ position:absolute; left:0; right:0; bottom:0; z-index:76; background:var(--card); border-radius:22px 22px 0 0; box-shadow:0 -12px 40px -12px rgba(0,0,0,.35);
+    transform:translateY(100%); transition:transform .5s var(--ease); max-height:78%; display:flex; flex-direction:column; }
+  .sheet.on{ transform:translateY(0); }
+  .grip{ width:38px; height:4px; border-radius:999px; background:var(--line-strong); margin:9px auto 4px; flex:0 0 auto; }
+  .shead{ padding:6px 18px 12px; border-bottom:1px solid var(--line); flex:0 0 auto; }
+  .shead .st{ font-size:16px; font-weight:800; color:var(--ink); }
+  .shead .ss{ margin-top:3px; display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--muted); }
+  .shead .rd{ border-radius:999px; background:var(--primary-soft); color:var(--primary-strong); font-size:10.5px; font-weight:800; padding:2px 8px; }
+  .sbody{ padding:15px 18px; overflow:hidden; flex:1 1 auto; }
+  .snote{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--primary-strong); background:var(--primary-soft); border:1px solid rgba(220,38,38,.2); border-radius:10px; padding:9px 11px; margin-bottom:12px; }
+  .snote svg{ width:14px; height:14px; flex:0 0 auto; }
+  .ssum{ font-size:13px; line-height:1.7; color:var(--ink); }
+  .ssum b{ font-weight:800; }
+  .schips{ margin-top:12px; display:flex; flex-wrap:wrap; gap:6px; }
+  .schip{ font-family:"Geist Mono",monospace; font-size:11px; font-weight:700; color:var(--ink); background:var(--elevate); border:1px solid var(--line); border-radius:8px; padding:4px 9px; }
+  .sfoot{ padding:12px 18px 16px; border-top:1px solid var(--line); flex:0 0 auto; }
+  .confirmbtn{ width:100%; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-weight:800; font-size:14.5px; padding:14px; border-radius:10px; border:none; box-shadow:0 8px 18px -8px rgba(220,38,38,.55); display:flex; align-items:center; justify-content:center; gap:7px; }
+  .confirmbtn svg{ width:16px; height:16px; }
+
+  .cursor{ position:absolute; width:26px; height:26px; z-index:85; left:50%; top:60%; pointer-events:none; transition:left .8s var(--ease), top .8s var(--ease); filter:drop-shadow(0 3px 5px rgba(0,0,0,.35)); }
+  .cursor svg{ width:100%; height:100%; }
+  .ripple{ position:absolute; z-index:84; width:34px; height:34px; border-radius:50%; border:2px solid rgba(220,38,38,.7); left:0; top:0; opacity:0; pointer-events:none; }
+  .ripple.go{ animation:ripple .55s var(--ease); }
+  @keyframes ripple{ 0%{opacity:.9; transform:scale(.5)} 100%{opacity:0; transform:scale(1.5)} }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <div class="phonecol">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+
+        <div class="mhead" id="mHead" style="display:none">
+          <div class="mbrandbar">
+            <span class="wm"><span class="b">오직 </span><span class="r">트레이너</span></span>
+            <span class="mtag2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" stroke-linecap="round" stroke-linejoin="round"/></svg>회원 전용 페이지</span>
+          </div>
+          <div class="mtitlebar">
+            <div class="mtitle">이지은 <span>회원님 공간</span></div>
+            <div class="mchips">
+              <span class="mchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg>목표 바디프로필</span>
+              <span class="mchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>D-84</span>
+              <span class="mchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" stroke-linecap="round" stroke-linejoin="round"/></svg>담당 박준형 트레이너</span>
+            </div>
+            <div class="msub"><div class="on" id="tabRead">내 기록</div><div class="off" id="tabWrite">기록 남기기</div></div>
+          </div>
+        </div>
+
+        <div class="stage" id="stage">
+
+          <!-- 씬0: 로그인 -->
+          <div class="scene" data-s="0">
+            <div class="login">
+              <div class="logincard">
+                <svg class="loginlogo" viewBox="0 0 512 512"><rect width="512" height="512" rx="120" fill="#fff" stroke="#dfe2ea" stroke-width="6"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#dc2626"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
+                <div class="logint">내 운동 기록</div>
+                <div class="logins">본인 확인 후 열람할 수 있어요</div>
+                <div class="loginlab">휴대폰 뒤 4자리</div>
+                <div class="pin" id="pin"></div>
+                <button class="loginbtn" id="loginBtn">확인</button>
+                <div class="loginnote">담당 트레이너가 보내준 링크로 접속하셨어요. 본인 기록만 안전하게 열람됩니다.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 씬1: 회원 홈(내 기록) -->
+          <div class="scene" data-s="1">
+            <div class="pan" id="pan1">
+              <!-- 미확인 수업일지 배너 -->
+              <div class="ucbanner" id="ucBanner">
+                <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="tx"><div class="t" id="ucTitle">확인 안 한 수업일지 1건</div><div class="s" id="ucSub">오늘 · 12회차 — 눌러서 확인해요</div></div>
+                <div class="go" id="ucGo">확인 ›</div>
+              </div>
+
+              <!-- 오운완 + 포상 -->
+              <div class="oun">
+                <div class="ounh"><span class="fl">🔥</span><span class="t">오늘 오운완 완료!</span></div>
+                <div class="ouns">8일 연속으로 해내고 있어요 🔥</div>
+                <div class="ounstat">
+                  <div><div class="l">이번 달</div><div class="v">16<small>회</small></div></div>
+                  <div><div class="l">누적</div><div class="v">42<small>회</small></div></div>
+                  <div><div class="l">연속</div><div class="v">8<small>일</small></div></div>
+                </div>
+                <div class="ounbadges">
+                  <span class="obadge on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 4.8L19 9.5l-4.8 1.9L12 16l-1.9-4.6L5 9.5l5.1-1.7z" stroke-linejoin="round"/></svg>첫 오운완</span>
+                  <span class="obadge on">🔥 불꽃 7일</span>
+                  <span class="obadge on">꾸준 10회</span>
+                  <span class="obadge on">든든 30회</span>
+                  <span class="obadge off">골드 60회</span>
+                </div>
+                <div class="reward">
+                  <div class="rewardh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17a2 2 0 0 1-2 2H8M14 14.7V17a2 2 0 0 0 2 2h0M18 2H6v7a6 6 0 0 0 12 0z" stroke-linecap="round" stroke-linejoin="round"/></svg><span>트레이너 포상</span></div>
+                  <div class="ritem">
+                    <div class="rtop"><span class="rt">단백질 쉐이크 1잔 → 30회 달성</span><span class="rc">42/30회</span></div>
+                    <div class="rbar"><i data-w="100"></i></div>
+                    <div class="rdone">달성! 트레이너에게 받으세요 🎉</div>
+                  </div>
+                  <div class="ritem">
+                    <div class="rtop"><span class="rt">센터 굿즈 티셔츠 → 50회 달성</span><span class="rc">42/50회</span></div>
+                    <div class="rbar"><i data-w="84"></i></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="eyerow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></svg><span>운동 달력 · 자동 체크</span></div>
+              <div class="cal">
+                <div class="calhead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="m">2026년 7월</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="caldow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
+                <div class="calgrid" id="calGrid"></div>
+                <div class="callegend"><span><i class="lgd pt"></i>PT 받은 날</span><span><i class="lgd pe"></i>개인운동</span><span><i class="lgd ca"></i>유산소</span></div>
+              </div>
+
+              <div class="eyerow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" stroke-linecap="round" stroke-linejoin="round"/></svg><span>내 수업일지</span></div>
+              <div class="logcard">
+                <div class="logtop"><span class="dt">오늘</span><span class="rd">12회차</span><span id="logBadge" class="badge-uc">미확인</span></div>
+                <div class="logsum">덤벨 숄더프레스로 어깨 운동을 진행했어요. <b>6kg에서 14kg까지</b> 2kg씩 점진적으로 올리며 12개씩 5세트. 이어서 사이드 레터럴 레이즈로 측면을 마무리했어요. 어깨 앞쪽 통증 없이 잘 따라오셨습니다 👏</div>
+                <div class="logmeta">담당 박준형 트레이너 · 오늘 오후 8시 12분</div>
+              </div>
+
+              <div class="eyerow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M5 8l7-5 7 5M5 8v8l7 5 7-5V8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>인바디 변화</span></div>
+              <div class="chart"><div class="chh"><span class="chn">체중</span><span class="chd dn">▼ -3.6kg</span></div><svg class="spark" viewBox="0 0 260 64"><polyline class="area" points="8,12 69,24.2 130,34 191,48.7 252,56 252,64 8,64"/><polyline class="ln" points="8,12 69,24.2 130,34 191,48.7 252,56"/><circle cx="8" cy="12" r="3"/><circle cx="252" cy="56" r="3.5"/></svg><div class="chx"><span>시작 62.0kg</span><span>지금 58.4kg</span></div></div>
+              <div class="chart"><div class="chh"><span class="chn">골격근량</span><span class="chd up">▲ +2.2kg</span></div><svg class="spark" viewBox="0 0 260 64"><polyline class="area" points="8,56 69,46 130,34 191,20 252,12 252,64 8,64"/><polyline class="ln" points="8,56 69,46 130,34 191,20 252,12"/><circle cx="8" cy="56" r="3"/><circle cx="252" cy="12" r="3.5"/></svg><div class="chx"><span>시작 22.1kg</span><span>지금 24.3kg</span></div></div>
+              <div class="chart"><div class="chh"><span class="chn">체지방률</span><span class="chd dn">▼ -7%p</span></div><svg class="spark" viewBox="0 0 260 64"><polyline class="area" points="8,12 69,24.6 130,37.1 191,49.7 252,56 252,64 8,64"/><polyline class="ln" points="8,12 69,24.6 130,37.1 191,49.7 252,56"/><circle cx="8" cy="12" r="3"/><circle cx="252" cy="56" r="3.5"/></svg><div class="chx"><span>시작 30%</span><span>지금 23%</span></div></div>
+
+              <div class="eyerow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5 17.5 17.5M4 12l4-4M16 16l4-4M2 14l3 3M17 5l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>종목별 무게 변화</span></div>
+              <div class="chart"><div class="chh"><span class="chn">덤벨 숄더프레스 · 최고 중량</span><span class="chd up">▲ +6kg</span></div><svg class="spark" viewBox="0 0 260 64"><polyline class="area" points="8,56 69,41.3 130,41.3 191,26.7 252,12 252,64 8,64"/><polyline class="ln" points="8,56 69,41.3 130,41.3 191,26.7 252,12"/><circle cx="8" cy="56" r="3"/><circle cx="252" cy="12" r="3.5"/></svg><div class="chx"><span>시작 8kg</span><span>지금 14kg</span></div></div>
+
+              <div class="eyerow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21" stroke-linecap="round" stroke-linejoin="round"/></svg><span>비포 · 애프터 사진</span></div>
+              <div class="photos">
+                <div class="pcard"><div class="pimg before"><span class="plabel">비포</span></div><div class="pdate">4월 3일 · 시작</div></div>
+                <div class="pcard"><div class="pimg after"><span class="plabel">애프터</span></div><div class="pdate">7월 24일 · 오늘</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 씬2: 기록 남기기 -->
+          <div class="scene" data-s="2">
+            <div class="pan" id="pan2">
+              <div class="formcard">
+                <div class="feye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>유산소 기록</span></div>
+                <div class="ffield"><div class="flabel">시간(분)</div><div class="finp"><span class="ph">예: 30</span><span class="vv">30<span class="u">분</span></span></div></div>
+                <div class="ffield"><div class="flabel">종류</div><div class="finp"><span class="ph">러닝 / 사이클 / 걷기…</span><span class="vv">러닝</span></div></div>
+                <div class="ffield"><div class="flabel">메모</div><div class="finp"><span class="ph">예: 가볍게 조깅</span><span class="vv">가볍게 조깅</span></div></div>
+                <button class="savebtn" id="saveCardio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8" stroke-linecap="round" stroke-linejoin="round"/></svg>유산소 저장</button>
+              </div>
+              <div class="formcard">
+                <div class="feye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5 17.5 17.5M4 12l4-4M16 16l4-4M2 14l3 3M17 5l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>개인운동 기록</span></div>
+                <div class="ffield"><div class="flabel">종목</div><div class="finp"><span class="ph">예: 랫풀다운</span><span class="vv">랫풀다운</span></div></div>
+                <div class="frow">
+                  <div class="ffield"><div class="flabel">무게(kg)</div><div class="finp"><span class="ph">예: 40</span><span class="vv">40<span class="u">kg</span></span></div></div>
+                  <div class="ffield"><div class="flabel">횟수·세트</div><div class="finp"><span class="ph">예: 12회 4세트</span><span class="vv">12회 4세트</span></div></div>
+                </div>
+                <button class="savebtn" id="savePersonal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8" stroke-linecap="round" stroke-linejoin="round"/></svg>개인운동 저장</button>
+              </div>
+              <div class="formcard">
+                <div class="feye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21" stroke-linecap="round" stroke-linejoin="round"/></svg><span>비포 · 애프터 사진 올리기</span></div>
+                <div class="photoup" id="photoUp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg><span class="pt">눌러서 오늘 사진 추가</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 수업일지 확인 바텀시트 -->
+        <div class="sheetdim" id="sheetDim"></div>
+        <div class="sheet" id="sheet">
+          <div class="grip"></div>
+          <div class="shead">
+            <div class="st">수업일지</div>
+            <div class="ss"><span class="rd">오늘 · 12회차</span><span>담당 박준형 트레이너</span></div>
+          </div>
+          <div class="sbody">
+            <div class="snote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>트레이너가 저장한 오늘 수업 내용이에요 · 확인해 주세요</div>
+            <div class="ssum">오늘은 <b>덤벨 숄더프레스</b>로 어깨를 집중적으로 했어요. 6kg으로 시작해 <b>14kg까지 2kg씩</b> 올리며 12개씩 5세트, 이어서 <b>사이드 레터럴 레이즈</b> 2kg 20개 3세트로 측면을 마무리했습니다. 어깨 앞쪽 통증 없이 폼이 안정적이었어요 👏 다음 시간엔 중량을 조금 더 올려볼게요.</div>
+            <div class="schips"><span class="schip">덤벨 숄더프레스 6~14kg · 12회 · 5세트</span><span class="schip">사이드 레터럴 2kg · 20회 · 3세트</span></div>
+          </div>
+          <div class="sfoot">
+            <button class="confirmbtn" id="confirmBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>확인했어요</button>
+          </div>
+        </div>
+
+        <div class="ripple" id="ripple"></div>
+        <div class="cursor" id="cursor"><svg viewBox="0 0 24 24" fill="#fff" stroke="#111" stroke-width="1.4"><path d="M5 3l14 8-6 1.5L9.5 19z" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+    <div class="caption" id="caption"><b>로그인</b> — 휴대폰 뒤 4자리만 입력</div>
+  </div>
+
+<script>
+  const scenes=[...document.querySelectorAll('.scene')];
+  const caption=document.getElementById('caption');
+  const cursor=document.getElementById('cursor');
+  const ripple=document.getElementById('ripple');
+  const screenEl=document.querySelector('.screen');
+  const mHead=document.getElementById('mHead');
+  const tabRead=document.getElementById('tabRead');
+  const tabWrite=document.getElementById('tabWrite');
+  const pin=document.getElementById('pin');
+  const loginBtn=document.getElementById('loginBtn');
+  const ucBanner=document.getElementById('ucBanner');
+  const ucGo=document.getElementById('ucGo');
+  const sheet=document.getElementById('sheet');
+  const sheetDim=document.getElementById('sheetDim');
+  const confirmBtn=document.getElementById('confirmBtn');
+  const logBadge=document.getElementById('logBadge');
+  const pan1=document.getElementById('pan1');
+  const pan2=document.getElementById('pan2');
+  const stage=document.getElementById('stage');
+
+  (function(){
+    const grid=document.getElementById('calGrid'); if(!grid) return;
+    const lead=3, days=31, today=24;
+    const marks={1:['pt'],2:['pe'],3:['pt','ca'],5:['ca'],6:['pe','ca'],8:['pt','ca'],9:['pe'],10:['pt'],13:['pe','ca'],15:['pt'],17:['pt'],18:['ca'],20:['pe'],21:['ca'],22:['pt'],24:['pt','ca']};
+    for(let i=0;i<lead;i++) grid.appendChild(document.createElement('div'));
+    for(let d=1;d<=days;d++){
+      const col=(lead+d-1)%7;
+      const cell=document.createElement('div');
+      cell.className='cell'+(marks[d]?' act':'')+(d===today?' today':'')+(col===0?' sun':col===6?' sat':'');
+      const num=document.createElement('span'); num.textContent=d; cell.appendChild(num);
+      const dots=document.createElement('span'); dots.className='dots';
+      (marks[d]||[]).forEach(m=>{ const dd=document.createElement('span'); dd.className='dot '+m; dots.appendChild(dd); });
+      cell.appendChild(dots); grid.appendChild(cell);
+    }
+  })();
+  const finps=[...document.querySelectorAll('#pan2 .finp')];
+  const saveCardio=document.getElementById('saveCardio');
+  const savePersonal=document.getElementById('savePersonal');
+  const photoUp=document.getElementById('photoUp');
+  const rbars=[...document.querySelectorAll('.rbar i')];
+
+  const captions=[
+    '<b>로그인</b> — 휴대폰 뒤 4자리만 입력',
+    '<b>수업일지 확인</b> — 트레이너가 보낸 오늘 일지 열람',
+    '<b>기록 남기기</b> — 유산소 · 개인운동 · 사진을 직접'
+  ];
+  function setCaption(h){ caption.style.opacity=0; setTimeout(()=>{ caption.innerHTML=h; caption.style.opacity=1; },260); }
+  function moveCursor(x,y){ cursor.style.left=x+'px'; cursor.style.top=y+'px'; }
+  function targetXY(el){ const s=screenEl.getBoundingClientRect(), b=el.getBoundingClientRect(); return { x:b.left-s.left+b.width/2, y:b.top-s.top+b.height/2 }; }
+  function cursorTo(el){ const p=targetXY(el); moveCursor(p.x-6,p.y-4); }
+  function tapEl(el){ cursorTo(el);
+    setTimeout(()=>{ cursor.style.transform='scale(.85)'; const p=targetXY(el);
+      ripple.style.left=(p.x-17)+'px'; ripple.style.top=(p.y-17)+'px'; ripple.classList.remove('go'); void ripple.offsetWidth; ripple.classList.add('go');
+      setTimeout(()=>cursor.style.transform='scale(1)',160);
+    },820);
+  }
+  function panContent(container, inner, pad, dur){
+    inner.style.transition='none'; inner.style.transform='translateY(0)'; void inner.offsetWidth;
+    const overflow = inner.offsetHeight - (container.clientHeight - pad*2);
+    if(overflow<=2) return;
+    inner.style.transition='transform '+dur+'ms cubic-bezier(.4,0,.25,1)';
+    inner.style.transform='translateY(-'+overflow+'px)';
+  }
+  function resetPan(inner){ inner.style.transition='none'; inner.style.transform='translateY(0)'; }
+
+  function showScene(i){
+    scenes.forEach((s,k)=>s.classList.toggle('on',k===i));
+    mHead.style.display=(i===0)?'none':'block';
+    tabRead.className=(i===2)?'off':'on';
+    tabWrite.className=(i===2)?'on':'off';
+    setCaption(captions[i]);
+    cursor.style.opacity=1;
+  }
+
+  function run(){
+    // 씬0: 로그인
+    showScene(0);
+    pin.textContent=''; pin.classList.add('focus');
+    sheet.classList.remove('on'); sheetDim.classList.remove('on'); resetPan(pan1);
+    ucBanner.classList.remove('done'); ucBanner.classList.remove('okbanner');
+    document.getElementById('ucTitle').textContent='확인 안 한 수업일지 1건';
+    document.getElementById('ucSub').textContent='오늘 · 12회차 — 눌러서 확인해요';
+    ucGo.textContent='확인 ›';
+    logBadge.className='badge-uc'; logBadge.textContent='미확인';
+    finps.forEach(f=>f.classList.remove('on'));
+    saveCardio.classList.remove('done'); savePersonal.classList.remove('done'); photoUp.classList.remove('on');
+    rbars.forEach(b=>b.style.width='0');
+    const PIN="8412"; let pi=0; clearInterval(window._pin);
+    setTimeout(()=>{ window._pin=setInterval(()=>{ pi++; pin.textContent=PIN.slice(0,pi); if(pi>=4){ clearInterval(window._pin); pin.classList.remove('focus'); } },300); },700);
+    setTimeout(()=>cursorTo(loginBtn),2300);
+    setTimeout(()=>tapEl(loginBtn),3000);
+
+    // 씬1: 홈 — 미확인 배너
+    setTimeout(()=>{ showScene(1); },3600);
+    setTimeout(()=>cursorTo(ucBanner),4300);
+    setTimeout(()=>tapEl(ucBanner),4900);
+    // 바텀시트 올라옴
+    setTimeout(()=>{ sheetDim.classList.add('on'); sheet.classList.add('on'); setCaption(captions[1]); },5300);
+    setTimeout(()=>cursorTo(confirmBtn),7400);
+    setTimeout(()=>tapEl(confirmBtn),8000);
+    // 확인 완료 → 시트 내려가고 배너·뱃지 갱신, 포상바 채워짐
+    setTimeout(()=>{ sheet.classList.remove('on'); sheetDim.classList.remove('on');
+      ucBanner.classList.add('done','okbanner');
+      document.getElementById('ucTitle').textContent='오늘 수업일지 확인 완료';
+      document.getElementById('ucSub').textContent='트레이너에게 확인이 전달됐어요';
+      ucGo.textContent='';
+      logBadge.className='badge-ok'; logBadge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>확인 완료';
+    },8500);
+    setTimeout(()=>{ setCaption('<b>내 공간</b> — 오운완·포상·달력·변화 그래프'); rbars.forEach(b=>b.style.width=b.dataset.w+'%'); },9100);
+    // 홈 훑기(오운완→달력→수업일지→그래프→사진)
+    setTimeout(()=>panContent(stage, pan1, 16, 6200),10200);
+    setTimeout(()=>cursorTo(tabWrite),17200);
+    setTimeout(()=>tapEl(tabWrite),17900);
+
+    // 씬2: 기록 남기기
+    setTimeout(()=>{ showScene(2); resetPan(pan2); finps.forEach(f=>f.classList.remove('on')); },18700);
+    [0,1,2].forEach((idx,k)=> setTimeout(()=>finps[idx].classList.add('on'), 19200+k*340));
+    setTimeout(()=>cursorTo(saveCardio),20500);
+    setTimeout(()=>tapEl(saveCardio),21100);
+    setTimeout(()=>{ saveCardio.classList.add('done'); saveCardio.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>유산소 저장 완료'; },21950);
+    setTimeout(()=>panContent(stage, pan2, 16, 3000),22400);
+    [3,4,5].forEach((idx,k)=> setTimeout(()=>finps[idx].classList.add('on'), 23100+k*340));
+    setTimeout(()=>cursorTo(savePersonal),24400);
+    setTimeout(()=>tapEl(savePersonal),25000);
+    setTimeout(()=>{ savePersonal.classList.add('done'); savePersonal.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>개인운동 저장 완료'; setCaption('<b>기록 남기기</b> — 사진까지 회원이 직접'); },25850);
+    setTimeout(()=>cursorTo(photoUp),26600);
+    setTimeout(()=>tapEl(photoUp),27200);
+    setTimeout(()=>{ photoUp.classList.add('on'); photoUp.querySelector('.pt').textContent='오늘 사진이 추가됐어요'; },27600);
+
+    setTimeout(run,30000);
+  }
+  run();
+</script>
+</body>
+</html>

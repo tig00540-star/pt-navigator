@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>목업 — 리텐션 관제 + 전환 퍼널</title>
+<style>
+  :root{
+    --bg:#f1f2f6;--card:#fff;--elevate:#f7f8fa;--line:#e6e8ee;--ink:#16181d;--sub:#4b515e;--muted:#8b91a1;
+    --primary:#dc2626;--primary-strong:#b91c1c;--primary-soft:#fee2e2;
+    --ot:#b45309;--ot-soft:#fef3c7;--ot-text:#92400e;
+    --pt:#0369a1;--pt-soft:#e0f2fe;--pt-text:#075985;
+    --danger:#be123c;--danger-soft:#fff1f2;
+    --good:#047857;
+    --radius-2xl:14px;--shadow-sm:0 1px 2px rgba(16,18,29,.04),0 1px 3px rgba(16,18,29,.06);
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",system-ui,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+  .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 60px}
+  .note{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:14px;line-height:1.5}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+  .tabs button{background:none;border:none;padding:9px 14px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;position:relative}
+  .tabs button.on{color:var(--primary-strong)}
+  .tabs button.on::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--primary);border-radius:2px}
+  .eyebrow{display:flex;align-items:center;gap:8px;margin:22px 0 11px}
+  .eyebrow span{font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--muted)}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-2xl);padding:13px 14px;box-shadow:var(--shadow-sm)}
+  .tile .l{font-size:11px;color:var(--muted);letter-spacing:.02em}
+  .tile .v{font-family:var(--mono);font-size:23px;font-weight:800;margin-top:4px}
+  .tile .c{font-size:10.5px;color:var(--muted);margin-top:3px}
+  .tile.warn{border-color:var(--danger);background:var(--danger-soft)}.tile.warn .v{color:var(--danger)}
+  .tile.pt{border-color:rgba(3,105,161,.3);background:var(--pt-soft)}.tile.pt .v{color:var(--pt-text)}
+  .tonecard{border-radius:var(--radius-2xl);padding:14px 16px;margin-bottom:12px;border:1px solid}
+  .tc-renewal{border-color:rgba(3,105,161,.25);background:rgba(14,165,233,.06)}
+  .tc-danger{border-color:rgba(225,29,72,.25);background:rgba(244,63,94,.06)}
+  .tc-unclosed{border-color:rgba(220,38,38,.25);background:rgba(239,68,68,.06)}
+  .tchead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .tchead .t{font-size:13px;font-weight:800}.tchead .t.pt{color:var(--pt-text)}.tchead .t.dg{color:var(--danger)}.tchead .t.rd{color:var(--primary-strong)}
+  .badge{font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;margin-left:auto}
+  .badge.pt{background:var(--pt-soft);color:var(--pt-text)}.badge.dg{background:#ffe4e6;color:var(--danger)}.badge.rd{background:var(--primary-soft);color:var(--primary-strong)}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid rgba(0,0,0,.05)}
+  .row:first-of-type{border-top:none}
+  .av{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;font-weight:800;font-size:12px;background:var(--card);border:1px solid var(--line);flex:none}
+  .rowmain{flex:1;min-width:0}
+  .rowmain .n{font-weight:700;font-size:13px}
+  .rowmain .s{font-size:11px;color:var(--muted);margin-top:1px}
+  .rowright{text-align:right;font-size:12px;white-space:nowrap}
+  .rowright .big{font-family:var(--mono);font-weight:800}
+  .muted{color:var(--muted)} .mono{font-family:var(--mono)}
+  .won{font-family:var(--mono);font-weight:800;color:var(--pt-text)}
+  /* trainer rereg bars */
+  .barrow{margin:11px 0}
+  .barrow .h{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .bartrack{height:8px;background:var(--line);border-radius:999px;overflow:hidden}
+  .barfill{height:100%;border-radius:999px;background:linear-gradient(90deg,#0ea5e9,#0369a1)}
+  /* funnel */
+  .funnelcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-2xl);padding:18px;box-shadow:var(--shadow-sm);margin-bottom:14px}
+  .convbig{text-align:center;margin-bottom:16px}
+  .convbig .v{font-family:var(--mono);font-size:40px;font-weight:800;color:var(--primary-strong);line-height:1}
+  .convbig .l{font-size:12px;color:var(--muted);margin-top:4px}
+  .stage{margin:10px auto}
+  .stagebar{height:44px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#fff;font-weight:700;margin:0 auto}
+  .s1{background:#d97706}.s2{background:#c2683c}.s3{background:#b45309}.s4{background:var(--primary)}
+  .stagebar .cnt{font-family:var(--mono);font-size:17px}
+  .drop{text-align:center;font-size:11px;color:var(--muted);margin:2px 0}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{font-size:10.5px;color:var(--muted);font-weight:700;text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);background:var(--elevate)}
+  th.l{text-align:left} td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+  td.l{text-align:left} tr:last-child td{border-bottom:none}
+  .tag{font-size:10px;font-weight:700;border-radius:6px;padding:2px 6px;background:var(--ot-soft);color:var(--ot-text)}
+  .tag.warn{background:#ffe4e6;color:var(--danger)}
+  .convcell.warn{color:var(--danger);font-weight:800}.convcell.good{color:var(--good);font-weight:800}
+  @media(max-width:800px){.tiles{grid-template-columns:repeat(2,1fr)}.hidesm{display:none}}
+</style></head>
+<body><div class="wrap">
+  <div class="note"><b>목업(예시 데이터)</b> — 원장용 관제 화면. 실제는 실측으로 채워집니다. 두 탭: <b>리텐션 관제(#4)</b> · <b>전환 퍼널(#2)</b>. 확인: 지표 구성·리스트 정보·색·"이번 주 챙길 것".</div>
+
+  <div class="tabs">
+    <button class="on" onclick="tab('ret')" id="tb-ret">리텐션 관제</button>
+    <button onclick="tab('fun')" id="tb-fun">전환 퍼널</button>
+  </div>
+
+  <!-- ============ #4 리텐션 ============ -->
+  <div id="pane-ret">
+    <div class="tiles">
+      <div class="tile pt"><div class="l">만료 임박 회원</div><div class="v">7명</div><div class="c">유료 잔여 10회 미만</div></div>
+      <div class="tile"><div class="l">예상 재등록 매출</div><div class="v" style="color:var(--pt-text)">1,050만</div><div class="c">추정 · 과거 재등록 평균 150만 기준</div></div>
+      <div class="tile warn"><div class="l">이탈위험 회원</div><div class="v">9명</div><div class="c">14일+ 무수업 · 잔여 있음</div></div>
+      <div class="tile"><div class="l">방치 잔여세션</div><div class="v">86회</div><div class="c">이탈위험 회원 잔여 합</div></div>
+    </div>
+
+    <div class="eyebrow"><span>만료 임박 — 재등록 챙길 회원</span></div>
+    <div class="tonecard tc-renewal">
+      <div class="tchead"><span class="t pt">만료 임박</span><span class="badge pt">7</span></div>
+      <div id="expList"></div>
+    </div>
+
+    <div class="eyebrow"><span>이탈 위험 — 지금 연락</span></div>
+    <div class="tonecard tc-danger">
+      <div class="tchead"><span class="t dg">이탈 위험</span><span class="badge dg">9</span></div>
+      <div id="churnList"></div>
+    </div>
+
+    <div class="eyebrow"><span>트레이너별 재등록률 비교</span></div>
+    <div class="funnelcard" id="reregBars"></div>
+  </div>
+
+  <!-- ============ #2 퍼널 ============ -->
+  <div id="pane-fun" style="display:none">
+    <div class="eyebrow"><span>OT → PT 전환 퍼널 · 현재 단계 분포(시점 스냅샷)</span></div>
+    <div class="funnelcard">
+      <div class="convbig"><div class="v">38%</div><div class="l">총 전환율 (유입 42명 → 등록 확정 16명)</div></div>
+      <div id="funnel"></div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px">1차 클로징 성공률 44% · 2차 클로징 성공률 61%</div>
+    </div>
+
+    <div class="eyebrow"><span>트레이너별 퍼널 — 어디가 새는지</span></div>
+    <div class="funnelcard" style="padding:4px 4px 0">
+      <table><thead><tr><th class="l">트레이너</th><th>유입</th><th>1차</th><th class="hidesm">2차</th><th>확정</th><th>전환율</th><th class="l" style="text-align:left;padding-left:14px">약점</th></tr></thead>
+      <tbody id="funTable"></tbody></table>
+    </div>
+
+    <div class="eyebrow"><span>이번 주 클로징 임박 — 원장이 직접 챙길 것</span></div>
+    <div class="tonecard tc-unclosed">
+      <div class="tchead"><span class="t rd">이번 주 클로징 임박</span><span class="badge rd">5</span></div>
+      <div id="dueList"></div>
+    </div>
+  </div>
+</div>
+<script>
+const won=(n)=>n.toLocaleString('ko-KR');
+const manwon=(n)=>Math.round(n/10000).toLocaleString('ko-KR')+'만';
+// 만료임박
+const EXP=[
+  {n:'김서연',t:'박준형',paid:2,svc:1,gap:5,est:1500000},
+  {n:'이준호',t:'이서준',paid:3,svc:0,gap:12,est:1500000},
+  {n:'박민재',t:'박준형',paid:4,svc:2,gap:3,est:1500000},
+  {n:'정예린',t:'최민지',paid:5,svc:0,gap:20,est:1500000},
+  {n:'한지우',t:'이서준',paid:6,svc:1,gap:8,est:1500000},
+  {n:'오세훈',t:'박준형',paid:8,svc:0,gap:2,est:1500000},
+  {n:'윤아름',t:'최민지',paid:9,svc:3,gap:15,est:1500000},
+];
+document.getElementById('expList').innerHTML=EXP.map(m=>`<div class="row">
+  <span class="av">${m.n[0]}</span>
+  <div class="rowmain"><div class="n">${m.n}</div><div class="s">담당 ${m.t} · 마지막 수업 ${m.gap}일 전</div></div>
+  <div class="rowright"><div class="big">잔여 ${m.paid}<span class="muted" style="font-weight:400">+서비스 ${m.svc}</span></div><div class="muted">예상 ${manwon(m.est)}</div></div>
+</div>`).join('');
+// 이탈위험
+const CHURN=[
+  {n:'강태오',t:'최민지',gap:31,rem:11,ever:true},
+  {n:'서지훈',t:'이서준',gap:24,rem:8,ever:true},
+  {n:'문채원',t:'최민지',gap:19,rem:14,ever:true},
+  {n:'배현우',t:'박준형',gap:17,rem:6,ever:false},
+  {n:'신유나',t:'이서준',gap:16,rem:9,ever:true},
+  {n:'조민수',t:'최민지',gap:15,rem:12,ever:true},
+];
+document.getElementById('churnList').innerHTML=CHURN.map(m=>`<div class="row">
+  <span class="av">${m.n[0]}</span>
+  <div class="rowmain"><div class="n">${m.n}</div><div class="s">담당 ${m.t} · ${m.ever?m.gap+'일째 무수업':'등록 후 '+m.gap+'일 미방문'}</div></div>
+  <div class="rowright"><div class="big" style="color:var(--danger)">잔여 ${m.rem}회</div></div>
+</div>`).join('');
+// 트레이너별 재등록률
+const RE=[{t:'박준형',s:14,a:20},{t:'이서준',s:8,a:16},{t:'최민지',s:5,a:15},{t:'정하늘',s:0,a:1}];
+document.getElementById('reregBars').innerHTML=RE.map(r=>{const rate=r.a?Math.round(r.s/r.a*100):null;const w=r.a?(r.s/r.a*100):0;
+  return `<div class="barrow"><div class="h"><span>${r.t}</span><span class="mono">${rate==null?'—':rate+'%'} <span class="muted">${r.s}/${r.a}</span></span></div><div class="bartrack"><div class="barfill" style="width:${w}%"></div></div></div>`;}).join('');
+// 퍼널
+const F={intake:42,first:34,second:23,confirmed:16};
+function stage(cls,label,cnt,base){const w=Math.max(18,Math.round(cnt/base*100));return `<div class="stage" style="width:${w}%"><div class="stagebar ${cls}"><span>${label}</span><span class="cnt">${cnt}명</span></div></div>`;}
+document.getElementById('funnel').innerHTML=
+  stage('s1','① 유입 (OT 시작)',F.intake,F.intake)+
+  `<div class="drop">▼ 1차 클로징 진행 ${Math.round(F.first/F.intake*100)}%</div>`+
+  stage('s2','② 1차 클로징',F.first,F.intake)+
+  `<div class="drop">▼ 2차 진행 ${Math.round(F.second/F.intake*100)}%</div>`+
+  stage('s3','③ 2차 클로징',F.second,F.intake)+
+  `<div class="drop">▼ 등록 확정 ${Math.round(F.confirmed/F.intake*100)}%</div>`+
+  stage('s4','④ 등록 확정',F.confirmed,F.intake);
+// 트레이너별 퍼널
+const FT=[
+  {t:'박준형',intake:16,first:15,second:10,conf:9,weak:null},
+  {t:'이서준',intake:14,first:11,second:8,conf:5,weak:'2차 성공률 낮음'},
+  {t:'최민지',intake:12,first:6,second:5,conf:2,weak:'1차 시도율 낮음'},
+];
+document.getElementById('funTable').innerHTML=FT.map(r=>{const cr=Math.round(r.conf/r.intake*100);const cls=cr>=45?'good':cr<=25?'warn':'';
+  return `<tr><td class="l" style="font-weight:700">${r.t}</td><td class="mono">${r.intake}</td><td class="mono">${r.first}</td><td class="mono hidesm">${r.second}</td><td class="mono">${r.conf}</td><td class="convcell ${cls}">${cr}%</td><td class="l" style="text-align:left;padding-left:14px">${r.weak?`<span class="tag warn">${r.weak}</span>`:'<span class="muted" style="font-size:11px">—</span>'}</td></tr>`;}).join('');
+// 이번주 임박
+const DUE=[
+  {n:'임도현',t:'박준형',kind:'reapproach',date:'07-26'},
+  {n:'황민서',t:'이서준',kind:'unclosed'},
+  {n:'노은채',t:'박준형',kind:'reapproach',date:'07-27'},
+  {n:'구자현',t:'최민지',kind:'unclosed'},
+  {n:'천서윤',t:'이서준',kind:'reapproach',date:'07-29'},
+];
+document.getElementById('dueList').innerHTML=DUE.map(m=>`<div class="row">
+  <span class="av">${m.n[0]}</span>
+  <div class="rowmain"><div class="n">${m.n}</div><div class="s">담당 ${m.t}</div></div>
+  <div class="rowright">${m.kind==='reapproach'?`<span class="tag">재접근 ${m.date}</span>`:`<span class="tag warn">2차 미마감</span>`}</div>
+</div>`).join('');
+function tab(w){document.getElementById('pane-ret').style.display=w==='ret'?'':'none';document.getElementById('pane-fun').style.display=w==='fun'?'':'none';
+  document.getElementById('tb-ret').classList.toggle('on',w==='ret');document.getElementById('tb-fun').classList.toggle('on',w==='fun');}
+</script></body></html>

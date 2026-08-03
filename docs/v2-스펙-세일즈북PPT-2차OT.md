@@ -35,9 +35,9 @@ goal이 **최우선 렌즈**(기존 `ot-brief`의 "goal = 중심축, pain은 goa
 |---|---|---|---|
 | 1 | 표지 | 회원명·부제 + 트레이너 소개칩(프로필에서) | — |
 | 2 | 목표 | 회원 언어 목표 + "지금 겪는 것" 태그 | 교정="펴진 자세" / 벌크업="가슴·어깨 키우기" |
-| 3 | 오늘 확인한 것 | 1차 before→after + **회원 실제 한마디** + bridge | 교정="편해짐" / 벌크업="자극점 찾음" |
+| 3 | 오늘 확인한 것 | before/after(작은 근거) + **★트레이너 시선이 주인공**: `diagnosis`(제가 본 원인) + `approach`(그래서 이렇게 바꿔드려요·순서) · 회원 한마디는 작은 보조 | 교정="흉곽부터 열고" / 벌크업="자극점 잡고" |
 | 4 | 사진 | **모드 분기** (아래 ★) | — |
-| 5 | 로드맵+현재 | 3단계 + "지금 여기" + 단계별 "느낄 변화" | goal별 단계 상이 |
+| 5 | 로드맵+현재 | 3단계 + "지금 여기" + 단계별 **"제 방법"(how)** + "느낄 변화"(feel) | goal별 단계 상이 |
 | 6 | 추천 플랜 | **2선택지**(pick_ref+alt_ref), 회차·빈도·기간 + **가격(가격표)** + 회당 단가 + 포함내역 | 빈도 논리 상이 |
 | 7 | 마무리 | 제공 서비스(전용공간 포함) + 손글씨 **다짐** + **서명** | 다짐 맥락 상이 |
 
@@ -117,13 +117,13 @@ SALESBOOK_PREAMBLE:
 각 슬라이드 채우기:
 ① cover: subtitle 1줄(무엇을 정리한 자료인지, goal 톤). ※회원명·트레이너 정보·서명은 앱이 프로필에서 채우니 생성 금지.
 ② goal: headline(회원 목표 회원 언어 1줄) · body(왜 이 목표인지 배경 2문장, 관찰 기반) · current_issues(지금 겪는 것 3개, 짧은 명사구).
-③ confirmed(오늘 확인한 것): before(처음 상태 1줄) · after(잡아드린 뒤 1줄) · member_quote(1차 memberQuote가 있으면 그 말 그대로, 없으면 "") · bridge(그 변화의 의미 1줄, '혼자선 매번 만들기 어렵지만 익히면 몸이 기억' 결. ★압박 아님, 사실).
+③ confirmed(오늘 확인한 것 — ★트레이너 전문가 시선이 주인공): before(오늘 처음, 작게) · after(자세 하나 잡아드린 뒤, 작게) · **diagnosis**('제가 본 원인' 1~2문장·트레이너 1인칭 — 왜 이런지·뭐가 관건인지) · **approach**('그래서 이렇게 바꿔드려요' 1~2문장·트레이너 1인칭·순서 언어) · member_quote(1차 memberQuote 있으면 그 말 그대로, **짧은 보조 근거로만**. 없으면 ""). ★diagnosis·approach는 회원 감상보다 '전문가 계획' 우선. "혼자선 못 잡는 지점을 제가 잡아드린다"=사실·책임의 말 OK. **의료 단정·수치 처방 금지**(자세·감각·순서 언어까지만). bridge는 approach로 흡수(제거).
 ④ photo_slide:
    - mode: goal이 자세교정·체중감량·체형처럼 '눈에 보이는 변화'면 "within_session"; 벌크업·근력·근비대처럼 '하루에 안 보이는 장기목표'면 "baseline".
    - title·body: within_session이면 "눈으로도 달라졌어요"(세션 내 비포→애프터). baseline이면 "오늘을 시작점으로 — 3개월 뒤 비교 기준"(가짜 성장 금지).
    - points(3): within_session=함께 확인한 포인트 / baseline=우선 키울 타겟.
    - photoLabels가 비었으면 body에 '사진은 다음에 함께 남겨요' 톤 + points는 유지.
-⑤ roadmap: current_step(정수, 보통 1) · steps[3] 각 {title·desc(1문장)·feel("느낄 변화 — …")}. goal 기반 단계.
+⑤ roadmap: current_step(정수, 보통 1) · steps[3] 각 {title · **how**('제 방법' 1문장 — 이 단계에서 트레이너가 뭘 하는지·1인칭 순서 언어) · feel("느낄 변화 — …")}. goal 기반 단계. 숫자·의료 금지.
 ⑥ plans[2]: A=pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 패키지 1개 선택). 각 {ref(정수)·name(예 "집중 코스"/"기본 코스")·recommended(불린)·meta("주 N회 · 약 M개월" — A는 recommendedProgram.frequency·duration에서, B는 더 가벼운 빈도)·sessions_label("함께 K회" — 패키지 sessions에서)·why(2문장, session_logic 회원 언어로)·includes[3](포함 서비스, 전용공간 관리 포함)}. ★금액(원)은 값 텍스트에 쓰지 마라 — 앱이 `packages[ref].price`(+ 회당 = price/sessions)를 슬라이드에 렌더한다. JSON엔 금액 없음.
 ⑦ closing: services[4](제공 서비스 — 매 수업 점검·기록 / 홈케어 피드백 / 진행사진 / **회원 전용 공간에 기록 쌓기**. goal 톤) · vow(트레이너 다짐 1~2문장 — "등록 권유가 아니라 책임지겠다는 약속" 결. 손글씨로 렌더됨. ★판매 동사 금지).
 
@@ -136,9 +136,9 @@ SALESBOOK_PREAMBLE:
 {
   "cover": { "subtitle": "..." },
   "goal": { "headline": "...", "body": "...", "current_issues": ["...","...","..."] },
-  "confirmed": { "before": "...", "after": "...", "member_quote": "", "bridge": "..." },
+  "confirmed": { "before": "...", "after": "...", "diagnosis": "...", "approach": "...", "member_quote": "" },
   "photo_slide": { "mode": "within_session|baseline", "title": "...", "body": "...", "points": ["...","...","..."] },
-  "roadmap": { "current_step": 1, "steps": [ {"title":"...","desc":"...","feel":"..."}, {"...":"..."}, {"...":"..."} ] },
+  "roadmap": { "current_step": 1, "steps": [ {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."} ] },
   "plans": [
     { "ref": 0, "name":"집중 코스", "recommended": true,  "meta":"주 2회 · 약 3개월", "sessions_label":"함께 24회", "why":"...", "includes":["...","...","..."] },
     { "ref": 2, "name":"기본 코스", "recommended": false, "meta":"주 1회 · 약 3개월", "sessions_label":"함께 12회", "why":"...", "includes":["...","...","..."] }
@@ -150,8 +150,8 @@ SALESBOOK_PREAMBLE:
 
 ### 3-5. 파싱·정제·토큰
 - `REQUIRED_SALESBOOK = ["cover","goal","confirmed","photo_slide","roadmap","plans","closing"]` → `parseBrief(textOut, REQUIRED_SALESBOOK)`.
-- `sanitizeFieldNames` 그대로 적용. FIELD_TERMS에 신규 키 방어 추가(`current_issues`,`photo_slide`,`roadmap`,`plans`,`includes`,`services`,`vow`,`bridge` 등 — 값 텍스트 누출 시 한글 치환).
-- `maxTokens`: salesbook은 브리핑보다 가벼움 → **3072** (거절5종·클로징시퀀스 없음).
+- `sanitizeFieldNames` 그대로 적용. FIELD_TERMS에 신규 키 방어 추가(`current_issues`,`photo_slide`,`roadmap`,`plans`,`includes`,`services`,`vow`,`diagnosis`,`approach`,`how` 등 — 값 텍스트 누출 시 한글 치환. ⚠️`approach`는 `closing_approach`·`approach_tag`보다 뒤에 둬 긴 키 먼저 처리).
+- `maxTokens`: **4096**. salesbook은 브리핑보다 가볍지만(거절5종·클로징시퀀스 없음), 한국어 텍스트 총량(goal.body·current_issues·roadmap 3×3·plans 2×(why+includes)·services 등)이 은근 커서 3072면 꼬리(`data_gaps`·`closing`) 잘림 위험. max_tokens는 상한일 뿐 실제 생성분만 과금 → 4096은 비용 증가 없이 안전마진만 확보.
 - `thinking: disabled` 유지.
 - **장비 블록(`fetchCenterMachines`/`equipmentBlock`)은 salesbook에 안 붙임**(회원 대면엔 불필요) — `phase === "acute"`처럼 제외 조건에 salesbook 추가.
 
@@ -161,16 +161,22 @@ SALESBOOK_PREAMBLE:
 
 ---
 
-## 4. Batch S2 — 자동 생성 + 캐시 (클라 · `SecondOTTab`)
+## 4. Batch S2 — 자동 생성 + 캐시 (클라 · `SecondOTTab`) — **하이브리드**
 
 **파일:** `components/tabs/SecondOTTab.jsx`
 
-- **트리거:** 2차 브리핑(`ot-brief` phase="second") 생성이 성공해 `report.brief`가 확정되면, **이어서 phase="salesbook" 호출**(백그라운드). 입력: `report`(1차 관찰) + `brief.recommended_program`(→ `recommendedProgram`) + `packages` + `photoLabels`(아래 조회).
-- **`photoLabels` 조회:** `member_photo`에서 `user_id` = 회원, `label` distinct(`MemberPhotoSummary`의 조회 패턴 재사용). 라벨 배열만 넘김(URL은 렌더 시점에 뷰가 서명URL 발급).
-- **캐시 저장:** `ot_log`(`ot_round=2`) `report`에 `salesbook` 키 **머지**(기존 `report.brief`·`closing_*` 보존). 기존 report 업데이트 패턴을 그대로 따르되 **read-modify-write**로 salesbook만 추가. 클라 write는 **교훈1 하드닝**(`.update(...).select()` + 0행 체크, 실패 시 사용자 안내).
-- **스테일 감지:** 1차 관찰 또는 `report.brief`가 갱신되면 salesbook도 재생성(기존 브리핑 스테일 로직 미러). 캐시 있으면 재호출 안 함.
-- **수동 재생성:** "세일즈북 다시 만들기" 버튼(브리핑 재생성 옆).
-- **상태:** 생성 중/실패/키 미설정 → 기존 AI 기능 폴백 패턴과 동일(숨김 또는 "데모" 라벨). 자동 생성 실패해도 브리핑 흐름은 막지 않음(세일즈북은 부가).
+> ⚠️ **선결 버그(코드 대조 확인 · 반드시 해결):** 현재 2차 브리핑 저장은 `report` jsonb **전체 교체**(`.update({ report: report2 })`, `report2 = { brief, briefMeta }`)라, salesbook을 별 키로 넣으면 **브리핑 재생성 때마다 salesbook이 조용히 삭제**된다. → **모든 `report` 쓰기를 "기존 report 스프레드 + 해당 키만 덮기"로 전환**한다: `report: { ...prevReport, brief, briefMeta }`(salesbook·closing_* 보존). 이게 #1의 근본 해결이자 아래 하이브리드의 토대. `prevReport`는 SecondOTTab이 이미 로드한 값 사용(없으면 read-before-write).
+
+**저장 세 경로(하이브리드):**
+1. **최초 자동 생성 / 수동 '세일즈북 다시 만들기':** 2차 브리핑 생성 흐름(`generateBrief`) 안에서 salesbook 생성을 **체이닝** — `{ ...prevReport, brief, briefMeta, salesbook, salesbookMeta }`를 **한 번의 update**로 저장(별도 read-modify-write 없이 race·부분덮어쓰기 원천 차단). `salesbookMeta`에 소스 브리핑의 `recommended_program` 스냅샷/버전 기록(스테일 판정용).
+2. **브리핑만 재생성:** salesbook을 **덮지 않음** — `report: { ...prevReport, brief, briefMeta }`로 저장해 **트레이너 편집 보존**. 새 `recommended_program`이 `salesbookMeta` 스냅샷과 다르면 **'세일즈북 최신 아님' 배지**만 노출(스테일 감지 — 기존 브리핑 스테일 로직 미러). 트레이너가 '세일즈북 다시 만들기'를 누를 때만 갱신.
+3. **S5 세일즈북 편집 저장:** `report: { ...prevReport, salesbook: edited }`(brief 보존).
+
+- **왜 하이브리드(A 아님):** 세일즈북 손편집(다짐·'오늘 확인한 것'·사진)은 이 기능의 '정성/사람 손길' 핵심 → 브리핑 재생성으로 **조용히 날리면 안 됨**(복구 불가). 반면 숫자 스테일은 배지+버튼으로 **복구 가능**. #1 스프레드 수정은 A로 가도 어차피 필요하므로, 하이브리드의 추가비용은 **스테일 배지 하나뿐**.
+- **입력:** `report`(1차 관찰) + `brief.recommended_program`(→ `recommendedProgram`) + `packages` + `photoLabels`.
+- **`photoLabels` 조회:** `member_photo`에서 `user_id`=회원, `label` distinct(`MemberPhotoSummary` 패턴). 라벨 배열만 넘김(URL은 렌더 시 뷰가 서명URL 발급).
+- **하드닝:** 모든 클라 write **교훈1**(`.update(...).select()` + 0행 체크, 실패 시 안내).
+- **폴백:** 생성 중/실패/키 미설정 → 기존 AI 폴백 패턴(숨김/"데모"). 자동 생성 실패해도 브리핑 흐름은 안 막음(세일즈북은 부가).
 
 ---
 
@@ -181,27 +187,38 @@ SALESBOOK_PREAMBLE:
 **Props:** `{ salesbook, member, trainer, editable = false, onSave }`
 - `salesbook` — 캐시된 JSON.
 - `member` — 회원(이름 등).
-- `trainer` — 프로필(이름·자격·**signature**).
+- `trainer` — 프로필(`display_name`·`credentials`·`signature_data_url` — S4에서 신설).
+- ⚠️ **trainer 객체 로딩(코드 대조):** `SecondOTTab`은 현재 `trainer_profile`을 **안 읽음** → SalesbookView에 넘길 `trainer`를 위한 **조회 1개 신설**(account 스코프, `TrainerProfileSettings`가 읽는 것과 같은 소스).
 
 **렌더:**
 - 7장 슬라이드를 JSON에서 렌더. **가로 16:9 기본**, `@media (orientation: portrait)` 또는 좁은 폭이면 세로 카드 레이아웃으로 전환(둘 다 같은 JSON). 디자인 토큰(빨강 `#dc2626`·Pretendard)은 디자인시스템/`globals` 사용.
-- 표지: `member.name` + `salesbook.cover.subtitle` + **트레이너 소개칩**(`trainer` 프로필에서 — AI 아님). 브랜드 로고는 **`components/ui/BrandMark`(침=trainer red)·`Wordmark` 프리미티브 그대로 사용**(커스텀 SVG 금지 — 샘플 HTML의 심볼은 근사치일 뿐, 실제 구현은 프리미티브).
+- 표지: `member.name` + `salesbook.cover.subtitle` + **트레이너 소개칩**(`trainer.display_name`·`trainer.credentials` — S4 신설 컬럼, AI 아님). 브랜드 로고는 **`components/ui/BrandMark`(침=trainer red)·`Wordmark` 프리미티브 그대로 사용**(커스텀 SVG 금지 — 샘플 HTML의 심볼은 근사치일 뿐, 실제 구현은 프리미티브).
 - 사진 슬라이드: `member_photo` **서명 URL 발급**(`createSignedUrls`, `MemberPhotoSummary` 패턴 재사용). mode=within_session → `before`+`after`; baseline → 최근 2컷(정면/후면 등). 사진 없으면 "다음에 함께 남겨요" 플레이스홀더.
 - 추천 플랜: 2개 카드. **가격은 `packages[plans[i].ref].price`를 앱이 렌더**(+ 회당 단가 = price/sessions). AI JSON엔 금액 없음 — 트레이너가 가격표 바꾸면 세일즈북 가격도 자동 반영. 회차·빈도·기간·why·includes는 JSON에서.
-- 마무리: `salesbook.closing.vow`를 **손글씨 폰트**로(다짐), 아래 **서명**(`trainer.signature` 있으면 표시). 손글씨 폰트(예: Nanum Pen Script)는 프로젝트 폰트 로딩 방식에 맞춰 추가(self-host 권장).
-- **네비:** 스와이프(터치)·좌우 키·점 인디케이터·화살표.
-- **PDF:** "PDF로 저장/인쇄" 버튼 → `window.print()`. `@media print { @page{size:A4 landscape;margin:0} .track{display:block;transform:none} .slide{height:100vh;page-break-after:always} 네비·버튼 display:none }`. (상단정렬로 세로 여백 최소화.)
-- **present 모드**(editable=false): 편집·샘플 주석 없이 깨끗하게. 회원에게 보이는 화면.
+- **오늘확인 슬라이드(트레이너 관점)**: 상단 before/after 작은 근거 → 중앙 **"제가 본 원인"(diagnosis·흰 박스) + "그래서 이렇게 바꿔드려요"(approach·빨강 박스)** 크게 → 하단 member_quote 작은 이탤릭 보조. 로드맵은 스텝별 **"제 방법 · {how}" + feel**.
+- **⚠️ 옛 캐시 폴백(필수):** 스키마 개정 전 캐시엔 `diagnosis`/`approach` 없고 `bridge`만, 로드맵은 `desc`만 있음. → `diagText = diagnosis || (!approach ? bridge : "")`, `how = step.how || step.desc`로 graceful 렌더(재생성 시 새 필드 채워짐).
+- 마무리: `salesbook.closing.vow`를 **손글씨 폰트**로(다짐), 아래 **서명**(`trainer.signature_data_url` 있으면 이미지). ⚠️ 손글씨는 `NanumPenScript.woff2`를 `public/fonts/`에 두고 `app/layout.js`에서 `localFont`로 self-host(`--font-handwriting`).
+- **채우기(fill) + 잘림 방지:** `.sb-slide-inner`=고정 16:9 `overflow:hidden`, 콘텐츠는 `.sb-pad>.sb-fit`(`min-height:100%`)로 감싸 각 슬라이드 `flex h-full flex-col`로 세로 분배(빈 여백 채움). 넘치면 `useFitScale`(ResizeObserver·scrollHeight 측정)이 `transform:scale`로 축소(잘림=데이터 손실 방지 안전망).
+- **가로 높이 캡:** `.sb-stage { max-width:min(1180px, 96vw, calc((100dvh - 130px) * 16 / 9)) }` — 넓고 짧은 뷰포트에서 16:9 프레임이 뷰포트 높이 넘어 위아래 잘리던 것 방지. 세로(폰)는 캐러셀 유지 + 9:16 프레임(`* 9 / 16` 캡).
+- **전체화면:** 상단 바에 토글(Fullscreen API로 `sb-root`). `document.fullscreenEnabled` false(아이폰 Safari)면 버튼 숨김. Esc는 전체화면 중이면 종료만(모달 안 닫힘).
+- **네비:** 스와이프(터치)·좌우 키(입력 포커스 중 무시)·점 인디케이터·화살표.
+- **PDF:** "PDF로 저장/인쇄" 버튼 → `window.print()`(A4 가로 · 슬라이드 페이지당 1장 · scale 유지).
+- **present 모드**(editable=false): 편집·주석 없이 깨끗하게. 회원에게 보이는 화면.
 
 ---
 
-## 6. Batch S4 — 트레이너 서명 저장 (프로필)
+## 6. Batch S4 — 트레이너 프로필 확장 (서명 + 표지 정보)
 
-**목표:** 서명을 트레이너가 **한 번 그려 프로필에 저장 → 모든 세일즈북에 자동 적용**.
+**목표:** 서명·이름·자격을 트레이너가 **프로필에 한 번 저장 → 모든 세일즈북에 자동 적용**.
 
-- **저장 위치:** 트레이너 프로필(설정 화면 `TrainerProfileSettings.jsx`가 읽는 테이블/행). ⚠️ **클로드코드가 실제 프로필 테이블·컬럼 구조를 먼저 확인**하고, `signature_data_url text`(nullable) 컬럼을 **additive 마이그레이션**으로 추가(작은 PNG data URL). RLS는 **account 스코프 내 additive**(anon-open 금지).
-- **입력 UI:** `TrainerProfileSettings`에 서명 패드(canvas 드로잉·"다시" 버튼) 추가 → PNG data URL 저장. 클라 write **교훈1 하드닝**.
-- **적용:** `SalesbookView`가 `trainer.signature`를 마무리 슬라이드에 렌더. editable 뷰에서 서명이 없으면 그 자리에서 그려 저장 유도.
+> ⚠️ **코드 대조:** `trainer_profile`엔 이름·자격 컬럼이 **없음**(`strong_approaches`·`sales_style`·`mbti`·`bio`만). 표지 소개칩이 쓸 필드가 부재 → **컬럼 3개를 additive 마이그레이션으로 신설**.
+
+- **마이그레이션(additive · 전부 nullable · RLS account 스코프 내 · anon-open 금지):**
+  - `signature_data_url text` — 서명 PNG data URL(작음).
+  - `display_name text` — 표지 표시 이름(예: "김도현 트레이너").
+  - `credentials text` — 표지 자격/경력 한 줄(예: "생활체육지도사 · 교정운동 전문 · 8년차").
+- **입력 UI:** `TrainerProfileSettings`에 ① 서명 패드(canvas 드로잉·"다시" 버튼 → PNG data URL) ② 표시이름·자격 텍스트 입력 추가. 클라 write **교훈1 하드닝**.
+- **적용:** `SalesbookView` 표지 소개칩(`display_name`·`credentials`) + 마무리 서명(`signature_data_url`). editable 뷰에서 서명 없으면 그 자리에서 그려 저장 유도.
 
 ---
 
@@ -209,12 +226,11 @@ SALESBOOK_PREAMBLE:
 
 **진입점(`SecondOTTab`):** 2차 브리핑/클로징 영역 하단에 **"회원에게 세일즈북 보기"** 버튼 → `SalesbookView`를 모달/풀스크린 present 모드로.
 
-**편집(editable 뷰):** AI 초안 중 트레이너가 손대는 곳(MVP 범위):
-- `confirmed`(before/after/member_quote/bridge) — 2차에서 실제 확인된 것에 맞게 조정.
+**편집(editable 뷰):** AI 초안 중 트레이너가 손대는 곳:
+- `confirmed`(before/after/**diagnosis/approach**/member_quote) — 2차에서 실제 확인된 것·전문가 시선에 맞게 조정.
 - `closing.vow`(다짐) · `closing.services`.
-- 사진 선택(어떤 `member_photo`를 쓸지).
-- 저장 → `report.salesbook` PATCH(**교훈1 하드닝**, `report.brief` 보존).
-- 나머지(목표·로드맵·플랜)는 편집 대신 재생성.
+- 저장 → `report.salesbook` PATCH(**교훈1 하드닝**, `report.brief`·`salesbookMeta.rpSnapshot` 보존, editedAt만 덧붙임). onSave truthy 반환 시 뷰가 닫힘.
+- 나머지(목표·로드맵·플랜·사진)는 편집 대신 재생성.
 
 **권장 구현 순서:** S1 → S3(손으로 만든 JSON으로 뷰 검증) → S2(자동생성·캐시 연결) → S4(서명) → S5(진입·편집). 각 배치 1커밋.
 
@@ -239,6 +255,20 @@ SALESBOOK_PREAMBLE:
 
 ---
 
-## 9. 후속(이번 스코프 밖) — 재등록용 세일즈북
+## 9. 후속(이번 스코프 밖)
 
+### 9-1. 재등록용 세일즈북
 `재등록 준비`(탭 id 11)에 대칭 구현. 소스: PT 관리데이터 + `reregisterPrompt` 산출(`why_now.proven`/`next_roadmap`/`recommended_program`). "그동안의 진전" 슬라이드가 "오늘 확인한 것"을 대체. 같은 `salesbook` phase에 `origin` 분기 또는 별도 프롬프트. 2차용 안정화 후 진행.
+
+### 9-2. 트레이너 포트폴리오(비포애프터 케이스 라이브러리) — 실적 증거
+**목적:** 트레이너가 회원 비포애프터를 **케이스별로 저장**해두고, 세일즈북에 "제가 이런 회원들을 이렇게 바꿨어요" 실적 슬라이드로 삽입. 특히 어깨 키우기·근비대처럼 **본인 변화가 몇 달 걸리는 신규 회원**에게 지금 당장 보여줄 가장 강한 사회적 증거.
+- **데이터:** 신규 `portfolio_case`(trainer_id·category·before_path·after_path·caption·sort). 스토리지 버킷 `trainer-portfolio`(회원 개인사진 `member-photos`와 분리). 기존 `TrainerLibrary`(`library_item`=영상·링크)의 **형제 격 라이브러리**로 같은 자기완결 패턴.
+- **UI:** 라이브러리 화면에서 케이스별 before/after 업로드 + 카테고리 + 캡션. **얼굴 크롭은 트레이너가 미리 잘라 업로드**(앱은 압축만).
+- **세일즈북 삽입:** **트레이너 수동 선택**(자동 매칭 아님) — 회원 goal로 후보 카테고리 필터, 트레이너가 1~3개 픽 → 별도 "실적 사례" 슬라이드. 없으면 스킵(옵션).
+- **⚠️ 개인정보:** 다른 회원 사진을 예비회원에게 보여주는 민감 사안. 얼굴 크롭 + **본인 동의 전제** 필수. 업로드 시 "동의받은·식별불가 사진만" 1회 확인 문구(트레이너 책임 명시). 현장 배포 체크리스트(MASTERPLAN §8)와 연동.
+- **판단:** 무겁진 않으나(온디맨드·additive) 관리 부담 있는 트레이너-대면 기능 → **세일즈북 코어 전환율 검증 후** 착수 권장.
+
+---
+
+## 10. 구현 상태 (2026-07 기준)
+S1(salesbook phase)·S2(자동생성·캐시 하이브리드)·S3(뷰)·S4(프로필 확장)·S5(진입·편집) + 폴리싱(**트레이너 관점**: diagnosis·approach·step.how · **채우기**: flex fill + fit-scale · **가로 높이 캡** · **전체화면 토글**) 구현·리뷰·커밋 완료. 손글씨 폰트(NanumPenScript) self-host 배선 완료. 남은 것: 9-1 재등록용, 9-2 포트폴리오(후속).
