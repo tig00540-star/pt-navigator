@@ -2,10 +2,12 @@
 // -----------------------------------------------------------------------------
 // Supabase `account` → 노션 '앱 고객 관리' 단방향 동기화(주기적 · Vercel Cron).
 // - upsert 키: 노션 '계정ID' 속성 = Supabase account.id (중복 생성 방지).
-// - 앱이 진실인 필드만 덮어씀: 고객명·단계·플랜·규모·가입일·만료일·구독상태·계정ID.
+// - 앱이 진실인 필드만 덮어씀: 고객명·단계·플랜·규모·만료일·구독상태·계정ID.
 // - 사람이 노션에서 직접 쓰는 필드는 절대 안 건드림: 다음 액션 · 기한 · 상태 · 연락처.
 // - 해지/이탈 계정도 노션에서 삭제하지 않음(이력 보존). 단계만 갱신.
 // 인증: Vercel Cron이 Authorization: Bearer <CRON_SECRET> 을 실어 보냄(수동 호출도 동일).
+// ⚠️ account 컬럼은 실제 존재하는 것만 select(id·type·name·subscription_status·current_period_end).
+//    billing_plan·cancel_at_period_end·created_at 는 스키마에 없어서 사용 안 함.
 // -----------------------------------------------------------------------------
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -27,24 +29,24 @@ function authorized(req) {
 }
 
 // 구독 필드 → 노션 '단계'. ⚠️ 매핑 규칙은 여기 한 곳에서만 조정하세요.
-// 결제 웹훅이 아직 수동인 현재 기준(문서 PRODUCT.md). 웹훅 붙이면 hasPaid 정확도가 올라갑니다.
+// 결제 웹훅이 아직 수동인 현재 기준. payment 성공행이 쌓이면 '활성' 정확도가 올라갑니다.
 function deriveStage(acc, hasPaid, now) {
   const end = acc.current_period_end ? new Date(acc.current_period_end).getTime() : null;
   const active = acc.subscription_status === "active" && (end === null || end > now);
-  if (!acc.subscription_status || acc.subscription_status === "inactive") return "리드";
-  if (active && acc.cancel_at_period_end) return "이탈위험";
   if (active && !hasPaid) {
     // 무료체험 중 — 만료 3일 이내면 전환 대상으로 승격
     if (end !== null && end - now < 3 * 86400000) return "유료전환대상";
     return "무료체험";
   }
   if (active && hasPaid) return "활성";
-  return "해지"; // 만료 또는 비활성
+  if (acc.subscription_status && acc.subscription_status !== "inactive") return "해지"; // 있었으나 만료
+  return "리드";
 }
 
-function planLabel(billingPlan) {
-  if (billingPlan === "solo") return "솔로";
-  if (billingPlan === "center") return "센터";
+// 계정 유형 → 노션 '플랜'(좌석 등급).
+function planLabel(type) {
+  if (type === "solo") return "솔로";
+  if (type === "center") return "센터";
   return "체험";
 }
 
@@ -60,11 +62,7 @@ export async function GET(req) {
 
   // 1) 계정 + 트레이너(좌석수·원장명) + 결제(유료 여부)
   const [{ data: accounts, error: ae }, { data: trainers }, { data: payments }] = await Promise.all([
-    sb
-      .from("account")
-      .select(
-        "id, name, type, subscription_status, plan, billing_plan, current_period_end, cancel_at_period_end, created_at"
-      ),
+    sb.from("account").select("id, type, name, subscription_status, current_period_end"),
     sb.from("trainer").select("account_id, role, name, active"),
     sb.from("payment").select("account_id, amount, status"),
   ]);
@@ -111,11 +109,10 @@ export async function GET(req) {
       "고객명 (센터/트레이너)": { title: [{ text: { content: title } }] },
       "계정ID": { rich_text: [{ text: { content: acc.id } }] },
       "단계": { select: { name: stage } },
-      "플랜": { select: { name: planLabel(acc.billing_plan) } },
+      "플랜": { select: { name: planLabel(acc.type) } },
       "구독상태": { rich_text: [{ text: { content: acc.subscription_status || "-" } }] },
     };
     if (size != null) props["규모(인원)"] = { number: size };
-    if (acc.created_at) props["가입일"] = { date: { start: String(acc.created_at).slice(0, 10) } };
     if (acc.current_period_end)
       props["만료일"] = { date: { start: String(acc.current_period_end).slice(0, 10) } };
 
