@@ -123,8 +123,8 @@ ${STAKES_AXIS}
      시간이에요, 비용이에요?"). 그 이유별 깊은 대응은 아래 objection_defense가 잇는다.`;
 }
 
-// ── ① firstPrompt — 사전무장 컨닝페이퍼(4블록). 세일즈 클로징 극대화 · 3분전 스캔용. ──
-function firstPrompt(member, packages) {
+// ── ① firstPrompt — 사전무장 컨닝페이퍼(3스텝: 인사 → 즉효운동 3~4개 → 클로징). 3분전 스캔용. ──
+function firstPrompt(member, packages, favorites) {
   const m = member || {};
   const machines = Array.isArray(m.machines) ? m.machines.join(", ") : g(m.machines);
   const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
@@ -134,9 +134,14 @@ function firstPrompt(member, packages) {
         return `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
       }).join("\n")
     : "등록된 패키지 없음";
+  const favs = Array.isArray(favorites) ? favorites.filter(Boolean) : [];
+  const favBlock = favs.length
+    ? favs.map((f, i) => `[f${i}] ${f.category ? f.category + " · " : ""}${g(f.title)}${f.note ? ` (${f.note})` : ""}`).join("\n")
+    : "없음(즐겨찾기한 운동자료 없음)";
   return `[상황·대전제] 1차 OT 입장 3분 전. 이 출력의 유일한 목적 = 이 회원의 '등록(클로징) 확률 극대화'다.
 트레이너는 이걸 30초~1분에 훑어 머리에 넣고 폰을 주머니에 넣는다. '참고 설명'이 아니라 '바로 외워
 바로 말할 완성 대사'로 써라. 추상 지침·개발자용 매핑 설명 금지.
+OT는 [① 인사·라포 → ② 운동(바로 효과 체감) → ③ 클로징] 3스텝으로 흐른다 — 그 순서대로, 각 스텝 핵심만 짧게.
 
 [이 국면 특칙 — 대본 수위] 세일즈(오프닝·비유·클로징·거절)뿐 아니라 운동 파트도 '회원에게 그대로 말할
 실제 대사'까지 구체적으로 준다. 단 아래는 여전히 절대 금지:
@@ -154,8 +159,10 @@ function firstPrompt(member, packages) {
 
 [내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
 ${pkgBlock}
+[내 즐겨찾기 운동자료] (트레이너가 별표한 자기 자료 — 상황에 맞으면 아래 exercises에서 '우선' 골라 lib_ref로 참조. [fn]=자료번호)
+${favBlock}
 
-[★운동목적(goal) = 최우선 렌즈] goal이 4블록 전부의 중심축이다.
+[★운동목적(goal) = 최우선 렌즈] goal이 3스텝 전부의 중심축이다.
  - 통증개선/불편해소 → 불편 부위를 전면, 그 해소로 엮는다.
  - 외형/체중감량/바디라인 → 체형·라인·자신감을 전면, pain은 보조.
  - 건강/체력/활력 → 컨디션·에너지를 전면.  - 벌크업/근육 → 근성장·볼륨·자세를 전면.
@@ -173,59 +180,48 @@ ${pkgBlock}
  - 제약 커 보이면(신호 부재·'가볍게 시작'): 최소 필요량부터 제안, 이후 확장 여지 남김.
  - ⚠️ 이 판단은 pick_ref 선택과 session_logic '톤'에만 반영. 회원에게 '여유 있어 보인다/돈' 식 재정 언급은 값 텍스트에 절대 금지.
 
-[컨닝페이퍼 4블록 — 트레이너가 읽는 순서]
+[컨닝페이퍼 3스텝 — 트레이너가 읽는 순서 = OT 진행 순서]
 
-① opening(오프닝 — 첫 만남 긴장 풀기): 회원의 직업·거주·나이·목표 같은 '일상 소재'로 가볍게 문을 여는
+① opening(인사·라포 — 첫 5분): 회원의 직업·거주·나이·목표 같은 '일상 소재'로 가볍게 문을 여는
    완성 대사 1개. 날씨 같은 무난한 소재도 좋다. 세일즈 냄새 0, 사람 대 사람의 라포.
    - line: 그대로 말할 첫 대사("○○님, …") 1~2문장.  - why: 이게 여는 것(긴장 완화·신뢰) 1문장.
 
-② session_plan(오늘 수업 운동 구성 — '무엇을 시킬지' 구체적으로): 오늘 1차 OT에서 이 회원에게 실제로
-   시킬 운동을 순서대로 3~5개 구성하라. 회원 goal·pain·기본정보(관찰 전이라 가설)에서 도출하고, 아래 '타겟
-   운동(증거)'이 잘 터지도록 빌드업되게 짜라(가벼운 활성·준비 → 핵심 → 증거로 자연히 이어짐). 이게 트레이너가
-   '오늘 뭘 시킬지'를 바로 아는 실전 구성이다.
-   ★각 운동은 '이름 있는 구체 동작 + 한 줄 큐/세팅'으로. 고정 구성 반복 금지, goal·pain으로 개인화(직업
-   없어도). 숫자 처방(세트·횟수·각도·중량·템포) 금지 — 무엇을·어떤 방향으로·왜인지까지만.
-${SAMEDAY_PLAN}
-${GENDER_HINT}
-   각 항목: exercise(구체 동작 + 한 줄 세팅) / point(왜 시키나 or 핵심 큐 1문장).
-
-③ target_exercise(타겟 운동 & 리액션 — 세일즈의 '증거' 만들기): 위 수업 구성 중/직후 터뜨릴 결정적 체감 순간이다. 목적은 운동 처방이 아니라, 회원이 '어? 되네/편해지네'를 그 자리에서 부인할 수 없이 체감해 'PT가 필요하구나'를 스스로 느끼게 하는 것.
-   ★증거 동작 2개(moves 배열). 각 동작 필수 — (a)이름 있는 구체 동작으로 콕 집을 것 (b)차이가 확 느껴질 것.
-   - ★★동작은 반드시 '이 회원의 goal·pain·injury_history·exercise_level'에서 도출하라. 회원마다 목적·
-     불편이 다르면 동작도 달라야 한다. 특정 고정 동작을 습관적으로 반복하지 마라 —
-     · goal이 체형·근력이면 그 타겟 부위를 직접 체감시키는 동작
-     · pain이 있으면 그 부위를 우회·완화시켜 '안 아프게 되네' 체감을 주는 동작
-     · goal이 체력·건강이면 전신 협응·호흡·자세로 '몸이 가벼워지는' 체감
-     · 부상 부위(injury_history)는 피하거나 우회, 초보(exercise_level 처음)면 쉬운 동작으로.
-   - ★직업(job)이 없거나 무직·백수·학생이어도 goal·pain으로 충분히 개인화하라. 직업 정보가 비었다고
-     매번 같은 일반 동작(목·어깨·흉추류 등)으로 도망가지 마라 — 직업은 개인화의 여러 축 중 하나일 뿐이다.
-   - ★차이가 극적인 동작 — 'before→after' 체감 실험으로: 먼저 시켜 지금 상태를 느끼게 → 큐·세팅 하나
-     잡아줌 → 다시 시키면 확 달라짐. 그 큐가 회원이 혼자선 못 잡는 지점이다.
-   - ★2개는 서로 겹치지 않게: 1번=회원의 주 목적/불편 직격, 2번=다른 각도(연관 부위·기능)로 쐐기.
-   - 숫자 처방(세트·횟수·각도·템포·중량) 금지 — 동작은 구체적으로, 숫자는 비워라.
+② exercises(오늘 시킬 즉효 운동 3~4개 — ★이 스텝이 핵심): 이 회원 goal·pain·기본정보(관찰 전 가설)에서,
+   '그 자리에서 바로 효과·자극을 느끼는' 운동 3~4개를 골라라. 목적별로:
+     · 재활·교정 → 굳은 데를 직접 풀어 그날 몸이 가벼워지는 기능성 동작
+     · 체형·근력 → 타겟 부위를 직접 자극해 '여기 딱 들어온다' 체감
+     · 경험자(운동 좀 해본) → 익숙한 것 말고 색다른 자극
+   ★쉬운·머신 위주로 도망가지 말고, 뻔한 일반동작(숄더프레스·체스트프레스류) 반복 금지 — 이 회원에 맞는
+   구체 동작으로 '매번 다르게'. [내 즐겨찾기 운동자료]가 상황에 맞으면 그걸 '우선' 골라 lib_ref로 참조하라.
+   숫자 처방(세트·횟수·각도·중량·템포) 금지 — 무엇을·어떤 방향으로·왜인지까지만.
 ${SAMEDAY_PROOF}
 ${REHAB_TONE}
-   moves[] 각 항목:
-   - exercise: 콕 집은 구체 동작 이름 + 어떻게 시키는지 한 줄(숫자 없이).
-   - target_reaction: 회원이 느낄 '분명한' 차이를 before→after 대비로(예: "처음엔 뻐근·제한 → 세팅 후 확 트임").
-   - point_it_out: 그 차이가 난 순간 그대로 말할 실제 대사 — before→after를 회원이 인정하게 묻고
-     ("아까랑 다르죠?"), '이건 혼자선 이 각도(혼자선 못 찾는 지점)를 못 잡는다'를 자연스럽게 심어라. 1~2문장.
-   그리고 so_what(moves 밖 · 2개 공통): 두 체감을 묶어 'PT를 받는 게 낫겠다'는 회원 스스로의 결론으로
-   잇는 한 줄(압박 아님·사실 기반).
+   exercises[] 각 항목:
+   - name: 콕 집은 구체 동작 이름 + 어떻게 하는지 한 줄(숫자 없이).
+   - reason: ★"회원님은 이 운동을 ~ 때문에 하셔야 해요"를 회원이 이해하도록 풀어주는 이유(이 회원 goal·pain
+     기반, 전문용어 없이). ★이게 이 블록의 핵심 — '혼자선 못 잡는다'는 의존 심기보다, 회원이 '왜 이 운동이
+     나한테 필요한지' 스스로 납득하게 하는 '교육형' 설명. 확신 있되 부담 없이.
+   - feel: 그 자리서 바로 느낄 효과·자극을 회원 말로("어? 여기 딱 들어오네 / 목이 트이네").
+   - cue: 그 순간 그대로 말할 대사(before→after 차이를 회원이 인정하게 + 이 운동의 가치를 각인). 압박 아님.
+   - proof: 3~4개 중 차이가 가장 극적인 1~2개만 true(핵심 증거 동작), 나머지 false.
+   - lib_ref: 위 [내 즐겨찾기 운동자료]에서 쓴 자료 번호(정수). 안 썼으면 null.
+   그리고 so_what(exercises 밖): 3~4개를 묶어 'PT를 받는 게 낫겠다'는 회원 스스로의 결론 한 줄(사실 기반·압박 아님).
 
-④ sales_metaphor(세일즈 비유 — 회원 세계 언어): 회원의 직업·일상·목표에서 끌어온 비유 하나로 '지금
+③ 클로징 — 운동 끝나고 다시 앉아서. 아래 셋으로 자연히 닫는다.
+
+ sales_metaphor(세일즈 비유 — 회원 세계 언어): 회원의 직업·일상·목표에서 끌어온 비유 하나로 '지금
    안 하면/함께 하면'을 그림처럼. 운동·기계 클리셰("브레이크-액셀") 금지.
    - metaphor: 그대로 말할 비유 대사 1~2문장.  - bridge: 비유→등록 필요성으로 잇는 한 줄.
 
 ${closingSeqInstruction({
-    num: "⑤",
-    leverage: "오늘 target_exercise의 체감",
+    num: "",
+    leverage: "오늘 exercises의 체감",
     trialHint: "방금 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
     askTarget: "추천 패키지 방향(회차·빈도)",
     askExample: `"다음 주 화·목으로 잡을게요 — 화요일 저녁 괜찮으세요?"`,
   })}
 
-⑥ objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
+ objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
    세일즈로 다시 끌기'. reason 키 고정(5개 전부 · 각 1개):
      price(가격 부담) · hesitation(생각해볼게요·망설임) · doubt(효과·필요성 의심) ·
      time(시간 부족·바빠서) · compare(타 센터 비교 — "가격 비교하고 올게요/다른 데서도 OT 받아볼게요").
@@ -261,15 +257,15 @@ ${MEMBER_LANG}
 {
   "member_read": "이 회원 한 줄 — 누구고/뭘 원하고/뭐가 걸리나 (3분전 각인 앵커)",
   "opening": { "line": "...", "why": "..." },
-  "session_plan": [ { "exercise": "...", "point": "..." } ],
-  "target_exercise": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "..." },
+  "exercises": [ { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": true, "lib_ref": null }, { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null }, { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null } ],
+  "so_what": "...",
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON},
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]
 }
-※ objection_defense는 위 5개 reason을 각각 1개씩(총 5). pick_ref/alt_ref는 정수 또는 null.`;
+※ exercises는 3~4개(각 proof 불린·lib_ref 정수 또는 null). objection_defense는 위 5개 reason을 각각 1개씩(총 5). pick_ref/alt_ref는 정수 또는 null.`;
 }
 
 // ③ phase="second" user 프롬프트
@@ -762,6 +758,11 @@ const FIELD_TERMS = [
   ["caseTier", "경향 신뢰도"],
   ["member_read", "회원 한 줄"],
   ["opening", "오프닝"],
+  // ① 3스텝 재설계 신규 키(exercises 블록) 누출 방어.
+  ["exercises", "운동"],
+  ["lib_ref", "자료 번호"],
+  ["reason", "이유"],
+  ["cue", "짚을 말"],
   ["target_exercise", "타겟 운동"],
   ["target_reaction", "노릴 반응"],
   ["point_it_out", "짚어줄 말"],
@@ -1018,7 +1019,7 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
   }
 
-  const { phase, member, report, ptContext, acuteContext, packages, closingCases, caseTier, recommendedProgram, photoLabels, change } = body || {};
+  const { phase, member, report, ptContext, acuteContext, packages, favorites, closingCases, caseTier, recommendedProgram, photoLabels, change } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook") {
     return Response.json({ error: "phase는 'first'·'second'·'reregister'·'acute'·'salesbook'·'reg_salesbook' 중 하나여야 합니다." }, { status: 400 });
   }
@@ -1027,7 +1028,7 @@ export async function POST(request) {
 
   const model = MODEL_SECOND; // 전 phase Sonnet(1차도 승급).
   const basePrompt =
-    phase === "first" ? firstPrompt(member, packages)
+    phase === "first" ? firstPrompt(member, packages, favorites)
     : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages)
     : phase === "reregister" ? reregisterPrompt(member, ptContext, packages)
     : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
@@ -1065,7 +1066,7 @@ export async function POST(request) {
       .join("");
     // first는 필수 키를 넘겨 스키마 완전성까지 파서가 보장(부분객체·다중블록 방어).
     // second는 별도 스키마라 키 미지정(1순위 단일 파싱 — 기존 동작 유지, 회귀 없음).
-    const REQUIRED_FIRST = ["member_read", "opening", "session_plan", "target_exercise", "sales_metaphor", "closing_sequence", "objection_defense"];
+    const REQUIRED_FIRST = ["member_read", "opening", "exercises", "sales_metaphor", "closing_sequence", "objection_defense"];
     const REQUIRED_SECOND = ["member_read", "recall", "session_plan", "proof", "sales_metaphor", "closing_sequence", "objection_defense"];
     const REQUIRED_REREG = ["member_read", "why_now", "session_flow", "sales_metaphor", "closing_sequence", "objection_defense"];
     const REQUIRED_SALESBOOK = ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];

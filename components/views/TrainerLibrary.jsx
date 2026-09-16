@@ -3,7 +3,7 @@
    library_item(본인 것 · trainer_id 필터). 지금은 관리만 — 수업중 표시·회원 공유는 후속.
    account_id·trainer_id는 DB DEFAULT라 insert 시 미포함. .select() 하드닝·데모 가드·Toast. */
 import { useEffect, useState } from "react";
-import { BookMarked, Plus, Trash2, Pencil, X, ExternalLink, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { BookMarked, Plus, Trash2, Pencil, X, ExternalLink, Search, ChevronDown, ChevronRight, Star } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
@@ -112,6 +112,16 @@ export default function TrainerLibrary() {
     setConfirmId(null); showToast("삭제됨");
   };
 
+  // 즐겨찾기 토글 — 별표한 자료는 1차 OT 운동 추천에 '우선' 반영. .select() 하드닝.
+  // ⚠️ favorite 컬럼 마이그레이션 전이면 실패 → 안내(비차단).
+  const toggleFav = async (r) => {
+    const next = !r.favorite;
+    if (!supabase) { setRows((p) => p.map((x) => (x.id === r.id ? { ...x, favorite: next } : x))); return; }
+    const { data, error } = await supabase.from("library_item").update({ favorite: next }).eq("id", r.id).select();
+    if (error || !data || data.length === 0) { showToast("즐겨찾기 변경 실패 — 마이그레이션을 확인하세요"); return; }
+    setRows((p) => p.map((x) => (x.id === r.id ? data[0] : x)));
+  };
+
   // 카테고리별 그룹(빈 카테고리는 '기타') — 검색 필터 후. datalist 제안은 전체 rows 기준.
   const ql = q.trim().toLowerCase();
   const filtered = ql
@@ -210,6 +220,9 @@ export default function TrainerLibrary() {
                                 </div>
                               ) : (
                                 <div className="flex shrink-0 items-center gap-1">
+                                  <button onClick={() => toggleFav(r)} className={r.favorite ? "text-amber-500" : "text-muted transition hover:text-amber-500"} aria-label="즐겨찾기" title="OT 운동 추천에 우선 반영">
+                                    <Star className="h-4 w-4" fill={r.favorite ? "currentColor" : "none"} />
+                                  </button>
                                   <button onClick={() => startEdit(r)} className="text-muted transition hover:text-primary-strong" aria-label="수정"><Pencil className="h-4 w-4" /></button>
                                   <button onClick={() => setConfirmId(r.id)} className="text-muted transition hover:text-rose-600" aria-label="삭제"><Trash2 className="h-4 w-4" /></button>
                                 </div>
