@@ -12,7 +12,28 @@ import { personName } from "@/lib/format";
 import Modal from "@/components/ui/Modal";
 import NumberInput from "@/components/ui/NumberInput";
 import Button from "@/components/ui/Button";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, X, ChevronDown, ChevronRight } from "lucide-react";
+
+// 입력 칸 하나 — opts 있으면 datalist(드롭다운 제안 + 자유 입력=기타). 모듈 레벨(렌더 내 정의 금지 · lint).
+function FieldCell({ f, value, onChange }) {
+  return (
+    <div className={f.k === "name" ? "sm:col-span-2" : ""}>
+      <label className="mb-1 block text-[11px] font-medium text-muted">
+        {f.label}
+        {f.k === "name" && <span className="text-primary-strong"> *</span>}
+      </label>
+      <input
+        type={f.type || "text"}
+        value={value}
+        onChange={onChange}
+        placeholder={f.ph}
+        list={f.opts ? `ml-${f.k}` : undefined}
+        className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
+      />
+      {f.opts && <datalist id={`ml-${f.k}`}>{f.opts.map((o) => <option key={o} value={o} />)}</datalist>}
+    </div>
+  );
+}
 
 export default function MemberForm({ onClose, onSaved, assignTrainers }) {
   const [form, setForm] = useState({
@@ -41,6 +62,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
   const [assignedTrainerId, setAssignedTrainerId] = useState(""); // admin 배정 모드에서만 사용
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  const [showDetail, setShowDetail] = useState(false); // OT 사전 문진 접기(기본 닫힘 · 입력 부담↓)
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -131,24 +153,38 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
     onSaved();
   };
 
-  const fields = [
+  // 드롭다운 제안(datalist) — 목록에서 고르거나, 없으면 그냥 직접 타이핑(=기타). 자유 입력 유지.
+  const OPTS = {
+    goal: ["체중감량", "바디프로필", "체형교정", "근력·벌크업", "건강·체력", "재활·통증개선"],
+    training_pace: ["가볍게", "제대로", "집중해서"],
+    exercise_level: ["처음", "가끔씩", "꾸준히"],
+    activity_level: ["주로 앉아서", "보통", "활동적"],
+    quit_reason: ["시간 부족", "동기 저하", "효과 의문", "부상", "혼자 막막"],
+    past_exercise: ["없음", "PT", "필라테스", "요가", "크로스핏"],
+    injury_history: ["없음"],
+  };
+  // 기본(항상 표시) — 필수·핵심만. 나머지는 아래 '사전 문진' 접기.
+  const BASIC = [
     { k: "name", label: "이름", ph: "김철수" },
     { k: "phone_number", label: "휴대폰 번호 (회원앱 로그인용)", ph: "010-1234-5678", type: "tel" },
     { k: "age", label: "나이", ph: "34", type: "number" },
+    { k: "goal", label: "목적", ph: "바디프로필", opts: OPTS.goal },
+    { k: "pain", label: "불편 부위", ph: "우측 무릎 통증" },
+  ];
+  // OT 사전 문진(접기 · 전부 선택) — 비워도 되지만 있으면 AI 근거가 좋아짐.
+  const DETAIL = [
     { k: "job", label: "직업", ph: "IT 개발자" },
     { k: "residence", label: "거주지", ph: "센터 인근 오피스텔" },
     { k: "mbti", label: "MBTI", ph: "ISTJ" },
-    { k: "pain", label: "불편 부위", ph: "우측 무릎 통증" },
-    { k: "goal", label: "목적", ph: "바디프로필" },
     { k: "goal_deadline",  label: "목표 시점·계기",  ph: "예: 8월 결혼 / 없으면 비움" },
-    { k: "training_pace",  label: "원하는 페이스",    ph: "가볍게 / 제대로 / 집중해서" },
-    { k: "injury_history", label: "부상·수술 이력",  ph: "없음 / 2년 전 무릎 수술 등" },
-    { k: "exercise_level", label: "운동 경험",        ph: "처음 / 가끔 / 꾸준히" },
-    { k: "quit_reason",    label: "예전 중단 이유",   ph: "시간·동기·효과·부상·혼자 막막 등" },
-    { k: "past_exercise",  label: "받아본 유료 운동", ph: "PT, 필라테스 등 / 없음" },
+    { k: "training_pace",  label: "원하는 페이스",    ph: "제대로", opts: OPTS.training_pace },
+    { k: "injury_history", label: "부상·수술 이력",  ph: "없음 / 2년 전 무릎 수술", opts: OPTS.injury_history },
+    { k: "exercise_level", label: "운동 경험",        ph: "처음", opts: OPTS.exercise_level },
+    { k: "quit_reason",    label: "예전 중단 이유",   ph: "혼자 막막", opts: OPTS.quit_reason },
+    { k: "past_exercise",  label: "받아본 유료 운동", ph: "없음", opts: OPTS.past_exercise },
     { k: "availability",   label: "가능 빈도·시간대", ph: "주 2회 · 저녁" },
-    { k: "activity_level", label: "하루 활동량",      ph: "주로 앉아서 / 활동적" },
-    { k: "member_note",    label: "바라는 점(선택)",  ph: "회원이 미리 남긴 말" },
+    { k: "activity_level", label: "하루 활동량",      ph: "주로 앉아서", opts: OPTS.activity_level },
+    { k: "member_note",    label: "바라는 점",        ph: "회원이 미리 남긴 말" },
   ];
 
   return (
@@ -186,38 +222,43 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
           </div>
         )}
 
-        {/* 폰 1열 — 긴 한글 라벨("휴대폰 번호 (회원앱 로그인용)")이 2줄이 되면 옆 칸과 세로가 어긋나 계단처럼 밀렸다.
-            sm+에서만 2열(레포 참고 구현: MemberListTab·ObservationTab·admin의 sm:grid-cols-2). */}
+        {/* 기본 정보(항상 표시) — 필수·핵심. sm+에서만 2열(계단 밀림 방지). */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {fields.map((f) => (
-            <div key={f.k} className={f.k === "name" ? "sm:col-span-2" : ""}>
-              <label className="mb-1 block text-[11px] font-medium text-muted">
-                {f.label}
-                {f.k === "name" && <span className="text-primary-strong"> *</span>}
-              </label>
-              <input
-                type={f.type || "text"}
-                value={form[f.k]}
-                onChange={set(f.k)}
-                placeholder={f.ph}
-                className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
-              />
-            </div>
+          {BASIC.map((f) => (
+            <FieldCell key={f.k} f={f} value={form[f.k]} onChange={set(f.k)} />
           ))}
+          {/* 성별 — AI가 동작을 성별에 맞춰 제시하는 재료(선택) */}
+          <div>
+            <label className="mb-1 block text-[11px] font-medium text-muted">성별 (선택)</label>
+            <select
+              value={form.gender}
+              onChange={set("gender")}
+              className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+            >
+              <option value="">선택 안 함</option>
+              <option value="female">여성</option>
+              <option value="male">남성</option>
+            </select>
+          </div>
         </div>
 
-        {/* 성별 — AI가 동작을 성별에 맞춰 제시하는 재료(선택) */}
+        {/* OT 사전 문진 — 접기(기본 닫힘). 비워도 등록되고, 채우면 AI 근거가 좋아짐. */}
         <div className="mt-3">
-          <label className="mb-1 block text-[11px] font-medium text-muted">성별 (선택)</label>
-          <select
-            value={form.gender}
-            onChange={set("gender")}
-            className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          <button
+            type="button"
+            onClick={() => setShowDetail((v) => !v)}
+            className="flex w-full items-center gap-1.5 rounded-lg border border-line bg-elevate px-3 py-2 text-left text-[12px] font-semibold text-sub transition-colors hover:text-ink"
           >
-            <option value="">선택 안 함</option>
-            <option value="female">여성</option>
-            <option value="male">남성</option>
-          </select>
+            {showDetail ? <ChevronDown className="h-4 w-4 text-muted" /> : <ChevronRight className="h-4 w-4 text-muted" />}
+            OT 사전 문진 <span className="text-[10px] font-normal text-muted">(선택 · 비워도 됨 · 채우면 AI 근거↑)</span>
+          </button>
+          {showDetail && (
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {DETAIL.map((f) => (
+                <FieldCell key={f.k} f={f} value={form[f.k]} onChange={set(f.k)} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ② 진입 문(origin) — status는 여기서 파생. status 드롭다운은 만들지 않음(§7). */}

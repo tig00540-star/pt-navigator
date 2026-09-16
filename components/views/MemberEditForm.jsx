@@ -7,6 +7,16 @@ import { supabase } from "@/lib/supabaseClient";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 
+// datalist 제안값 — MemberForm과 동일(목록에서 고르거나 직접 타이핑=기타).
+const O = {
+  goal: ["체중감량", "바디프로필", "체형교정", "근력·벌크업", "건강·체력", "재활·통증개선"],
+  training_pace: ["가볍게", "제대로", "집중해서"],
+  exercise_level: ["처음", "가끔씩", "꾸준히"],
+  activity_level: ["주로 앉아서", "보통", "활동적"],
+  quit_reason: ["시간 부족", "동기 저하", "효과 의문", "부상", "혼자 막막"],
+  past_exercise: ["없음", "PT", "필라테스", "요가", "크로스핏"],
+  injury_history: ["없음"],
+};
 const FIELDS = [
   { k: "name", label: "이름", ph: "김철수" },
   { k: "phone_number", label: "휴대폰 번호 (회원앱 로그인용)", ph: "010-1234-5678", type: "tel" },
@@ -15,15 +25,15 @@ const FIELDS = [
   { k: "residence", label: "거주지", ph: "센터 인근 오피스텔" },
   { k: "mbti", label: "MBTI", ph: "ISTJ" },
   { k: "pain", label: "불편 부위", ph: "우측 무릎 통증" },
-  { k: "goal", label: "목적", ph: "바디프로필" },
+  { k: "goal", label: "목적", ph: "바디프로필", opts: O.goal },
   { k: "goal_deadline", label: "목표 시점·계기", ph: "예: 8월 결혼 / 없으면 비움" },
-  { k: "training_pace", label: "원하는 페이스", ph: "가볍게 / 제대로 / 집중해서" },
-  { k: "injury_history", label: "부상·수술 이력", ph: "없음 / 2년 전 무릎 수술 등" },
-  { k: "exercise_level", label: "운동 경험", ph: "처음 / 가끔 / 꾸준히" },
-  { k: "quit_reason", label: "예전 중단 이유", ph: "시간·동기·효과·부상·혼자 막막 등" },
-  { k: "past_exercise", label: "받아본 유료 운동", ph: "PT, 필라테스 등 / 없음" },
+  { k: "training_pace", label: "원하는 페이스", ph: "제대로", opts: O.training_pace },
+  { k: "injury_history", label: "부상·수술 이력", ph: "없음 / 2년 전 무릎 수술", opts: O.injury_history },
+  { k: "exercise_level", label: "운동 경험", ph: "처음", opts: O.exercise_level },
+  { k: "quit_reason", label: "예전 중단 이유", ph: "혼자 막막", opts: O.quit_reason },
+  { k: "past_exercise", label: "받아본 유료 운동", ph: "없음", opts: O.past_exercise },
   { k: "availability", label: "가능 빈도·시간대", ph: "주 2회 · 저녁" },
-  { k: "activity_level", label: "하루 활동량", ph: "주로 앉아서 / 활동적" },
+  { k: "activity_level", label: "하루 활동량", ph: "주로 앉아서", opts: O.activity_level },
   { k: "member_note", label: "바라는 점(선택)", ph: "회원이 미리 남긴 말" },
 ];
 
@@ -133,8 +143,10 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
                       value={form[f.k]}
                       onChange={setF(f.k)}
                       placeholder={f.ph}
+                      list={f.opts ? `mle-${f.k}` : undefined}
                       className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
                     />
+                    {f.opts && <datalist id={`mle-${f.k}`}>{f.opts.map((o) => <option key={o} value={o} />)}</datalist>}
                   </div>
                 ))}
               </div>
