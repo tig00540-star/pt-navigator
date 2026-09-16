@@ -60,7 +60,7 @@ function deltaTone(field, cur, before) {
   return "bad";
 }
 
-export default function PtInbodyTab({ member, mode }) {
+export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -262,8 +262,8 @@ export default function PtInbodyTab({ member, mode }) {
         </Card>
       )}
 
-      {/* AI 분석 (회원 대면) — 최근 측정 기준. '앱이 분석' 프레이밍으로 영업 부담↓. */}
-      {mode !== "record" && latest && (
+      {/* AI 분석 (회원 대면) — OT(신규) 세일즈 도구. 기존 PT 회원은 추이만(showAnalysis=false). */}
+      {showAnalysis && latest && (
         <Card as="section">
           <div className="flex items-center justify-between gap-2">
             <Eyebrow icon={Sparkles}>인바디 분석 · 회원에게 보여주기</Eyebrow>
