@@ -185,6 +185,7 @@ export default function FirstOTAssist({ member }) {
   const op = data?.opening || {};
   const exercises = Array.isArray(data?.exercises) ? data.exercises.filter(Boolean) : [];
   const soWhat = data?.so_what || "";
+  const wi = data?.workout_intro || ""; // 오늘 운동 시작 전 회원에게 말할 안내(왜 하는지)
   const sm = data?.sales_metaphor || {};
   const cline = data?.closing_line || "";
   const obj = Array.isArray(data?.objection_defense) ? data.objection_defense.filter(Boolean) : [];
@@ -261,6 +262,12 @@ export default function FirstOTAssist({ member }) {
                 <Dumbbell className="h-4 w-4 text-sky-700" />
                 <span className="text-[11px] font-semibold tracking-label-ko text-sky-700">오늘 시킬 즉효 운동 · {exercises.length}</span>
               </div>
+              {wi && (
+                <p className="mt-2 rounded-lg bg-sky-500/10 px-3 py-2 text-[13px] leading-relaxed text-ink">
+                  <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-sky-700">회원에게</span>
+                  &ldquo;{wi}&rdquo;
+                </p>
+              )}
               <div className="mt-2.5 space-y-3">
                 {exercises.map((ex, i) => {
                   const lib = Number.isInteger(ex.lib_ref) ? (favorites[ex.lib_ref] || null) : null;
@@ -300,22 +307,11 @@ export default function FirstOTAssist({ member }) {
             </div>
           )}
 
-          {/* ③ 세일즈 비유 */}
-          {sm.metaphor && (
-            <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
-              <div className="flex items-center gap-2">
-                <span className="text-base">💬</span>
-                <span className="text-[11px] font-semibold tracking-label-ko text-amber-700">세일즈 비유</span>
-              </div>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink">&ldquo;{sm.metaphor}&rdquo;</p>
-              {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
-            </div>
-          )}
-
-          {/* ④ 클로징 흐름(4비트) — 크게(L0). 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
+          {/* ③ 세일즈 비유 → 클로징 흐름(비유 리드인 + plan_pitch 포함). 옛 캐시는 closing_line 폴백. */}
           <ClosingSequence
             sequence={data?.closing_sequence}
             fallbackLine={cline}
+            metaphor={sm}
             icon={<Flag className="h-4 w-4 text-primary-strong" />}
           />
 

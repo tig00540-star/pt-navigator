@@ -106,17 +106,21 @@ const REHAB_TONE = `   ★재활·교정 동작은 강하게 넣되(약한 동�
    → "굳은 목·어깨를 풀어 그날 목이 가벼워지는 걸 체감"(✅). 진단·치료·완치·교정완료 단정 금지. 통증은 '불편/부담'까지만.`;
 
 // ③ closing_sequence JSON 예시(스키마 · 3 프롬프트 공유).
-const CLOSING_SEQ_JSON = `"closing_sequence": { "trial_close": "떠보기 대사 + 끝에 (기다림)", "stakes": "goal 축에 맞는 손실·가치 근거", "ask": "구체 커밋 + 회피 어려운 질문형 요청", "hold": "요청 직후 침묵 — 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
+const CLOSING_SEQ_JSON = `"closing_sequence": { "trial_close": "떠보기 대사 + 끝에 (기다림)", "stakes": "goal 축에 맞는 손실·가치 근거", "plan_pitch": "추천 프로그램을 회원에게 말하는 대사 — 주 N회·약 M개월·총 K회 + 진행 로드맵/기대효과(가격 없이)", "ask": "그 플랜 전제로 오늘 시작 결정 + 구체 일정 요청(회피 어려운 질문형)", "hold": "요청 직후 침묵 — 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
 
 // ④ 클로징 4비트 지시(재료만 phase별 주입 · trial_close→stakes→ask→hold→flush).
 function closingSeqInstruction({ num, leverage, trialHint, askTarget, askExample, tone = "" }) {
-  return `${num} closing_sequence(클로징 흐름 — 한 줄이 아니라 4비트 시퀀스): ${leverage}를 지렛대로, 회원을
-   커밋까지 데려가는 흐름을 준다. 각 비트는 '바로 말할 완성 대사'로.${tone}
+  return `${num} closing_sequence(클로징 흐름 — 한 줄이 아니라 5비트 시퀀스 · 세일즈 비유에서 자연스럽게 이어짐): ${leverage}를 지렛대로, 회원을
+   커밋까지 데려가는 흐름을 준다. 각 비트는 '바로 말할 완성 대사'로. sales_metaphor(비유)를 던진 뒤 그 여운으로 trial_close가 자연히 이어지게 써라.${tone}
    - trial_close: ${trialHint} + 끝에 (기다림). 작은 예스부터 받는다.
    - stakes: 오늘/그동안 몸에서 일어난 일 + 안 하면 그게 어떻게 되는지를, 이 회원 goal 축으로(막연한
      "좋아지실 거예요" 금지). 손실·가치는 goal 유형마다 다르게 —
 ${STAKES_AXIS}
-   - ask: ★구체 커밋을 못 박는다 — ${askTarget} + 시작/시점을 담아 '회피 어려운 질문형'으로
+   - plan_pitch: ★추천 프로그램을 회원에게 그대로 말하는 완성 대사 — [recommended_program]의 pick_ref 패키지
+     기준 '주 N회 · 약 M개월 · 총 K회'를 명확히 말하고, "그래서 이런 순서로 진행해 이런 효과까지 갑니다"라는
+     계획·로드맵을 한 호흡에 담아라. 회원이 '무엇을 얼마나 하는지' 그림이 잡히게. ★K(세션수)는 pick_ref 패키지의
+     실제 sessions 값에 맞춰라(새 숫자 창작 금지). ★가격(원)은 말하지 마라(앱이 채운다).
+   - ask: ★구체 커밋을 못 박는다 — 위 plan_pitch 플랜을 전제로 ${askTarget} + 시작/시점을 담아 '회피 어려운 질문형'으로
      (${askExample}). ★★두리뭉술 절대 금지: "같이 맞춰가요 / 이 페이스대로 가시죠 / 이어가시죠 / 다음에 또
      봬요"처럼 '뭘 하자는 건지, 다음에 또 오라는 건지' 회원이 해석하게 만드는 모호한 표현 금지. 회원이 0.5초 안에
      "아, 지금 PT를 시작할지(등록할지) 정하라는 거구나"를 알도록 한 문장에 (a)무엇을 정하는지=오늘 PT 시작
@@ -198,9 +202,14 @@ ${favBlock}
      · 경험자(운동 좀 해본) → 익숙한 것 말고 색다른 자극
    ★쉬운·머신 위주로 도망가지 말고, 뻔한 일반동작(숄더프레스·체스트프레스류) 반복 금지 — 이 회원에 맞는
    구체 동작으로 '매번 다르게'. [내 즐겨찾기 운동자료]가 상황에 맞으면 그걸 '우선' 골라 lib_ref로 참조하라.
+   ★밴드·튜빙·미니밴드·폼롤러·짐볼 등 소도구를 적극 활용하라(맨몸·소도구로도 즉효 자극이 난다). 특히 여성
+   회원·초보는 바로 무거운 웨이트가 부담일 수 있으니, 소도구·맨몸으로 감각을 먼저 잡아주는 동작을 섞어 부담
+   없이 '어? 되네'를 느끼게 하라(goal이 근력·벌크업이거나 경험자면 웨이트 바로도 OK).
    숫자 처방(세트·횟수·각도·중량·템포) 금지 — 무엇을·어떤 방향으로·왜인지까지만.
 ${SAMEDAY_PROOF}
 ${REHAB_TONE}
+   먼저 workout_intro(exercises 밖 · 회원에게 말할 대사): "오늘은 ○○·△△ 해볼 거예요 — ~하려고요"처럼 오늘
+   할 운동들을 회원에게 소개하며 '왜 이걸 하는지'를 한 번에 납득시키는 완성 대사 1~2문장.
    exercises[] 각 항목:
    - name: 콕 집은 구체 동작 이름 + 어떻게 하는지 한 줄(숫자 없이).
    - reason: ★"회원님은 이 운동을 ~ 때문에 하셔야 해요"를 회원이 이해하도록 풀어주는 이유(이 회원 goal·pain
@@ -262,6 +271,7 @@ ${MEMBER_LANG}
 {
   "member_read": "이 회원 한 줄 — 누구고/뭘 원하고/뭐가 걸리나 (3분전 각인 앵커)",
   "opening": { "line": "...", "why": "..." },
+  "workout_intro": "오늘 할 운동들을 회원에게 소개 + 왜 하는지 납득시키는 대사",
   "exercises": [ { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": true, "lib_ref": null }, { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null }, { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null } ],
   "so_what": "...",
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
@@ -764,6 +774,7 @@ const FIELD_TERMS = [
   ["member_read", "회원 한 줄"],
   ["opening", "오프닝"],
   // ① 3스텝 재설계 신규 키(exercises 블록) 누출 방어.
+  ["workout_intro", "오늘 운동 안내"],
   ["exercises", "운동"],
   ["lib_ref", "자료 번호"],
   ["reason", "이유"],
@@ -782,6 +793,7 @@ const FIELD_TERMS = [
   ["ask", "요청"],
   ["hold", "침묵"],
   ["flush", "진짜 이유 꺼내기"],
+  ["plan_pitch", "플랜 제시"],
   ["moves", "동작"],
   ["session_logic", "세션 근거"],
   ["frequency", "빈도"],
