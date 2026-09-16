@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { Scale, Plus, Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Scale, Plus, Trash2, TrendingUp, TrendingDown, Minus, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
@@ -17,6 +17,8 @@ import { INBODY_FIELDS } from "@/lib/labels";
 import { kstToday } from "@/lib/date";
 import Card from "@/components/ui/Card";
 import { inputCls } from "@/components/ui/Field";
+import { authHeader } from "@/lib/authHeader";
+import InbodyAnalysis from "@/components/views/InbodyAnalysis";
 
 // 입력 상태 초기값 — INBODY_FIELDS.key별 빈 문자열.
 function emptyVals() {
@@ -67,6 +69,10 @@ export default function PtInbodyTab({ member, mode }) {
   const [note, setNote] = useState("");
   const [vals, setVals] = useState(emptyVals());
   const { toast, showToast } = useToast();
+  // AI 인바디 분석(회원 대면) — 세션 전용(재생성 시 갱신 · 회원 전환은 PTView key 리마운트로 리셋).
+  const [analysis, setAnalysis] = useState(null);
+  const [anaLoading, setAnaLoading] = useState(false);
+  const [anaNotice, setAnaNotice] = useState("");
 
   // 회원 변경 시 인바디 이력 로드(measured_at 내림차순 = 최신 먼저).
   useEffect(() => {
@@ -160,6 +166,30 @@ export default function PtInbodyTab({ member, mode }) {
   // delta 표시값 — ±값(소수 1자리 반올림) + 방향 아이콘.
   const fmtDelta = (d) => (d > 0 ? "+" : "") + (Math.round(d * 10) / 10);
 
+  // AI 인바디 분석 — 최근 측정 + 회원정보 → 회원 대면 리포트. 데모/키없음은 안내.
+  const analyze = async () => {
+    if (anaLoading || !latest) return;
+    setAnaLoading(true);
+    setAnaNotice("");
+    try {
+      const res = await fetch("/api/ot-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ phase: "inbody", member, inbody: { latest, prev } }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (AI 키/구독 상태를 확인하세요)");
+        return;
+      }
+      setAnalysis(await res.json());
+    } catch (e) {
+      setAnaNotice("네트워크 오류: " + (e?.message || "unknown"));
+    } finally {
+      setAnaLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 입력 카드 */}
@@ -229,6 +259,23 @@ export default function PtInbodyTab({ member, mode }) {
               );
             })}
           </div>
+        </Card>
+      )}
+
+      {/* AI 분석 (회원 대면) — 최근 측정 기준. '앱이 분석' 프레이밍으로 영업 부담↓. */}
+      {mode !== "record" && latest && (
+        <Card as="section">
+          <div className="flex items-center justify-between gap-2">
+            <Eyebrow icon={Sparkles}>인바디 분석 · 회원에게 보여주기</Eyebrow>
+            <Button variant="primary" size="sm" onClick={analyze} disabled={anaLoading}>
+              {anaLoading ? "분석 중…" : analysis ? "다시 분석" : "AI 분석"}
+            </Button>
+          </div>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted">
+            최근 측정({latest.measured_at}) 기준. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
+          </p>
+          {anaNotice && <p className="mt-2 text-[12px] text-danger-text">{anaNotice}</p>}
+          {analysis && <div className="mt-3"><InbodyAnalysis data={analysis} /></div>}
         </Card>
       )}
 
