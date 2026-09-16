@@ -17,19 +17,22 @@ function Confirm() {
   const ran = useRef(false); // StrictMode 이중 실행/재요청 방지
 
   useEffect(() => {
+    // ran 가드 = StrictMode 이중 실행/재요청(빌링키 중복 발급) 방지 — 이거 하나로 충분.
+    // ⚠️ 과거 버그: 여기에 `alive` 게이트를 두면, StrictMode 첫 cleanup이 alive=false로
+    //    만든 뒤 두 번째 실행은 ran 가드로 재요청도 안 해서, fetch가 200이어도 setState가
+    //    막혀 화면이 'confirming'에 영구 고착됐다. 언마운트 후 setState는 안전한 no-op이라 게이트 제거.
     if (ran.current) return;
     ran.current = true;
 
-    let alive = true;
     (async () => {
       const authKey = sp.get("authKey");
       const customerKey = sp.get("customerKey");
       const plan = sp.get("plan");
-      if (!supabase) { if (alive) { setState("error"); setMsg("결제 설정이 준비 중입니다."); } return; }
-      if (!authKey || !customerKey) { if (alive) { setState("error"); setMsg("결제 정보가 확인되지 않았어요."); } return; }
+      if (!supabase) { setState("error"); setMsg("결제 설정이 준비 중입니다."); return; }
+      if (!authKey || !customerKey) { setState("error"); setMsg("결제 정보가 확인되지 않았어요."); return; }
       const { data } = await supabase.auth.getSession();
       const tok = data?.session?.access_token;
-      if (!tok) { if (alive) { setState("error"); setMsg("로그인이 필요합니다. 다시 로그인 후 시도해 주세요."); } return; }
+      if (!tok) { setState("error"); setMsg("로그인이 필요합니다. 다시 로그인 후 시도해 주세요."); return; }
       try {
         const res = await fetch("/api/billing/confirm", {
           method: "POST",
@@ -37,14 +40,12 @@ function Confirm() {
           body: JSON.stringify({ authKey, customerKey, plan }),
         });
         const body = await res.json().catch(() => ({}));
-        if (!alive) return;
         if (res.ok) setState("done");
         else { setState("error"); setMsg(body.error || "결제 처리에 실패했어요."); }
       } catch {
-        if (alive) { setState("error"); setMsg("네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요."); }
+        setState("error"); setMsg("네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
       }
     })();
-    return () => { alive = false; };
   }, [sp]);
 
   return (
