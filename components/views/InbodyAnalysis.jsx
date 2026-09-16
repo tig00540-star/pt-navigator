@@ -26,13 +26,13 @@ function Section({ icon: Icon, title, items }) {
   );
 }
 
-export default function InbodyAnalysis({ data }) {
+export default function InbodyAnalysis({ data, title = "인바디 분석" }) {
   if (!data) return null;
   const metrics = Array.isArray(data.metrics) ? data.metrics.filter(Boolean) : [];
   return (
     <div className="space-y-4 rounded-2xl border border-line bg-card p-5">
       <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary-strong">
-        <Sparkles className="h-3.5 w-3.5" /> 인바디 분석 · 앱이 분석한 결과예요
+        <Sparkles className="h-3.5 w-3.5" /> {title} · 앱이 분석한 결과예요
       </div>
 
       {data.headline && <p className="text-[17px] font-bold leading-snug text-ink">{data.headline}</p>}

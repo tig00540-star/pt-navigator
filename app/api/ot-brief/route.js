@@ -788,6 +788,62 @@ ${lines}
 }`;
 }
 
+// ⑨ phase="posture" user 프롬프트 — 회원 대면 체형평가 분석. 독자=회원 본인.
+// ⚠️ 인바디와 동일 철학: '앱이 객관 분석' · 의료 단정 금지 · 세일즈 표현 금지 · SALESBOOK_PREAMBLE.
+const POSTURE_LABELS = [
+  ["forward_head", "거북목"],
+  ["round_shoulder", "라운드숄더"],
+  ["pelvic_tilt", "골반 전·후 경사"],
+  ["pelvic_rotation", "골반 좌우 틀어짐"],
+  ["spine_balance", "척추 좌우 불균형"],
+  ["knee_align", "무릎 정렬(X·O다리)"],
+  ["ankle_arch", "발목·발아치"],
+];
+const POSTURE_STATE_KO = { normal: "정상", mild: "경도", moderate: "중등도", severe: "심함" };
+function posturePrompt(member, posture) {
+  const m = member || {};
+  const f = (posture && posture.findings) || {};
+  const note = (posture && posture.note) || "";
+  const issues = POSTURE_LABELS
+    .filter(([k]) => f[k] && f[k] !== "normal")
+    .map(([k, label]) => `- ${label}: ${POSTURE_STATE_KO[f[k]] || f[k]}`).join("\n");
+  const block = issues || "특이 소견 없음(대체로 정상)";
+  return `[상황] 이 회원의 체형평가(자세 체크) 결과를 '회원 본인에게 보여주며' 설명하는 화면이다. 트레이너의
+영업 멘트가 아니라 '앱이 객관적으로 분석해 제안하는' 리포트다. 회원이 직접 읽으니 따뜻한 구어체로.
+
+[목적] 회원이 자기 체형 상태를 이해하고 '아, 관리(운동)를 해야겠구나'를 스스로 납득하게 — 압박 아니라 사실로.
+
+[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, gender=${g(m.gender)}, job=${g(m.job)}, goal=${g(m.goal)}, pain=${g(m.pain)}
+[체형평가 소견 (경도 이상만 · 트레이너 관찰)]
+${block}${note ? `\n[트레이너 메모] ${note}` : ""}
+
+[해석 원칙]
+- 주어진 소견만 해석하라(없는 증상·부위 창작 금지). goal·job(직업상 자세 습관)·pain과 엮어라.
+- ★의료 단정 절대 금지 — '측만증·디스크·질환' 등 진단명·치료 단정 금지. '틀어짐·불균형·굳음' 상태 표현까지만.
+- 숫자 처방(세트·횟수·각도·중량) 금지. 운동은 방향(예: "굳은 가슴 열고 등 세우기")까지만.
+- 회원이 부담·죄책감 느끼게 하지 말 것 — '지금부터 바로잡으면 된다'는 긍정 프레임.
+- ★★이건 세일즈가 아니라 '객관적 분석'이다. 'PT·트레이너·전문가·함께·혼자보다·시행착오·등록·수업' 등 세일즈
+  표현 절대 금지. 왜 이 체형이 정교한 교정이 필요한 일인지 사실로만 짚고, 결론은 회원이 스스로 내리게.
+
+[채울 것]
+- headline: 오늘 체형평가로 확인한 핵심을 회원 이름 톤으로 1줄.
+- findings[]: 소견마다 {label(한글 항목명) · state(경도/중등도/심함) · meaning(이게 몸·목표·일상에 주는 영향 1~2문장)}.
+- exercise[2~3]: 이 체형을 바로잡는 운동 방향(무엇을 왜).
+- lifestyle[2~3]: 일상 자세·습관 교정(직업 자세 등).
+- why_now: 객관 종합 — 지금 상태와 왜 지금 관리가 좋은지를 '사실'로 2~3문장(세일즈 단어 금지).
+- data_gaps: 평가가 얇으면 '무엇을 더 보면 좋은지' 긍정 코칭. 충실하면 빈 배열.
+
+[출력 언어] 한국어만. 영문 키/코드값 노출 금지. 아래 JSON만(설명·마크다운·코드펜스 금지).
+{
+  "headline": "...",
+  "findings": [ { "label": "...", "state": "...", "meaning": "..." } ],
+  "exercise": ["...", "..."],
+  "lifestyle": ["...", "..."],
+  "why_now": "...",
+  "data_gaps": []
+}`;
+}
+
 // 최종 안전망: 모델이 출력 텍스트에 흘린 필드명(코드값)을 한글로 치환.
 // 키/구조는 건드리지 않고 '문자열 값'만 재귀적으로 훑는다.
 const FIELD_TERMS = [
@@ -890,9 +946,10 @@ const FIELD_TERMS = [
   // 세일즈북(salesbook) 신규 키 누출 방어(회원이 직접 보므로 영어 노출 특히 치명적).
   //   ⚠️ roadmap은 위 ["next_roadmap",...] 뒤라 안전(긴 키 먼저 처리됨).
   ["current_issues", "지금 겪는 것"],
-  // ⑧ inbody 회원 대면 키 누출 방어.
+  // ⑧⑨ inbody·posture 회원 대면 키 누출 방어.
   ["lifestyle", "생활습관"],
   ["meaning", "의미"],
+  ["findings", "소견"],
   ["current_step", "현재 단계"],
   ["member_quote", "회원 한마디"],
   ["photo_slide", "사진"],
@@ -1106,8 +1163,8 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
   }
 
-  const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, closingCases, caseTier, recommendedProgram, photoLabels, change } = body || {};
-  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "inbody") {
+  const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change } = body || {};
+  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "inbody" && phase !== "posture") {
     return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
   }
   // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
@@ -1121,9 +1178,10 @@ export async function POST(request) {
     : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
     : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)
     : phase === "inbody" ? inbodyPrompt(member, inbody)
+    : phase === "posture" ? posturePrompt(member, posture)
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute·salesbook 제외(회원 대면엔 불필요).
-  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody") ? [] : await fetchCenterMachines(request);
+  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody" || phase === "posture") ? [] : await fetchCenterMachines(request);
   const prompt =
     (phase === "acute" || centerMachines.length === 0)
       ? basePrompt
@@ -1133,7 +1191,7 @@ export async function POST(request) {
   // salesbook은 거절5·클로징시퀀스 없어 가볍지만 한국어 총량 은근 커 4096(꼬리 잘림 마진 · max는 상한이라 과금 무관).
   const maxTokens =
     phase === "first" ? 8192
-    : phase === "inbody" ? 3072
+    : phase === "inbody" || phase === "posture" ? 3072
     : phase === "salesbook" || phase === "reg_salesbook" ? 4096
     : (phase === "second" && boundedCases?.length ? 6144 : 5120);
 
@@ -1142,7 +1200,7 @@ export async function POST(request) {
     const req = {
       model,
       max_tokens: maxTokens,
-      system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody") ? SALESBOOK_PREAMBLE : PREAMBLE,
+      system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody" || phase === "posture") ? SALESBOOK_PREAMBLE : PREAMBLE,
       messages: [{ role: "user", content: prompt }],
     };
     // sonnet-5는 기본이 adaptive thinking이라 JSON 생성엔 불필요 → 전 phase 끔(1차도 Sonnet).
@@ -1161,7 +1219,8 @@ export async function POST(request) {
     const REQUIRED_SALESBOOK = ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
     const REQUIRED_REG_SALESBOOK = ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"];
     const REQUIRED_INBODY = ["headline", "metrics", "diet", "lifestyle", "exercise", "why_now"];
-    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : [];
+    const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
+    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : [];
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
     return Response.json(brief);
   } catch (e) {

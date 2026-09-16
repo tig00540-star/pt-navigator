@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Activity, Brain, Briefcase, MapPin, Send } from "lucide-react";
 import FirstOTAssist from "@/components/tabs/FirstOTAssist";
 import PtInbodyTab from "@/components/views/PtInbodyTab";
+import PostureAssessment from "@/components/views/PostureAssessment";
 import { STATUS_OPTS, labelOf } from "@/lib/labels";
 import { hasVal } from "@/lib/format";
 
@@ -123,6 +124,11 @@ export default function FirstOTTab({ member }) {
         {/* 인바디 측정 + AI 분석 — OT(신규) 세일즈 도구. 측정하고 '앱이 분석'을 회원에게 보여주기. */}
         <section className="mb-6">
           <PtInbodyTab member={member} showAnalysis />
+        </section>
+
+        {/* 체형평가 + AI 분석 — OT(신규) 세일즈 도구. 인바디와 동일 패턴. */}
+        <section className="mb-6">
+          <PostureAssessment member={member} />
         </section>
 
         {/* logged notes */}
