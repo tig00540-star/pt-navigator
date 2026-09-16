@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import PasswordChange from "@/components/views/PasswordChange";
 import Button from "@/components/ui/Button";
 import Wordmark, { Slogan } from "@/components/ui/Wordmark";
 import { PLANS } from "@/lib/plans";
+import LandingPage from "@/app/lp/page";
 
 export default function AuthGate({ children }) {
   const [ready, setReady] = useState(false);   // 초기 세션 조회 완료 여부
@@ -24,6 +25,7 @@ export default function AuthGate({ children }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const pathname = usePathname(); // /signup 등 공개 경로 판정
+  const router = useRouter();
 
   useEffect(() => {
     // 키 없으면(데모 모드) 게이트를 건너뛰고 그대로 앱을 보여준다(개발 편의).
@@ -83,6 +85,11 @@ export default function AuthGate({ children }) {
     })();
     return () => { alive = false; };
   }, [session]);
+
+  // 로그인 상태로 /login 에 있으면 앱 루트로 정리(로그인 직후 착지·직접 진입 모두).
+  useEffect(() => {
+    if (supabase && session && pathname === "/login") router.replace("/");
+  }, [session, pathname, router]);
 
   const signIn = async () => {
     if (!supabase || busy) return;
@@ -178,7 +185,12 @@ export default function AuthGate({ children }) {
     );
   }
 
-  // 미로그인 → 로그인 폼
+  // 로그아웃 방문자가 루트("/")로 오면 공개 랜딩(홈)을 그대로 노출 — URL "/" 유지.
+  // 광고·명함·토스 심사가 도메인만 쳐도 서비스 소개가 보이게. 앱은 로그인 필요라
+  // 랜딩의 "앱 열기"는 /login 으로 → 로그인 후 앱 루트로 자동 복귀(위 effect).
+  if (pathname === "/") return <LandingPage />;
+
+  // 미로그인 → 로그인 폼(/login·/admin 등 보호 경로)
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">

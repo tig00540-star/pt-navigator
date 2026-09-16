@@ -226,7 +226,7 @@ export default function LandingPage() {
               <button type="button" onClick={() => scrollToId("directors")} className="rounded-full px-2.5 py-1.5 text-[13px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">관리자</button>
             </div>
 
-            <Link href="/" className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-primary px-3.5 py-2.5 text-[14px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f] sm:px-[18px] sm:text-[14.5px]">앱 열기</Link>
+            <Link href="/login" className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-primary px-3.5 py-2.5 text-[14px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f] sm:px-[18px] sm:text-[14.5px]">앱 열기</Link>
           </div>
         </div>
       </header>
@@ -245,7 +245,7 @@ export default function LandingPage() {
               <p className="reveal mt-[22px] text-[clamp(20px,2.6vw,30px)] font-extrabold tracking-[-0.03em]">그럼 잘 오셨습니다.</p>
               <div className="reveal mt-[30px] flex flex-wrap justify-center gap-3">
                 <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
-                <Link href="/" className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.28] px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-white/[0.08]">앱 열기</Link>
+                <Link href="/login" className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.28] px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-white/[0.08]">앱 열기</Link>
               </div>
 
               <a href="#founder-story" onClick={onNav("founder-story")} className="scroll-cue mx-auto mt-[clamp(36px,6vw,64px)] inline-flex flex-col items-center gap-1.5 text-white/50 no-underline">
@@ -537,7 +537,7 @@ export default function LandingPage() {
               <h2 className="mt-[22px] text-[clamp(28px,4.2vw,48px)] font-extrabold leading-[1.15] tracking-[-0.045em] text-balance">오늘 수업부터 달라집니다.</h2>
               <div className="mt-[30px] flex flex-wrap justify-center gap-3">
                 <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
-                <Link href="/" className="inline-flex items-center gap-2 rounded-[10px] border border-line-strong bg-card px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-ink no-underline transition-colors hover:bg-elevate">앱 열기</Link>
+                <Link href="/login" className="inline-flex items-center gap-2 rounded-[10px] border border-line-strong bg-card px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-ink no-underline transition-colors hover:bg-elevate">앱 열기</Link>
               </div>
             </div>
           </div>
