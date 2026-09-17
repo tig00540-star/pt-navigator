@@ -163,13 +163,19 @@ export default function PostureAssessment({ member }) {
   const analyze = async () => {
     if (anaLoading) return;
     const clean = cleanFindings();
-    if (Object.keys(clean).length === 0) { setAnaNotice("먼저 항목(소견)을 하나 이상 평가해 주세요. (AI는 소견을 근거로 분석해요)"); return; }
+    // 업로드된 사진의 서명 URL을 함께 보내면 AI가 사진을 '직접' 관찰(비전)해 소견을 도출한다.
+    const photoUrls = SLOTS
+      .filter((s) => photos[s.key] && urls[photos[s.key]])
+      .map((s) => ({ label: s.label, url: urls[photos[s.key]] }));
+    if (Object.keys(clean).length === 0 && photoUrls.length === 0) {
+      setAnaNotice("사진을 올리거나 소견을 하나 이상 체크해 주세요."); return;
+    }
     setAnaLoading(true); setAnaNotice("");
     try {
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "posture", member, posture: { findings: clean, note: note.trim() } }),
+        body: JSON.stringify({ phase: "posture", member, posture: { findings: clean, note: note.trim(), photoUrls } }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -244,7 +250,7 @@ export default function PostureAssessment({ member }) {
           </Button>
         </div>
         <p className="mt-1 text-[11px] leading-relaxed text-muted">
-          소견 기준. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
+          업로드한 <b className="text-sub">사진을 AI가 직접 관찰</b>하고 소견 체크도 함께 반영해요. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
         </p>
         {anaNotice && <p className="mt-2 text-[12px] text-danger-text">{anaNotice}</p>}
         {analysis && <div className="mt-3"><InbodyAnalysis data={{ ...analysis, metrics: analysis.findings }} title="체형 분석" /></div>}

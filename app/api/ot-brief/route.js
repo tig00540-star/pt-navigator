@@ -804,10 +804,20 @@ function posturePrompt(member, posture) {
   const m = member || {};
   const f = (posture && posture.findings) || {};
   const note = (posture && posture.note) || "";
+  const photoUrls = Array.isArray(posture?.photoUrls) ? posture.photoUrls.filter((p) => p && p.url) : [];
+  const hasPhotos = photoUrls.length > 0;
+  const photoOrder = photoUrls.map((p, i) => `${i + 1}번=${p.label || "사진"}`).join(", ");
   const issues = POSTURE_LABELS
     .filter(([k]) => f[k] && f[k] !== "normal")
     .map(([k, label]) => `- ${label}: ${POSTURE_STATE_KO[f[k]] || f[k]}`).join("\n");
-  const block = issues || "특이 소견 없음(대체로 정상)";
+  const block = issues || (hasPhotos ? "트레이너 체크 없음 — 아래 사진을 직접 관찰해 소견을 도출하라." : "특이 소견 없음(대체로 정상)");
+  const visionBlock = hasPhotos
+    ? `\n[체형 사진 — ★AI가 직접 관찰] 첨부된 사진을 '가로세로 그리드' 기준으로 직접 보고 소견을 도출하라.
+사진 순서: ${photoOrder}. 관찰 포인트 — 좌우 어깨 높이·기울기, 골반 높이·좌우 균형, 머리 전방이동(거북목),
+무릎 정렬(X·O), 발목·아치, 척추 정렬. 세로 중심선(플럼라인) 대비 머리·어깨·골반·무릎이 벗어난 정도를 보라.
+★사진에서 '명확히 보이는 것'만 소견에 담고, 안 보이는 각도·부위는 추정하지 마라. 위 트레이너 체크가 있으면 함께 참고.
+★단 사진만으로 의학적 단정은 금지(진단명·질환·치료 표현 금지) — '틀어짐·불균형·굳음' 상태 표현까지만.\n`
+    : "";
   return `[상황] 이 회원의 체형평가(자세 체크) 결과를 '회원 본인에게 보여주며' 설명하는 화면이다. 트레이너의
 영업 멘트가 아니라 '앱이 객관적으로 분석해 제안하는' 리포트다. 회원이 직접 읽으니 따뜻한 구어체로.
 
@@ -816,7 +826,7 @@ function posturePrompt(member, posture) {
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, gender=${g(m.gender)}, job=${g(m.job)}, goal=${g(m.goal)}, pain=${g(m.pain)}
 [체형평가 소견 (경도 이상만 · 트레이너 관찰)]
 ${block}${note ? `\n[트레이너 메모] ${note}` : ""}
-
+${visionBlock}
 [해석 원칙]
 - 주어진 소견만 해석하라(없는 증상·부위 창작 금지). goal·job(직업상 자세 습관)·pain과 엮어라.
 - ★의료 단정 절대 금지 — '측만증·디스크·질환' 등 진단명·치료 단정 금지. '틀어짐·불균형·굳음' 상태 표현까지만.
@@ -1197,11 +1207,20 @@ export async function POST(request) {
 
   try {
     const anthropic = new Anthropic({ apiKey });
+    // posture: 회원 체형 사진을 비전으로 직접 관찰(이미지 블록 · 서명 URL 소스 · 최대 3장).
+    let userContent = prompt;
+    if (phase === "posture" && Array.isArray(posture?.photoUrls)) {
+      const imgs = posture.photoUrls
+        .filter((p) => p && typeof p.url === "string" && /^https:\/\//.test(p.url))
+        .slice(0, 3)
+        .map((p) => ({ type: "image", source: { type: "url", url: p.url } }));
+      if (imgs.length) userContent = [...imgs, { type: "text", text: prompt }];
+    }
     const req = {
       model,
       max_tokens: maxTokens,
       system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody" || phase === "posture") ? SALESBOOK_PREAMBLE : PREAMBLE,
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content: userContent }],
     };
     // sonnet-5는 기본이 adaptive thinking이라 JSON 생성엔 불필요 → 전 phase 끔(1차도 Sonnet).
     req.thinking = { type: "disabled" };
