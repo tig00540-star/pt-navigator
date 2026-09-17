@@ -13,6 +13,7 @@ create table if not exists posture_assessment (
   user_id      uuid not null references user_table(id) on delete cascade,
   assessed_at  date not null default (now() at time zone 'Asia/Seoul')::date,  -- 평가일(KST)
   findings     jsonb not null default '{}'::jsonb,   -- 항목별 상태(normal/mild/moderate/severe)
+  photos       jsonb not null default '{}'::jsonb,   -- {front,side,back} 스토리지 경로(member-photos 버킷 · 그리드 오버레이용)
   note         text                                   -- 메모(선택)
 );
 alter table posture_assessment enable row level security;

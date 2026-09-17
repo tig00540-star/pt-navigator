@@ -1,22 +1,32 @@
 "use client";
 
 /* =========================================================================
-   PostureAssessment — 체형평가(OT 신규 회원 세일즈 도구 · 인바디와 동일 패턴).
-   항목별 상태 체크 → posture_assessment 저장 + 최근 프리필 + AI 분석(회원 대면).
+   PostureAssessment — 체형평가(OT 신규 회원 세일즈 도구).
+   ★핵심: 정면·측면·후면 사진 + '가로세로 그리드 오버레이'로 시각 측정(회원에게 보여주며 설득).
+   보조: 항목별 소견 체크(AI 분석 입력). → posture_assessment 저장 + AI 분석(회원 대면).
+   사진 업로드는 member-photos 버킷 재활용(MemberPhotoSummary 패턴 · compressImage · 서명URL).
    ⚠️ AI 분석은 '앱이 객관 분석' 톤(세일즈 표현 금지) — InbodyAnalysis 재사용(title="체형 분석").
-   ⚠️ favorite/마이그레이션 전이면 저장/조회 실패 → 안내(비차단).
+   ⚠️ 마이그레이션 전이면 저장/조회 실패 → 안내(비차단).
    ========================================================================= */
 
-import { useEffect, useState } from "react";
-import { PersonStanding, Plus, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { PersonStanding, Plus, Sparkles, ImagePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { compressImage } from "@/lib/image";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import { inputCls } from "@/components/ui/Field";
 import { authHeader } from "@/lib/authHeader";
 import { POSTURE_ITEMS, POSTURE_STATES } from "@/lib/posture";
 import InbodyAnalysis from "@/components/views/InbodyAnalysis";
+
+const SLOTS = [
+  { key: "front", label: "정면" },
+  { key: "side", label: "측면" },
+  { key: "back", label: "후면" },
+];
 
 function emptyFindings() {
   const o = {};
@@ -24,33 +34,74 @@ function emptyFindings() {
   return o;
 }
 
+// 사진 위 가로세로 그리드 — 세로 중심선(빨강 플럼라인) + 3분할선. 정렬 어긋남이 눈에 보이게.
+function GridPhoto({ url, onOpen, onRemove }) {
+  return (
+    <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-line bg-elevate">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="체형 사진" onClick={onOpen} className="h-full w-full cursor-pointer object-cover" />
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-primary/70" />
+        <div className="absolute left-1/3 top-0 h-full w-px bg-white/40" />
+        <div className="absolute left-2/3 top-0 h-full w-px bg-white/40" />
+        <div className="absolute top-1/4 left-0 h-px w-full bg-white/40" />
+        <div className="absolute top-1/2 left-0 h-px w-full bg-primary/45" />
+        <div className="absolute top-3/4 left-0 h-px w-full bg-white/40" />
+      </div>
+      {onRemove && (
+        <button onClick={onRemove} className="absolute right-1 top-1 rounded-lg bg-card/85 p-1 text-muted transition hover:text-rose-600" aria-label="사진 삭제">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function PostureAssessment({ member }) {
+  const [photos, setPhotos] = useState({}); // {front,side,back} → 스토리지 경로
+  const [urls, setUrls] = useState({}); // path → 서명 URL(1h)
   const [findings, setFindings] = useState(emptyFindings());
   const [note, setNote] = useState("");
+  const [busySlot, setBusySlot] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [lightbox, setLightbox] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [anaLoading, setAnaLoading] = useState(false);
   const [anaNotice, setAnaNotice] = useState("");
+  const memberId = member?.id;
 
-  // 최근 평가 프리필(회원 전환은 FirstOTTab이 최상위라 회원 id 바뀌면 재조회).
+  // 경로들 → 서명 URL 맵.
+  const signPaths = useCallback(async (paths) => {
+    const list = paths.filter(Boolean);
+    if (!supabase || list.length === 0) { setUrls({}); return; }
+    const { data } = await supabase.storage.from("member-photos").createSignedUrls(list, 3600);
+    const map = {};
+    (data || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
+    setUrls(map);
+  }, []);
+
+  // 최근 평가 프리필(회원 전환은 FirstOTTab 최상위라 id 바뀌면 재조회).
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!supabase || !member?.id) return;
+      if (!supabase || !memberId) return;
       const { data } = await supabase
         .from("posture_assessment")
         .select("*")
-        .eq("user_id", member.id)
+        .eq("user_id", memberId)
         .order("assessed_at", { ascending: false })
         .limit(1);
       if (cancelled) return;
       const row = data?.[0] || null;
+      const ph = row?.photos || {};
+      setPhotos(ph);
       if (row?.findings) setFindings({ ...emptyFindings(), ...row.findings });
       if (row?.note) setNote(row.note);
+      await signPaths(SLOTS.map((s) => ph[s.key]));
     })();
     return () => { cancelled = true; };
-  }, [member?.id]);
+  }, [memberId, signPaths]);
 
   const setF = (k, v) => setFindings((s) => ({ ...s, [k]: v }));
   const cleanFindings = () => {
@@ -59,15 +110,47 @@ export default function PostureAssessment({ member }) {
     return c;
   };
 
+  // 슬롯 사진 업로드 — 압축→member-photos 버킷→경로 저장→서명URL 갱신.
+  const onPick = (slot) => async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || busySlot) return;
+    if (!supabase || !memberId) { setMsg("정보를 불러오는 중이에요. 잠시 후 다시."); return; }
+    setBusySlot(slot); setMsg("");
+    let blob;
+    try { blob = await compressImage(file); }
+    catch { setBusySlot(""); setMsg("이 사진을 읽지 못했어요. 다른 사진으로 시도하세요."); return; }
+    const path = `${memberId}/posture/${crypto.randomUUID()}.jpg`;
+    const { error: upErr } = await supabase.storage.from("member-photos").upload(path, blob, { contentType: "image/jpeg" });
+    if (upErr) { setBusySlot(""); setMsg("업로드 실패: " + upErr.message); return; }
+    const next = { ...photos, [slot]: path };
+    setPhotos(next);
+    await signPaths(SLOTS.map((s) => next[s.key]));
+    setBusySlot("");
+  };
+
+  const removeSlot = (slot) => async () => {
+    const path = photos[slot];
+    if (!path) return;
+    if (supabase) await supabase.storage.from("member-photos").remove([path]);
+    const next = { ...photos, [slot]: null };
+    setPhotos(next);
+    await signPaths(SLOTS.map((s) => next[s.key]));
+  };
+
   const save = async () => {
     if (saving) return;
     const clean = cleanFindings();
-    if (Object.keys(clean).length === 0) { setMsg("항목을 하나 이상 평가하세요."); return; }
+    const photoClean = {};
+    for (const s of SLOTS) if (photos[s.key]) photoClean[s.key] = photos[s.key];
+    if (Object.keys(clean).length === 0 && Object.keys(photoClean).length === 0) {
+      setMsg("사진을 올리거나 항목을 하나 이상 평가하세요."); return;
+    }
     if (!supabase) { setMsg("데모 모드 — 저장하려면 Supabase 키가 필요합니다."); return; }
     setSaving(true); setMsg("");
     const { data, error } = await supabase
       .from("posture_assessment")
-      .insert({ user_id: member.id, findings: clean, note: note.trim() || null })
+      .insert({ user_id: memberId, findings: clean, photos: photoClean, note: note.trim() || null })
       .select();
     setSaving(false);
     if (error || !data || data.length === 0) {
@@ -80,7 +163,7 @@ export default function PostureAssessment({ member }) {
   const analyze = async () => {
     if (anaLoading) return;
     const clean = cleanFindings();
-    if (Object.keys(clean).length === 0) { setAnaNotice("먼저 항목을 평가해 주세요."); return; }
+    if (Object.keys(clean).length === 0) { setAnaNotice("먼저 항목(소견)을 하나 이상 평가해 주세요. (AI는 소견을 근거로 분석해요)"); return; }
     setAnaLoading(true); setAnaNotice("");
     try {
       const res = await fetch("/api/ot-brief", {
@@ -103,8 +186,31 @@ export default function PostureAssessment({ member }) {
 
   return (
     <div className="space-y-4">
+      {/* 사진 + 그리드 — 시각 측정(회원에게 보여주기) */}
       <Card as="section">
-        <Eyebrow icon={PersonStanding}>체형평가</Eyebrow>
+        <Eyebrow icon={PersonStanding}>체형 사진 · 가로세로 측정</Eyebrow>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted">정면·측면·후면 사진을 올리면 그리드가 겹쳐져 어긋난 정렬이 눈에 보여요. 회원에게 그대로 보여주며 짚어주세요.</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {SLOTS.map((s) => (
+            <div key={s.key}>
+              <div className="mb-1 text-center text-[11px] font-semibold text-sub">{s.label}</div>
+              {photos[s.key] && urls[photos[s.key]] ? (
+                <GridPhoto url={urls[photos[s.key]]} onOpen={() => setLightbox(urls[photos[s.key]])} onRemove={removeSlot(s.key)} />
+              ) : (
+                <label className={`flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line-strong bg-elevate text-[11px] font-semibold text-muted ${busySlot === s.key ? "opacity-60" : ""}`}>
+                  <ImagePlus className="h-5 w-5" />
+                  {busySlot === s.key ? "올리는 중…" : "사진"}
+                  <input type="file" accept="image/*" onChange={onPick(s.key)} disabled={Boolean(busySlot)} className="hidden" />
+                </label>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* 소견 체크(보조 · AI 분석 입력) */}
+      <Card as="section">
+        <Eyebrow icon={PersonStanding}>소견 체크 <span className="text-[10px] font-normal text-muted">(AI 분석 근거)</span></Eyebrow>
         <div className="mt-3 space-y-2">
           {POSTURE_ITEMS.map((it) => (
             <div key={it.key} className="flex items-center gap-2">
@@ -115,7 +221,7 @@ export default function PostureAssessment({ member }) {
                 className="w-28 shrink-0 rounded-lg border border-line bg-elevate px-2 py-1.5 text-[13px] text-ink outline-none focus:border-primary"
                 aria-label={it.label}
               >
-                {POSTURE_STATES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                {POSTURE_STATES.map((st) => <option key={st.value} value={st.value}>{st.label}</option>)}
               </select>
             </div>
           ))}
@@ -129,6 +235,7 @@ export default function PostureAssessment({ member }) {
         </div>
       </Card>
 
+      {/* AI 분석 — 회원 대면 */}
       <Card as="section">
         <div className="flex items-center justify-between gap-2">
           <Eyebrow icon={Sparkles}>체형 분석 · 회원에게 보여주기</Eyebrow>
@@ -137,11 +244,13 @@ export default function PostureAssessment({ member }) {
           </Button>
         </div>
         <p className="mt-1 text-[11px] leading-relaxed text-muted">
-          평가 항목 기준. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
+          소견 기준. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
         </p>
         {anaNotice && <p className="mt-2 text-[12px] text-danger-text">{anaNotice}</p>}
         {analysis && <div className="mt-3"><InbodyAnalysis data={{ ...analysis, metrics: analysis.findings }} title="체형 분석" /></div>}
       </Card>
+
+      <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
     </div>
   );
 }
