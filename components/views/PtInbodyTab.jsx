@@ -109,6 +109,11 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
     let cancelled = false;
     (async () => {
       if (!showAnalysis) return;
+      // ⚠️ 회원 전환 잔상 제거 — FirstOTTab은 회원이 바뀌어도 리마운트되지 않는다(PTView와 달리 key 없음).
+      //    비우지 않으면 이전 회원의 분석/캐시가 새 회원 화면에 그대로 남는다.
+      setOtRow(null);
+      setAnalysis(null);
+      setAnaNotice("");
       const row = await loadOtRound1(member?.id);
       if (!cancelled) setOtRow(row);
     })();

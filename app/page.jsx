@@ -635,7 +635,9 @@ export default function OTNavigatorDashboard() {
           )}
 
           {tab === 1 && (
-            <div><FirstOTTab member={member} /></div>
+            // key=회원id — 회원이 바뀌면 통째로 리마운트(PTView와 같은 방식).
+            // 없으면 이전 회원의 AI 분석·체크 상태가 새 회원 화면에 남는다.
+            <div><FirstOTTab key={member?.id} member={member} /></div>
           )}
 
           {tab === 2 && (

@@ -90,6 +90,12 @@ export default function PostureAssessment({ member }) {
     let cancelled = false;
     (async () => {
       if (!supabase || !memberId) return;
+      // ⚠️ 회원 전환 잔상 제거 — FirstOTTab은 회원이 바뀌어도 리마운트되지 않는다.
+      //    비우지 않으면 이전 회원의 체형 분석이 새 회원 화면에 남는다(사진 소견이라 더 위험).
+      setAssessId(null);
+      setOtRow(null);
+      setAnalysis(null);
+      setAnaNotice("");
       const { data } = await supabase
         .from("posture_assessment")
         .select("*")
@@ -101,8 +107,9 @@ export default function PostureAssessment({ member }) {
       setAssessId(row?.id || null);
       const ph = row?.photos || {};
       setPhotos(ph);
-      if (row?.findings) setFindings({ ...emptyFindings(), ...row.findings });
-      if (row?.note) setNote(row.note);
+      // 기록이 없는 회원이면 비운다 — 조건부로 채우기만 하면 이전 회원의 체크·메모가 남는다.
+      setFindings(row?.findings ? { ...emptyFindings(), ...row.findings } : emptyFindings());
+      setNote(row?.note || "");
       await signPaths(SLOTS.map((s) => ph[s.key]));
       const ot = await loadOtRound1(memberId);
       if (!cancelled) setOtRow(ot);
