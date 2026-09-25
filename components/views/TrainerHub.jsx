@@ -14,7 +14,7 @@
    ========================================================================= */
 "use client";
 
-import { CalendarDays, ChevronRight, Award, Settings, ShieldCheck, UserPlus } from "lucide-react";
+import { CalendarDays, ChevronRight, Award, Settings, UserPlus } from "lucide-react";
 import Card from "@/components/ui/Card";
 import { viewFor } from "@/lib/memberStatus";
 
@@ -35,7 +35,7 @@ function Tile({ icon: Icon, label, title, desc, tone, onClick }) {
   );
 }
 
-export default function TrainerHub({ members = [], trainerName, isCenter = false, onGo, onAdd }) {
+export default function TrainerHub({ members = [], trainerName, onGo, onAdd }) {
   const counts = { ot: 0, pt: 0, inactive: 0 };
   for (const m of members) {
     const v = viewFor(m);
@@ -110,23 +110,6 @@ export default function TrainerHub({ members = [], trainerName, isCenter = false
         )}
       </div>
 
-      {isCenter && (
-        <a
-          href="/admin"
-          className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-line-strong bg-elevate px-4 py-3 transition hover:border-fuchsia-500/60 active:scale-[0.99]"
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-admin-soft text-admin-text">
-              <ShieldCheck className="h-4 w-4" strokeWidth={2.2} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[13px] font-bold text-ink">센터 운영도 하고 계신가요?</span>
-              <span className="block text-[11px] font-medium text-muted">브리핑 · 매출 · 트레이너 화면으로 이동</span>
-            </span>
-          </span>
-          <span className="shrink-0 text-[12px] font-extrabold text-primary-strong">전환</span>
-        </a>
-      )}
     </div>
   );
 }
