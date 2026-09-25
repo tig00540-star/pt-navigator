@@ -20,6 +20,7 @@ import ImageLightbox from "@/components/ui/ImageLightbox";
 import { inputCls } from "@/components/ui/Field";
 import { authHeader } from "@/lib/authHeader";
 import { POSTURE_ITEMS, POSTURE_STATES } from "@/lib/posture";
+import { loadOtRound1, saveOtRound1Key, cacheFor } from "@/lib/otCache";
 import InbodyAnalysis from "@/components/views/InbodyAnalysis";
 
 const SLOTS = [
@@ -66,9 +67,12 @@ export default function PostureAssessment({ member }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [lightbox, setLightbox] = useState(null);
+  // 분석 결과는 1차 행(report.posture_analysis)에 캐시 — 사진 비전 호출이라 재방문마다 부르면 비싸다.
   const [analysis, setAnalysis] = useState(null);
   const [anaLoading, setAnaLoading] = useState(false);
   const [anaNotice, setAnaNotice] = useState("");
+  const [otRow, setOtRow] = useState(null);       // 1차 행 { id, report } — 캐시 자리
+  const [assessId, setAssessId] = useState(null); // 최신 체형평가 행 id — 캐시 유효성 기준
   const memberId = member?.id;
 
   // 경로들 → 서명 URL 맵.
@@ -94,14 +98,20 @@ export default function PostureAssessment({ member }) {
         .limit(1);
       if (cancelled) return;
       const row = data?.[0] || null;
+      setAssessId(row?.id || null);
       const ph = row?.photos || {};
       setPhotos(ph);
       if (row?.findings) setFindings({ ...emptyFindings(), ...row.findings });
       if (row?.note) setNote(row.note);
       await signPaths(SLOTS.map((s) => ph[s.key]));
+      const ot = await loadOtRound1(memberId);
+      if (!cancelled) setOtRow(ot);
     })();
     return () => { cancelled = true; };
   }, [memberId, signPaths]);
+
+  // 지금 저장된 평가를 보고 만든 캐시만 쓴다 — 새로 평가했으면 옛 분석을 띄우지 않는다.
+  const shownAnalysis = analysis ?? cacheFor(otRow?.report?.posture_analysis, assessId);
 
   const setF = (k, v) => setFindings((s) => ({ ...s, [k]: v }));
   const cleanFindings = () => {
@@ -157,6 +167,8 @@ export default function PostureAssessment({ member }) {
       setMsg("저장 실패 — 체형평가 마이그레이션이 실행됐는지 확인하세요. " + (error?.message || ""));
       return;
     }
+    // 새 평가가 기준이 된다 — 이전 평가로 만든 분석 캐시는 이 시점부터 안 쓴다.
+    setAssessId(data[0].id);
     setMsg("저장됐어요.");
   };
 
@@ -182,7 +194,14 @@ export default function PostureAssessment({ member }) {
         setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (AI 키/구독 상태를 확인하세요)");
         return;
       }
-      setAnalysis(await res.json());
+      const result = await res.json();
+      setAnalysis(result);
+      const merged = await saveOtRound1Key(otRow, "posture_analysis", {
+        data: result,
+        meta: { generatedAt: new Date().toISOString(), sourceId: assessId },
+      });
+      if (merged) setOtRow((r) => ({ ...r, report: merged }));
+      else if (otRow) setAnaNotice("분석은 나왔지만 저장에 실패했어요 — 이 화면에서만 보입니다. (권한/정책 확인)");
     } catch (e) {
       setAnaNotice("네트워크 오류: " + (e?.message || "unknown"));
     } finally {
@@ -246,14 +265,14 @@ export default function PostureAssessment({ member }) {
         <div className="flex items-center justify-between gap-2">
           <Eyebrow icon={Sparkles}>체형 분석 · 회원에게 보여주기</Eyebrow>
           <Button variant="primary" size="sm" onClick={analyze} disabled={anaLoading}>
-            {anaLoading ? "분석 중…" : analysis ? "다시 분석" : "AI 분석"}
+            {anaLoading ? "분석 중…" : shownAnalysis ? "다시 분석" : "AI 분석"}
           </Button>
         </div>
         <p className="mt-1 text-[11px] leading-relaxed text-muted">
           업로드한 <b className="text-sub">사진을 AI가 직접 관찰</b>하고 소견 체크도 함께 반영해요. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
         </p>
         {anaNotice && <p className="mt-2 text-[12px] text-danger-text">{anaNotice}</p>}
-        {analysis && <div className="mt-3"><InbodyAnalysis data={{ ...analysis, metrics: analysis.findings }} title="체형 분석" /></div>}
+        {shownAnalysis && <div className="mt-3"><InbodyAnalysis data={{ ...shownAnalysis, metrics: shownAnalysis.findings }} title="체형 분석" /></div>}
       </Card>
 
       <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />

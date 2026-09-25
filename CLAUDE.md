@@ -40,7 +40,7 @@ Tables in use: `user_table`(members)·`center_machine`(장비)·`daily_workout_l
 
 ### Real vs. demo data — the central rule
 
-Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보드·voice-log DB 저장), 대부분 **content generation은 여전히 demo**(AI 성향 요약·모든 세일즈 스크립트/루틴/타임라인). ⚠️ admin 분석 대시보드는 **실측**(아래 별도 섹션 · 옛 "admin KPI·QC 데모"는 제거/실데이터화됨). **Exceptions(real):** ① 음성일지 voice→AI(`MediaRecorder`→OpenAI STT+Claude 요약 · `app/api/voice-log`) ② 2차 OT `SecondOTTab`(1차 관찰 `ot_log`→`ot-brief` Sonnet · `ot_round=2` 행 `report.brief` 캐시) + 1차 `FirstOTAssist`(Sonnet · 미캐시) ③ **오운완**(회원앱 카드·트레이너 랭킹·포상 — `daily_workout_log` 출석 **서버 RPC** 집계 · ⚠️ 클라 계산 금지) ④ **수업일지 회원 확인·서명(2026-07-21)** — 아래. 키 없으면 각자 "데모" 폴백. 편집 시 real/fake 명확 분리.
+Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보드·voice-log DB 저장), 대부분 **content generation은 여전히 demo**(AI 성향 요약·모든 세일즈 스크립트/루틴/타임라인). ⚠️ admin 분석 대시보드는 **실측**(아래 별도 섹션 · 옛 "admin KPI·QC 데모"는 제거/실데이터화됨). **Exceptions(real):** ① 음성일지 voice→AI(`MediaRecorder`→OpenAI STT+Claude 요약 · `app/api/voice-log`) ② 2차 OT `SecondOTTab`(1차 관찰 `ot_log`→`ot-brief` Sonnet · `ot_round=2` 행 `report.brief` 캐시) + 1차 `FirstOTAssist`(Sonnet · `ot_round=1` 행 `report.first_assist` 캐시) + 인바디·체형 분석(`PtInbodyTab`·`PostureAssessment` · 같은 1차 행의 `report.inbody_analysis`/`posture_analysis` 캐시 · 헬퍼 `lib/otCache.js` · 캐시는 `meta.sourceId`가 현재 최신 측정/평가 행 id와 같을 때만 사용) ③ **오운완**(회원앱 카드·트레이너 랭킹·포상 — `daily_workout_log` 출석 **서버 RPC** 집계 · ⚠️ 클라 계산 금지) ④ **수업일지 회원 확인·서명(2026-07-21)** — 아래. 키 없으면 각자 "데모" 폴백. 편집 시 real/fake 명확 분리.
 
 ### UI conventions
 

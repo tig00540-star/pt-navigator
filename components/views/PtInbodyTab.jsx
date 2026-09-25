@@ -18,6 +18,7 @@ import { kstToday } from "@/lib/date";
 import Card from "@/components/ui/Card";
 import { inputCls } from "@/components/ui/Field";
 import { authHeader } from "@/lib/authHeader";
+import { loadOtRound1, saveOtRound1Key, cacheFor } from "@/lib/otCache";
 import InbodyAnalysis from "@/components/views/InbodyAnalysis";
 
 // 입력 상태 초기값 — INBODY_FIELDS.key별 빈 문자열.
@@ -69,10 +70,12 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
   const [note, setNote] = useState("");
   const [vals, setVals] = useState(emptyVals());
   const { toast, showToast } = useToast();
-  // AI 인바디 분석(회원 대면) — 세션 전용(재생성 시 갱신 · 회원 전환은 PTView key 리마운트로 리셋).
+  // AI 인바디 분석(회원 대면). 결과는 1차 행(report.inbody_analysis)에 캐시 —
+  // 화면을 다시 열 때마다 AI를 새로 부르면 느리고 비용도 든다(1차·2차 브리핑과 같은 방식).
   const [analysis, setAnalysis] = useState(null);
   const [anaLoading, setAnaLoading] = useState(false);
   const [anaNotice, setAnaNotice] = useState("");
+  const [otRow, setOtRow] = useState(null); // 1차 행 { id, report } — 캐시 자리(없으면 세션 전용)
 
   // 회원 변경 시 인바디 이력 로드(measured_at 내림차순 = 최신 먼저).
   useEffect(() => {
@@ -101,8 +104,21 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
     return () => { cancelled = true; };
   }, [member?.id]);
 
+  // 분석 캐시 로드 — 분석 화면(신규 OT)일 때만. 조회 1건, 실패해도 조용히 세션 전용으로 동작.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!showAnalysis) return;
+      const row = await loadOtRound1(member?.id);
+      if (!cancelled) setOtRow(row);
+    })();
+    return () => { cancelled = true; };
+  }, [member?.id, showAnalysis]);
+
   const latest = rows[0] ?? null;
   const prev = rows[1] ?? null;
+  // 지금 최신 측정을 보고 만든 캐시만 쓴다 — 새로 측정했으면 옛 분석을 띄우지 않는다.
+  const shownAnalysis = analysis ?? cacheFor(otRow?.report?.inbody_analysis, latest?.id);
 
   const resetForm = () => { setVals(emptyVals()); setNote(""); setMeasuredAt(kstToday()); };
 
@@ -182,7 +198,15 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
         setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (AI 키/구독 상태를 확인하세요)");
         return;
       }
-      setAnalysis(await res.json());
+      const result = await res.json();
+      setAnalysis(result);
+      // 1차 행이 있으면 캐시 — 다음에 들어오면 재호출 0.
+      const merged = await saveOtRound1Key(otRow, "inbody_analysis", {
+        data: result,
+        meta: { generatedAt: new Date().toISOString(), sourceId: latest.id },
+      });
+      if (merged) setOtRow((r) => ({ ...r, report: merged }));
+      else if (otRow) setAnaNotice("분석은 나왔지만 저장에 실패했어요 — 이 화면에서만 보입니다. (권한/정책 확인)");
     } catch (e) {
       setAnaNotice("네트워크 오류: " + (e?.message || "unknown"));
     } finally {
@@ -268,14 +292,14 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
           <div className="flex items-center justify-between gap-2">
             <Eyebrow icon={Sparkles}>인바디 분석 · 회원에게 보여주기</Eyebrow>
             <Button variant="primary" size="sm" onClick={analyze} disabled={anaLoading}>
-              {anaLoading ? "분석 중…" : analysis ? "다시 분석" : "AI 분석"}
+              {anaLoading ? "분석 중…" : shownAnalysis ? "다시 분석" : "AI 분석"}
             </Button>
           </div>
           <p className="mt-1 text-[11px] leading-relaxed text-muted">
             최근 측정({latest.measured_at}) 기준. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
           </p>
           {anaNotice && <p className="mt-2 text-[12px] text-danger-text">{anaNotice}</p>}
-          {analysis && <div className="mt-3"><InbodyAnalysis data={analysis} /></div>}
+          {shownAnalysis && <div className="mt-3"><InbodyAnalysis data={shownAnalysis} /></div>}
         </Card>
       )}
 
