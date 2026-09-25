@@ -25,6 +25,7 @@ import MyStats from "@/components/views/MyStats";
 import SettingsView, { SETTINGS_SUBTABS } from "@/components/views/SettingsView";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import TodoTab from "@/components/views/TodoTab";
+import TrainerHub from "@/components/views/TrainerHub";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -155,9 +156,10 @@ const GROUP_TAB = {
    회원 목록 (전용 탭)
    ========================================================================= */
 
-function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
+function MemberListTab({ members, selectedId, onSelect, onAdd, uid, initialSegment = "all" }) {
   const [q, setQ] = useState("");
-  const [segment, setSegment] = useState("all"); // all | ot | pt | inactive
+  // 허브에서 'OT 회원'·'PT 회원'으로 들어오면 그 세그먼트로 열린다(하단바 '회원'은 전체).
+  const [segment, setSegment] = useState(initialSegment); // all | ot | pt | inactive
   // 원장 = 본인 것 아닌 회원이 보임(RLS상 trainer는 본인 것만 → 토글 불필요).
   const isOwner = members.some((m) => m.trainer_id && uid && m.trainer_id !== uid);
   const [mineOnly, setMineOnly] = useState(true); // 기본 '내 회원'
@@ -295,8 +297,11 @@ function MemberListTab({ members, selectedId, onSelect, onAdd, uid }) {
    ========================================================================= */
 
 export default function OTNavigatorDashboard() {
-  const [tab, setTab] = useState(9);
+  // 첫 화면 = 허브("hub"). 숫자 id는 기존 탭 그대로 — 허브만 문자열이라 기존 분기와 안 겹친다.
+  const [tab, setTab] = useState("hub");
   const [settingsSub, setSettingsSub] = useState("me");
+  // 회원 목록을 열 때의 초기 세그먼트(허브의 OT/PT 카드가 지정). 하단바 '회원'은 전체.
+  const [listSegment, setListSegment] = useState("all");
 
   // --- Supabase 연동 상태 ---
   const [members, setMembers] = useState([]);
@@ -312,6 +317,13 @@ export default function OTNavigatorDashboard() {
   const [bellOpen, setBellOpen] = useState(false);   // 공지 재열람(벨) 모달
   const [unreadCount, setUnreadCount] = useState(0); // 공지 안읽음 배지 수
   const scheduleRef = useRef(null); // '오늘' 스택 내 스케줄 섹션 — 미처리예약 클릭 시 스크롤 타겟(같은 탭이라 setTab no-op 회귀 방지)
+
+  // 허브·하단바 공용 이동 — 세그먼트가 오면 회원 목록을 그 필터로 연다.
+  const goTab = (next, opts) => {
+    if (opts?.segment) setListSegment(opts.segment);
+    else if (next === 0) setListSegment("all");
+    setTab(next);
+  };
 
   const loadMembers = async () => {
     if (!supabase) {
@@ -438,7 +450,12 @@ export default function OTNavigatorDashboard() {
                 → 워드마크를 h3 스케일(17px)로 올려 브랜드를 앞세우고,
                   이름은 12px muted 보조 라인으로 내린다. 심볼 36px과 두 줄 높이가 맞는다.
                 워드마크는 shrink-0(쪼개짐·잘림 금지), 이름만 길면 truncate. */}
-            <div className="flex min-w-0 shrink-0 items-center gap-2.5">
+            {/* 로고 락업 = 홈(허브) 버튼. 어느 화면에서든 한 번에 첫 화면으로 돌아온다. */}
+            <button
+              onClick={() => goTab("hub")}
+              aria-label="홈으로"
+              className="flex min-w-0 shrink-0 items-center gap-2.5 text-left transition active:scale-95"
+            >
               {/* 관리자 헤더와 같은 벡터 소스(BrandMark)를 쓴다 — PNG는 고해상도 화면에서
                   36px로 줄어들 때 링 선이 뭉갠다. 아트워크는 동일하다(마크 지름 56%, 중심 정중앙).
                   PNG는 PWA·홈화면 아이콘용으로 계속 필요하니 public/icons에 그대로 둔다. */}
@@ -449,7 +466,7 @@ export default function OTNavigatorDashboard() {
                   {trainerName || "트레이너"}
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* 회원 드롭다운 제거(2026-07-21) — 현장에서 거의 안 쓴다는 판단.
                 회원 선택은 회원 목록 카드 탭이 주 경로이고, '오늘' 할일·이탈위험·내 실적에서도
@@ -544,7 +561,15 @@ export default function OTNavigatorDashboard() {
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         <div key={tab} className="tab-anim">
-        {tab === 9 ? (
+        {tab === "hub" ? (
+          <TrainerHub
+            members={members}
+            trainerName={trainerName}
+            isCenter={isCenter}
+            onGo={goTab}
+            onAdd={() => setShowForm(true)}
+          />
+        ) : tab === 9 ? (
           members.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-line bg-card p-6 text-center shadow-sm">
               <User className="mx-auto h-8 w-8 text-line" />
@@ -604,6 +629,8 @@ export default function OTNavigatorDashboard() {
           {tab === 0 && (
             <div>
             <MemberListTab
+              key={listSegment}
+              initialSegment={listSegment}
               members={members}
               selectedId={selectedId}
               onSelect={(id) => {
@@ -661,7 +688,7 @@ export default function OTNavigatorDashboard() {
         />
       )}
 
-      <BottomNav tab={tab} onTab={setTab} />
+      <BottomNav tab={tab} onTab={goTab} />
     </div>
   );
 }
