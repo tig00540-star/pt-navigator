@@ -217,18 +217,18 @@ export default function LandingPage() {
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <nav className="hidden items-center gap-[26px] lg:flex">
               {[["#philosophy", "철학"], ["#pricing", "가격"], ["#faq", "FAQ"]].map(([href, label]) => (
-                <a key={href} href={href} onClick={onNav(href.slice(1))} className="text-[14.5px] font-semibold tracking-[-0.01em] text-sub no-underline transition-colors hover:text-ink">{label}</a>
+                <a key={href} href={href} onClick={onNav(href.slice(1))} className="text-[15px] font-semibold tracking-[-0.01em] text-sub no-underline transition-colors hover:text-ink">{label}</a>
               ))}
             </nav>
 
             {/* 상시 역할 바로가기 — 스크롤해도 헤더에 계속 노출 (트레이너=기능 · 관리자=센터관리) */}
             <div role="group" aria-label="역할별 바로가기" className="flex items-center gap-1 whitespace-nowrap rounded-full border border-line-strong bg-elevate p-1">
-              <span aria-hidden="true" className="hidden pl-2 pr-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted sm:inline">바로가기</span>
-              <button type="button" onClick={() => scrollToId("features")} className="rounded-full px-2.5 py-1.5 text-[13px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">트레이너</button>
-              <button type="button" onClick={() => scrollToId("directors")} className="rounded-full px-2.5 py-1.5 text-[13px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">관리자</button>
+              <span aria-hidden="true" className="hidden pl-2 pr-0.5 text-[12px] font-bold uppercase tracking-[0.08em] text-muted sm:inline">바로가기</span>
+              <button type="button" onClick={() => scrollToId("features")} className="inline-flex min-h-[40px] items-center rounded-full px-3 py-2 text-[13.5px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">트레이너</button>
+              <button type="button" onClick={() => scrollToId("directors")} className="inline-flex min-h-[40px] items-center rounded-full px-3 py-2 text-[13.5px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">관리자</button>
             </div>
 
-            <Link href="/login" className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-primary px-3.5 py-2.5 text-[14px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f] sm:px-[18px] sm:text-[14.5px]">앱 열기</Link>
+            <Link href="/login" className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-primary px-3.5 py-2.5 text-[15px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f] sm:px-[18px] sm:text-[15px]">앱 열기</Link>
           </div>
         </div>
       </header>
@@ -245,7 +245,7 @@ export default function LandingPage() {
                 매달 초기화되는 매출, 쌓이는 회원 관리, 밀리는 업무.<br /><b className="font-extrabold text-white">그럼 잘 오셨습니다.</b>
               </p>
               <div className="reveal mt-[30px] flex flex-wrap justify-center gap-3">
-                <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
+                <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16.5px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
                 <InstallAppButton className="!bg-white/[0.12] !text-white hover:!bg-white/[0.2]" label="앱 설치" />
               </div>
 
@@ -256,10 +256,10 @@ export default function LandingPage() {
                 트레이너 경력 10년. 팀장·관리자까지 다 해본 사람이,<br />
                 <span className="builtline"><span className="built font-extrabold text-primary">답답해서 직접 개발했습니다.</span></span>
               </p>
-              <p className="reveal mt-7 text-[clamp(15px,1.6vw,17px)] leading-[1.75] tracking-[-0.011em] text-white/[0.88]">
+              <p className="reveal mt-7 text-[clamp(15px,1.6vw,16.5px)] leading-[1.75] tracking-[-0.011em] text-white/[0.88]">
                 어플·노션·스프레드시트 다 써봤지만<br />타이핑은 그대로였습니다.
               </p>
-              <p className="reveal mt-[18px] text-[clamp(15px,1.6vw,17px)] leading-[1.75] tracking-[-0.011em] text-white/[0.88]">
+              <p className="reveal mt-[18px] text-[clamp(15px,1.6vw,16.5px)] leading-[1.75] tracking-[-0.011em] text-white/[0.88]">
                 <b className="font-bold text-white">수업 외 모든 업무</b>를 여기 싹 다 녹여냈습니다.
               </p>
               <div className="reveal mt-[clamp(28px,4vh,48px)]">
@@ -297,7 +297,7 @@ export default function LandingPage() {
                     {PHILO_OLD.map((x) => (
                       <li key={x} className="flex items-start gap-[11px]">
                         <X size={18} strokeWidth={2.4} className="mt-0.5 flex-none text-muted" />
-                        <span className="text-[14.5px] leading-[1.5] tracking-[-0.011em] text-muted">{x}</span>
+                        <span className="text-[15px] leading-[1.5] tracking-[-0.011em] text-muted">{x}</span>
                       </li>
                     ))}
                   </ul>
@@ -313,7 +313,7 @@ export default function LandingPage() {
                     {PHILO_NEW.map((x) => (
                       <li key={x} className="flex items-start gap-[11px]">
                         <Check size={18} strokeWidth={3} className="mt-0.5 flex-none text-primary" />
-                        <span className="text-[14.5px] leading-[1.5] tracking-[-0.011em] text-ink">{x}</span>
+                        <span className="text-[15px] leading-[1.5] tracking-[-0.011em] text-ink">{x}</span>
                       </li>
                     ))}
                   </ul>
@@ -376,14 +376,14 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1160px] px-6">
             <div className="fintro py-[clamp(56px,8vw,96px)]">
               <div className="reveal">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-extrabold uppercase tracking-[0.12em] text-[#fca5a5]">관리자님을 위한</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#fca5a5]">관리자님을 위한</span>
                 <h2 className="mt-[18px] max-w-[800px] text-[clamp(28px,4vw,46px)] font-extrabold leading-[1.14] tracking-[-0.045em] text-balance">
                   무엇을 잘하고 어떤 걸 놓치는지,<br /><span className="text-[#fca5a5]">숫자로 보여드립니다.</span>
                 </h2>
                 <p className="mt-4 max-w-[620px] text-[clamp(15px,1.6vw,18px)] leading-[1.6] tracking-[-0.011em] text-white/[0.88]">순매출과 다음달 예상, 어디서 새는지까지 한 화면에서.</p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {["순매출 · 예상 매출", "등록 퍼널 · 임박 등록", "AI 운영 보고서"].map((x) => (
-                    <span key={x} className="rounded-full bg-white/10 px-3.5 py-[7px] text-[13px] font-bold text-[#fca5a5]">{x}</span>
+                    <span key={x} className="rounded-full bg-white/10 px-3.5 py-[7px] text-[13.5px] font-bold text-[#fca5a5]">{x}</span>
                   ))}
                 </div>
                 <a href={contactHref()} className="mt-7 inline-flex items-center gap-2 rounded-[10px] bg-primary px-[22px] py-[13px] text-[15px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">센터 도입 문의 <ArrowRight size={16} strokeWidth={2.4} /></a>
@@ -405,7 +405,7 @@ export default function LandingPage() {
                     <p className="text-[13.5px] leading-[1.55] tracking-[-0.011em] text-white/70">{d}</p>
                     <div className="mt-auto flex items-start gap-2 rounded-[10px] bg-white/[0.06] p-[10px_12px]">
                       <ArrowRight size={15} strokeWidth={2.4} className="mt-0.5 flex-none text-[#fca5a5]" />
-                      <span className="text-[13px] font-bold leading-[1.5] tracking-[-0.012em] text-[#fca5a5]">{fix}</span>
+                      <span className="text-[13.5px] font-bold leading-[1.5] tracking-[-0.012em] text-[#fca5a5]">{fix}</span>
                     </div>
                   </div>
                 ))}
@@ -425,8 +425,8 @@ export default function LandingPage() {
                     <div className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-white/[0.06]">
                       <Icon size={22} strokeWidth={2} className="text-[#fca5a5]" />
                     </div>
-                    <h4 className="mt-4 text-[16px] font-extrabold tracking-[-0.025em]">{t}</h4>
-                    <p className="mt-2 text-[13px] leading-[1.55] tracking-[-0.011em] text-white/70">{d}</p>
+                    <h4 className="mt-4 text-[16.5px] font-extrabold tracking-[-0.025em]">{t}</h4>
+                    <p className="mt-2 text-[13.5px] leading-[1.55] tracking-[-0.011em] text-white/70">{d}</p>
                   </div>
                 ))}
               </div>
@@ -439,9 +439,9 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1160px] px-6">
             <div className="py-[clamp(44px,6vw,76px)]">
               <div className="reveal mb-4 text-center">
-                <div className="text-[12.5px] font-bold uppercase tracking-[0.14em] text-primary-strong">가격</div>
+                <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-primary-strong">가격</div>
                 <h2 className="mt-3.5 text-[clamp(24px,3.2vw,36px)] font-extrabold leading-[1.22] tracking-[-0.04em] text-balance">7일 무료로 먼저 써보세요.</h2>
-                <p className="mt-3 text-[16px] tracking-[-0.011em] text-sub">신규·재등록 <b className="text-ink">1건만 더</b> 나와도 회수됩니다.</p>
+                <p className="mt-3 text-[16.5px] tracking-[-0.011em] text-sub">신규·재등록 <b className="text-ink">1건만 더</b> 나와도 회수됩니다.</p>
               </div>
               <div className="mx-auto mt-7 grid max-w-[720px] items-stretch gap-[18px] sm:grid-cols-2">
                 {TIERS.map((tier) => (
@@ -454,24 +454,24 @@ export default function LandingPage() {
                     }`}
                   >
                     {tier.highlight && (
-                      <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center rounded-full bg-primary px-3 py-1 text-[11px] font-bold tracking-[0.06em] text-white shadow-sm">추천</span>
+                      <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center rounded-full bg-primary px-3 py-1 text-[12px] font-bold tracking-[0.06em] text-white shadow-sm">추천</span>
                     )}
                     <h3 className="m-0 text-[20px] font-extrabold tracking-[-0.03em]">{tier.name}</h3>
                     <p className="mt-1.5 text-[13.5px] text-muted">{tier.tagline}</p>
                     <div className="my-4">
                       <div className="flex items-baseline gap-1">
                         <span className="font-mono text-[28px] font-extrabold tracking-[-0.03em] text-ink">{tier.price.toLocaleString("ko-KR")}</span>
-                        <span className="text-[14px] font-bold text-ink">원</span>
-                        <span className="text-[13px] text-muted">/ 월</span>
+                        <span className="text-[15px] font-bold text-ink">원</span>
+                        <span className="text-[13.5px] text-muted">/ 월</span>
                       </div>
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="text-[12.5px] text-muted line-through">정가 {tier.regular.toLocaleString("ko-KR")}원</span>
-                        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-bold text-primary-strong">얼리버드</span>
+                        <span className="text-[12px] text-muted line-through">정가 {tier.regular.toLocaleString("ko-KR")}원</span>
+                        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-bold text-primary-strong">얼리버드</span>
                       </div>
                     </div>
                     <div className="flex flex-1 flex-col gap-[9px]">
                       {tier.feats.map(([tx, strong]) => (
-                        <div key={tx} className={`flex gap-2 text-[14px] tracking-[-0.011em] ${strong ? "font-semibold text-ink" : "text-sub"}`}>
+                        <div key={tx} className={`flex gap-2 text-[15px] tracking-[-0.011em] ${strong ? "font-semibold text-ink" : "text-sub"}`}>
                           <Check size={16} strokeWidth={3} className="mt-0.5 flex-none text-primary" />{tx}
                         </div>
                       ))}
@@ -489,7 +489,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <p className="reveal mt-8 text-center text-[14px] leading-[1.7] tracking-[-0.008em] text-muted">부가세 별도 · 7일 무료 후 자동결제 · 언제든 해지</p>
+              <p className="reveal mt-8 text-center text-[15px] leading-[1.7] tracking-[-0.008em] text-muted">부가세 별도 · 7일 무료 후 자동결제 · 언제든 해지</p>
             </div>
           </div>
         </section>
@@ -521,8 +521,8 @@ export default function LandingPage() {
               <span className="mx-auto block w-fit"><Sym size={52} /></span>
               <h2 className="mt-[22px] text-[clamp(28px,4.2vw,48px)] font-extrabold leading-[1.15] tracking-[-0.045em] text-balance">오늘 수업부터 달라집니다.</h2>
               <div className="mt-[30px] flex flex-wrap justify-center gap-3">
-                <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
-                <Link href="/login" className="inline-flex items-center gap-2 rounded-[10px] border border-line-strong bg-card px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-ink no-underline transition-colors hover:bg-elevate">앱 열기</Link>
+                <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16.5px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
+                <Link href="/login" className="inline-flex items-center gap-2 rounded-[10px] border border-line-strong bg-card px-7 py-[15px] text-[16.5px] font-bold tracking-[-0.01em] text-ink no-underline transition-colors hover:bg-elevate">앱 열기</Link>
               </div>
             </div>
           </div>
@@ -534,16 +534,16 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2.5">
                 <Sym size={22} />
-                <span className="whitespace-nowrap text-[16px] font-extrabold tracking-[-0.03em]">
+                <span className="whitespace-nowrap text-[16.5px] font-extrabold tracking-[-0.03em]">
                   <span className="text-ink">오직</span> <span className="text-primary">트레이너</span>
                 </span>
               </div>
-              <p className="mt-2.5 text-[11.5px] uppercase tracking-[0.14em] text-muted">ONLY FOR TRAINER</p>
-              <p className="mt-3.5 max-w-[420px] text-[12.5px] leading-[1.6] tracking-[-0.008em] text-muted">오직 트레이너는 운동 지도·세일즈·회원관리 도구입니다. <br />의료기관이 아니며 치료·진단을 제공하지 않습니다.</p>
+              <p className="mt-2.5 text-[12px] uppercase tracking-[0.14em] text-muted">ONLY FOR TRAINER</p>
+              <p className="mt-3.5 max-w-[420px] text-[12px] leading-[1.6] tracking-[-0.008em] text-muted">오직 트레이너는 운동 지도·세일즈·회원관리 도구입니다. <br />의료기관이 아니며 치료·진단을 제공하지 않습니다.</p>
             </div>
             <div className="flex flex-wrap gap-7">
               {[["#features", "기능"], ["#pricing", "가격"], ["#faq", "FAQ"], ["/download", "설치 안내"]].map(([href, label]) => (
-                <a key={label} href={href} onClick={href.startsWith("#") ? onNav(href.slice(1)) : undefined} className="text-[13.5px] text-sub no-underline transition-colors hover:text-ink">{label}</a>
+                <a key={label} href={href} onClick={href.startsWith("#") ? onNav(href.slice(1)) : undefined} className="inline-flex min-h-[40px] items-center text-[13.5px] text-sub no-underline transition-colors hover:text-ink">{label}</a>
               ))}
             </div>
           </div>
@@ -564,9 +564,9 @@ function PainBlock({ kicker, title, lead, cards, footer }) {
   return (
     <div className="py-[clamp(44px,6vw,76px)]">
       <div className="reveal">
-        <div className="text-[12.5px] font-bold uppercase tracking-[0.14em] text-primary-strong">{kicker}</div>
+        <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-primary-strong">{kicker}</div>
         <h2 className="mt-3.5 max-w-[760px] text-[clamp(24px,3.4vw,40px)] font-extrabold leading-[1.16] tracking-[-0.045em] text-balance">{title}</h2>
-        {lead && <p className="mt-3.5 max-w-[640px] text-[clamp(15px,1.6vw,17px)] leading-[1.62] tracking-[-0.011em] text-sub">{lead}</p>}
+        {lead && <p className="mt-3.5 max-w-[640px] text-[clamp(15px,1.6vw,16.5px)] leading-[1.62] tracking-[-0.011em] text-sub">{lead}</p>}
       </div>
       <div className={`mt-[26px] grid gap-3.5 sm:grid-cols-2 ${cards.length >= 4 ? "" : "lg:grid-cols-3"}`}>
         {cards.map(({ icon: Icon, t, d, fix }, i) => (
@@ -578,7 +578,7 @@ function PainBlock({ kicker, title, lead, cards, footer }) {
             <p className="m-0 text-[13.5px] leading-[1.55] tracking-[-0.011em] text-sub">{d}</p>
             <div className="mt-auto flex items-start gap-2 rounded-[10px] bg-primary-soft p-[10px_12px]">
               <ArrowRight size={15} strokeWidth={2.4} className="mt-0.5 flex-none text-primary-strong" />
-              <span className="text-[13px] font-bold leading-[1.5] tracking-[-0.012em] text-primary-strong">{fix}</span>
+              <span className="text-[13.5px] font-bold leading-[1.5] tracking-[-0.012em] text-primary-strong">{fix}</span>
             </div>
           </div>
         ))}

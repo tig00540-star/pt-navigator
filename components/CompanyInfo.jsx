@@ -14,13 +14,13 @@ export default function CompanyInfo({ className = "" }) {
     <div className={className}>
       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         {LEGAL.map(([href, label]) => (
-          <Link key={href} href={href} className="text-[12.5px] font-semibold text-sub no-underline transition-colors hover:text-ink">
+          <Link key={href} href={href} className="inline-flex min-h-[36px] items-center text-[12px] font-semibold text-sub no-underline transition-colors hover:text-ink">
             {label}
           </Link>
         ))}
-        <a href={contactHref()} className="text-[12.5px] font-semibold text-sub no-underline transition-colors hover:text-ink">문의</a>
+        <a href={contactHref()} className="inline-flex min-h-[36px] items-center text-[12px] font-semibold text-sub no-underline transition-colors hover:text-ink">문의</a>
       </div>
-      <div className="mt-3 space-y-0.5 text-[11.5px] leading-[1.7] text-muted">
+      <div className="mt-3 space-y-0.5 text-[12px] leading-[1.7] text-muted">
         <p>상호 {COMPANY.name} · 대표 {COMPANY.ceo} · 사업자등록번호 {COMPANY.bizNo}</p>
         <p>통신판매업 신고번호 {COMPANY.mailOrderNo || "신고 예정"} · {COMPANY.address}</p>
         <p>고객센터 {COMPANY.tel} · {COMPANY.email}</p>
