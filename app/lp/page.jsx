@@ -246,7 +246,6 @@ export default function LandingPage() {
               </p>
               <div className="reveal mt-[30px] flex flex-wrap justify-center gap-3">
                 <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
-                <Link href="/login" className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.28] px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-white/[0.08]">앱 열기</Link>
                 <InstallAppButton className="!bg-white/[0.12] !text-white hover:!bg-white/[0.2]" label="앱 설치" />
               </div>
 
@@ -279,7 +278,6 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1160px] px-6">
             <div className="snappage flex flex-col justify-center">
               <div className="reveal">
-                <div className="text-[12.5px] font-bold uppercase tracking-[0.14em] text-primary-strong">왜 또 다른 앱이냐고요?</div>
                 <h2 className="mt-3.5 max-w-[820px] text-[clamp(28px,4.2vw,50px)] font-extrabold leading-[1.12] tracking-[-0.045em] text-balance">
                   다 써봤지만,<br /><span className="text-primary-strong">달라진 게 없었으니까.</span>
                 </h2>
@@ -356,7 +354,6 @@ export default function LandingPage() {
             {/* 그 외 기능 — 풀스크린 해제(자연 흐름). */}
             <div className="border-t border-line py-[clamp(48px,7vw,88px)]">
               <div className="reveal">
-                <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-primary-strong">그 외 기능</div>
                 <h3 className="mt-3 max-w-[640px] text-[clamp(22px,3vw,32px)] font-extrabold tracking-[-0.04em] text-balance">수업 밖 모든 업무까지, 앱이 대신합니다.</h3>
               </div>
               <div className="mt-8 grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
@@ -396,7 +393,6 @@ export default function LandingPage() {
             {/* 왜 관리자에게 필요한가 — 문제 카드(다크) */}
             <div className="py-[clamp(44px,6vw,76px)]">
               <div className="reveal">
-                <div className="text-[12.5px] font-bold uppercase tracking-[0.14em] text-[#fca5a5]">왜 관리자에게 필요한가</div>
                 <h3 className="mt-3.5 max-w-[760px] text-[clamp(24px,3.4vw,40px)] font-extrabold leading-[1.16] tracking-[-0.045em] text-balance">감으로 굴리면, 문제는 늘 뒤늦게 드러납니다.</h3>
               </div>
               <div className="mt-[26px] grid gap-3.5 sm:grid-cols-2">
@@ -421,7 +417,6 @@ export default function LandingPage() {
             {/* 그 외 관리자 기능(다크) */}
             <div className="py-[clamp(40px,6vw,72px)]">
               <div className="reveal">
-                <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#fca5a5]">그 외 관리자 기능</div>
                 <h3 className="mt-3 max-w-[640px] text-[clamp(22px,3vw,32px)] font-extrabold tracking-[-0.04em] text-balance">운영도 숫자로, 손이 덜 가게.</h3>
               </div>
               <div className="mt-8 grid gap-[18px] sm:grid-cols-2 lg:grid-cols-4">
@@ -503,7 +498,6 @@ export default function LandingPage() {
         <section id="faq" className="py-[clamp(56px,7vw,104px)]">
           <div className="mx-auto max-w-[780px] px-6">
             <div className="reveal mb-[34px] text-center">
-              <div className="text-[12.5px] font-bold uppercase tracking-[0.14em] text-primary-strong">FAQ</div>
               <h2 className="mt-3.5 text-[clamp(24px,3.2vw,36px)] font-extrabold leading-[1.22] tracking-[-0.04em]">먼저 궁금한 것들.</h2>
             </div>
             <div className="reveal">
