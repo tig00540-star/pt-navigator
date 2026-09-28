@@ -10,13 +10,13 @@
    ========================================================================= */
 
 import { useCallback, useEffect, useState } from "react";
-import { PersonStanding, Plus, Sparkles, ImagePlus, Trash2 } from "lucide-react";
+import { Maximize2, PersonStanding, Plus, Sparkles, ImagePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { compressImage } from "@/lib/image";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import ImageLightbox from "@/components/ui/ImageLightbox";
+import PostureViewer, { PostureGridLines } from "@/components/ui/PostureViewer";
 import { inputCls } from "@/components/ui/Field";
 import { authHeader } from "@/lib/authHeader";
 import { POSTURE_ITEMS, POSTURE_STATES } from "@/lib/posture";
@@ -41,14 +41,7 @@ function GridPhoto({ url, onOpen, onRemove }) {
     <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-line bg-elevate">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt="체형 사진" onClick={onOpen} className="h-full w-full cursor-pointer object-cover" />
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-primary/70" />
-        <div className="absolute left-1/3 top-0 h-full w-px bg-white/40" />
-        <div className="absolute left-2/3 top-0 h-full w-px bg-white/40" />
-        <div className="absolute top-1/4 left-0 h-px w-full bg-white/40" />
-        <div className="absolute top-1/2 left-0 h-px w-full bg-primary/45" />
-        <div className="absolute top-3/4 left-0 h-px w-full bg-white/40" />
-      </div>
+      <PostureGridLines />
       {onRemove && (
         <button onClick={onRemove} className="absolute right-1 top-1 rounded-lg bg-card/85 p-1 text-muted transition hover:text-rose-600" aria-label="사진 삭제">
           <Trash2 className="h-3.5 w-3.5" />
@@ -66,7 +59,7 @@ export default function PostureAssessment({ member }) {
   const [busySlot, setBusySlot] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [lightbox, setLightbox] = useState(null);
+  const [viewAt, setViewAt] = useState(null); // 전체화면으로 볼 사진 인덱스(null=닫힘)
   // 분석 결과는 1차 행(report.posture_analysis)에 캐시 — 사진 비전 호출이라 재방문마다 부르면 비싸다.
   const [analysis, setAnalysis] = useState(null);
   const [anaLoading, setAnaLoading] = useState(false);
@@ -119,6 +112,11 @@ export default function PostureAssessment({ member }) {
 
   // 지금 저장된 평가를 보고 만든 캐시만 쓴다 — 새로 평가했으면 옛 분석을 띄우지 않는다.
   const shownAnalysis = analysis ?? cacheFor(otRow?.report?.posture_analysis, assessId);
+
+  // 올라온 사진만 모아 전체화면 뷰어에 넘긴다(정면 → 측면 → 후면 순서 유지).
+  const shotList = SLOTS
+    .filter((s) => photos[s.key] && urls[photos[s.key]])
+    .map((s) => ({ slot: s.key, label: s.label, url: urls[photos[s.key]] }));
 
   const setF = (k, v) => setFindings((s) => ({ ...s, [k]: v }));
   const cleanFindings = () => {
@@ -227,7 +225,7 @@ export default function PostureAssessment({ member }) {
             <div key={s.key}>
               <div className="mb-1 text-center text-[11px] font-semibold text-sub">{s.label}</div>
               {photos[s.key] && urls[photos[s.key]] ? (
-                <GridPhoto url={urls[photos[s.key]]} onOpen={() => setLightbox(urls[photos[s.key]])} onRemove={removeSlot(s.key)} />
+                <GridPhoto url={urls[photos[s.key]]} onOpen={() => setViewAt(SLOTS.findIndex((x) => x.key === s.key))} onRemove={removeSlot(s.key)} />
               ) : (
                 <label className={`flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line-strong bg-elevate text-[11px] font-semibold text-muted ${busySlot === s.key ? "opacity-60" : ""}`}>
                   <ImagePlus className="h-5 w-5" />
@@ -238,6 +236,14 @@ export default function PostureAssessment({ member }) {
             </div>
           ))}
         </div>
+        {shotList.length > 0 && (
+          <button
+            onClick={() => setViewAt(SLOTS.findIndex((x) => x.key === shotList[0].slot))}
+            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-[14px] font-bold text-white transition active:scale-[0.99]"
+          >
+            <Maximize2 className="h-4 w-4" /> 회원에게 크게 보여주기
+          </button>
+        )}
       </Card>
 
       {/* 소견 체크(보조 · AI 분석 입력) */}
@@ -282,7 +288,9 @@ export default function PostureAssessment({ member }) {
         {shownAnalysis && <div className="mt-3"><InbodyAnalysis data={{ ...shownAnalysis, metrics: shownAnalysis.findings }} title="체형 분석" /></div>}
       </Card>
 
-      <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
+      {viewAt !== null && (
+        <PostureViewer shots={shotList} startIndex={Math.max(0, shotList.findIndex((x) => x.slot === SLOTS[viewAt]?.key))} onClose={() => setViewAt(null)} />
+      )}
     </div>
   );
 }
