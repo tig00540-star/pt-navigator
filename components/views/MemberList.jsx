@@ -112,7 +112,7 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
           )}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="stagger grid gap-3 sm:grid-cols-2">
           {list.map((m) => {
             const on = m.id === selectedId;
             const goalSet = hasVal(m.goal) && m.goal !== "미설정";

@@ -70,7 +70,7 @@ export default function TrainerHub({ members = [], trainerName, onGo, onAdd }) {
         <ChevronRight className="h-4 w-4 shrink-0 text-line-strong" />
       </Card>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="stagger grid grid-cols-2 gap-3">
         <Tile
           icon={CalendarDays} title="오늘" desc="스케줄과 오늘 할 일"
           tone="bg-primary-soft text-primary-strong"

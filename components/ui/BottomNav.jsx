@@ -29,11 +29,12 @@ export default function BottomNav({ tab, onTab }) {
               key={id}
               onClick={() => onTab(id)}
               aria-current={on ? "page" : undefined}
-              className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition active:scale-95 ${
+              /* 터치 영역 최소 52px — 수업 중 한 손으로 누르는 자리라 작으면 오탭이 난다. */
+              className={`flex min-h-[52px] flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-semibold transition active:scale-95 ${
                 on ? "text-primary-strong" : "text-muted hover:text-ink"
               }`}
             >
-              <Icon className="h-5 w-5" strokeWidth={on ? 2.5 : 2} />
+              <Icon className="h-[22px] w-[22px]" strokeWidth={on ? 2.5 : 2} />
               {label}
             </button>
           );

@@ -4,6 +4,7 @@
 
 import { useRouter } from "next/navigation";
 import TrainerHub from "@/components/views/TrainerHub";
+import InstallHint from "@/components/app/InstallHint";
 import { useMembers } from "@/components/app/MembersProvider";
 import { useAppUi } from "@/components/app/AppChrome";
 import { useAccount } from "@/lib/useAccount";
@@ -16,11 +17,14 @@ export default function HubPage() {
   const { openMemberForm } = useAppUi();
 
   return (
-    <TrainerHub
-      members={members}
-      trainerName={trainerName}
-      onGo={(tab, opts) => router.push(hrefFor(tab) + (opts?.segment ? `/${opts.segment}` : ""))}
-      onAdd={openMemberForm}
-    />
+    <div className="space-y-4">
+      <InstallHint />
+      <TrainerHub
+        members={members}
+        trainerName={trainerName}
+        onGo={(tab, opts) => router.push(hrefFor(tab) + (opts?.segment ? `/${opts.segment}` : ""))}
+        onAdd={openMemberForm}
+      />
+    </div>
   );
 }

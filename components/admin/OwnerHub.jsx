@@ -84,7 +84,7 @@ export default function OwnerHub({
         <ChevronRight className="h-4 w-4 shrink-0 text-primary-strong" />
       </Card>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="stagger grid grid-cols-2 gap-3">
         <Tile
           icon={AlertTriangle} title="오늘 챙길 것"
           desc={brief.length ? `${brief.length}건 · 금액 큰 순서` : "지금은 비어 있어요"}
