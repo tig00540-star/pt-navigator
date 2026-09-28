@@ -11,7 +11,6 @@ import { useState } from "react";
 import { Activity, Brain, Briefcase, MapPin, Send } from "lucide-react";
 import FirstOTAssist from "@/components/tabs/FirstOTAssist";
 import PtInbodyTab from "@/components/views/PtInbodyTab";
-import PostureAssessment from "@/components/views/PostureAssessment";
 import { STATUS_OPTS, labelOf } from "@/lib/labels";
 import { hasVal } from "@/lib/format";
 
@@ -126,10 +125,12 @@ export default function FirstOTTab({ member }) {
           <PtInbodyTab member={member} showAnalysis />
         </section>
 
-        {/* 체형평가 + AI 분석 — OT(신규) 세일즈 도구. 인바디와 동일 패턴. */}
-        <section className="mb-6">
-          <PostureAssessment member={member} />
-        </section>
+        {/* 체형평가 — 화면에서 뺌(2026-09-28).
+            사진에 기준선만 긋는 방식이라 "얼마나 틀어졌는지"를 말할 수 없었고,
+            AI에게 등급을 맡기면 같은 사진도 매번 다른 등급이 나와 회원 앞에서 신뢰를 잃는다.
+            되살리는 조건: ① 좌표 기반 측정(머리 전방이동·어깨 높이차·골반 기울기)
+            ② 앱 기준 등급표를 화면에 명시 ③ 같은 조건으로 찍게 하는 촬영 가이드.
+            컴포넌트·테이블·저장된 사진은 그대로 둔다 — 조건이 갖춰지면 한 줄로 되살린다. */}
 
         {/* logged notes */}
         {notes.length > 0 && (
