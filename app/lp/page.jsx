@@ -21,7 +21,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import {
-  ArrowRight, ChevronDown, X, Check, PencilLine, Presentation, Bell,
+  ArrowRight, ChevronDown, ChevronRight, X, Check, PencilLine, Presentation, Bell,
   Users, Calculator, BookOpen, Wallet, Library, Network, Trophy,
   CalendarDays, ChartColumn, MessageSquare, Filter, Megaphone, ShieldCheck,
 } from "lucide-react";
@@ -53,10 +53,18 @@ const PAINS_1 = [
 ];
 
 const PILLARS = [
-  { num: "01", kicker: "신규등록 · 세일즈", title: "세일즈, 잘 모르겠으면", accent: "따라만 하세요.", body: "OT 전 5분, 앱이 알려주는 대로 말하고 운동하면 됩니다.", demo: "/lp/demos/ot-mockup-embed.html", demoTitle: "신규등록 실제 화면 데모", w: 524 },
-  { num: "02", kicker: "재등록", title: "때 되면 하는 재등록?", accent: "그런 건 없습니다.", body: "운동일지와 인바디 변화를 근거로, 알람에 맞춰 준비합니다.", demo: "/lp/demos/ot-rereg-embed.html", demoTitle: "재등록 실제 화면 데모", w: 524 },
-  { num: "03", kicker: "운동일지 자동작성", title: "쓰지 말고,", accent: "말하세요.", body: "수업 끝 5분 전, 회원과 복기만 하세요. 정리는 앱이 합니다.", demo: "/lp/demos/ot-voicelog-embed.html", demoTitle: "운동일지 실제 화면 데모", w: 524 },
-  { num: "04", kicker: "회원관리", title: "붙잡지 마세요.", accent: "회원이 셀프로 관리합니다.", body: "회원이 스스로 기록을 남깁니다. 트레이너는 소통만 하세요.", demo: "/lp/demos/ot-member-embed.html", demoTitle: "회원관리 실제 화면 데모", w: 524 },
+  { num: "01", kicker: "신규등록 · 세일즈", title: "세일즈, 잘 모르겠으면", accent: "따라만 하세요.",
+    steps: ["회원별 맞춤 OT 보고서", "리딩 후 세일즈", "피드백까지"],
+    demo: "/lp/demos/ot-mockup-embed.html", demoTitle: "신규등록 실제 화면 데모", w: 524 },
+  { num: "02", kicker: "재등록", title: "때 되면 하는 재등록?", accent: "그런 건 없습니다.",
+    steps: ["만료 임박 알림", "변화 근거 정리", "제안까지"],
+    demo: "/lp/demos/ot-rereg-embed.html", demoTitle: "재등록 실제 화면 데모", w: 524 },
+  { num: "03", kicker: "운동일지 자동작성", title: "쓰지 말고,", accent: "말하세요.",
+    steps: ["수업", "말로 복기", "정리와 회원 전송까지"],
+    demo: "/lp/demos/ot-voicelog-embed.html", demoTitle: "운동일지 실제 화면 데모", w: 524 },
+  { num: "04", kicker: "회원관리", title: "붙잡지 마세요.", accent: "회원이 셀프로 관리합니다.",
+    steps: ["회원 전용 페이지", "기록·출석 자동 집계", "관리 업무 자동화"],
+    demo: "/lp/demos/ot-member-embed.html", demoTitle: "회원관리 실제 화면 데모", w: 524 },
 ];
 
 const ETC = [
@@ -69,8 +77,12 @@ const ETC = [
 ];
 
 const DIRECTOR_PILLARS = [
-  { num: "01", kicker: "매출 · KPI", title: "감으로 보던 지점 매출을,", accent: "한 화면에서 숫자로.", body: "이달 순매출과 목표 달성률, 다음달 예상 매출까지.", demo: "/lp/demos/ot-admin-revenue-embed.html", demoTitle: "지점 매출 대시보드 데모", w: 524 },
-  { num: "02", kicker: "퍼널 · 브리핑", title: "어디서 새는지,", accent: "앱이 짚어줍니다.", body: "등록 단계별로 어디서 새는지 보고, 오늘 챙길 것을 먼저 띄웁니다.", demo: "/lp/demos/ot-admin-funnel-embed.html", demoTitle: "회원 퍼널 관리 데모", w: 524 },
+  { num: "01", kicker: "매출 · KPI", title: "감으로 보던 지점 매출을,", accent: "한 화면에서 숫자로.",
+    steps: ["이달 순매출", "목표 달성률", "다음달 예상"],
+    demo: "/lp/demos/ot-admin-revenue-embed.html", demoTitle: "지점 매출 대시보드 데모", w: 524 },
+  { num: "02", kicker: "퍼널 · 브리핑", title: "어디서 새는지,", accent: "앱이 짚어줍니다.",
+    steps: ["등록 단계별 이탈", "트레이너별 약점", "오늘 챙길 것"],
+    demo: "/lp/demos/ot-admin-funnel-embed.html", demoTitle: "회원 퍼널 관리 데모", w: 524 },
 ];
 
 // 관리자(원장) 섹션 — 왜 필요한가 · 다크 카드
@@ -586,7 +598,7 @@ function PainBlock({ kicker, title, lead, cards, footer }) {
    ⚠️ w는 7개 모두 524로 통일: 임베드 폰은 전부 344px(동일)지만, 신규등록·재등록 임베드는
    폰이 90° 가로 회전(세일즈북 PPT)해 폭이 커져 524px `.phonezone`이 있어야 안 잘린다.
    같은 캔버스(524)에 같은 배율로 그려야 모든 폰이 같은 크기로 보인다(400짜리는 폰이 가운데 정렬). */
-function EmbedPillar({ num, kicker, title, accent, body, demo, demoTitle, w, dark }) {
+function EmbedPillar({ num, kicker, title, accent, steps, demo, demoTitle, w, dark }) {
   const accentText = dark ? "text-[#fca5a5]" : "text-primary-strong";
   const kickerText = dark ? "text-white/80" : "text-muted";
   const bodyText = dark ? "text-white/[0.88]" : "text-sub";
@@ -601,7 +613,19 @@ function EmbedPillar({ num, kicker, title, accent, body, demo, demoTitle, w, dar
         <h3 className={`mt-4 text-[clamp(23px,2.8vw,33px)] font-extrabold leading-[1.2] tracking-[-0.038em] text-balance ${headText}`}>
           {title}<br /><span className={accentText}>{accent}</span>
         </h3>
-        <p className={`mx-auto mt-3.5 max-w-[44ch] text-[15px] leading-[1.62] tracking-[-0.011em] ${bodyText}`}>{body}</p>
+        {/* 설명 문장 대신 단계 흐름 — 읽지 않고 훑어도 무엇이 자동인지 보인다. */}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+          {steps.map((st, i) => (
+            <span key={st} className="flex items-center gap-2">
+              {i > 0 && <ChevronRight size={15} strokeWidth={2.6} className={dark ? "text-white/35" : "text-line-strong"} />}
+              <span className={`rounded-full px-3.5 py-2 text-[13.5px] font-bold tracking-[-0.012em] ${
+                dark ? "bg-white/10 text-white" : "bg-elevate text-ink"
+              } ${i === steps.length - 1 ? (dark ? "!bg-primary !text-white" : "!bg-primary-soft !text-primary-strong") : ""}`}>
+                {st}
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
       <div className="reveal mt-8 w-full max-w-[520px] overflow-hidden">
         <DemoSlot src={demo} title={demoTitle} w={w} h={766} />
