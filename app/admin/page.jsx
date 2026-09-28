@@ -23,6 +23,7 @@ import MemberForm from "@/components/MemberForm";
 import MemberReassign from "@/components/admin/MemberReassign";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
+import OwnerHub from "@/components/admin/OwnerHub";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import OwnerOverview from "@/components/admin/OwnerOverview";
 import ExpenseManager from "@/components/admin/ExpenseManager";
@@ -45,16 +46,31 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 
 // admin 섹션 탭(7) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
-  { id: "overview",  label: "한눈에" },    // ← Phase A 데스크톱 콘솔 · 기본 랜딩
-  { id: "briefing",  label: "브리핑" },    // ← 추가(#6)
-  { id: "perf",      label: "트레이너" },  // ← 개명(구 '실적'). ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
-  { id: "revenue",   label: "매출" },      // ← 추가(#3)
-  { id: "funnel",    label: "OT회원 현황" },   // ← 개명(구 '전환'). id는 그대로.
-  { id: "retention", label: "PT회원 현황" },   // ← 개명(구 '리텐션'). id는 그대로.
-  { id: "schedule",  label: "스케줄" },   // ← 추가(#5)
+  { id: "overview",  label: "한눈에" },    // ← Phase A 데스크톱 콘솔
+  { id: "briefing",  label: "브리핑" },
+  { id: "perf",      label: "트레이너" },  // ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
+  { id: "revenue",   label: "매출" },
+  { id: "funnel",    label: "OT회원 현황" },
+  { id: "retention", label: "PT회원 현황" },
+  { id: "schedule",  label: "스케줄" },
   { id: "payroll",   label: "급여" },
   { id: "ops",       label: "운영" },
 ];
+
+/* 상단 네비 = 허브 + 5묶음. 9개 탭을 없애지 않고 묶기만 한다 —
+   각 섹션의 {atab === "..."} 조건은 그대로 두고, 묶음 안에서 세그먼트로 고른다.
+   대표는 하루에 여러 번 열지 않는다. 탭 9개를 가로로 훑게 하는 대신 5개로 줄인다. */
+const AGROUPS = [
+  { id: "hub",      label: "홈",         tabs: ["hub"] },
+  { id: "briefing", label: "오늘 챙길 것", tabs: ["briefing"] },
+  { id: "revenue",  label: "매출",        tabs: ["revenue"] },
+  { id: "team",     label: "트레이너",     tabs: ["perf", "payroll"] },
+  { id: "members",  label: "회원 흐름",    tabs: ["funnel", "retention"] },
+  { id: "ops",      label: "운영",        tabs: ["schedule", "ops"] },
+];
+const ATAB_LABEL = { perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
+const groupOf = (tab) => AGROUPS.find((g) => g.tabs.includes(tab))?.id ?? (tab === "overview" ? "hub" : "hub");
+
 
 /* =========================================================================
    재사용 UI 조각
@@ -103,7 +119,7 @@ export default function AdminDashboard() {
   const [goals, setGoals] = useState([]);      // trainer_goal(목표매출 · 매출 탭 게이지 · 비차단 fetch)
   const [appts, setAppts] = useState([]);      // appointment(최근 90일 · 스케줄 탭 · 비차단 fetch)
   const [expenses, setExpenses] = useState([]); // expense(이번달 · 지출/순이익 · 비차단 fetch)
-  const [atab, setAtab] = useState("overview"); // admin 섹션 탭(기본=한눈에 · Phase A 데스크톱 콘솔)
+  const [atab, setAtab] = useState("hub"); // admin 섹션(기본=허브 홈 · 9탭을 5묶음으로 고른다)
   const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
   const [showMemberCreate, setShowMemberCreate] = useState(false); // 운영 탭 회원 등록·배정 모달
   const [showReassign, setShowReassign] = useState(false); // 운영 탭 회원 재배정(인계) 모달
@@ -283,17 +299,33 @@ export default function AdminDashboard() {
         {/* 섹션 탭 네비 (admin fuchsia) */}
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
-            {ATABS.map((t) => {
-              const active = atab === t.id;
+            {AGROUPS.map((g) => {
+              const active = groupOf(atab) === g.id;
               return (
-                <button key={t.id} onClick={() => setAtab(t.id)}
+                <button key={g.id} onClick={() => setAtab(g.tabs[0])}
                   className={`relative px-4 py-2.5 text-xs font-semibold transition ${active ? "text-fuchsia-700" : "text-muted hover:text-ink"}`}>
-                  {t.label}
+                  {g.label}
                   {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-fuchsia-500" />}
                 </button>
               );
             })}
           </nav>
+          {(() => {
+            const g = AGROUPS.find((x) => x.id === groupOf(atab));
+            if (!g || g.tabs.length < 2) return null;
+            return (
+              <div className="flex gap-1.5 pb-2.5">
+                {g.tabs.map((t) => (
+                  <button key={t} onClick={() => setAtab(t)}
+                    className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${
+                      atab === t ? "bg-admin-soft text-admin-text" : "bg-elevate text-muted hover:text-ink"
+                    }`}>
+                    {ATAB_LABEL[t] || t}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </header>
 
@@ -309,7 +341,17 @@ export default function AdminDashboard() {
         {/* 빈상태 온보딩 — 회원 0명일 때만 · 모든 탭 위 · 탭별 안내 + 현재 트레이너/회원 수 */}
         <AdminEmptyOnboarding members={rows} trainers={trainers} atab={atab} />
 
-        {/* ===== 한눈에 — 대표 데스크톱 콘솔 (Phase A · 기본 랜딩) ===== */}
+        {/* ===== 홈(허브) — 9개 탭을 5묶음으로 고르는 첫 화면 ===== */}
+        {atab === "hub" && (
+        <section className="mb-8">
+          <OwnerHub
+            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            appts={appts} goals={goals} trainers={trainers} ym={ym}
+            centerName={centerName} onGoTab={(id) => setAtab(id)} />
+        </section>
+        )}
+
+        {/* ===== 한눈에 — 대표 데스크톱 콘솔 (Phase A) ===== */}
         {atab === "overview" && (
         <section className="mb-8">
           <OwnerOverview
