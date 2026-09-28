@@ -115,23 +115,19 @@ input[type="date"] {
    containing block이 되므로, 이 div 안의 모달(PtConfirmBanner·PtWorkoutTab 계약·ScheduleBoard)이
    뷰포트가 아니라 이 div 기준으로 앵커돼 위쪽이 잘리고 도달 불가가 된다(90vh도 이 div 기준이 됨).
    backwards는 시작 전 from 상태 보호만 유지 → 진입 깜빡임 방지는 그대로, 끝 상태는 natural과 동일. */
-.tab-anim { animation: tabIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
-@media (prefers-reduced-motion: reduce) { .tab-anim { animation: none; } }
+/* ⛔ 진입 모션 끔(2026-09-28 · 사용자 요청) — 화면 전환·카드 등장 애니메이션을 전부 중단.
+   클래스와 keyframe(tabIn)은 남겨둔다: 되살리려면 아래 두 줄의 `none`만 원래 값으로 되돌리면 된다.
+   원래 값 → .tab-anim: tabIn 0.26s cubic-bezier(0.22,1,0.36,1) backwards
+            .stagger > *: tabIn 0.30s cubic-bezier(0.22,1,0.36,1) backwards (+ nth-child 지연)
+   ⚠️ 되살릴 땐 fill-mode를 반드시 backwards로 — both면 끝난 뒤 transform이 남아
+      그 안의 position:fixed 모달이 화면 밖으로 앵커된다(현장 트러블슈팅 참고). */
+.tab-anim { animation: none; }
 
 /* 목록·카드 순차 등장 — 화면이 "한 번에 쿵" 뜨지 않고 위에서부터 차례로 들어온다.
    ⚠️ tab-anim과 같은 이유로 fill-mode는 backwards만(끝 상태에 transform을 남기면
    그 안의 position:fixed 모달이 이 요소 기준으로 앵커돼 화면 밖으로 나간다).
    지연은 8번째까지만 — 목록이 길어도 마지막 카드를 0.3초 넘게 기다리지 않게. */
-.stagger > * { animation: tabIn 0.30s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
-.stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 40ms; }
-.stagger > *:nth-child(3) { animation-delay: 80ms; }
-.stagger > *:nth-child(4) { animation-delay: 120ms; }
-.stagger > *:nth-child(5) { animation-delay: 160ms; }
-.stagger > *:nth-child(6) { animation-delay: 200ms; }
-.stagger > *:nth-child(7) { animation-delay: 240ms; }
-.stagger > *:nth-child(n+8) { animation-delay: 280ms; }
-@media (prefers-reduced-motion: reduce) { .stagger > * { animation: none; } }
+.stagger > * { animation: none; } /* 순차 등장 끔 — 지연값(40ms 간격)은 git 히스토리에 있다 */
 
 /* AI 브리핑 무한 진행바 — 끝을 모르는 대기(실측 45초~1분)를 '진행 중'으로 보이게 한다.
    ⚠️ margin-left가 아니라 transform으로 움직인다 — margin은 매 프레임 레이아웃을
