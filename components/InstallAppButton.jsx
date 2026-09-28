@@ -14,7 +14,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { Download, Share, Plus, X, Check } from "lucide-react";
+import { Download, Share, Plus, X, Check, MoreHorizontal } from "lucide-react";
 
 export default function InstallAppButton({ className = "", label = "앱 설치하기" }) {
   const [deferred, setDeferred] = useState(null); // 안드로이드·PC 설치 프롬프트
@@ -74,9 +74,10 @@ function InstallGuide({ onClose }) {
   const ios = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
   const steps = ios
     ? [
-        { icon: Share, t: "사파리 아래 공유 버튼을 누르세요", d: "화면 하단 가운데의 ⬆︎ 아이콘입니다." },
-        { icon: Plus, t: "‘홈 화면에 추가’를 고르세요", d: "목록을 조금 내리면 있습니다." },
-        { icon: Check, t: "오른쪽 위 ‘추가’를 누르세요", d: "홈 화면에 아이콘이 생깁니다." },
+        { icon: MoreHorizontal, t: "주소창 옆 ⋯ 를 누르고 ‘공유’를 고르세요", d: "사파리 주소창 오른쪽에 있는 점 세 개입니다." },
+        { icon: Share, t: "‘더보기’를 누르세요", d: "공유 목록 아래쪽에 있습니다." },
+        { icon: Plus, t: "‘홈 화면에 추가’를 고르세요", d: "목록에서 찾아 누릅니다." },
+        { icon: Check, t: "‘웹 앱으로 열기’를 고르고 ‘추가’를 누르세요", d: "홈 화면에 아이콘이 생깁니다." },
       ]
     : [
         { icon: Share, t: "브라우저 메뉴를 여세요", d: "크롬은 우측 상단 ⋮, 엣지는 ⋯ 입니다." },
@@ -97,8 +98,8 @@ function InstallGuide({ onClose }) {
             <h2 className="text-[18px] font-extrabold tracking-[-0.02em] text-ink">홈 화면에 추가하기</h2>
             <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
               {ios
-                ? "아이폰은 애플 정책상 버튼 한 번으로 설치할 수 없어요. 아래 3단계면 앱처럼 쓸 수 있습니다."
-                : "이 브라우저는 설치 창을 지원하지 않아요. 아래 방법으로 추가하세요."}
+                ? "아래 순서대로 하면 홈 화면에 아이콘이 생겨요."
+                : "아래 방법으로 홈 화면에 추가하세요."}
             </p>
           </div>
           <button onClick={onClose} aria-label="닫기" className="shrink-0 rounded-lg p-1 text-muted transition hover:text-ink active:scale-95">
