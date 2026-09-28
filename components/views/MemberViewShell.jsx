@@ -11,6 +11,7 @@
 import dynamic from "next/dynamic";
 import { viewFor } from "@/lib/memberStatus";
 import InactiveView from "@/components/views/InactiveView";
+import SkeletonScreen from "@/components/ui/Skeleton";
 
 // PT 전용 서브트리는 첫 로드에서 빼고 PT 회원 선택 시에만 청크 로드(무게 위생).
 // MemberViewShell이 이미 "use client"라 ssr:false 정상 동작.
@@ -20,11 +21,7 @@ const PTView = dynamic(() => import("@/components/views/PTView"), {
 });
 
 function ViewLoading() {
-  return (
-    <div className="flex items-center justify-center py-16 text-sm text-sub">
-      불러오는 중…
-    </div>
-  );
+  return <SkeletonScreen cards={3} />;
 }
 
 export default function MemberViewShell({ member, children, onGoList, showList, onMemberPatch, onMembersChanged, tab }) {

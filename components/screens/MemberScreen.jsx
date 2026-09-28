@@ -16,6 +16,7 @@ import { useAppUi } from "@/components/app/AppChrome";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor } from "@/lib/memberStatus";
 import { tabForStep, hrefForMember } from "@/lib/nav";
+import SkeletonScreen from "@/components/ui/Skeleton";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
 import FirstOTTab from "@/components/tabs/FirstOTTab";
@@ -47,7 +48,7 @@ export default function MemberScreen({ kind, memberId, step }) {
   }, [member, view, kind, router]);
 
   if (!member) {
-    return <div className="flex items-center justify-center py-16 text-sm text-sub">불러오는 중…</div>;
+    return <SkeletonScreen cards={2} />;
   }
 
   return (
