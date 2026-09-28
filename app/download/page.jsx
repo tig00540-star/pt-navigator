@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { Share, MoreVertical, MonitorSmartphone, ArrowRight, Check } from "lucide-react";
 import CompanyInfo from "@/components/CompanyInfo";
+import InstallAppButton from "@/components/InstallAppButton";
 
 export const metadata = {
   title: "설치·시작 안내 · 오직 트레이너",
@@ -63,6 +64,8 @@ export default function DownloadPage() {
             오직 트레이너는 웹앱(PWA)입니다. 브라우저로 바로 쓰고, 홈 화면에 추가하면 일반 앱처럼 아이콘으로 열립니다.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            {/* 기기가 지원하면 버튼 한 번으로 설치, 아이폰이면 3단계 안내 시트 */}
+            <InstallAppButton />
             <Link href="/signup" className={`${cta} bg-primary text-white hover:bg-[#c11f1f]`}>
               7일 무료로 시작 <ArrowRight size={17} strokeWidth={2.4} />
             </Link>

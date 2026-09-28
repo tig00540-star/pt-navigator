@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
+import InstallAppButton from "@/components/InstallAppButton";
 import { contactHref } from "@/lib/company";
 
 /* ───────── 데이터 ───────── */
@@ -246,6 +247,7 @@ export default function LandingPage() {
               <div className="reveal mt-[30px] flex flex-wrap justify-center gap-3">
                 <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
                 <Link href="/login" className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.28] px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-white/[0.08]">앱 열기</Link>
+                <InstallAppButton className="!bg-white/[0.12] !text-white hover:!bg-white/[0.2]" label="앱 설치" />
               </div>
 
               <a href="#founder-story" onClick={onNav("founder-story")} className="scroll-cue mx-auto mt-[clamp(36px,6vw,64px)] inline-flex flex-col items-center gap-1.5 text-white/50 no-underline">
