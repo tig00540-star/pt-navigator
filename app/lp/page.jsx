@@ -33,67 +33,58 @@ import { contactHref } from "@/lib/company";
 /* ───────── 데이터 ───────── */
 
 const PHILO_OLD = [
-  "앱·노션·스프레드시트를 오가며 관리",
+  "앱·노션·엑셀을 오가며 관리",
   "수업마다 똑같은 수기 타이핑",
-  "세일즈·교육은 각자 알아서",
-  "회원이 늘수록 관리 부담도 증가",
-  "재등록·재접근은 놓치기 일쑤",
+  "회원이 늘수록 부담도 증가",
+  "재등록은 놓치기 일쑤",
 ];
 const PHILO_NEW = [
-  "등록·재등록·관리·컨텐츠를 한 앱에서",
-  "말로 30초, 일지·리포트 자동 작성",
-  "AI가 대사·근거까지 미리 준비",
-  "부담은 앱이 — 트레이너는 수업만",
+  "등록·재등록·관리를 한 앱에서",
+  "말로 30초, 일지 자동 작성",
+  "AI가 대사·근거까지 준비",
   "재등록 타이밍을 앱이 먼저 알림",
 ];
 
 const PAINS_1 = [
-  { icon: PencilLine, t: "일지·기록에 매일 40분", d: "수업 끝나고 회원별로 종목·중량·세트를 다시 타이핑. 미루면 뭉개지고, 뭉개지면 재등록 근거가 사라집니다.", fix: "말로 30초 → 하루 40분을 되찾습니다" },
-  { icon: Presentation, t: "OT 준비는 매번 백지에서", d: "회원 성향·통증·목표를 놓고 무슨 말을 할지 매번 고민. 준비 없이 들어간 OT는 클로징이 감에 맡겨집니다.", fix: "AI가 대사·근거까지 → 준비 5분" },
-  { icon: Bell, t: "재등록은 기억력에 의존", d: "잔여 세션을 머리로 세다 놓칩니다. 회원은 조용히 사라지고, 매출은 매달 0에서 다시 시작합니다.", fix: "앱이 먼저 알림 → 놓치는 재등록 0" },
-  { icon: MessageSquare, t: "회원 피드백·소통에 저녁이 녹는다", d: "수업 끝나고 회원마다 카톡으로 피드백·다음 숙제를 정리해 보내다 보면, 정작 쉬어야 할 시간이 사라집니다.", fix: "회원앱이 기록·성과를 자동 전달 → 소통도 앱이" },
-];
-const PAINS_2 = [
-  { icon: Users, t: "회원이 늘면 관리도 늘어난다", d: "10명이 20명 되면 카톡·기록·피드백도 두 배. 결국 관리 품질이 먼저 무너집니다.", fix: "회원 셀프 관리 → 인원 늘어도 부담 동일" },
-  { icon: Calculator, t: "정산·급여는 매달 수기 대조", d: "수업 수를 세고, 맞춰보고, 틀리면 다시. 즐거워야 할 정산날이 스트레스가 됩니다.", fix: "자동 집계 → 확정만 누르면 끝" },
-  { icon: BookOpen, t: "교육은 저장만 하고 안 씀", d: "인스타·유튜브에 좋은 자료는 넘치는데, 실전에서 꺼내 쓰지 못하면 자산이 아닙니다.", fix: "AI가 학습 → 현장 스크립트로 전환" },
-  { icon: Trophy, t: "동기부여를 일일이 챙긴다", d: "출석·오운완을 수기로 독려하다 지칩니다. 회원이 스스로 오지 않으면 결국 이탈로 이어집니다.", fix: "오운완·랭킹·뱃지로 회원이 스스로 오게" },
+  { icon: PencilLine, t: "일지·기록에 매일 40분", d: "수업 끝나고 회원별로 다시 타이핑. 미루면 재등록 근거가 사라집니다.", fix: "말로 30초 → 하루 40분을 되찾습니다" },
+  { icon: Presentation, t: "OT 준비는 매번 백지에서", d: "무슨 말을 할지 매번 고민. 클로징이 감에 맡겨집니다.", fix: "AI가 대사·근거까지 → 준비 5분" },
+  { icon: Bell, t: "재등록은 기억력에 의존", d: "잔여 세션을 머리로 세다 놓칩니다. 매출은 매달 0에서 다시 시작합니다.", fix: "앱이 먼저 알림 → 놓치는 재등록 0" },
+  { icon: Users, t: "회원이 늘면 관리도 늘어난다", d: "10명이 20명 되면 카톡·기록도 두 배. 관리 품질이 먼저 무너집니다.", fix: "회원 셀프 관리 → 인원 늘어도 부담 동일" },
 ];
 
 const PILLARS = [
-  { num: "01", kicker: "신규등록 · 세일즈", title: "세일즈, 잘 모르겠으면", accent: "따라만 하세요.", body: <>회원 맞춤 OT부터 세일즈·클로징, 세일즈북 PPT 제작까지 한 큐에. <br />OT 전 5분 앱 켜고, 알려주는 대로 말하고 운동하고 보여주세요.</>, demo: "/lp/demos/ot-mockup-embed.html", demoTitle: "신규등록 실제 화면 데모", w: 524 },
-  { num: "02", kicker: "재등록", title: "때 되면 하는 재등록?", accent: "그런 건 없습니다.", body: "운동일지·인바디 변화·운동 빈도를 전부 반영해, 회원이 재등록할 수밖에 없게. 알람에 맞춰 준비하고 세일즈북 PPT를 보여주세요.", demo: "/lp/demos/ot-rereg-embed.html", demoTitle: "재등록 실제 화면 데모", w: 524 },
-  { num: "03", kicker: "운동일지 자동작성", title: "쓰지 말고,", accent: "말하세요.", body: <>노션·스프레드시트·관리앱 다 써봐도 결국 하나하나 타이핑. <br />수업 끝 5분 전, 회원과 복기만 하세요.<br />운동 설명은 앱이 합니다.</>, demo: "/lp/demos/ot-voicelog-embed.html", demoTitle: "운동일지 실제 화면 데모", w: 524 },
-  { num: "04", kicker: "회원관리", title: "붙잡지 마세요.", accent: "회원이 셀프로 관리합니다.", body: <>회원 10·20·30명… 늘어나는 부담. 카톡 기록 하나하나 찾고 계신가요? 이제 회원이 스스로 남깁니다. <br />트레이너는 소통만 하세요.</>, demo: "/lp/demos/ot-member-embed.html", demoTitle: "회원관리 실제 화면 데모", w: 524 },
+  { num: "01", kicker: "신규등록 · 세일즈", title: "세일즈, 잘 모르겠으면", accent: "따라만 하세요.", body: "OT 전 5분, 앱이 알려주는 대로 말하고 운동하면 됩니다.", demo: "/lp/demos/ot-mockup-embed.html", demoTitle: "신규등록 실제 화면 데모", w: 524 },
+  { num: "02", kicker: "재등록", title: "때 되면 하는 재등록?", accent: "그런 건 없습니다.", body: "운동일지와 인바디 변화를 근거로, 알람에 맞춰 준비합니다.", demo: "/lp/demos/ot-rereg-embed.html", demoTitle: "재등록 실제 화면 데모", w: 524 },
+  { num: "03", kicker: "운동일지 자동작성", title: "쓰지 말고,", accent: "말하세요.", body: "수업 끝 5분 전, 회원과 복기만 하세요. 정리는 앱이 합니다.", demo: "/lp/demos/ot-voicelog-embed.html", demoTitle: "운동일지 실제 화면 데모", w: 524 },
+  { num: "04", kicker: "회원관리", title: "붙잡지 마세요.", accent: "회원이 셀프로 관리합니다.", body: "회원이 스스로 기록을 남깁니다. 트레이너는 소통만 하세요.", demo: "/lp/demos/ot-member-embed.html", demoTitle: "회원관리 실제 화면 데모", w: 524 },
 ];
 
 const ETC = [
-  { icon: Wallet, t: "급여·정산 자동", d: <>수업·실적을 실시간 집계해 자동 계산. <br />트레이너는 확인후 확정만 누르세요.</> },
-  { icon: Library, t: "라이브러리 · AI 학습", d: <>인스타·유튜브 링크만 저장하면 AI가 알아서 학습해 <br />실전 스크립트로 녹여줍니다.</> },
-  { icon: Network, t: "집단 학습", d: <>트레이너들의 성공 클로징을 학습·업데이트. <br />실패 패턴은 스스로 지웁니다.</> },
-  { icon: Trophy, t: "이벤트 · 컨텐츠", d: <>트레이너가 여는 챌린지와 랭킹 경쟁. <br />주기적 목표로 회원이 떠나지 않게.</> },
-  { icon: CalendarDays, t: "스케줄링", d: <>예약·수업 일정을 한 곳에서 관리합니다.<br />수업확인, 세션지 모두 한 곳에서 알아서 계산합니다.</> },
-  { icon: ChartColumn, t: "KPI 리포트", d: "클로징률 등 트레이너 지표를 리포트로 제공합니다." },
+  { icon: Wallet, t: "급여·정산 자동", d: "실시간 집계 후 확정만 누르면 끝." },
+  { icon: Library, t: "라이브러리 · AI 학습", d: "링크만 저장하면 실전 스크립트로 바뀝니다." },
+  { icon: Network, t: "집단 학습", d: "성공한 클로징을 학습하고, 실패 패턴은 지웁니다." },
+  { icon: Trophy, t: "이벤트 · 컨텐츠", d: "챌린지와 랭킹으로 회원이 떠나지 않게." },
+  { icon: CalendarDays, t: "스케줄링", d: "예약·수업확인·세션 차감을 한 곳에서." },
+  { icon: ChartColumn, t: "KPI 리포트", d: "클로징률 등 내 지표를 리포트로." },
 ];
 
 const DIRECTOR_PILLARS = [
-  { num: "01", kicker: "매출 · KPI", title: "감으로 보던 지점 매출을,", accent: "한 화면에서 숫자로.", body: "이달 순매출과 목표 달성률, 다음달 예상 매출(신규 유입 + 재등록)까지. 신규 vs 재등록 구성비와 최근 6개월 추이를 함께 봅니다.", demo: "/lp/demos/ot-admin-revenue-embed.html", demoTitle: "지점 매출 대시보드 데모", w: 524 },
-  { num: "02", kicker: "퍼널 · 이탈 관리", title: "어디서 새는지,", accent: "앱이 짚어줍니다.", body: "OT 회원 → 1차 OT → 2차 OT → PT 등록, 단계별로 어디서 새는지 한눈에. 이번 주 챙길 임박 등록도 따로 띄웁니다.", demo: "/lp/demos/ot-admin-funnel-embed.html", demoTitle: "회원 퍼널 관리 데모", w: 524 },
-  { num: "03", kicker: "QC · 브리핑", title: "잔소리 대신,", accent: "데이터로 코칭.", body: "오늘 챙길 것 3건과 AI 운영 보고서로 시작해, 매출 파이프라인·주의할 회원·트레이너별 코칭까지 한 흐름에서.", demo: "/lp/demos/ot-admin-briefing-embed.html", demoTitle: "트레이너 브리핑 데모", w: 524 },
+  { num: "01", kicker: "매출 · KPI", title: "감으로 보던 지점 매출을,", accent: "한 화면에서 숫자로.", body: "이달 순매출과 목표 달성률, 다음달 예상 매출까지.", demo: "/lp/demos/ot-admin-revenue-embed.html", demoTitle: "지점 매출 대시보드 데모", w: 524 },
+  { num: "02", kicker: "퍼널 · 브리핑", title: "어디서 새는지,", accent: "앱이 짚어줍니다.", body: "등록 단계별로 어디서 새는지 보고, 오늘 챙길 것을 먼저 띄웁니다.", demo: "/lp/demos/ot-admin-funnel-embed.html", demoTitle: "회원 퍼널 관리 데모", w: 524 },
 ];
 
 // 관리자(원장) 섹션 — 왜 필요한가 · 다크 카드
 const ADMIN_PAINS = [
-  { icon: Wallet, t: "매출을 월말에야 안다", d: "이달이 어떻게 끝날지 마지막 날 정산하며 처음 압니다. 다음 달 예상은 늘 감입니다.", fix: "순매출·목표 달성·다음달 예측을 실시간으로" },
-  { icon: Filter, t: "어디서 새는지 모른다", d: "OT는 많은데 등록이 안 되는 원인이 트레이너별로 안 잡혀, 코칭이 감에 의존합니다.", fix: "OT→PT 퍼널을 트레이너별로 → 약점이 숫자로" },
-  { icon: Users, t: "코칭이 잔소리가 된다", d: "근거 데이터 없이 지적하면 트레이너는 감시로 느낍니다. 결국 코칭이 안 먹힙니다.", fix: "실적·클로징률 데이터로 → 잔소리 대신 코칭" },
-  { icon: Bell, t: "재등록 시즌을 놓친다", d: "만료가 몰리는 걸 뒤늦게 알고, 회원이 이미 빠진 뒤에야 챙기게 됩니다.", fix: "만료 임박·이탈 위험을 앱이 먼저 알림" },
+  { icon: Wallet, t: "매출을 월말에야 안다", d: "정산하며 처음 압니다. 다음 달 예상은 늘 감입니다.", fix: "순매출·예상 매출을 실시간으로" },
+  { icon: Filter, t: "어디서 새는지 모른다", d: "OT는 많은데 등록이 안 되는 원인이 안 잡힙니다.", fix: "트레이너별 퍼널 → 약점이 숫자로" },
+  { icon: Bell, t: "재등록 시즌을 놓친다", d: "회원이 이미 빠진 뒤에야 알게 됩니다.", fix: "만료 임박·이탈 위험을 먼저 알림" },
 ];
+
 const ADMIN_ETC = [
-  { icon: Calculator, t: "급여 자동정산", d: "수업·실적을 실시간 집계해 자동 계산. 확인 후 확정만 누르면 끝." },
-  { icon: ShieldCheck, t: "트레이너 초대·권한", d: "초대 한 번으로 팀이 붙고, 매출은 원장만 · 트레이너는 담당 회원만." },
-  { icon: Megaphone, t: "필수 공지", d: "센터 공지를 앱이 트레이너에게 확실히 띄워 전달합니다." },
-  { icon: CalendarDays, t: "스케줄 · 노쇼", d: "요일×시간 밀도와 완료·노쇼를 한눈에. 빈 시간이 보입니다." },
+  { icon: Calculator, t: "급여 자동정산", d: "실시간 집계 후 확정만." },
+  { icon: ShieldCheck, t: "트레이너 초대·권한", d: "매출은 원장만, 트레이너는 담당 회원만." },
+  { icon: Megaphone, t: "필수 공지", d: "센터 공지를 확실히 전달합니다." },
+  { icon: CalendarDays, t: "스케줄 · 노쇼", d: "요일별 밀도와 노쇼를 한눈에." },
 ];
 
 // ⚠️ 가격은 lib/plans.js(실제 결제 금액)와 반드시 일치시킬 것 — 랜딩↔결제 불일치 금지.
@@ -103,14 +94,12 @@ const TIERS = [
 ];
 
 const FAQ = [
-  { q: "설치해야 하나요?", a: "아니요. 웹앱(PWA)이라 앱스토어 없이 브라우저로 바로 쓰고, 홈 화면에 추가하면 앱처럼 열립니다.", open: true },
-  { q: "어떤 기기에서 되나요?", a: "폰 현장 사용에 최적화됐고, 웹이라 태블릿·PC에서도 그대로 열립니다." },
-  { q: "AI가 대신 팔아주나요?", a: "아니요. AI는 정답을 주는 게 아니라 당신의 판단을 돕는 스파링 파트너입니다. 관찰은 트레이너가, 근거·방향 정리는 AI가 맡습니다." },
-  { q: "회원 정보는 안전한가요?", a: "계정별로 데이터가 격리되고(멀티테넌트), 회원 앱은 별도 인증으로 본인 것만 봅니다. 실제 AI는 서버에서만 키를 다뤄 노출되지 않습니다." },
-  { q: "회원은 앱을 어떻게 받나요?", a: "트레이너가 발급한 링크로 접속하면 됩니다(설치 불필요). 자기 성과·운동 기록을 봅니다. (Premium)" },
-  { q: "혼자(솔로) 하는데도 되나요?", a: "네. 관리자 없이 1인 트레이너 모드로 쓸 수 있고, 급여·실적도 본인 기준으로 자동계산됩니다." },
-  { q: "가격이 어떻게 되나요?", a: "Basic/Premium/맞춤 3단계, 7일 무료 체험. 구체 금액은 문의·체험 신청 시 안내드립니다(베타 확정 중)." },
-  { q: "의료·재활 목적인가요?", a: "아니요. 운동 지도·세일즈·회원관리 도구이며, 통증은 “불편 부위 고려·움직임 개선” 관점으로 다룹니다(치료·진단 아님)." },
+  { q: "설치해야 하나요?", a: "아니요. 브라우저로 바로 쓰고, 홈 화면에 추가하면 앱처럼 열립니다.", open: true },
+  { q: "어떤 기기에서 되나요?", a: "폰에 맞춰 만들었고, 태블릿·PC에서도 그대로 열립니다." },
+  { q: "AI가 대신 팔아주나요?", a: "아니요. 관찰은 트레이너가, 근거 정리는 AI가 맡습니다." },
+  { q: "회원 정보는 안전한가요?", a: "계정별로 데이터가 분리되고, 회원은 본인 것만 봅니다." },
+  { q: "혼자 하는데도 되나요?", a: "네. 1인 모드로 쓰고 급여·실적도 본인 기준으로 계산됩니다." },
+  { q: "의료·재활 목적인가요?", a: "아니요. 운동 지도·세일즈·회원관리 도구입니다." },
 ];
 
 /* ───────── 심볼 ───────── */
@@ -241,19 +230,14 @@ export default function LandingPage() {
                 지금 트레이너 생활이 너무 만족스럽다면,<br /><span className="kill">쓰실 필요 없습니다.</span>
               </h2>
               <p className="reveal mx-auto mt-[30px] max-w-[660px] text-[clamp(16px,1.9vw,21px)] leading-[1.7] tracking-[-0.015em] text-white/[0.88]">
-                매달 초기화되는 매출, 늘어나는 회원만큼 늘어나는 회원 관리, 누적되는 업무.<br />세일즈 교육, 재활 교육… 난 언제 듣지...
+                매달 초기화되는 매출, 쌓이는 회원 관리, 밀리는 업무.<br /><b className="font-extrabold text-white">그럼 잘 오셨습니다.</b>
               </p>
-              <p className="reveal mt-[22px] text-[clamp(20px,2.6vw,30px)] font-extrabold tracking-[-0.03em]">그럼 잘 오셨습니다.</p>
               <div className="reveal mt-[30px] flex flex-wrap justify-center gap-3">
                 <a href="/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f]">7일 무료 시작 <ArrowRight size={18} strokeWidth={2.4} /></a>
                 <Link href="/login" className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.28] px-7 py-[15px] text-[16px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-white/[0.08]">앱 열기</Link>
                 <InstallAppButton className="!bg-white/[0.12] !text-white hover:!bg-white/[0.2]" label="앱 설치" />
               </div>
 
-              <a href="#founder-story" onClick={onNav("founder-story")} className="scroll-cue mx-auto mt-[clamp(36px,6vw,64px)] inline-flex flex-col items-center gap-1.5 text-white/50 no-underline">
-                <span className="text-[11px] uppercase tracking-[0.1em]">계속</span>
-                <ChevronDown size={22} />
-              </a>
             </div>
 
             <div id="founder-story" className="snappage snap flex flex-col justify-center border-t border-white/10 text-center">
@@ -262,10 +246,10 @@ export default function LandingPage() {
                 <span className="builtline"><span className="built font-extrabold text-primary">답답해서 직접 개발했습니다.</span></span>
               </p>
               <p className="reveal mt-7 text-[clamp(15px,1.6vw,17px)] leading-[1.75] tracking-[-0.011em] text-white/[0.88]">
-                어플·노션·스프레드시트 다 써봤지만<br />현실은 똑같은 타이핑과 시간 소모.<br />그래서 직접 만들었습니다.
+                어플·노션·스프레드시트 다 써봤지만<br />타이핑은 그대로였습니다.
               </p>
               <p className="reveal mt-[18px] text-[clamp(15px,1.6vw,17px)] leading-[1.75] tracking-[-0.011em] text-white/[0.88]">
-                AI 활용부터 세일즈·자기계발·급여정산까지, 수업 외 모든 업무.<br /><b className="font-bold text-white">회원 스스로 셀프 관리하게 만드는 PT 시스템</b> 여기 싹 다 녹여냈습니다.
+                <b className="font-bold text-white">수업 외 모든 업무</b>를 여기 싹 다 녹여냈습니다.
               </p>
               <div className="reveal mt-[clamp(28px,4vh,48px)]">
                 <span className="mx-auto block w-fit"><Sym size={48} dark /></span>
@@ -283,7 +267,6 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1160px] px-6">
             <div className="snappage flex flex-col justify-center">
               <div className="reveal">
-                <span className="mb-[22px] inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1.5 text-[11.5px] font-extrabold uppercase tracking-[0.12em] text-primary-strong">트레이너를 위한</span>
                 <div className="text-[12.5px] font-bold uppercase tracking-[0.14em] text-primary-strong">왜 또 다른 앱이냐고요?</div>
                 <h2 className="mt-3.5 max-w-[820px] text-[clamp(28px,4.2vw,50px)] font-extrabold leading-[1.12] tracking-[-0.045em] text-balance">
                   다 써봤지만,<br /><span className="text-primary-strong">달라진 게 없었으니까.</span>
@@ -335,8 +318,8 @@ export default function LandingPage() {
                   <span className="text-primary-strong">오직 트레이너</span>가 해결하겠습니다.
                 </h2>
                 <p className="mt-5 text-[clamp(16px,1.9vw,21px)] leading-[1.6] tracking-[-0.011em] text-sub">
-                  더 이상 시간 쓰지 마세요. 그 시간을,<br />내가 트레이너가 된 이유&nbsp;
-                  <b className="mt-2.5 inline-block text-[clamp(24px,3.4vw,42px)] font-extrabold leading-[1.2] tracking-[-0.035em] text-ink">회원을 위한 본질에 투자하세요.</b>
+                  그 시간을,<br />
+                  <b className="mt-2.5 inline-block text-[clamp(24px,3.4vw,42px)] font-extrabold leading-[1.2] tracking-[-0.035em] text-ink">회원에게 쓰세요.</b>
                 </p>
               </div>
             </div>
@@ -350,15 +333,9 @@ export default function LandingPage() {
             <PainBlock
               kicker="왜 앱이 해야 하나"
               title={<>수업은 2시간, <span className="text-primary-strong">수업 밖 업무는 4시간.</span></>}
-              lead={<>트레이너의 하루는 수업으로 끝나지 않습니다. 일지·상담 준비·재등록 관리·정산이 뒤에 붙습니다. 이 업무들은 실력이 아니라 <b className="text-ink">시간</b>을 먹습니다.</>}
+              lead={<>일지·상담 준비·재등록·정산. 실력이 아니라 <b className="text-ink">시간</b>을 먹는 일들입니다.</>}
               cards={PAINS_1}
-            />
-            {/* 왜 앱이 해야 하나 — 2 (eyebrow 차별화: 반복 방지) */}
-            <PainBlock
-              kicker="게다가, 늘어날수록"
-              title={<>회원이 늘어도 <span className="text-primary-strong">부담은 그대로.</span></>}
-              cards={PAINS_2}
-              footer={<>수업 밖 업무를 앱에 넘기면, <span className="text-primary-strong">하루 2~3시간이 돌아옵니다.</span> 그 시간을 수업과 회원에게 쓰세요.</>}
+              footer={<>이 업무를 앱에 넘기면 <span className="text-primary-strong">하루 2~3시간이 돌아옵니다.</span></>}
             />
 
             {/* 폰 목업 필러 4 */}
@@ -394,7 +371,7 @@ export default function LandingPage() {
                 <h2 className="mt-[18px] max-w-[800px] text-[clamp(28px,4vw,46px)] font-extrabold leading-[1.14] tracking-[-0.045em] text-balance">
                   무엇을 잘하고 어떤 걸 놓치는지,<br /><span className="text-[#fca5a5]">숫자로 보여드립니다.</span>
                 </h2>
-                <p className="mt-4 max-w-[620px] text-[clamp(15px,1.6vw,18px)] leading-[1.6] tracking-[-0.011em] text-white/[0.88]">순매출·목표 달성률부터 다음달 예상 매출까지. 등록 퍼널에서 어디가 새는지 짚고, 오늘 챙길 것을 AI가 먼저 정리해 드립니다.</p>
+                <p className="mt-4 max-w-[620px] text-[clamp(15px,1.6vw,18px)] leading-[1.6] tracking-[-0.011em] text-white/[0.88]">순매출과 다음달 예상, 어디서 새는지까지 한 화면에서.</p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {["순매출 · 예상 매출", "등록 퍼널 · 임박 등록", "AI 운영 보고서"].map((x) => (
                     <span key={x} className="rounded-full bg-white/10 px-3.5 py-[7px] text-[13px] font-bold text-[#fca5a5]">{x}</span>
@@ -505,7 +482,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <p className="reveal mt-8 text-center text-[14px] leading-[1.7] tracking-[-0.008em] text-muted">얼리버드 한정가 · 부가세 별도 · 7일 무료 체험 후 자동결제 · 언제든 해지<br />센터에 트레이너 4인 이상이면 추가 좌석 문의</p>
+              <p className="reveal mt-8 text-center text-[14px] leading-[1.7] tracking-[-0.008em] text-muted">부가세 별도 · 7일 무료 후 자동결제 · 언제든 해지</p>
             </div>
           </div>
         </section>
