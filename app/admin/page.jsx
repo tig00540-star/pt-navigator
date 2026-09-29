@@ -627,7 +627,10 @@ export default function AdminDashboard() {
              매출 탭은 분석(구성·예측·추이)만 남긴다. */}
         {atab === "settle" && (
         <section className="mb-8">
+          {/* startDay는 비동기로 온다(기본 1 → 계정값 15 등). 패널의 기간(from/to)은 마운트 때
+              한 번 잡히므로, 늦게 도착하면 달력월에 머문다 → key로 다시 마운트해 기간을 잡는다. */}
           <SettlementPanel
+            key={startDay}
             contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
             startDay={startDay} onChangeStartDay={saveStartDay} onChanged={reloadIncomes} />
         </section>

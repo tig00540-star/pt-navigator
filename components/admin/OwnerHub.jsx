@@ -93,7 +93,7 @@ export default function OwnerHub({
         />
         <Tile
           icon={Wallet} title="매출·정산"
-          desc={`이달 ${manwon(rev.net)} · 정산·지출 장부도 여기`}
+          desc={`이달 ${manwon(rev.net)} · 정산과 지출도 여기`}
           tone="bg-primary-soft text-primary-strong"
           onClick={() => onGoTab("revenue")}
         />
