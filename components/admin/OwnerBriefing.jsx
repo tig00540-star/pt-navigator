@@ -7,19 +7,21 @@
 import { useMemo, useState, useEffect } from "react";
 import { RefreshCw, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
 import { ownerBriefing, ownerReportData } from "@/lib/memberStatus";
-import { won, personName } from "@/lib/format";
+import { won, wonApprox, personName } from "@/lib/format";
 import { supabase } from "@/lib/supabaseClient";
 import Card from "@/components/ui/Card";
 
 // kind별 카드 메타(아이콘·강조색·이동 라벨). 전부 정적 리터럴.
 const META = {
-  reregister: { icon: RefreshCw,     accent: "cyan", go: "리텐션 보기" },
-  closing:    { icon: Filter,        accent: "cyan", go: "전환 보기" },
-  churn:      { icon: TrendingDown,  accent: "rose", go: "리텐션 보기" },
+  reregister: { icon: RefreshCw,     accent: "cyan", go: "재등록 회원 보기" },
+  closing:    { icon: Filter,        accent: "cyan", go: "OT 회원 보기" },
+  churn:      { icon: TrendingDown,  accent: "rose", go: "이탈위험 회원 보기" },
   goal:       { icon: Target,        accent: "rose", go: "매출 보기" },
   pastdue:    { icon: CalendarClock, accent: "muted", go: "스케줄 보기" },
   trainer:    { icon: UserX,         accent: "rose", go: "트레이너 보기" },
 };
+// 타일 보조줄용 만원 축약 — 좁은 칸에 원 단위를 다 쓰면 줄이 터진다(OwnerHub와 같은 규칙).
+const manwon = (n) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString("ko-KR")}만원` : won(n));
 const accentText = (a) => (a === "cyan" ? "text-cyan-700" : a === "rose" ? "text-danger-text" : "text-muted");
 
 export default function OwnerBriefing({ members = [], otRows = [], contracts = [], logs = [], appts = [], goals = [], trainers = [], ym, onGoTab }) {
@@ -42,7 +44,9 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
   const memberName = (id) => personName(nameById.get(id)) || "회원";
 
   // ── 하루 캐시(localStorage) + AI 1회/일 제한 ──
-  const LS_KEY = "owner-report-v1";
+  // v2 — 보고서 블록 구성이 바뀌었다(어제/오늘 PT·OT 분해, 매출 신규/재등록, 존댓말 서술).
+  // 키를 올려 예전 모양 캐시를 버린다(안 올리면 오늘 하루 옛 화면이 그대로 복원된다).
+  const LS_KEY = "owner-report-v2";
   function loadCache() { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
   function saveCache(o) { try { localStorage.setItem(LS_KEY, JSON.stringify(o)); } catch { /* 프라이빗·용량 = 무시 */ } }
 
@@ -132,7 +136,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-extrabold tracking-[-0.02em] text-ink">오늘 챙길 것</h2>
-        <p className="mt-0.5 text-[12px] text-sub">지표에서 <b className="text-ink">돈과 급한 순서</b>로 3가지만 뽑았어요.</p>
+        <p className="mt-0.5 text-[12px] text-sub">매출은 과거 데이터 기반 추정 매출입니다.</p>
       </div>
 
       {top.length === 0 ? (
@@ -160,7 +164,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                     <p className="mt-0.5 text-[12px] text-sub">{c.detail}</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    {c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>≈ {won(c.amount)}</div>}
+                    {c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>≈ {wonApprox(c.amount)}</div>}
                     <div className="mt-0.5 inline-flex items-center text-[11px] text-muted">{m.go} <ChevronRight className="h-3 w-3" /></div>
                   </div>
                 </div>
@@ -184,13 +188,11 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
             {/* 머리글 + AI 총평 */}
             <div className="flex items-start justify-between gap-2 border-b border-line pb-2">
               <div>
-                <div className="text-[11px] font-bold tracking-label-ko text-muted">오늘의 운영 보고서</div>
-                <div className="text-[12px] text-sub">{dateLabel}</div>
+                <div className="text-[19px] font-extrabold leading-tight tracking-[-0.03em] text-ink">오늘의 운영 보고서</div>
+                <div className="mt-1 text-[12px] text-sub">{dateLabel}{generatedAt ? ` · ${genLabel(generatedAt)}` : ""}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {locked ? (
-                  <span className="text-[11px] text-muted">{genLabel(generatedAt)} · 내일 새 보고서</span>
-                ) : (
+                {!locked && (
                   <button type="button" onClick={genReport} className="text-[11px] font-semibold text-muted underline underline-offset-2">다시 생성</button>
                 )}
                 <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted"><Printer className="h-3.5 w-3.5" /> 인쇄</button>
@@ -201,7 +203,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
 
             {/* 💰 매출 파이프라인 (결정적) */}
             <div>
-              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold tracking-label-ko text-muted"><Wallet className="h-3.5 w-3.5" /> 오늘의 매출 파이프라인</div>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold tracking-label-ko text-muted"><Wallet className="h-3.5 w-3.5" /> 오늘의 예상 PT매출</div>
               {report.pipeline.byTrainer.length === 0 ? (
                 <p className="text-[12px] text-muted">이번 주 신규·재등록 임박 후보가 없어요.</p>
               ) : (
@@ -210,35 +212,51 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                     <div key={r.trainerId} className="rounded-lg border border-line px-3 py-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[13px] font-bold text-ink">{nameOf(r.trainerId)}</span>
-                        <span className="font-mono text-[13px] font-extrabold text-cyan-700">≈ {won(r.subtotal)}</span>
+                        <span className="font-mono text-[13px] font-extrabold text-cyan-700">≈ {wonApprox(r.subtotal)}</span>
                       </div>
                       <div className="mt-0.5 text-[11px] text-sub">신규 {r.newCount} · 재등록 {r.reCount}</div>
                       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted">
                         {report.pipeline.reCandidates.filter((c) => c.trainerId === r.trainerId).map((c) => (
-                          <span key={"r" + c.user_id}>{memberName(c.user_id)}<span className="text-danger-text">(재등록)</span> {typeof c.amount === "number" ? `≈${won(c.amount)}` : ""}</span>
+                          <span key={"r" + c.user_id}>{memberName(c.user_id)}<span className="text-danger-text">(재등록)</span> {typeof c.amount === "number" ? `≈${wonApprox(c.amount)}` : ""}</span>
                         ))}
                         {report.pipeline.newCandidates.filter((c) => c.trainerId === r.trainerId).map((c) => (
-                          <span key={"n" + c.user_id}>{memberName(c.user_id)}<span className="text-cyan-700">(신규)</span> {typeof c.amount === "number" ? `≈${won(c.amount)}` : ""}</span>
+                          <span key={"n" + c.user_id}>{memberName(c.user_id)}<span className="text-cyan-700">(신규)</span> {typeof c.amount === "number" ? `≈${wonApprox(c.amount)}` : ""}</span>
                         ))}
                       </div>
                     </div>
                   ))}
                   <div className="flex items-center justify-between gap-2 pt-1">
                     <span className="text-[12px] font-bold text-ink">총 예상 매출</span>
-                    <span className="font-mono text-sm font-extrabold text-cyan-700">≈ {won(report.pipeline.grandTotal)}</span>
+                    <span className="font-mono text-sm font-extrabold text-cyan-700">≈ {wonApprox(report.pipeline.grandTotal)}</span>
                   </div>
-                  <p className="text-[10px] text-muted">성사 시 합계 · 재등록=회원 현재 계약 기준 · 신규={report.pipeline.newEstimable ? "센터 평균 추정" : "이력 부족(산정 불가)"}.</p>
                 </div>
               )}
             </div>
 
             {/* 📊 어제·이번달 (결정적) */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {/* 어제 캐시(구 보고서)에는 pt/ot/total이 없다 — sessions로 떨어뜨려 빈칸을 막는다. */}
               {[
-                { label: "어제 수업", value: `${report.yesterday.sessions}건`, sub: report.yesterday.noshows ? `노쇼 ${report.yesterday.noshows}` : "" },
-                { label: "오늘 예약", value: `${report.today.bookings}건`, sub: "" },
-                { label: "이달 매출", value: won(report.month.revenueNet), sub: report.month.progressPct != null ? `목표 ${report.month.progressPct}%` : "목표 미설정" },
-                { label: "이달 신규등록", value: `${report.month.newRegs}건`, sub: report.month.reRegs ? `재등록 ${report.month.reRegs}` : "" },
+                {
+                  label: "어제 총 수업",
+                  value: `${report.yesterday.total ?? report.yesterday.sessions}건`,
+                  sub: `PT ${report.yesterday.pt ?? report.yesterday.sessions} · OT ${report.yesterday.ot ?? 0}${report.yesterday.noshows ? ` · 노쇼 ${report.yesterday.noshows}` : ""}`,
+                },
+                {
+                  label: "오늘 예정 수업",
+                  value: `${report.today.bookings}건`,
+                  sub: `PT ${report.today.pt ?? report.today.bookings} · OT ${report.today.ot ?? 0}`,
+                },
+                {
+                  label: "이달 매출",
+                  value: won(report.month.revenueNet),
+                  sub: `신규 ${manwon(report.month.newRev ?? 0)} · 재등록 ${manwon(report.month.reRev ?? 0)}`,
+                },
+                {
+                  label: "이달 등록",
+                  value: `${(report.month.newRegs ?? 0) + (report.month.reRegs ?? 0)}건`,
+                  sub: `신규 ${report.month.newRegs ?? 0} · 재등록 ${report.month.reRegs ?? 0}`,
+                },
               ].map((t) => (
                 <div key={t.label} className="rounded-lg bg-elevate px-2.5 py-2">
                   <div className="text-[10px] tracking-label-ko text-muted">{t.label}</div>
@@ -289,14 +307,9 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
               )}
             </div>
 
-            <p className="text-[10px] leading-relaxed text-muted">
-              {generatedAt ? `${genLabel(generatedAt).replace(" 생성", "")} 기준 스냅샷 · ` : ""}숫자·회원·금액은 실측 파생, 총평·코칭만 AI예요. 금액은 추정입니다.
-            </p>
           </div>
         </Card>
       )}
-
-      <p className="text-[10px] leading-relaxed text-muted">돈·긴급도 규칙으로 자동 정렬한 요약이에요. 금액은 과거 평균 기반 추정입니다.</p>
     </div>
   );
 }
