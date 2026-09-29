@@ -104,8 +104,8 @@ export default function OwnerHub({
           onClick={() => onGoTab("perf")}
         />
         <Tile
-          icon={Repeat2} title="회원 흐름"
-          desc={`전환 ${pct(convRate)} · 재등록 ${pct(rereg.rate)}`}
+          icon={Repeat2} title="등록·이탈"
+          desc={`등록 ${pct(convRate)} · 재등록 ${pct(rereg.rate)}`}
           tone="bg-pt-soft text-pt-text"
           onClick={() => onGoTab("funnel")}
         />

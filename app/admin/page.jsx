@@ -29,8 +29,7 @@ import OwnerOverview from "@/components/admin/OwnerOverview";
 import AdminEmptyOnboarding from "@/components/admin/AdminEmptyOnboarding";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
 import RevenuePipeline from "@/components/admin/RevenuePipeline";
-import ConversionFunnel from "@/components/admin/ConversionFunnel";
-import RetentionConsole from "@/components/admin/RetentionConsole";
+import MemberFlow from "@/components/admin/MemberFlow";
 import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
 import CenterMonthSummary from "@/components/admin/CenterMonthSummary";
 import TrainerQualityReport from "@/components/admin/TrainerQualityReport";
@@ -50,8 +49,7 @@ const ATABS = [
   { id: "revenue",   label: "매출" },
   { id: "settle",       label: "정산 보기" },   // 기간 정산(PT+FC+기타−지출=순이익)
   { id: "settle_entry", label: "장부 적기" },   // FC·기타 매출·지출 입력(폼 1개) + 기간 내역
-  { id: "funnel",    label: "OT회원 현황" },
-  { id: "retention", label: "PT회원 현황" },
+  { id: "flow",      label: "등록·이탈" },   // 구 OT회원 현황 + PT회원 현황(합침 · MemberFlow)
   { id: "schedule",  label: "스케줄" },
   { id: "payroll",   label: "급여" },
   { id: "ops",       label: "운영" },
@@ -68,10 +66,12 @@ const AGROUPS = [
   // 숨으면 매달 찾아 들어가야 한다. 원장이 반복하는 실무라 상단에 제 집을 준다.
   { id: "settle",   label: "정산",        tabs: ["settle", "settle_entry"] },
   { id: "team",     label: "트레이너",     tabs: ["perf", "payroll"] },
-  { id: "members",  label: "회원 흐름",    tabs: ["funnel", "retention"] },
+  { id: "members",  label: "등록·이탈",    tabs: ["flow"] },
   { id: "ops",      label: "운영",        tabs: ["schedule", "ops"] },
 ];
-const ATAB_LABEL = { settle: "정산 보기", settle_entry: "장부 적기", perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
+const ATAB_LABEL = { settle: "정산 보기", settle_entry: "장부 적기", perf: "성과·리더보드", payroll: "급여 설정", schedule: "스케줄", ops: "센터 운영" };
+// 옛 탭 id 흡수 — ownerBriefing 카드가 tab:"funnel"·"retention"을 들고 온다(lib은 안 건드린다).
+const normalizeTab = (tab) => (tab === "funnel" || tab === "retention" ? "flow" : tab);
 const groupOf = (tab) => AGROUPS.find((g) => g.tabs.includes(tab))?.id ?? (tab === "overview" ? "hub" : "hub");
 
 
@@ -125,6 +125,8 @@ export default function AdminDashboard() {
   const [incomes, setIncomes] = useState([]);   // income(FC·기타 매출 수기 · 정산 전용 · 트레이너 지표 미반영)
   const [startDay, setStartDay] = useState(1);  // account.settlement_start_day — 센터별 정산 주기(1일/15일 등)
   const [atab, setAtab] = useState("hub"); // admin 섹션(기본=허브 홈 · 9탭을 5묶음으로 고른다)
+  // 탭 이동 공통 — 옛 id(funnel·retention)를 새 화면(flow)으로 흘린다.
+  const goTab = (id) => setAtab(normalizeTab(id));
   const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
   const [showMemberCreate, setShowMemberCreate] = useState(false); // 운영 탭 회원 등록·배정 모달
   const [showReassign, setShowReassign] = useState(false); // 운영 탭 회원 재배정(인계) 모달
@@ -383,7 +385,7 @@ export default function AdminDashboard() {
           <OwnerHub
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
             appts={appts} goals={goals} trainers={trainers} ym={ym}
-            centerName={centerName} onGoTab={(id) => setAtab(id)} />
+            centerName={centerName} onGoTab={goTab} />
         </section>
         )}
 
@@ -393,7 +395,7 @@ export default function AdminDashboard() {
           <OwnerOverview
             members={rows} contracts={contracts} logs={logs}
             trainers={trainers} appts={appts} expenses={expenses} ym={ym}
-            onGoTab={(id) => setAtab(id)} />
+            onGoTab={goTab} />
         </section>
         )}
 
@@ -403,7 +405,7 @@ export default function AdminDashboard() {
           <OwnerBriefing
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
             appts={appts} goals={goals} trainers={trainers} ym={ym}
-            onGoTab={(id) => setAtab(id)} />
+            onGoTab={goTab} />
         </section>
         )}
 
@@ -634,17 +636,12 @@ export default function AdminDashboard() {
         </section>
         )}
 
-        {/* ===== OT→PT 전환 퍼널 (전환 탭 · #2) ===== */}
-        {atab === "funnel" && (
+        {/* ===== 등록·이탈 (구 OT 전환 + PT 유지 · MemberFlow) ===== */}
+        {atab === "flow" && (
         <section className="mb-8">
-          <ConversionFunnel members={rows} otRows={otRows} trainers={trainers} />
-        </section>
-        )}
-
-        {/* ===== 재등록·이탈 관제 (리텐션 탭 · #4) ===== */}
-        {atab === "retention" && (
-        <section className="mb-8">
-          <RetentionConsole members={rows} contracts={contracts} logs={logs} trainers={trainers} ym={ym} />
+          <MemberFlow
+            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            trainers={trainers} ym={ym} onGoTab={goTab} />
         </section>
         )}
 
