@@ -6,7 +6,7 @@
    ========================================================================= */
 import { useMemo, useState, useEffect } from "react";
 import { RefreshCw, CalendarCheck, ChevronDown, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
-import { ownerBriefing, ownerReportData } from "@/lib/memberStatus";
+import { ownerBriefing, ownerReportData, churnRiskMembers, expiringMembers } from "@/lib/memberStatus";
 import { won, wonApprox, personName } from "@/lib/format";
 import { supabase } from "@/lib/supabaseClient";
 import Card from "@/components/ui/Card";
@@ -17,10 +17,10 @@ import Card from "@/components/ui/Card";
 //   · 이탈위험 금액은 다른 카드와 성격이 달랐다(앞으로 들어올 돈 vs 이미 받은 미소진 수업료)
 //     → 나란히 두면 더 헷갈려서 화면에서 뺀다. 랭킹·AI 입력에는 그대로 쓴다.
 const META = {
-  otToday:    { icon: CalendarCheck, accent: "cyan", go: "누가 오는지 보기" }, // 탭=제자리 펼침(이동 아님)
-  reregister: { icon: RefreshCw,     accent: "cyan", go: "재등록 회원 보기", hideDetail: true },
+  otToday:    { icon: CalendarCheck, accent: "cyan", go: "누가 오는지 보기", expand: true }, // 탭=제자리 펼침(이동 아님)
+  reregister: { icon: RefreshCw,     accent: "cyan", go: "누구인지 보기", hideDetail: true, expand: true },
   closing:    { icon: Filter,        accent: "cyan", go: "OT 회원 보기" },
-  churn:      { icon: TrendingDown,  accent: "rose", go: "이탈위험 회원 보기", hideDetail: true, hideAmount: true },
+  churn:      { icon: TrendingDown,  accent: "rose", go: "누구인지 보기", hideDetail: true, hideAmount: true, expand: true },
   goal:       { icon: Target,        accent: "rose", go: "매출 보기" },
   pastdue:    { icon: CalendarClock, accent: "muted", go: "스케줄 보기" },
   trainer:    { icon: UserX,         accent: "rose", go: "트레이너 보기" },
@@ -63,7 +63,23 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     return out.sort((x, y) => x.sort - y.sort);
   }, [appts, visible, nowISO]);
   const otTodayCount = otTodayList.length;
-  const [otOpen, setOtOpen] = useState(false); // 카드 제자리 펼침(탭 이동 대신)
+  // 이탈위험·만료임박 명단 — ownerBriefing이 개수를 셀 때 쓰는 함수 그대로.
+  // 다른 함수로 뽑으면 "3명"이라 써놓고 명단은 4줄이 되는 사고가 난다.
+  const churnList = useMemo(
+    () => churnRiskMembers(visible, contracts, logs, { nowISO })
+      .slice(0, 8)
+      .map((c) => ({ id: c.user_id, user_id: c.user_id, trainerId: c.trainer_id ?? "unknown", rem: c.rem?.total ?? null, gap: c.gap ?? null })),
+    [visible, contracts, logs, nowISO]
+  );
+  const expiringList = useMemo(
+    () => expiringMembers(visible, contracts, logs, { nowISO })
+      .slice(0, 8)
+      .map((e) => ({ id: e.user_id, user_id: e.user_id, trainerId: e.trainer_id ?? "unknown", rem: e.rem?.total ?? null, gap: null })),
+    [visible, contracts, logs, nowISO]
+  );
+  const listFor = (kind) => (kind === "otToday" ? otTodayList : kind === "churn" ? churnList : kind === "reregister" ? expiringList : []);
+
+  const [openKind, setOpenKind] = useState(null); // 제자리 펼침(한 번에 하나)
 
   // 3번은 항상 'OT 예정' 자리다 — 0건이면 감추지 않고 '없음'으로 둔다.
   // 감추면 어제는 3장이던 게 오늘 2장이 되어 "3번 카드 어디 갔지"가 된다.
@@ -210,7 +226,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
             const title = c.kind === "trainer" ? `${nameOf(c.trainer_id)} — 관리 필요` : c.title;
             return (
               <Card key={c.kind} interactive
-                onClick={() => (c.kind === "otToday" ? setOtOpen((v) => !v) : onGoTab?.(c.tab))}>
+                onClick={() => (m.expand ? setOpenKind((k) => (k === c.kind ? null : c.kind)) : onGoTab?.(c.tab))}>
                 <div className="flex items-start gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevate text-sm font-extrabold text-muted">{i + 1}</div>
                   <div className="min-w-0 flex-1">
@@ -218,26 +234,39 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                       <Icon className={`h-4 w-4 ${c.dim ? "text-muted" : accentText(m.accent)}`} />
                       <span className={`text-sm font-bold ${c.dim ? "text-muted" : "text-ink"}`}>{title}</span>
                     </div>
-                    {/* 오늘 누가 오는지 — 여기서 끝나야 한다. 분석 탭으로 보내면 오늘 예약이 안 나온다. */}
-                    {c.kind === "otToday" && otOpen && otTodayList.length > 0 && (
-                      <ul className="mt-2 space-y-1 border-t border-line pt-2">
-                        {otTodayList.map((o) => (
-                          <li key={o.id} className="flex items-center gap-2 text-[12px]">
-                            <span className="font-mono font-bold text-ink">{o.at}</span>
-                            <span className="font-medium text-sub">{memberName(o.user_id)}</span>
-                            <span className="text-[11px] text-muted">{nameOf(o.trainerId)}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    {/* 누가 있는지는 여기서 끝나야 한다 — 분석 탭으로 보내면 명단이 안 나온다.
+                        전체·조치는 목록 끝의 링크로(그때만 탭 이동). */}
+                    {m.expand && openKind === c.kind && listFor(c.kind).length > 0 && (
+                      <div className="mt-2 border-t border-line pt-2">
+                        <ul className="space-y-1">
+                          {listFor(c.kind).map((o) => (
+                            <li key={o.id} className="flex items-center gap-2 text-[12px]">
+                              {o.at && <span className="font-mono font-bold text-ink">{o.at}</span>}
+                              <span className="font-medium text-sub">{memberName(o.user_id)}</span>
+                              <span className="min-w-0 truncate text-[11px] text-muted">{nameOf(o.trainerId)}</span>
+                              {o.rem != null && <span className="ml-auto shrink-0 font-mono text-[11px] text-muted">잔여 {o.rem}회</span>}
+                              {o.gap != null && <span className="shrink-0 font-mono text-[11px] text-danger-text">{o.gap}일 무수업</span>}
+                            </li>
+                          ))}
+                        </ul>
+                        {c.kind !== "otToday" && (
+                          <button type="button"
+                            onClick={(e) => { e.stopPropagation(); onGoTab?.(c.tab); }}
+                            className="mt-2 inline-flex items-center text-[11px] font-semibold text-muted underline underline-offset-2">
+                            PT회원 현황에서 전체 보기 <ChevronRight className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
                     )}
                     {!m.hideDetail && c.detail && <p className="mt-0.5 text-[12px] text-sub">{c.detail}</p>}
                   </div>
                   <div className="shrink-0 text-right">
                     {!m.hideAmount && c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>{wonApprox(c.amount)}</div>}
-                    {c.kind === "otToday" ? (
-                      c.dim ? null : (
+                    {m.expand ? (
+                      c.dim || listFor(c.kind).length === 0 ? null : (
                         <div className="mt-0.5 inline-flex items-center text-[11px] text-muted">
-                          {otOpen ? "접기" : m.go} <ChevronDown className={`h-3 w-3 transition ${otOpen ? "rotate-180" : ""}`} />
+                          {openKind === c.kind ? "접기" : m.go}
+                          <ChevronDown className={`h-3 w-3 transition ${openKind === c.kind ? "rotate-180" : ""}`} />
                         </div>
                       )
                     ) : (
