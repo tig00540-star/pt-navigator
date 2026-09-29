@@ -5,7 +5,7 @@
    회원신호=visible · 노쇼 트레이너 귀속=전체 회원맵. 색: 기회 cyan · 위험 rose · 위생 muted.
    ========================================================================= */
 import { useMemo, useState, useEffect } from "react";
-import { RefreshCw, CalendarCheck, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
+import { RefreshCw, CalendarCheck, ChevronDown, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
 import { ownerBriefing, ownerReportData } from "@/lib/memberStatus";
 import { won, wonApprox, personName } from "@/lib/format";
 import { supabase } from "@/lib/supabaseClient";
@@ -17,7 +17,7 @@ import Card from "@/components/ui/Card";
 //   · 이탈위험 금액은 다른 카드와 성격이 달랐다(앞으로 들어올 돈 vs 이미 받은 미소진 수업료)
 //     → 나란히 두면 더 헷갈려서 화면에서 뺀다. 랭킹·AI 입력에는 그대로 쓴다.
 const META = {
-  otToday:    { icon: CalendarCheck, accent: "cyan", go: "OT 회원 보기" },
+  otToday:    { icon: CalendarCheck, accent: "cyan", go: "누가 오는지 보기" }, // 탭=제자리 펼침(이동 아님)
   reregister: { icon: RefreshCw,     accent: "cyan", go: "재등록 회원 보기", hideDetail: true },
   closing:    { icon: Filter,        accent: "cyan", go: "OT 회원 보기" },
   churn:      { icon: TrendingDown,  accent: "rose", go: "이탈위험 회원 보기", hideDetail: true, hideAmount: true },
@@ -44,16 +44,26 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
   // 오늘 신규 OT 예정 — 브리핑 3번 자리.
   // ⚠️ ownerBriefing(금액 랭킹)에 넣지 않는다 — 대표 홈 '지킬 수 있는 매출' 합계와
   //    AI 보고서 입력(top3)이 금액 없는 항목으로 오염된다. 여기서만 끼워 넣는다.
-  const otTodayCount = useMemo(() => {
+  const otTodayList = useMemo(() => {
     const kstDay = (iso) => { const t = Date.parse(iso); return Number.isNaN(t) ? null : new Date(t + 9 * 3600000).toISOString().slice(0, 10); };
     const day = new Date(new Date(nowISO).getTime() + 9 * 3600000).toISOString().slice(0, 10);
     const otIds = new Set(visible.filter((m) => m.status === "ot_active").map((m) => m.id));
-    let n = 0;
+    const out = [];
     for (const a of appts || []) {
-      if (a && a.status === "booked" && otIds.has(a.user_id) && kstDay(a.start_at) === day) n++;
+      if (!(a && a.status === "booked" && otIds.has(a.user_id) && kstDay(a.start_at) === day)) continue;
+      const kst = new Date(Date.parse(a.start_at) + 9 * 3600000);
+      out.push({
+        id: a.id ?? `${a.user_id}-${a.start_at}`,
+        at: `${String(kst.getUTCHours()).padStart(2, "0")}:${String(kst.getUTCMinutes()).padStart(2, "0")}`,
+        user_id: a.user_id,
+        trainerId: a.trainer_id ?? "unknown",
+        sort: Date.parse(a.start_at),
+      });
     }
-    return n;
+    return out.sort((x, y) => x.sort - y.sort);
   }, [appts, visible, nowISO]);
+  const otTodayCount = otTodayList.length;
+  const [otOpen, setOtOpen] = useState(false); // 카드 제자리 펼침(탭 이동 대신)
 
   // 3번은 항상 'OT 예정' 자리다 — 0건이면 감추지 않고 '없음'으로 둔다.
   // 감추면 어제는 3장이던 게 오늘 2장이 되어 "3번 카드 어디 갔지"가 된다.
@@ -199,7 +209,8 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
             const Icon = m.icon;
             const title = c.kind === "trainer" ? `${nameOf(c.trainer_id)} — 관리 필요` : c.title;
             return (
-              <Card key={c.kind} interactive onClick={() => onGoTab?.(c.tab)}>
+              <Card key={c.kind} interactive
+                onClick={() => (c.kind === "otToday" ? setOtOpen((v) => !v) : onGoTab?.(c.tab))}>
                 <div className="flex items-start gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevate text-sm font-extrabold text-muted">{i + 1}</div>
                   <div className="min-w-0 flex-1">
@@ -207,11 +218,31 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                       <Icon className={`h-4 w-4 ${c.dim ? "text-muted" : accentText(m.accent)}`} />
                       <span className={`text-sm font-bold ${c.dim ? "text-muted" : "text-ink"}`}>{title}</span>
                     </div>
+                    {/* 오늘 누가 오는지 — 여기서 끝나야 한다. 분석 탭으로 보내면 오늘 예약이 안 나온다. */}
+                    {c.kind === "otToday" && otOpen && otTodayList.length > 0 && (
+                      <ul className="mt-2 space-y-1 border-t border-line pt-2">
+                        {otTodayList.map((o) => (
+                          <li key={o.id} className="flex items-center gap-2 text-[12px]">
+                            <span className="font-mono font-bold text-ink">{o.at}</span>
+                            <span className="font-medium text-sub">{memberName(o.user_id)}</span>
+                            <span className="text-[11px] text-muted">{nameOf(o.trainerId)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {!m.hideDetail && c.detail && <p className="mt-0.5 text-[12px] text-sub">{c.detail}</p>}
                   </div>
                   <div className="shrink-0 text-right">
                     {!m.hideAmount && c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>{wonApprox(c.amount)}</div>}
-                    <div className="mt-0.5 inline-flex items-center text-[11px] text-muted">{m.go} <ChevronRight className="h-3 w-3" /></div>
+                    {c.kind === "otToday" ? (
+                      c.dim ? null : (
+                        <div className="mt-0.5 inline-flex items-center text-[11px] text-muted">
+                          {otOpen ? "접기" : m.go} <ChevronDown className={`h-3 w-3 transition ${otOpen ? "rotate-180" : ""}`} />
+                        </div>
+                      )
+                    ) : (
+                      <div className="mt-0.5 inline-flex items-center text-[11px] text-muted">{m.go} <ChevronRight className="h-3 w-3" /></div>
+                    )}
                   </div>
                 </div>
               </Card>
