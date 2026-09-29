@@ -24,6 +24,7 @@ import MemberReassign from "@/components/admin/MemberReassign";
 import Button from "@/components/ui/Button";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerHub from "@/components/admin/OwnerHub";
+import SettlementPanel from "@/components/admin/SettlementPanel";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import OwnerOverview from "@/components/admin/OwnerOverview";
 import ExpenseManager from "@/components/admin/ExpenseManager";
@@ -119,6 +120,8 @@ export default function AdminDashboard() {
   const [goals, setGoals] = useState([]);      // trainer_goal(목표매출 · 매출 탭 게이지 · 비차단 fetch)
   const [appts, setAppts] = useState([]);      // appointment(최근 90일 · 스케줄 탭 · 비차단 fetch)
   const [expenses, setExpenses] = useState([]); // expense(이번달 · 지출/순이익 · 비차단 fetch)
+  const [incomes, setIncomes] = useState([]);   // income(FC·기타 매출 수기 · 정산 전용 · 트레이너 지표 미반영)
+  const [startDay, setStartDay] = useState(1);  // account.settlement_start_day — 센터별 정산 주기(1일/15일 등)
   const [atab, setAtab] = useState("hub"); // admin 섹션(기본=허브 홈 · 9탭을 5묶음으로 고른다)
   const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
   const [showMemberCreate, setShowMemberCreate] = useState(false); // 운영 탭 회원 등록·배정 모달
@@ -146,8 +149,10 @@ export default function AdminDashboard() {
         if (myRole !== "owner") return; // 비owner는 데이터 조회 스킵
         // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
         const apptCutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString(); // 스케줄 분석 최근 90일 창
-        const exStart = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 7) + "-01"; // 이번달 지출(KST)
-        const [u, o, c, l, tr, ps, pr, tg, ap, ex] = await Promise.all([
+        // ⚠️ 정산 시작일이 15일이면 기간이 전달에 걸친다 → 지난달 1일부터 가져온다(월초만 가져오면 앞이 빈다).
+        const exKst = new Date(Date.now() + 9 * 3600 * 1000);
+        const exStart = new Date(exKst.getFullYear(), exKst.getMonth() - 1, 1).toISOString().slice(0, 10); // 이번달 지출(KST)
+        const [u, o, c, l, tr, ps, pr, tg, ap, ex, inc, acc] = await Promise.all([
           supabase.from("user_table").select("*"),
           supabase.from("ot_log").select("*"),
           // ⚠️ session_log·daily_workout_log는 센터 전체를 부른다 → 1000행 잘림 위험(P0-6).
@@ -161,8 +166,11 @@ export default function AdminDashboard() {
           supabase.from("trainer_goal").select("*"),   // 매출 탭 게이지용 목표. 원장 RLS가 계정 전체 SELECT 허용.
           // 스케줄 분석: 최근 90일 예약(canceled 포함=취소율). 창은 좁지만 다트레이너면 1000행 넘을 수 있어 페이지네이션.
           fetchAllRows(() => supabase.from("appointment").select("*").gte("start_at", apptCutoff)),
-          // 지출: 비차단 · 테이블 없거나 실패해도 []로 폴백(지출/순이익만 빈값). 이번달만.
+          // 지출: 비차단 · 테이블 없거나 실패해도 []로 폴백(지출/순이익만 빈값).
           supabase.from("expense").select("*").gte("spent_on", exStart),
+          // FC·기타 매출(수기) + 정산 시작일: 비차단 · 마이그레이션 전이면 []/1로 폴백(정산 카드만 빈값).
+          supabase.from("income").select("*").gte("earned_on", exStart),
+          supabase.from("account").select("settlement_start_day").maybeSingle(),
         ]);
         const firstErr = u.error || o.error || c.error || l.error;
         if (firstErr) {
@@ -179,6 +187,8 @@ export default function AdminDashboard() {
         setGoals(tg.data || []);   // 비차단 — trainer_goal 없거나 실패해도 []로 폴백(게이지만 "미설정")
         setAppts(ap.data || []);   // 비차단 — appointment 없거나 실패해도 []로 폴백(스케줄 탭만 빈상태)
         setExpenses(ex.data || []); // 비차단 — expense 테이블 없거나 실패해도 []로 폴백(지출/순이익만 빈값)
+        setIncomes(inc.data || []);  // 비차단 — income 테이블 없으면 []로 폴백(FC·기타 매출만 빈값)
+        setStartDay(acc.data?.settlement_start_day ?? 1); // 컬럼 없으면 1(달력 월)
       } catch {
         setDbNote("불러오기 실패 — 새로고침해 주세요.");
         setRole((r) => r ?? "denied"); // role 고착 방지(에러=잠금, 안전측)
@@ -214,9 +224,34 @@ export default function AdminDashboard() {
   // 지출 입력/삭제 후 재조회(이번달 · 원본 로더와 동일).
   const reloadExpenses = async () => {
     if (!supabase) return;
-    const exStart = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 7) + "-01";
+    // ⚠️ 정산 시작일이 15일이면 기간이 전달에 걸친다 → 지난달 1일부터 가져온다(월초만 가져오면 앞부분이 빈다).
+    const kst = new Date(Date.now() + 9 * 3600 * 1000);
+    const exStart = new Date(kst.getFullYear(), kst.getMonth() - 1, 1).toISOString().slice(0, 10);
     const { data } = await supabase.from("expense").select("*").gte("spent_on", exStart);
     setExpenses(data || []);
+  };
+
+  // FC·기타 매출(수기) — 지출과 같은 창으로 가져온다. 실패해도 비차단(그 탭만 빈 상태).
+  const reloadIncomes = async () => {
+    if (!supabase) return;
+    const kst = new Date(Date.now() + 9 * 3600 * 1000);
+    const start = new Date(kst.getFullYear(), kst.getMonth() - 1, 1).toISOString().slice(0, 10);
+    const { data } = await supabase.from("income").select("*").gte("earned_on", start);
+    setIncomes(data || []);
+  };
+
+  // 정산 시작일 저장 — account는 select 정책만 있어 직접 update가 막힌다(RLS).
+  // update 정책을 열면 트레이너가 subscription_status·billing_key까지 고칠 수 있으므로,
+  // '이 컬럼만·원장만' 고치는 security definer 함수로 좁혀서 호출한다.
+  const saveStartDay = async (d) => {
+    const prev = startDay;
+    setStartDay(d); // 낙관적 반영 — 실패하면 아래에서 되돌린다
+    if (!supabase) return;
+    const { error } = await supabase.rpc("set_settlement_start_day", { d });
+    if (error) {
+      setStartDay(prev);
+      setDbNote("정산 시작일 저장 실패 — 마이그레이션(2026-09-29-income.sql) 실행 여부를 확인하세요.");
+    }
   };
 
   // ④ 실데이터 파생 — 기준월(KST 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
@@ -594,6 +629,14 @@ export default function AdminDashboard() {
         )}
 
         {/* ===== 매출 파이프라인·예측 (매출 탭 · #3) ===== */}
+        {atab === "revenue" && (
+        <section className="mb-8">
+          <SettlementPanel
+            contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
+            startDay={startDay} onChangeStartDay={saveStartDay} onChanged={reloadIncomes} />
+        </section>
+        )}
+
         {atab === "revenue" && (
         <section className="mb-8">
           <RevenuePipeline members={rows} contracts={contracts} logs={logs} otRows={otRows} trainers={trainers} goals={goals} ym={ym} />
