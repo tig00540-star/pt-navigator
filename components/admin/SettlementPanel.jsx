@@ -201,7 +201,7 @@ function ViewPane({
         {onChangeStartDay && (
           <div className="mt-4 border-t border-line pt-3">
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-sub">
-            <span className="font-semibold">정산 기간</span>
+            <span className="font-semibold">정산 기준일 설정</span>
             <select
               value={startDay}
               onChange={(e) => onChangeStartDay(Number(e.target.value))}
