@@ -22,6 +22,10 @@ const META = {
 };
 // 타일 보조줄용 만원 축약 — 좁은 칸에 원 단위를 다 쓰면 줄이 터진다(OwnerHub와 같은 규칙).
 const manwon = (n) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString("ko-KR")}만원` : won(n));
+// 이 페이지 세션에서 자동 생성을 시도한 날(KST ymd). 탭을 오갈 때마다 컴포넌트가 새로 마운트되는데,
+// 생성이 실패하면 캐시가 안 남아 왕복할 때마다 AI를 다시 부르게 된다. 하루 한 번만 시도한다.
+let autoRunDay = null;
+
 const accentText = (a) => (a === "cyan" ? "text-cyan-700" : a === "rose" ? "text-danger-text" : "text-muted");
 
 export default function OwnerBriefing({ members = [], otRows = [], contracts = [], logs = [], appts = [], goals = [], trainers = [], ym, onGoTab }) {
@@ -62,22 +66,30 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     return `${h < 12 ? "오전" : "오후"} ${h12}시 ${String(m).padStart(2, "0")}분 생성`;
   }
 
-  // 마운트 1회: 오늘(KST) 캐시가 있으면 보고서 복원(버튼 없이 종일 유지 · AI 호출 0). nowISO는 마운트 고정이라 stable.
+  // 마운트 1회: 오늘(KST) 캐시가 있으면 복원(AI 호출 0), 없으면 그 자리에서 생성한다.
+  // ★ 대표가 버튼을 누르게 하지 않는다 — 열었을 때 이미 있어야 보고서다.
+  //   결정적 4블록은 즉시 뜨고(ownerReportData는 순수·동기) AI 총평·코칭만 뒤따라 채워진다.
   // localStorage 외부 저장소 sync라 마운트 후(effect) 복원 — 지연 초기화는 SSR 하이드레이션 불일치 유발이라 회피.
   useEffect(() => {
     if (!supabase) return;
-    const c = loadCache();
-    if (!c || c.ymd !== todayYmd || !c.report) return;
     let cancelled = false;
     (async () => {
+      const c = loadCache();
       let uid = null;
-      try { const { data: { session } } = await supabase.auth.getSession(); uid = session?.user?.id ?? null; } catch { /* 세션 실패 = 복원 안 함 */ }
-      if (cancelled || !c.uid || c.uid !== uid) return;
-      setReport(c.report);
-      setAi(c.ai || null);
-      setAiState(c.aiState === "premium" ? "premium" : "ready");
-      setGeneratedAt(c.generatedAt || "");
-      setLocked(true);
+      try { const { data: { session } } = await supabase.auth.getSession(); uid = session?.user?.id ?? null; }
+      catch { return; } // 세션 조회 실패 = 계정 확인 불가 → 복원도 생성도 안 함
+      if (cancelled) return;
+      if (c && c.ymd === todayYmd && c.report && c.uid && c.uid === uid) {
+        setReport(c.report);
+        setAi(c.ai || null);
+        setAiState(c.aiState === "premium" ? "premium" : "ready");
+        setGeneratedAt(c.generatedAt || "");
+        setLocked(true);
+        return;
+      }
+      if (autoRunDay === todayYmd) return; // 이 페이지 세션에서 이미 시도(실패 후 탭 왕복 재호출 방지)
+      autoRunDay = todayYmd;
+      genReport();
     })();
     return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -174,12 +186,12 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
         </div>
       )}
 
-      {/* ===== 오늘의 보고서 v2 — 결정적 4블록 항상 + AI(총평·코칭)만 적응 ===== */}
+      {/* ===== 오늘의 운영 보고서 — 열면 자동 생성(버튼 없음) =====
+           결정적 4블록 + AI(총평·코칭)만 적응. 생성 전 짧은 순간만 자리표시가 보인다. */}
       {supabase && !report && (
-        <button type="button" onClick={genReport}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-3 py-2 text-[13px] font-bold text-ink hover:bg-card">
-          <FileText className="h-4 w-4 text-cyan-700" /> 오늘의 보고서 받기
-        </button>
+        <div className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-3 py-2 text-[13px] font-bold text-muted">
+          <FileText className="h-4 w-4 text-cyan-700" /> 오늘의 운영 보고서 준비 중…
+        </div>
       )}
 
       {supabase && report && (
