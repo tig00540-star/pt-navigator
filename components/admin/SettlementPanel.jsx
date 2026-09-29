@@ -116,7 +116,7 @@ export default function SettlementPanel({
           <Row label="FC 매출" value={t.fc} sub="회원권 등 센터 FC부서" />
           <Row label="기타 매출" value={t.etc} />
           <Row label="총 매출" value={t.revenue} strong />
-          <Row label="지출" value={-t.expense} sub="운영 탭에서 입력" />
+          <Row label="지출" value={-t.expense} sub="아래 지출 관리에서 입력" />
           <Row label="순이익" value={t.net} strong accent />
         </div>
 

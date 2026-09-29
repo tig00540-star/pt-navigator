@@ -51,6 +51,7 @@ const ATABS = [
   { id: "briefing",  label: "브리핑" },
   { id: "perf",      label: "트레이너" },  // ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
   { id: "revenue",   label: "매출" },
+  { id: "settle",    label: "정산" },     // 기간 정산 + FC·기타 매출 + 지출 장부(돈 들어온 것·나간 것 한 자리)
   { id: "funnel",    label: "OT회원 현황" },
   { id: "retention", label: "PT회원 현황" },
   { id: "schedule",  label: "스케줄" },
@@ -64,12 +65,12 @@ const ATABS = [
 const AGROUPS = [
   { id: "hub",      label: "홈",         tabs: ["hub"] },
   { id: "briefing", label: "오늘 챙길 것", tabs: ["briefing"] },
-  { id: "revenue",  label: "매출",        tabs: ["revenue"] },
+  { id: "revenue",  label: "매출",        tabs: ["revenue", "settle"] },
   { id: "team",     label: "트레이너",     tabs: ["perf", "payroll"] },
   { id: "members",  label: "회원 흐름",    tabs: ["funnel", "retention"] },
   { id: "ops",      label: "운영",        tabs: ["schedule", "ops"] },
 ];
-const ATAB_LABEL = { perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
+const ATAB_LABEL = { revenue: "매출 분석", settle: "정산·장부", perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
 const groupOf = (tab) => AGROUPS.find((g) => g.tabs.includes(tab))?.id ?? (tab === "overview" ? "hub" : "hub");
 
 
@@ -406,15 +407,6 @@ export default function AdminDashboard() {
         </section>
         )}
 
-        {/* ===== 지출 관리 — 인앱 장부 (Phase B · 노션 대체) ===== */}
-        {atab === "ops" && (
-        <section className="mb-8">
-          <Eyebrow icon={Receipt}>지출 관리</Eyebrow>
-          <p className="mb-3 text-[12px] leading-relaxed text-muted">센터 지출을 입력하면 대시보드 순이익(매출−지출)에 바로 반영돼요.</p>
-          <ExpenseManager expenses={expenses} ym={ym} onChanged={reloadExpenses} />
-        </section>
-        )}
-
         {/* ===== 회원 등록·배정 — 대표가 트레이너 지정해 신규 회원 생성 ===== */}
         {atab === "ops" && (
         <section className="mb-8">
@@ -628,8 +620,12 @@ export default function AdminDashboard() {
         </section>
         )}
 
-        {/* ===== 매출 파이프라인·예측 (매출 탭 · #3) ===== */}
-        {atab === "revenue" && (
+        {/* ===== 정산 탭 — 기간 정산 + FC·기타 매출 + 지출 장부 =====
+             원래 정산은 '매출' 탭 맨 위, 지출은 '운영' 탭에 있었다. 순이익을 보려면
+             두 탭을 오가야 했고, 정산표의 지출 줄만 다른 화면에서 채워야 했다.
+             들어온 돈·나간 돈·남은 돈은 한 화면에 있어야 장부로 쓰인다.
+             매출 탭은 분석(구성·예측·추이)만 남긴다. */}
+        {atab === "settle" && (
         <section className="mb-8">
           <SettlementPanel
             contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
@@ -637,6 +633,15 @@ export default function AdminDashboard() {
         </section>
         )}
 
+        {atab === "settle" && (
+        <section className="mb-8">
+          <Eyebrow icon={Receipt}>지출 관리</Eyebrow>
+          <p className="mb-3 text-[12px] leading-relaxed text-muted">센터 지출을 입력하면 위 정산의 지출·순이익에 바로 반영돼요.</p>
+          <ExpenseManager expenses={expenses} ym={ym} onChanged={reloadExpenses} />
+        </section>
+        )}
+
+        {/* ===== 매출 파이프라인·예측 (매출 탭 · #3) ===== */}
         {atab === "revenue" && (
         <section className="mb-8">
           <RevenuePipeline members={rows} contracts={contracts} logs={logs} otRows={otRows} trainers={trainers} goals={goals} ym={ym} />

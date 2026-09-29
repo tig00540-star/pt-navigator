@@ -92,8 +92,8 @@ export default function OwnerHub({
           onClick={() => onGoTab("briefing")}
         />
         <Tile
-          icon={Wallet} title="매출"
-          desc={`이달 ${manwon(rev.net)} · 신규 ${rev.cntNew}건 · 재등록 ${rev.cntRe}건`}
+          icon={Wallet} title="매출·정산"
+          desc={`이달 ${manwon(rev.net)} · 정산·지출 장부도 여기`}
           tone="bg-primary-soft text-primary-strong"
           onClick={() => onGoTab("revenue")}
         />
@@ -111,7 +111,7 @@ export default function OwnerHub({
         />
         <Tile
           icon={Settings2} title="운영"
-          desc="스케줄 · 지출 · 초대 · 공지"
+          desc="스케줄 · 초대 · 공지 · 회원 배정"
           tone="bg-bg text-sub"
           onClick={() => onGoTab("schedule")}
         />
