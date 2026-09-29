@@ -55,14 +55,18 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     return n;
   }, [appts, visible, nowISO]);
 
-  // OT 예정이 있으면 금액 카드 2장 + OT 카드, 없으면 금액 카드 3장.
-  const top = useMemo(() => {
-    if (otTodayCount <= 0) return cands.slice(0, 3);
-    return [
-      ...cands.slice(0, 2),
-      { kind: "otToday", tab: "funnel", amount: null, detail: "", title: `오늘 신규 OT 예정 ${otTodayCount}건` },
-    ];
-  }, [cands, otTodayCount]);
+  // 3번은 항상 'OT 예정' 자리다 — 0건이면 감추지 않고 '없음'으로 둔다.
+  // 감추면 어제는 3장이던 게 오늘 2장이 되어 "3번 카드 어디 갔지"가 된다.
+  // ⚠️ 0건이 계속 뜨면 데이터가 없는 것 — 이 숫자는 appointment(예약) 표에서 온다.
+  //    앱에 예약을 넣지 않으면 영원히 0이다.
+  const top = useMemo(() => [
+    ...cands.slice(0, 2),
+    {
+      kind: "otToday", tab: "funnel", amount: null, detail: "",
+      title: otTodayCount > 0 ? `오늘 신규 OT 예정 ${otTodayCount}건` : "오늘 신규 OT 예정 없음",
+      dim: otTodayCount === 0,
+    },
+  ], [cands, otTodayCount]);
   const nameOf = (tid) => personName(trainers.find((t) => t.id === tid)?.name) || "트레이너";
 
   // ── 오늘의 보고서 v2(결정적 4블록 + AI 총평·코칭 분리) ──
@@ -181,7 +185,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
         <p className="mt-0.5 text-[12px] text-sub">매출은 과거 데이터 기반 추정 매출입니다.</p>
       </div>
 
-      {top.length === 0 ? (
+      {cands.length === 0 && otTodayCount === 0 ? (
         <Card>
           <div className="flex items-center gap-2 py-4 text-sub">
             <CheckCircle2 className="h-5 w-5 text-cyan-700" />
@@ -200,8 +204,8 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevate text-sm font-extrabold text-muted">{i + 1}</div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <Icon className={`h-4 w-4 ${accentText(m.accent)}`} />
-                      <span className="text-sm font-bold text-ink">{title}</span>
+                      <Icon className={`h-4 w-4 ${c.dim ? "text-muted" : accentText(m.accent)}`} />
+                      <span className={`text-sm font-bold ${c.dim ? "text-muted" : "text-ink"}`}>{title}</span>
                     </div>
                     {!m.hideDetail && c.detail && <p className="mt-0.5 text-[12px] text-sub">{c.detail}</p>}
                   </div>
