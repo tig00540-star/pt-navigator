@@ -44,14 +44,15 @@ const pct = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 const burnText = (v) => (v == null ? "—" : v.toFixed(1));
 const payText = (t) => (t.run?.final_total != null ? won(t.run.final_total) : t.pay?.computed != null ? won(t.pay.computed) : "—");
 
-// 정렬 옵션 — 이탈은 '문제 큰 순'(높은 이탈 먼저).
+// 줄 세우는 기준 — 이탈은 '문제 큰 순'(높은 이탈 먼저).
+// 라벨에 '순'을 붙여 버튼만 보고도 뭘 하는지 알게 한다('정렬'이라는 말은 쓰지 않는다).
 const SORTS = [
-  { key: "rev",   label: "매출" },
-  { key: "r1",    label: "1차 등록" },
-  { key: "r2",    label: "2차 등록" },
-  { key: "rereg", label: "재등록" },
-  { key: "burn",  label: "출석" },
-  { key: "churn", label: "이탈위험" },
+  { key: "rev",   label: "매출 순" },
+  { key: "r1",    label: "1차 등록 순" },
+  { key: "r2",    label: "2차 등록 순" },
+  { key: "rereg", label: "재등록 순" },
+  { key: "burn",  label: "출석 순" },
+  { key: "churn", label: "이탈위험 순" },
 ];
 
 const EMPTY_REV = { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 };
@@ -212,9 +213,8 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
       <p className="mb-3 text-[12px] leading-relaxed text-sub">
         트레이너 성적표 — 누가 <b className="text-ink">등록·관리·매출</b>을 잘 내는지 한눈에.
       </p>
-      {/* 정렬 토글(표·카드 공용) */}
+      {/* 줄 세우기 기준(표·카드 공용) — 칩이 '…순'이라 별도 라벨을 두지 않는다. */}
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-[11px] text-muted">정렬</span>
         {SORTS.map((s) => (
           <button key={s.key} onClick={() => setSortKey(s.key)}
             className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${sortKey === s.key ? "border-primary bg-primary-soft text-primary-strong" : "border-line bg-card text-sub hover:border-primary/40"}`}>

@@ -1,12 +1,15 @@
 "use client";
 /* =========================================================================
-   트레이너 탭 상단 '이번 달 센터 요약' — 구 '실데이터 요약'(센터 클로징률+재등록률) 교체.
-   그 두 %는 OT회원 현황·PT회원 현황 탭이 소유(중복 제거) → 여기선 트레이너 관점 실물 수치.
+   트레이너 탭 상단 '센터 요약' — 구 '실데이터 요약'(센터 클로징률+재등록률) 교체.
+   ⚠️ 중복 정리(2026-09-29): '이달 신규 등록' 타일 제거 — 홈 매출 타일과 오늘의 운영 보고서
+   '이달 등록' 타일이 이미 같은 숫자를 말한다. 누적 총 수업은 구 '클로징·재등록 상세 분석'
+   안에 홀로 박혀 있던 카드를 여기로 흡수(사유 분포 차트들 사이에 있어 아무도 못 찾았다).
+   남긴 기준: 이 탭(리더보드)의 분모가 되는 수치만 — 수업 수와 사람 수.
    admin이 로드한 배열 props로 파생만(fetch 0 · 마이그레이션 0 · RLS 0). hidden 제외는 컴포넌트 책임.
    ========================================================================= */
 import { useMemo } from "react";
-import { CalendarClock, UserPlus, Users } from "lucide-react";
-import { otSessionsThisMonthByTrainer, sessionsThisMonthByTrainer, revenueCompositionInMonth } from "@/lib/memberStatus";
+import { CalendarClock, Users } from "lucide-react";
+import { otSessionsThisMonthByTrainer, sessionsThisMonthByTrainer, sessionsCount } from "@/lib/memberStatus";
 import Card from "@/components/ui/Card";
 
 function Tile({ icon: Icon, label, value, sub }) {
@@ -21,20 +24,20 @@ function Tile({ icon: Icon, label, value, sub }) {
   );
 }
 
-export default function CenterMonthSummary({ members = [], otRows = [], logs = [], contracts = [], trainers = [], ym }) {
+export default function CenterMonthSummary({ members = [], otRows = [], logs = [], trainers = [], ym }) {
   const visible = useMemo(() => members.filter((m) => m && !m.hidden), [members]);
   const memberTrainer = useMemo(() => new Map(visible.filter((m) => m?.id).map((m) => [m.id, m.trainer_id ?? "unknown"])), [visible]);
   const otSess = useMemo(() => otSessionsThisMonthByTrainer(otRows, memberTrainer, ym), [otRows, memberTrainer, ym]);
   const ptSess = useMemo(() => sessionsThisMonthByTrainer(logs, memberTrainer, ym), [logs, memberTrainer, ym]);
   const otTotal = useMemo(() => [...otSess.values()].reduce((s, n) => s + n, 0), [otSess]);
   const ptTotal = useMemo(() => [...ptSess.values()].reduce((s, n) => s + n, 0), [ptSess]);
-  const comp = useMemo(() => revenueCompositionInMonth(contracts, ym), [contracts, ym]);
+  const allTime = useMemo(() => sessionsCount(logs), [logs]);
   const activeMembers = useMemo(() => visible.filter((m) => m.status === "ot_active" || m.status === "pt_active").length, [visible]);
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <Tile icon={CalendarClock} label="이번 달 진행 수업" value={`OT ${otTotal} · PT ${ptTotal}`} sub={`합계 ${otTotal + ptTotal}회 · 실제 진행 기록`} />
-      <Tile icon={UserPlus} label="이달 신규 등록" value={`${comp.cntNew}건`} sub={comp.cntRe ? `재등록 ${comp.cntRe}건 별도` : "신규 계약 기준"} />
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <Tile icon={CalendarClock} label="이번 달 진행 수업" value={`OT ${otTotal} · PT ${ptTotal}`}
+        sub={`합계 ${otTotal + ptTotal}회 · 센터 누적 ${allTime.toLocaleString("ko-KR")}회`} />
       <Tile icon={Users} label="트레이너 / 활성 회원" value={`${trainers.length} / ${activeMembers}`} sub="담당 활성(OT+PT) 회원" />
     </div>
   );

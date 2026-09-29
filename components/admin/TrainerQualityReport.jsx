@@ -1,6 +1,6 @@
 "use client";
 /* =========================================================================
-   오늘의 리포트 — 원장 코칭용(읽기 전용). 트레이너 탭(atab==="perf") 하단 섹션.
+   오늘 코칭할 것(구 '오늘의 리포트' · 이름만 바꿈) — 원장 코칭용(읽기 전용). 트레이너 탭 하단 섹션.
    각 트레이너의 OT·재등록 업무 '실제 내용'까지 보고 부족한 곳을 짚어 오프라인 대면 코칭.
    제거된 "QC 모니터링"(하드코딩 데모)의 실측 대체재.
    ⚠️ write·supabase 호출 0 · 새 fetch 0 — admin이 이미 로드한 배열을 props로 받아 순수 파생만.
@@ -122,8 +122,8 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
         <div className="flex items-center gap-2">
           <ClipboardCheck className="h-4 w-4 text-fuchsia-600" />
           <div>
-            <div className="text-sm font-semibold text-ink">오늘의 리포트</div>
-            <div className="text-[11px] text-muted">오늘 진행한 OT·수업의 부족한 부분 — 대면 코칭용</div>
+            <div className="text-sm font-semibold text-ink">오늘 코칭할 것</div>
+            <div className="text-[11px] text-muted">오늘 진행된 OT·수업을 열어보고, 트레이너가 놓친 것만 모았어요</div>
           </div>
         </div>
         <div className="inline-flex rounded-lg border border-line bg-elevate p-0.5">

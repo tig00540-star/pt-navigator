@@ -15,7 +15,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { closingApproachStats, reregisterReasonStats, sessionsCount, closingReasonStats } from "@/lib/memberStatus";
+import { closingApproachStats, reregisterReasonStats, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import MemberForm from "@/components/MemberForm";
@@ -35,7 +35,6 @@ import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
 import CenterMonthSummary from "@/components/admin/CenterMonthSummary";
 import TrainerQualityReport from "@/components/admin/TrainerQualityReport";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
-import Card from "@/components/ui/Card";
 import BrandMark from "@/components/ui/BrandMark";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 
@@ -263,7 +262,6 @@ export default function AdminDashboard() {
   const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
   const closingReasonDist = useMemo(() => closingReasonStats(otRows), [otRows]);
-  const totalSessions = useMemo(() => sessionsCount(logs), [logs]);
   // 트레이너별 파생은 TrainerScorecard(컴포넌트)가 자체 계산 — admin은 원배열만 prop으로 내려준다.
 
   if (role === null) {
@@ -466,8 +464,8 @@ export default function AdminDashboard() {
         {/* ===== 이번 달 센터 요약 (구 '실데이터 요약' 교체 · 클로징/재등록률은 OT/PT 현황 탭 소유) ===== */}
         {atab === "perf" && (
         <section className="mb-8">
-          <Eyebrow icon={TrendingUp}>이번 달 센터 요약</Eyebrow>
-          <CenterMonthSummary members={rows} otRows={otRows} logs={logs} contracts={contracts} trainers={trainers} ym={ym} />
+          <Eyebrow icon={TrendingUp}>센터 요약</Eyebrow>
+          <CenterMonthSummary members={rows} otRows={otRows} logs={logs} trainers={trainers} ym={ym} />
         </section>
         )}
 
@@ -600,22 +598,12 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
-
-            {/* 총 수업수 */}
-            <Card>
-              <div className="text-[11px] font-semibold tracking-label-ko text-muted">총 수업수</div>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="font-mono text-5xl font-extrabold tracking-tight text-ink">{totalSessions}</span>
-                <span className="text-xl font-bold text-muted">회</span>
-              </div>
-              <div className="mt-1 text-xs text-muted">노쇼 취소분(voided) 제외 · 누적</div>
-            </Card>
           </div>
           )}
         </section>
         )}
 
-        {/* ===== 오늘의 리포트 (트레이너 탭 하단 · 원장 코칭용·읽기전용) ===== */}
+        {/* ===== 오늘 코칭할 것 (트레이너 탭 하단 · 원장 코칭용·읽기전용) ===== */}
         {atab === "perf" && (
         <section className="mb-8">
           <TrainerQualityReport members={rows} otRows={otRows} contracts={contracts} logs={logs} trainers={trainers} ym={ym} />
