@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Receipt,
   ShieldCheck,
   TrendingUp,
   UserPlus,
@@ -27,7 +26,6 @@ import OwnerHub from "@/components/admin/OwnerHub";
 import SettlementPanel from "@/components/admin/SettlementPanel";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import OwnerOverview from "@/components/admin/OwnerOverview";
-import ExpenseManager from "@/components/admin/ExpenseManager";
 import AdminEmptyOnboarding from "@/components/admin/AdminEmptyOnboarding";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
 import RevenuePipeline from "@/components/admin/RevenuePipeline";
@@ -630,20 +628,11 @@ export default function AdminDashboard() {
              매출 탭은 분석(구성·예측·추이)만 남긴다. */}
         {atab === "settle" && (
         <section className="mb-8">
-          {/* startDay는 비동기로 온다(기본 1 → 계정값 15 등). 패널의 기간(from/to)은 마운트 때
-              한 번 잡히므로, 늦게 도착하면 달력월에 머문다 → key로 다시 마운트해 기간을 잡는다. */}
+          {/* 기간은 패널 안에서 startDay로부터 파생한다 — 늦게 도착해도 자동으로 맞는다(key 불필요). */}
           <SettlementPanel
-            key={startDay}
             contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
-            startDay={startDay} onChangeStartDay={saveStartDay} onChanged={reloadIncomes} />
-        </section>
-        )}
-
-        {atab === "settle" && (
-        <section className="mb-8">
-          <Eyebrow icon={Receipt}>지출 관리</Eyebrow>
-          <p className="mb-3 text-[12px] leading-relaxed text-muted">센터 지출을 입력하면 위 정산의 지출·순이익에 바로 반영돼요.</p>
-          <ExpenseManager expenses={expenses} ym={ym} onChanged={reloadExpenses} />
+            startDay={startDay} onChangeStartDay={saveStartDay}
+            onIncomeChanged={reloadIncomes} onExpenseChanged={reloadExpenses} />
         </section>
         )}
 
