@@ -176,7 +176,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                     <p className="mt-0.5 text-[12px] text-sub">{c.detail}</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    {c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>≈ {wonApprox(c.amount)}</div>}
+                    {c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>{wonApprox(c.amount)}</div>}
                     <div className="mt-0.5 inline-flex items-center text-[11px] text-muted">{m.go} <ChevronRight className="h-3 w-3" /></div>
                   </div>
                 </div>
@@ -224,22 +224,22 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                     <div key={r.trainerId} className="rounded-lg border border-line px-3 py-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[13px] font-bold text-ink">{nameOf(r.trainerId)}</span>
-                        <span className="font-mono text-[13px] font-extrabold text-cyan-700">≈ {wonApprox(r.subtotal)}</span>
+                        <span className="font-mono text-[13px] font-extrabold text-cyan-700">{wonApprox(r.subtotal)}</span>
                       </div>
                       <div className="mt-0.5 text-[11px] text-sub">신규 {r.newCount} · 재등록 {r.reCount}</div>
                       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted">
                         {report.pipeline.reCandidates.filter((c) => c.trainerId === r.trainerId).map((c) => (
-                          <span key={"r" + c.user_id}>{memberName(c.user_id)}<span className="text-danger-text">(재등록)</span> {typeof c.amount === "number" ? `≈${wonApprox(c.amount)}` : ""}</span>
+                          <span key={"r" + c.user_id}>{memberName(c.user_id)}<span className="text-danger-text">(재등록)</span> {typeof c.amount === "number" ? wonApprox(c.amount) : ""}</span>
                         ))}
                         {report.pipeline.newCandidates.filter((c) => c.trainerId === r.trainerId).map((c) => (
-                          <span key={"n" + c.user_id}>{memberName(c.user_id)}<span className="text-cyan-700">(신규)</span> {typeof c.amount === "number" ? `≈${wonApprox(c.amount)}` : ""}</span>
+                          <span key={"n" + c.user_id}>{memberName(c.user_id)}<span className="text-cyan-700">(신규)</span> {typeof c.amount === "number" ? wonApprox(c.amount) : ""}</span>
                         ))}
                       </div>
                     </div>
                   ))}
                   <div className="flex items-center justify-between gap-2 pt-1">
                     <span className="text-[12px] font-bold text-ink">총 예상 매출</span>
-                    <span className="font-mono text-sm font-extrabold text-cyan-700">≈ {wonApprox(report.pipeline.grandTotal)}</span>
+                    <span className="font-mono text-sm font-extrabold text-cyan-700">{wonApprox(report.pipeline.grandTotal)}</span>
                   </div>
                 </div>
               )}

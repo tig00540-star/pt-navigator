@@ -78,7 +78,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
         <Card>
           <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><TrendingUp className="h-3.5 w-3.5" /> 다음달 예상 매출 · 추정</div>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
-            <span className="font-mono text-4xl font-extrabold text-cyan-700">{forecast.total != null ? `≈ ${wonApprox(forecast.total)}` : "추정 불가"}</span>
+            <span className="font-mono text-4xl font-extrabold text-cyan-700">{forecast.total != null ? wonApprox(forecast.total) : "추정 불가"}</span>
             <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-muted">추정</span>
           </div>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -86,7 +86,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
               <div className="text-[11px] font-semibold text-sub">신규 유입에서</div>
               {forecast.expectedNew != null ? (
                 <>
-                  <div className="mt-1 font-mono text-lg font-bold text-ink">≈ {wonApprox(forecast.expectedNew)}</div>
+                  <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedNew)}</div>
                   <div className="mt-1 text-[10px] leading-relaxed text-muted">OT 진행 {forecast.otPipeline}명 × 전환율 {pctText(forecast.convRate)} × 평균 {won(forecast.avgNew)}</div>
                 </>
               ) : <div className="mt-1 text-[11px] text-muted">아직 부족 — OT/전환 이력 쌓이면 표시</div>}
@@ -95,7 +95,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
               <div className="text-[11px] font-semibold text-sub">재등록에서</div>
               {forecast.expectedRe != null ? (
                 <>
-                  <div className="mt-1 font-mono text-lg font-bold text-ink">≈ {wonApprox(forecast.expectedRe)}</div>
+                  <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedRe)}</div>
                   <div className="mt-1 text-[10px] leading-relaxed text-muted">만료임박 {forecast.expiringCount}명 × 재등록률 {pctText(forecast.reregRate)} × 평균 {won(forecast.avgRe)}</div>
                 </>
               ) : <div className="mt-1 text-[11px] text-muted">아직 부족 — 재등록 이력 쌓이면 표시</div>}

@@ -95,7 +95,7 @@ export default function RetentionConsole({ members = [], contracts = [], logs = 
                     잔여 유료 {e.rem.paid}{e.rem.service ? ` · 서비스 ${e.rem.service}` : ""}회
                   </span>
                   {e.gap != null && <span className="text-[11px] text-muted">마지막 {e.gap}일 전</span>}
-                  {avgRe != null && <span className="ml-auto font-mono text-[12px] font-semibold text-cyan-700">≈ {wonApprox(avgRe)}</span>}
+                  {avgRe != null && <span className="ml-auto font-mono text-[12px] font-semibold text-cyan-700">{wonApprox(avgRe)}</span>}
                 </li>
               ))}
             </ul>
