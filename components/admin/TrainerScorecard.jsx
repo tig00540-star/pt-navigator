@@ -9,7 +9,8 @@ import { Fragment, useMemo, useState } from "react";
 import { Trophy, ChevronDown, ChevronUp } from "lucide-react";
 import {
   closingStatsByRoundByTrainer, reregisterStatsByTrainer, sessionsThisMonthByTrainer,
-  logWriteRateByTrainer, churnRiskByTrainer, revenueByTrainer,
+  logWriteRateByTrainer,
+  otSessionsThisMonthByTrainer, churnRiskByTrainer, revenueByTrainer,
   sessionCountByTrainer, sessionPriceSumByTrainer, resolveScheme, payForScheme,
 } from "@/lib/memberStatus";
 import { won, personName } from "@/lib/format";
@@ -135,13 +136,15 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
   const closeMap = useMemo(() => closingStatsByRoundByTrainer(otRows, memberTrainer), [otRows, memberTrainer]);
   const reregMap = useMemo(() => reregisterStatsByTrainer(contracts), [contracts]);
   const sessMonth = useMemo(() => sessionsThisMonthByTrainer(logs, memberTrainer, ym), [logs, memberTrainer, ym]);
+  // 이달 OT 수업 — PT(daily_workout_log)와 원천이 다르다(ot_log 1·2차). 센터 요약과 같은 함수.
+  const otSessMonth = useMemo(() => otSessionsThisMonthByTrainer(otRows, memberTrainer, ym), [otRows, memberTrainer, ym]);
   const logRateMap = useMemo(() => logWriteRateByTrainer(logs, memberTrainer, ym), [logs, memberTrainer, ym]);
   const churnMap = useMemo(() => churnRiskByTrainer(visible, contracts, logs, { nowISO }), [visible, contracts, logs, nowISO]);
   const revMap = useMemo(() => new Map(revenueByTrainer(contracts, ym).map((r) => [r.trainer_id, r])), [contracts, ym]);
   const sessCount = useMemo(() => sessionCountByTrainer(logs, contracts, ym), [logs, contracts, ym]);
   const sessPriceSum = useMemo(() => sessionPriceSumByTrainer(logs, contracts, ym), [logs, contracts, ym]);
 
-  // 담당 회원 수(현재 · !hidden · status 기준). all=ot+pt, pt=pt_active(세션소진·이탈률 status 분모).
+  // 담당 회원 수(현재 · !hidden · status 기준). all=ot+pt, pt=pt_active(세션소진·이탈률 status 분모), ot=ot_active.
   const memberCounts = useMemo(() => {
     const m = new Map();
     for (const r of members) {
@@ -149,9 +152,9 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
       if (r.status !== "ot_active" && r.status !== "pt_active") continue;
       const tid = r.trainer_id ?? "unknown";
       let c = m.get(tid);
-      if (!c) { c = { all: 0, pt: 0 }; m.set(tid, c); }
+      if (!c) { c = { all: 0, pt: 0, ot: 0 }; m.set(tid, c); }
       c.all += 1;
-      if (r.status === "pt_active") c.pt += 1;
+      if (r.status === "pt_active") c.pt += 1; else c.ot += 1;
     }
     return m;
   }, [members]);
@@ -167,21 +170,22 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
       const rereg = reregMap.get(id) || { attempted: 0, success: 0, rate: null };
       const churn = churnMap.get(id) || { atRisk: 0, activePt: 0, rate: null };
       const logRate = logRateMap.get(id) || { written: 0, total: 0, rate: null };
-      const cnt = memberCounts.get(id) || { all: 0, pt: 0 };
+      const cnt = memberCounts.get(id) || { all: 0, pt: 0, ot: 0 };
+      const sess = { ot: otSessMonth.get(id) || 0, pt: sessMonth.get(id) || 0 };
       // ⚠️ 세션소진 분모 = status 기준 활성 PT(cnt.pt). churn.activePt(활성계약 PT)와 다름 — 혼동 방지.
       const burn = cnt.pt > 0 ? (sessMonth.get(id) || 0) / cnt.pt : null;
       const pay = payForScheme(resolveScheme(schemes, id), {
         monthRevenue: rev.total, sessionCount: sessCount.get(id) || 0, sessionPriceSum: sessPriceSum.get(id) || 0,
       });
       const run = runs.find((r) => r.ym === ym && r.trainer_id === id) || null;
-      return { id, name: nameOf(id), rev, close, rereg, churn, logRate, cnt, burn, pay, run };
+      return { id, name: nameOf(id), rev, close, rereg, churn, logRate, cnt, sess, burn, pay, run };
     });
     // 순위 = 매출 내림차순(항상). 메달은 매출>0 상위3에만.
     const byRev = [...list].sort((a, b) => b.rev.total - a.rev.total);
     const rankOf = new Map(byRev.map((r, i) => [r.id, i + 1]));
     for (const r of list) r.rank = rankOf.get(r.id);
     return list;
-  }, [trainers, revMap, closeMap, reregMap, churnMap, logRateMap, memberCounts, sessMonth, sessCount, sessPriceSum, schemes, runs, ym]);
+  }, [trainers, revMap, closeMap, reregMap, churnMap, logRateMap, memberCounts, sessMonth, otSessMonth, sessCount, sessPriceSum, schemes, runs, ym]);
 
   const sorted = useMemo(() => {
     const nz = (v) => (v == null ? -Infinity : v);
@@ -227,12 +231,13 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
       {/* 데스크톱(sm+) — 표 */}
       <div className="hidden sm:block">
         <div className="overflow-x-auto rounded-2xl border border-line">
-          <table className="w-full min-w-[880px] border-collapse text-sm">
+          <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead>
               <tr className="bg-elevate text-[11px] tracking-label-ko text-muted">
                 <th className="px-2.5 py-2.5 text-left font-semibold">#</th>
                 <th className="px-2.5 py-2.5 text-left font-semibold">트레이너</th>
-                <th className="px-2.5 py-2.5 text-right font-semibold">담당</th>
+                <th className="px-2.5 py-2.5 text-right font-semibold">담당 회원</th>
+                <th className="px-2.5 py-2.5 text-right font-semibold">이달 수업</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">1차 등록</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">2차 등록</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">재등록</th>
@@ -254,7 +259,12 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                     <tr className="border-t border-line hover:bg-elevate/60">
                       <td className="px-2.5 py-2.5 text-left"><RankBadge rank={t.rank} medal={medal} /></td>
                       <td className="px-2.5 py-2.5 text-left font-semibold text-ink">{t.name}</td>
-                      <td className="px-2.5 py-2.5 text-right text-sub">{t.cnt.all}<span className="text-[10px] text-muted"> (PT {t.cnt.pt})</span></td>
+                      <td className="px-2.5 py-2.5 text-right text-sub">
+                        <span className="font-mono">OT {t.cnt.ot}</span><span className="text-muted"> · </span><span className="font-mono">PT {t.cnt.pt}</span>
+                      </td>
+                      <td className="px-2.5 py-2.5 text-right text-sub">
+                        <span className="font-mono">OT {t.sess.ot}</span><span className="text-muted"> · </span><span className="font-mono">PT {t.sess.pt}</span>
+                      </td>
                       <td className={`px-2.5 py-2.5 text-right font-mono font-semibold ${GRADE_TEXT[g.r1]}`}>{pct(t.close.r1.rate)}</td>
                       <td className={`px-2.5 py-2.5 text-right font-mono font-semibold ${GRADE_TEXT[g.r2]}`}>{pct(t.close.r2.rate)}</td>
                       <td className={`px-2.5 py-2.5 text-right font-mono font-semibold ${GRADE_TEXT[g.re]}`}>{pct(t.rereg.rate)}</td>
@@ -273,7 +283,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                     </tr>
                     {open && (
                       <tr className="border-t border-line bg-elevate/30">
-                        <td colSpan={12} className="px-3 py-3">
+                        <td colSpan={13} className="px-3 py-3">
                           <ExpandDetail rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} />
                         </td>
                       </tr>
@@ -285,7 +295,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
           </table>
         </div>
         <p className="mt-2 px-1 text-[11px] leading-relaxed text-muted">
-          1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 수업 수 · 이탈위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
+          담당 회원 = 지금 맡고 있는 활성 회원(OT/PT) · 이달 수업 = OT 상담 기록 + PT 수업일지 · 1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 PT 수업 수 · 이탈위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
         </p>
       </div>
 
@@ -308,7 +318,8 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <MetricTile label="담당" value={`${t.cnt.all} · PT ${t.cnt.pt}`} />
+                <MetricTile label="담당 회원" value={`OT ${t.cnt.ot} · PT ${t.cnt.pt}`} />
+                <MetricTile label="이달 수업" value={`OT ${t.sess.ot} · PT ${t.sess.pt}`} />
                 <MetricTile label="1차 등록률" value={pct(t.close.r1.rate)} g={g.r1} />
                 <MetricTile label="2차 등록률" value={pct(t.close.r2.rate)} g={g.r2} />
                 <MetricTile label="재등록" value={pct(t.rereg.rate)} g={g.re} />

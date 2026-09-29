@@ -8,7 +8,7 @@
    admin이 로드한 배열 props로 파생만(fetch 0 · 마이그레이션 0 · RLS 0). hidden 제외는 컴포넌트 책임.
    ========================================================================= */
 import { useMemo } from "react";
-import { CalendarClock, Users } from "lucide-react";
+import { CalendarClock, UserCircle, Users } from "lucide-react";
 import { otSessionsThisMonthByTrainer, sessionsThisMonthByTrainer, sessionsCount } from "@/lib/memberStatus";
 import Card from "@/components/ui/Card";
 
@@ -32,13 +32,16 @@ export default function CenterMonthSummary({ members = [], otRows = [], logs = [
   const otTotal = useMemo(() => [...otSess.values()].reduce((s, n) => s + n, 0), [otSess]);
   const ptTotal = useMemo(() => [...ptSess.values()].reduce((s, n) => s + n, 0), [ptSess]);
   const allTime = useMemo(() => sessionsCount(logs), [logs]);
-  const activeMembers = useMemo(() => visible.filter((m) => m.status === "ot_active" || m.status === "pt_active").length, [visible]);
+  const otMembers = useMemo(() => visible.filter((m) => m.status === "ot_active").length, [visible]);
+  const ptMembers = useMemo(() => visible.filter((m) => m.status === "pt_active").length, [visible]);
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <Tile icon={CalendarClock} label="이번 달 진행 수업" value={`OT ${otTotal} · PT ${ptTotal}`}
         sub={`합계 ${otTotal + ptTotal}회 · 센터 누적 ${allTime.toLocaleString("ko-KR")}회`} />
-      <Tile icon={Users} label="트레이너 / 활성 회원" value={`${trainers.length} / ${activeMembers}`} sub="담당 활성(OT+PT) 회원" />
+      <Tile icon={Users} label="활성 회원" value={`OT ${otMembers} · PT ${ptMembers}`}
+        sub={`합계 ${otMembers + ptMembers}명`} />
+      <Tile icon={UserCircle} label="트레이너" value={`${trainers.length}명`} sub="트레이너별 수치는 아래 리더보드" />
     </div>
   );
 }
