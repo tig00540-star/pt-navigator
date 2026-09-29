@@ -9,12 +9,22 @@
 import { useMemo, useState } from "react";
 import { Wallet, TrendingUp, PieChart, LineChart } from "lucide-react";
 import {
-  revenueInMonth, revenueCompositionInMonth, revenueTrendByMonth, revenueForecastNextMonth,
+  revenueInMonth, revenueCompositionInMonth, revenueTrendByMonth, revenueForecastNextMonth, revenueByTrainer,
 } from "@/lib/memberStatus";
-import { won, wonApprox } from "@/lib/format";
+import { won, wonApprox, personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
 
 const pctText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
+
+// 목표/현재/달성률 한 줄.
+function Line({ label, value, accent }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2">
+      <span className="text-[12px] font-semibold text-sub">{label}</span>
+      <span className={`shrink-0 font-mono tabular-nums ${accent ? "text-[15px] font-extrabold text-primary-strong" : "text-[13px] font-bold text-ink"}`}>{value}</span>
+    </div>
+  );
+}
 // 차트 라벨 축약 — 만원 단위(6열이 폰에서 안 겹치게). 원 단위 전체값은 막대 title(hover)에 유지.
 const manLabel = (n) => { const man = Math.round((n ?? 0) / 10000); return man === 0 ? "0" : man.toLocaleString("ko-KR") + "만"; };
 
@@ -39,6 +49,16 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
   const goalPct = target ? net / target : null;
   const trainerCount = trainers.length;
 
+  // 트레이너별 목표·현재 매출 — 합산 목표만 보면 누가 끌고 누가 밀리는지 모른다.
+  // 목표를 세운 트레이너를 먼저(목표 큰 순), 목표 없는 트레이너는 뒤로.
+  const revByT = useMemo(() => new Map(revenueByTrainer(contracts, ym).map((r) => [r.trainer_id, r.total])), [contracts, ym]);
+  const goalByT = useMemo(() => new Map(goalsThisYm.map((g) => [g.trainer_id, g.target_revenue || 0])), [goalsThisYm]);
+  const trainerRows = useMemo(() => trainers.map((t) => {
+    const goal = goalByT.get(t.id) ?? null;
+    const rev = revByT.get(t.id) ?? 0;
+    return { id: t.id, name: personName(t.name) || "트레이너", goal, rev, pct: goal ? rev / goal : null };
+  }).sort((a, b) => (b.goal ?? -1) - (a.goal ?? -1)), [trainers, goalByT, revByT]);
+
   return (
     <div className="space-y-6">
       <p className="text-[12px] leading-relaxed text-sub">이달 <b className="text-ink">번 돈과 목표</b>, 다음달 <b className="text-ink">들어올 돈 예상</b>을 한눈에.</p>
@@ -46,25 +66,48 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
       <div className="grid gap-4 sm:grid-cols-2">
         {/* 블록① 이달 매출/목표 게이지 */}
         <Card>
-          <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><Wallet className="h-3.5 w-3.5" /> 이달 순매출</div>
+          <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><Wallet className="h-3.5 w-3.5" /> 이달 매출 현황</div>
           <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(net)}</div>
-          <div className="mt-1 text-xs text-muted">{ym} · 환불 차감 · 인계·외부 제외</div>
+          <div className="mt-1 text-xs text-muted">{ym} 현재 총 매출</div>
           {target != null ? (
             <div className="mt-4">
-              <div className="flex items-baseline justify-between text-[12px]">
-                <span className="text-sub">목표 달성</span>
-                <span className="font-mono font-bold text-ink">{pctText(goalPct)}
-                  <span className="ml-1 text-[11px] font-normal text-muted">({won(net)} / {won(target)})</span></span>
+              {/* 목표 · 현재 · 달성률 세 줄 */}
+              <div className="divide-y divide-line rounded-xl border border-line">
+                <Line label="이달 목표 매출" value={won(target)} />
+                <Line label="현재 총 매출" value={won(net)} />
+                <Line label="달성률" value={pctText(goalPct)} accent />
               </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-line">
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-line">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((goalPct ?? 0) * 100))}%` }} />
               </div>
-              <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted">
-                <span>트레이너 {goalsThisYm.length}/{trainerCount}명 목표 설정</span>
-                {goalPct != null && goalPct >= 1 && <span className="rounded bg-cyan-500/10 px-1.5 py-0.5 font-semibold text-cyan-700">목표 달성</span>}
-              </div>
-              {goalsThisYm.length < trainerCount && (
-                <p className="mt-1 text-[10px] leading-relaxed text-muted">일부 트레이너만 목표를 설정해 합산 목표가 과소할 수 있어요.</p>
+              {goalPct != null && goalPct >= 1 && (
+                <div className="mt-2 inline-block rounded bg-cyan-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-cyan-700">목표 달성</div>
+              )}
+
+              {/* 트레이너별 목표 — 합산 목표만으론 누가 밀리는지 모른다. */}
+              {trainerRows.length > 0 && (
+                <div className="mt-4">
+                  <div className="mb-1.5 text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 목표</div>
+                  <ul className="space-y-1.5">
+                    {trainerRows.map((t) => (
+                      <li key={t.id} className="flex items-center gap-2 text-[12px]">
+                        <span className="min-w-0 flex-1 truncate font-medium text-sub">{t.name}</span>
+                        {t.goal == null ? (
+                          <span className="text-[11px] text-muted">목표 미설정</span>
+                        ) : (
+                          <>
+                            <span className="font-mono text-ink">{won(t.rev)}</span>
+                            <span className="text-[11px] text-muted">/ {won(t.goal)}</span>
+                            <span className={`w-10 shrink-0 text-right font-mono text-[11px] font-bold ${t.pct >= 1 ? "text-cyan-700" : "text-muted"}`}>{pctText(t.pct)}</span>
+                          </>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {goalsThisYm.length < trainerCount && (
+                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted">목표를 안 세운 트레이너가 있어 센터 목표가 실제보다 작게 잡혀 있어요.</p>
+                  )}
+                </div>
               )}
             </div>
           ) : (
@@ -107,10 +150,6 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
 
       {/* 매출 구성 · 추이 — 상시 노출 */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <PieChart className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">매출 구성 · 추이</span>
-        </div>
       {/* 블록③ 신규/재등록 구성비 */}
       <Card>
         <div className="mb-3 flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><PieChart className="h-3.5 w-3.5" /> 이달 매출 구성 · 신규 vs 재등록</div>
@@ -155,7 +194,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
             </div>
           );
         })()}
-        <p className="mt-3 text-[10px] leading-relaxed text-muted">막대=월 순매출(환불 차감) · 빨강=환불 · 숫자는 만원 단위(막대에 마우스 올리면 원 단위). ※ 미수금(미납) 추이는 준비 중이에요.</p>
+        <p className="mt-3 text-[11px] leading-relaxed text-muted">막대는 그 달 매출(환불 뺀 금액), 빨간 숫자는 환불이에요. 단위는 만원입니다.</p>
       </Card>
       </div>
     </div>

@@ -65,12 +65,15 @@ const ATABS = [
 const AGROUPS = [
   { id: "hub",      label: "홈",         tabs: ["hub"] },
   { id: "briefing", label: "오늘 챙길 것", tabs: ["briefing"] },
-  { id: "revenue",  label: "매출",        tabs: ["revenue", "settle"] },
+  { id: "revenue",  label: "매출",        tabs: ["revenue"] },
+  // 정산은 '보는' 화면이 아니라 '하는' 화면(입력·월말 마감)이라 매출 분석 옆 세그먼트에
+  // 숨으면 매달 찾아 들어가야 한다. 원장이 반복하는 실무라 상단에 제 집을 준다.
+  { id: "settle",   label: "정산",        tabs: ["settle"] },
   { id: "team",     label: "트레이너",     tabs: ["perf", "payroll"] },
   { id: "members",  label: "회원 흐름",    tabs: ["funnel", "retention"] },
   { id: "ops",      label: "운영",        tabs: ["schedule", "ops"] },
 ];
-const ATAB_LABEL = { revenue: "매출 분석", settle: "정산·장부", perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
+const ATAB_LABEL = { perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
 const groupOf = (tab) => AGROUPS.find((g) => g.tabs.includes(tab))?.id ?? (tab === "overview" ? "hub" : "hub");
 
 

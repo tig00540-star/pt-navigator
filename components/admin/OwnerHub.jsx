@@ -13,7 +13,7 @@
    ⚠️ hidden(환불·소프트삭제) 필터는 컴포넌트 책임 — 여기서 걸러 넘긴다.
    ========================================================================= */
 
-import { AlertTriangle, ChevronRight, Users, Wallet, Repeat2, Settings2 } from "lucide-react";
+import { AlertTriangle, ChevronRight, Users, Wallet, Repeat2, Settings2, Receipt } from "lucide-react";
 import Card from "@/components/ui/Card";
 import { won } from "@/lib/format";
 import {
@@ -92,8 +92,8 @@ export default function OwnerHub({
           onClick={() => onGoTab("briefing")}
         />
         <Tile
-          icon={Wallet} title="매출·정산"
-          desc={`이달 ${manwon(rev.net)} · 정산과 지출도 여기`}
+          icon={Wallet} title="매출"
+          desc={`이달 ${manwon(rev.net)} · 신규 ${rev.cntNew}건 · 재등록 ${rev.cntRe}건`}
           tone="bg-primary-soft text-primary-strong"
           onClick={() => onGoTab("revenue")}
         />
@@ -114,6 +114,12 @@ export default function OwnerHub({
           desc="스케줄 · 초대 · 공지 · 회원 배정"
           tone="bg-bg text-sub"
           onClick={() => onGoTab("schedule")}
+        />
+        <Tile
+          icon={Receipt} title="정산"
+          desc="기간 매출·지출·순이익 · FC매출 입력"
+          tone="bg-primary-soft text-primary-strong"
+          onClick={() => onGoTab("settle")}
         />
         <Tile
           icon={ChevronRight} title="한눈에"
