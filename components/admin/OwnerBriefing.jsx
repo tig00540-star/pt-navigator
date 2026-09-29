@@ -94,11 +94,15 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 날짜 라벨(결정적 · AI에 안 맡김). 예: 2026년 7월 28일 월요일
-  const dateLabel = useMemo(() => {
+  // 날짜 라벨(결정적 · AI에 안 맡김). 제목="26년 9월 29일 보고서" · 아래줄="화요일".
+  // 제목이 날짜를 들고 있으면 인쇄해 뒀을 때 어느 날 보고서인지 바로 보인다.
+  const { reportTitle, weekdayLabel } = useMemo(() => {
     const kst = new Date(new Date(nowISO).getTime() + 9 * 3600000);
     const days = ["일", "월", "화", "수", "목", "금", "토"];
-    return `${kst.getUTCFullYear()}년 ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${days[kst.getUTCDay()]}요일`;
+    return {
+      reportTitle: `${String(kst.getUTCFullYear()).slice(2)}년 ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 보고서`,
+      weekdayLabel: `${days[kst.getUTCDay()]}요일`,
+    };
   }, [nowISO]);
 
   // 결정적 코칭 폴백(AI 실패·premium 시) — 트레이너 약점 msg + top3 제목.
@@ -200,8 +204,8 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
             {/* 머리글 + AI 총평 */}
             <div className="flex items-start justify-between gap-2 border-b border-line pb-2">
               <div>
-                <div className="text-[19px] font-extrabold leading-tight tracking-[-0.03em] text-ink">오늘의 운영 보고서</div>
-                <div className="mt-1 text-[12px] text-sub">{dateLabel}{generatedAt ? ` · ${genLabel(generatedAt)}` : ""}</div>
+                <div className="text-[19px] font-extrabold leading-tight tracking-[-0.03em] text-ink">{reportTitle}</div>
+                <div className="mt-1 text-[12px] text-sub">{weekdayLabel}{generatedAt ? ` · ${genLabel(generatedAt)}` : ""}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {!locked && (
@@ -210,7 +214,11 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                 <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted"><Printer className="h-3.5 w-3.5" /> 인쇄</button>
               </div>
             </div>
-            {aiState === "ready" && ai?.headline && <p className="text-sm font-bold text-ink">{ai.headline}</p>}
+            {aiState === "ready" && ai?.headline && (
+              <p className="rounded-xl border border-primary/30 bg-primary-soft px-3.5 py-3 text-[15px] font-extrabold leading-relaxed tracking-[-0.01em] text-primary-strong break-keep">
+                {ai.headline}
+              </p>
+            )}
             {aiState === "loading" && <div className="inline-flex items-center gap-2 text-[12px] text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-700" /> AI 총평·코칭 작성 중…</div>}
 
             {/* 💰 매출 파이프라인 (결정적) */}
@@ -252,12 +260,12 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                 {
                   label: "어제 총 수업",
                   value: `${report.yesterday.total ?? report.yesterday.sessions}건`,
-                  sub: `PT ${report.yesterday.pt ?? report.yesterday.sessions} · OT ${report.yesterday.ot ?? 0}${report.yesterday.noshows ? ` · 노쇼 ${report.yesterday.noshows}` : ""}`,
+                  sub: `PT ${report.yesterday.pt ?? report.yesterday.sessions}건 · OT ${report.yesterday.ot ?? 0}건${report.yesterday.noshows ? ` · 노쇼 ${report.yesterday.noshows}건` : ""}`,
                 },
                 {
                   label: "오늘 예정 수업",
                   value: `${report.today.bookings}건`,
-                  sub: `PT ${report.today.pt ?? report.today.bookings} · OT ${report.today.ot ?? 0}`,
+                  sub: `PT ${report.today.pt ?? report.today.bookings}건 · OT ${report.today.ot ?? 0}건`,
                 },
                 {
                   label: "이달 매출",
@@ -267,13 +275,13 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                 {
                   label: "이달 등록",
                   value: `${(report.month.newRegs ?? 0) + (report.month.reRegs ?? 0)}건`,
-                  sub: `신규 ${report.month.newRegs ?? 0} · 재등록 ${report.month.reRegs ?? 0}`,
+                  sub: `신규 ${report.month.newRegs ?? 0}건 · 재등록 ${report.month.reRegs ?? 0}건`,
                 },
               ].map((t) => (
                 <div key={t.label} className="rounded-lg bg-elevate px-2.5 py-2">
                   <div className="text-[10px] tracking-label-ko text-muted">{t.label}</div>
                   <div className="mt-0.5 font-mono text-sm font-extrabold text-ink">{t.value}</div>
-                  {t.sub && <div className="text-[10px] text-muted">{t.sub}</div>}
+                  {t.sub && <div className="text-[10px] leading-snug text-muted break-keep">{t.sub}</div>}
                 </div>
               ))}
             </div>
