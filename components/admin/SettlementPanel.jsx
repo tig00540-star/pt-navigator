@@ -55,10 +55,10 @@ function shiftYm(ym, delta) {
 }
 
 export default function SettlementPanel({
-  contracts = [], incomes = [], expenses = [], ym,
+  contracts = [], incomes = [], expenses = [], ym, view = "view",
   startDay = 1, onChangeStartDay, onIncomeChanged, onExpenseChanged,
 }) {
-  const [view, setView] = useState("view");     // view=정산 보기 · entry=장부 적기
+  // view(보기/적기)는 상단 세그먼트가 준다 — 하위탭이 화면마다 다른 자리에 있으면 안 된다.
   const [ymBase, setYmBase] = useState(ym);     // 보는 정산 기간의 기준월
   const [custom, setCustom] = useState(false);  // 직접 고르기(예외 상황)
   const [cFrom, setCFrom] = useState("");
@@ -108,18 +108,6 @@ export default function SettlementPanel({
 
   return (
     <div className="space-y-4">
-      {/* 보기 / 적기 */}
-      <div className="flex gap-1.5">
-        {[{ k: "view", l: "정산 보기" }, { k: "entry", l: "장부 적기" }].map((o) => (
-          <button key={o.k} type="button" onClick={() => setView(o.k)}
-            className={`min-h-[38px] rounded-lg px-3.5 text-[13px] font-bold transition ${
-              view === o.k ? "bg-admin-soft text-admin-text" : "bg-elevate text-muted hover:text-ink"
-            }`}>
-            {o.l}
-          </button>
-        ))}
-      </div>
-
       {view === "view" ? (
         <ViewPane
           from={from} to={to} custom={custom} setCustom={setCustom}
@@ -207,12 +195,12 @@ function ViewPane({
             ))}
           </div>
         )}
-      </Card>
 
-      {/* 정산 기간 설정 — 센터마다 한 달을 끊는 날이 다르다(1일~말일 / 15일~익월 14일). */}
-      {onChangeStartDay && (
-        <Card as="section" padding="sm">
-          <div className="flex flex-wrap items-center gap-2 text-[12px] text-sub">
+        {/* 정산 기간 설정 — 매달의 기본값이다. '직접 고르기'는 지금 한 번 보는 것이고,
+            이건 화살표로 넘길 때의 기준(15일 마감 센터는 이걸 안 하면 매달 날짜를 다시 찍는다). */}
+        {onChangeStartDay && (
+          <div className="mt-4 border-t border-line pt-3">
+            <div className="flex flex-wrap items-center gap-2 text-[12px] text-sub">
             <span className="font-semibold">정산 기간</span>
             <select
               value={startDay}
@@ -227,10 +215,11 @@ function ViewPane({
             <span className="text-muted">
               {startDay === 1 ? "매달 1일부터 말일까지" : `매달 ${startDay}일부터 다음달 ${startDay - 1}일까지`}
             </span>
+            </div>
+            {custom && <p className="mt-1 text-[11px] text-muted">지금은 직접 고른 기간을 보고 있어요 — 이 설정은 매달의 기본 기간입니다.</p>}
           </div>
-          {custom && <p className="mt-1 text-[11px] text-muted">지금은 직접 고른 기간을 보고 있어요 — 위 설정은 기본 정산 기간입니다.</p>}
-        </Card>
-      )}
+        )}
+      </Card>
     </>
   );
 }

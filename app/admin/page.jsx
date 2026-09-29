@@ -49,7 +49,8 @@ const ATABS = [
   { id: "briefing",  label: "브리핑" },
   { id: "perf",      label: "트레이너" },  // ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
   { id: "revenue",   label: "매출" },
-  { id: "settle",    label: "정산" },     // 기간 정산 + FC·기타 매출 + 지출 장부(돈 들어온 것·나간 것 한 자리)
+  { id: "settle",       label: "정산 보기" },   // 기간 정산(PT+FC+기타−지출=순이익)
+  { id: "settle_entry", label: "장부 적기" },   // FC·기타 매출·지출 입력(폼 1개) + 기간 내역
   { id: "funnel",    label: "OT회원 현황" },
   { id: "retention", label: "PT회원 현황" },
   { id: "schedule",  label: "스케줄" },
@@ -66,12 +67,12 @@ const AGROUPS = [
   { id: "revenue",  label: "매출",        tabs: ["revenue"] },
   // 정산은 '보는' 화면이 아니라 '하는' 화면(입력·월말 마감)이라 매출 분석 옆 세그먼트에
   // 숨으면 매달 찾아 들어가야 한다. 원장이 반복하는 실무라 상단에 제 집을 준다.
-  { id: "settle",   label: "정산",        tabs: ["settle"] },
+  { id: "settle",   label: "정산",        tabs: ["settle", "settle_entry"] },
   { id: "team",     label: "트레이너",     tabs: ["perf", "payroll"] },
   { id: "members",  label: "회원 흐름",    tabs: ["funnel", "retention"] },
   { id: "ops",      label: "운영",        tabs: ["schedule", "ops"] },
 ];
-const ATAB_LABEL = { perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
+const ATAB_LABEL = { settle: "정산 보기", settle_entry: "장부 적기", perf: "성과·리더보드", payroll: "급여 설정", funnel: "OT 전환", retention: "PT 유지", schedule: "스케줄", ops: "센터 운영" };
 const groupOf = (tab) => AGROUPS.find((g) => g.tabs.includes(tab))?.id ?? (tab === "overview" ? "hub" : "hub");
 
 
@@ -354,7 +355,7 @@ export default function AdminDashboard() {
               <div className="flex gap-1.5 pb-2.5">
                 {g.tabs.map((t) => (
                   <button key={t} onClick={() => setAtab(t)}
-                    className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${
+                    className={`min-h-[38px] rounded-lg px-3.5 text-[13px] font-bold transition ${
                       atab === t ? "bg-admin-soft text-admin-text" : "bg-elevate text-muted hover:text-ink"
                     }`}>
                     {ATAB_LABEL[t] || t}
@@ -626,10 +627,12 @@ export default function AdminDashboard() {
              두 탭을 오가야 했고, 정산표의 지출 줄만 다른 화면에서 채워야 했다.
              들어온 돈·나간 돈·남은 돈은 한 화면에 있어야 장부로 쓰인다.
              매출 탭은 분석(구성·예측·추이)만 남긴다. */}
-        {atab === "settle" && (
+        {(atab === "settle" || atab === "settle_entry") && (
         <section className="mb-8">
-          {/* 기간은 패널 안에서 startDay로부터 파생한다 — 늦게 도착해도 자동으로 맞는다(key 불필요). */}
+          {/* 보기/적기는 상단 세그먼트가 고른다(하위탭은 헤더 한 곳에서만).
+              기간은 패널 안에서 startDay로부터 파생 — 늦게 도착해도 자동으로 맞는다. */}
           <SettlementPanel
+            view={atab === "settle_entry" ? "entry" : "view"}
             contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
             startDay={startDay} onChangeStartDay={saveStartDay}
             onIncomeChanged={reloadIncomes} onExpenseChanged={reloadExpenses} />
