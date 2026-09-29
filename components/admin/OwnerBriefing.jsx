@@ -5,17 +5,22 @@
    회원신호=visible · 노쇼 트레이너 귀속=전체 회원맵. 색: 기회 cyan · 위험 rose · 위생 muted.
    ========================================================================= */
 import { useMemo, useState, useEffect } from "react";
-import { RefreshCw, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
+import { RefreshCw, CalendarCheck, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
 import { ownerBriefing, ownerReportData } from "@/lib/memberStatus";
 import { won, wonApprox, personName } from "@/lib/format";
 import { supabase } from "@/lib/supabaseClient";
 import Card from "@/components/ui/Card";
 
 // kind별 카드 메타(아이콘·강조색·이동 라벨). 전부 정적 리터럴.
+// hideDetail/hideAmount: 제목만으로 뜻이 통하는 카드는 설명글·금액을 지운다.
+//   · 재등록·이탈위험은 '몇 명'이 전부다. 밑에 붙던 근거 한 줄은 카드만 무겁게 했다.
+//   · 이탈위험 금액은 다른 카드와 성격이 달랐다(앞으로 들어올 돈 vs 이미 받은 미소진 수업료)
+//     → 나란히 두면 더 헷갈려서 화면에서 뺀다. 랭킹·AI 입력에는 그대로 쓴다.
 const META = {
-  reregister: { icon: RefreshCw,     accent: "cyan", go: "재등록 회원 보기" },
+  otToday:    { icon: CalendarCheck, accent: "cyan", go: "OT 회원 보기" },
+  reregister: { icon: RefreshCw,     accent: "cyan", go: "재등록 회원 보기", hideDetail: true },
   closing:    { icon: Filter,        accent: "cyan", go: "OT 회원 보기" },
-  churn:      { icon: TrendingDown,  accent: "rose", go: "이탈위험 회원 보기" },
+  churn:      { icon: TrendingDown,  accent: "rose", go: "이탈위험 회원 보기", hideDetail: true, hideAmount: true },
   goal:       { icon: Target,        accent: "rose", go: "매출 보기" },
   pastdue:    { icon: CalendarClock, accent: "muted", go: "스케줄 보기" },
   trainer:    { icon: UserX,         accent: "rose", go: "트레이너 보기" },
@@ -36,7 +41,28 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     () => ownerBriefing({ members: visible, otRows, contracts, logs, appts, goals, memberTrainer, ym, nowISO }),
     [visible, otRows, contracts, logs, appts, goals, memberTrainer, ym, nowISO]
   );
-  const top = cands.slice(0, 3);
+  // 오늘 신규 OT 예정 — 브리핑 3번 자리.
+  // ⚠️ ownerBriefing(금액 랭킹)에 넣지 않는다 — 대표 홈 '지킬 수 있는 매출' 합계와
+  //    AI 보고서 입력(top3)이 금액 없는 항목으로 오염된다. 여기서만 끼워 넣는다.
+  const otTodayCount = useMemo(() => {
+    const kstDay = (iso) => { const t = Date.parse(iso); return Number.isNaN(t) ? null : new Date(t + 9 * 3600000).toISOString().slice(0, 10); };
+    const day = new Date(new Date(nowISO).getTime() + 9 * 3600000).toISOString().slice(0, 10);
+    const otIds = new Set(visible.filter((m) => m.status === "ot_active").map((m) => m.id));
+    let n = 0;
+    for (const a of appts || []) {
+      if (a && a.status === "booked" && otIds.has(a.user_id) && kstDay(a.start_at) === day) n++;
+    }
+    return n;
+  }, [appts, visible, nowISO]);
+
+  // OT 예정이 있으면 금액 카드 2장 + OT 카드, 없으면 금액 카드 3장.
+  const top = useMemo(() => {
+    if (otTodayCount <= 0) return cands.slice(0, 3);
+    return [
+      ...cands.slice(0, 2),
+      { kind: "otToday", tab: "funnel", amount: null, detail: "", title: `오늘 신규 OT 예정 ${otTodayCount}건` },
+    ];
+  }, [cands, otTodayCount]);
   const nameOf = (tid) => personName(trainers.find((t) => t.id === tid)?.name) || "트레이너";
 
   // ── 오늘의 보고서 v2(결정적 4블록 + AI 총평·코칭 분리) ──
@@ -177,10 +203,10 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                       <Icon className={`h-4 w-4 ${accentText(m.accent)}`} />
                       <span className="text-sm font-bold text-ink">{title}</span>
                     </div>
-                    <p className="mt-0.5 text-[12px] text-sub">{c.detail}</p>
+                    {!m.hideDetail && c.detail && <p className="mt-0.5 text-[12px] text-sub">{c.detail}</p>}
                   </div>
                   <div className="shrink-0 text-right">
-                    {c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>{wonApprox(c.amount)}</div>}
+                    {!m.hideAmount && c.amount != null && <div className={`font-mono text-sm font-extrabold ${accentText(m.accent)}`}>{wonApprox(c.amount)}</div>}
                     <div className="mt-0.5 inline-flex items-center text-[11px] text-muted">{m.go} <ChevronRight className="h-3 w-3" /></div>
                   </div>
                 </div>
