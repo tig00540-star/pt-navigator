@@ -143,7 +143,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-fuchsia-700">
-        <Megaphone className="h-3.5 w-3.5" /> 공지 (원장 → 트레이너)
+        <Megaphone className="h-3.5 w-3.5" /> 공지 (대표 → 트레이너)
       </div>
 
       {/* 작성/수정 폼 */}

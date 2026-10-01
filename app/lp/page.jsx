@@ -73,7 +73,7 @@ const ETC = [
   { icon: Network, t: "집단 학습", d: "성공한 클로징을 학습하고, 실패 패턴은 지웁니다." },
   { icon: Trophy, t: "이벤트 · 컨텐츠", d: "챌린지와 랭킹으로 회원이 떠나지 않게." },
   { icon: CalendarDays, t: "스케줄링", d: "예약·수업확인·세션 차감을 한 곳에서." },
-  { icon: ChartColumn, t: "KPI 리포트", d: "클로징률 등 내 지표를 리포트로." },
+  { icon: ChartColumn, t: "KPI 리포트", d: "등록률 등 내 지표를 리포트로." },
 ];
 
 const DIRECTOR_PILLARS = [
@@ -94,7 +94,7 @@ const ADMIN_PAINS = [
 
 const ADMIN_ETC = [
   { icon: Calculator, t: "급여 자동정산", d: "실시간 집계 후 확정만." },
-  { icon: ShieldCheck, t: "트레이너 초대·권한", d: "매출은 원장만, 트레이너는 담당 회원만." },
+  { icon: ShieldCheck, t: "트레이너 초대·권한", d: "매출은 대표만, 트레이너는 담당 회원만." },
   { icon: Megaphone, t: "필수 공지", d: "센터 공지를 확실히 전달합니다." },
   { icon: CalendarDays, t: "스케줄 · 노쇼", d: "요일별 밀도와 노쇼를 한눈에." },
 ];
@@ -102,7 +102,7 @@ const ADMIN_ETC = [
 // ⚠️ 가격은 lib/plans.js(실제 결제 금액)와 반드시 일치시킬 것 — 랜딩↔결제 불일치 금지.
 const TIERS = [
   { t: "solo", name: "솔로", tagline: "개인 트레이너 1인", price: 59000, regular: 79000, feats: [["1·2차 OT · 재등록 서포트", false], ["음성일지 · AI 리포트", false], ["회원앱 (성과 그래프·비포애프터)", true], ["실적 · 급여 자동계산", false]], cta: "7일 무료 체험", href: "/signup", highlight: true },
-  { t: "center", name: "센터", tagline: "트레이너 3인 + 관리자 1인", price: 149000, regular: 199000, feats: [["솔로 전체 포함", false], ["관리자 대시보드 (매출·전환·리텐션)", true], ["트레이너 3인 좌석 + 관리자 1인", false], ["QC · 팀 관리", false]], cta: "7일 무료 체험", href: "/signup", highlight: false },
+  { t: "center", name: "센터", tagline: "트레이너 3인 + 대표 1인", price: 149000, regular: 199000, feats: [["솔로 전체 포함", false], ["대표 대시보드 (매출·정산·등록·이탈)", true], ["트레이너 3인 좌석 + 대표 1인", false], ["트레이너 코칭 · 팀 관리", false]], cta: "7일 무료 체험", href: "/signup", highlight: false },
 ];
 
 const FAQ = [
@@ -225,7 +225,7 @@ export default function LandingPage() {
             <div role="group" aria-label="역할별 바로가기" className="flex items-center gap-1 whitespace-nowrap rounded-full border border-line-strong bg-elevate p-1">
               <span aria-hidden="true" className="hidden pl-2 pr-0.5 text-[12px] font-bold uppercase tracking-[0.08em] text-muted sm:inline">바로가기</span>
               <button type="button" onClick={() => scrollToId("features")} className="inline-flex min-h-[40px] items-center rounded-full px-3 py-2 text-[13.5px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">트레이너</button>
-              <button type="button" onClick={() => scrollToId("directors")} className="inline-flex min-h-[40px] items-center rounded-full px-3 py-2 text-[13.5px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">관리자</button>
+              <button type="button" onClick={() => scrollToId("directors")} className="inline-flex min-h-[40px] items-center rounded-full px-3 py-2 text-[13.5px] font-bold text-ink transition-colors hover:bg-primary hover:text-white sm:px-3.5">대표</button>
             </div>
 
             <Link href="/login" className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-primary px-3.5 py-2.5 text-[15px] font-bold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-[#c11f1f] sm:px-[18px] sm:text-[15px]">앱 열기</Link>
@@ -376,7 +376,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1160px] px-6">
             <div className="fintro py-[clamp(56px,8vw,96px)]">
               <div className="reveal">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#fca5a5]">관리자님을 위한</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#fca5a5]">대표님을 위한</span>
                 <h2 className="mt-[18px] max-w-[800px] text-[clamp(28px,4vw,46px)] font-extrabold leading-[1.14] tracking-[-0.045em] text-balance">
                   무엇을 잘하고 어떤 걸 놓치는지,<br /><span className="text-[#fca5a5]">숫자로 보여드립니다.</span>
                 </h2>

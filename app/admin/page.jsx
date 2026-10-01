@@ -282,7 +282,7 @@ export default function AdminDashboard() {
         <ShieldCheck className="h-10 w-10 text-muted" />
         <div>
           <div className="text-lg font-semibold text-ink">접근 권한이 없습니다</div>
-          <div className="mt-1 text-sm text-muted">경영 대시보드는 원장(owner) 전용입니다.</div>
+          <div className="mt-1 text-sm text-muted">대표 화면은 센터 대표만 볼 수 있어요.</div>
         </div>
         <Link href="/" className="rounded-lg border border-line bg-elevate px-3 py-2 text-xs font-medium text-ink hover:border-primary hover:text-primary-strong">
           트레이너 화면으로
@@ -309,14 +309,14 @@ export default function AdminDashboard() {
               같은 제품으로 안 읽혔다. 링·중심점은 그대로 두고 침만 관리자 색으로 칠한다.
               같은 마크·다른 침색 = 같은 제품·다른 역할. */}
           <div className="flex min-w-0 items-center gap-2.5">
-            <BrandMark accent="admin" title="오직 트레이너 관리자" className="h-9 w-9 shrink-0 rounded-lg shadow-sm" />
+            <BrandMark accent="admin" title="오직 트레이너 대표 화면" className="h-9 w-9 shrink-0 rounded-lg shadow-sm" />
             <div className="min-w-0">
               {/* 센터명은 길 수 있다(폰 폭) — truncate로 로크업이 밀리지 않게. */}
               <div className="max-w-[150px] truncate text-[17px] font-extrabold leading-none tracking-[-0.04em] text-ink sm:max-w-none">
                 {centerName || "내 센터"}
               </div>
               <div className="mt-1 text-[12px] font-medium leading-none text-fuchsia-700">
-                Admin · 총괄 경영
+                대표 · 총괄 경영
               </div>
             </div>
           </div>

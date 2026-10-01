@@ -36,7 +36,7 @@ export async function POST(req) {
   const { data: me } = await sb.from("trainer").select("role, account_id").eq("id", u.user.id).maybeSingle();
   if (me?.role !== "owner") {
     console.warn(`[create-trainer] 403 권한상승 시도 — owner 아님 uid=${u.user.id} role=${me?.role ?? "none"}`);
-    return Response.json({ error: "원장(owner)만 트레이너를 추가할 수 있습니다." }, { status: 403 });
+    return Response.json({ error: "대표만 트레이너를 추가할 수 있어요." }, { status: 403 });
   }
 
   // 좌석 — 센터 플랜은 트레이너 3인(관리자 제외), 솔로는 추가 없음.

@@ -82,7 +82,7 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryTile icon={CalendarClock} label="최근 90일 예약" value={`${grid.total}건`} sub="취소 제외 · 밀도 기준" />
         <SummaryTile icon={LayoutGrid} label="완료율" value={pctText(centerDoneRate)} accent="cyan" sub={`완료 ${totalDone} / 취소 ${totalCanceled}`} />
-        <SummaryTile icon={UserX} label="노쇼율" value={pctText(centerNoshowRate)} accent="rose" sub={`수업일지 기준 · 노쇼 ${nsNo}건`} />
+        <SummaryTile icon={UserX} label="노쇼율" value={pctText(centerNoshowRate)} accent="rose" sub={`운동일지 기준 · 노쇼 ${nsNo}건`} />
         <SummaryTile icon={AlertTriangle} label="미처리 예약" value={`${pastDueCount}건`} accent="rose" sub="시간 지났는데 완료·취소 안 함" />
       </div>
 
@@ -213,7 +213,7 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
             </table>
           </div>
         )}
-        <p className="mt-2 px-1 text-[10px] leading-relaxed text-muted">완료율 = 완료 ÷ (완료+취소) · 노쇼율 = 수업일지 노쇼 ÷ 전체 수업(예약과 별개 집계).</p>
+        <p className="mt-2 px-1 text-[10px] leading-relaxed text-muted">완료율 = 완료 ÷ (완료+취소) · 노쇼율 = 운동일지 노쇼 ÷ 전체 수업(예약과 별개 집계).</p>
       </Card>
       </div>
 

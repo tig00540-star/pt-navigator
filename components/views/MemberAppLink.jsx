@@ -119,7 +119,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
       </div>
       {confirmEnd && (
         <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
-          PT를 종료하면 이 회원의 앱 접근이 차단됩니다(로그인 세션 무효 + 링크 폐기). 회원 기록(수업일지·인바디)은 그대로 보존돼요. 다시 열려면 [링크 생성]으로 새 링크를 발급하면 됩니다.
+          PT를 종료하면 이 회원의 앱 접근이 차단됩니다(로그인 세션 무효 + 링크 폐기). 회원 기록(운동일지·인바디)은 그대로 보존돼요. 다시 열려면 [링크 생성]으로 새 링크를 발급하면 됩니다.
         </p>
       )}
       <Toast message={toast} />

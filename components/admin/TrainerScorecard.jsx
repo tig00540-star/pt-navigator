@@ -295,7 +295,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
           </table>
         </div>
         <p className="mt-2 px-1 text-[11px] leading-relaxed text-muted">
-          담당 회원 = 지금 맡고 있는 활성 회원(OT/PT) · 이달 수업 = OT 상담 기록 + PT 수업일지 · 1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 PT 수업 수 · 이탈 위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
+          담당 회원 = 지금 맡고 있는 활성 회원(OT/PT) · 이달 수업 = OT 상담 기록 + PT 운동일지 · 1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 PT 수업 수 · 이탈 위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
         </p>
       </div>
 

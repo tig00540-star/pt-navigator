@@ -137,7 +137,7 @@ export default function AppChrome({ children }) {
                   className="flex items-center gap-1.5 rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-700 transition hover:border-fuchsia-500/60 active:scale-95"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">관리자</span>
+                  <span className="hidden sm:inline">대표 화면</span>
                 </a>
               )}
             </div>

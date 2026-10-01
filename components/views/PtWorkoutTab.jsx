@@ -853,7 +853,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
         <Modal
           variant="center"
           size="sm"
-          title="이 수업일지를 삭제할까요?"
+          title="이 운동일지를 삭제할까요?"
           onClose={() => !logBusy && setVoidTarget(null)}
           footer={
             <>

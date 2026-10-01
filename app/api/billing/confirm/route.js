@@ -32,7 +32,7 @@ export async function POST(req) {
   const { data: me } = await sb.from("trainer").select("role, account_id").eq("id", u.user.id).maybeSingle();
   if (me?.role !== "owner" || !me.account_id) {
     console.warn(`[billing/confirm] 403 owner 아님 uid=${u.user.id} role=${me?.role ?? "none"}`);
-    return Response.json({ error: "원장만 결제를 설정할 수 있습니다." }, { status: 403 });
+    return Response.json({ error: "대표만 결제를 설정할 수 있어요." }, { status: 403 });
   }
 
   const body = await req.json().catch(() => ({}));

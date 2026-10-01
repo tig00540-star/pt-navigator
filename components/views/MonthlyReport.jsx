@@ -173,7 +173,7 @@ export default function MonthlyReport({ data, onClose }) {
           <StatTile icon={RefreshCw} label="재등록" value={`${rev.cntRe}건`}>
             <div className="mt-2 text-[11px] text-muted">재등록 매출 {won(rev.reRev)}</div>
           </StatTile>
-          <StatTile icon={Target} label="클로징률(누적)" value={rate}>
+          <StatTile icon={Target} label="등록률(누적)" value={rate}>
             <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공 · 전체 기간</div>
           </StatTile>
         </div>
@@ -250,10 +250,10 @@ export default function MonthlyReport({ data, onClose }) {
           ) : (
             <>
               <div className="mt-2 flex items-center justify-between text-[11px]">
-                <span className="text-muted">누적 전환</span>
+                <span className="text-muted">누적 재등록</span>
                 <span className="tabular-nums text-sub">
                   성공 <b className="text-primary-strong">{reReg.success}</b> · 보류 <b className="text-amber-700">{reReg.hold}</b> · 미등록 <b className="text-rose-700">{reReg.fail}</b>
-                  {reReg.rate != null && <> · 전환율 <b className="text-ink">{Math.round(reReg.rate * 100)}%</b></>}
+                  {reReg.rate != null && <> · 재등록률 <b className="text-ink">{Math.round(reReg.rate * 100)}%</b></>}
                 </span>
               </div>
               {regReasonRows.length > 0 && (
@@ -314,7 +314,7 @@ export default function MonthlyReport({ data, onClose }) {
           )}
         </ToneCard>
 
-        <p className="mt-4 text-[10px] text-muted">※ 예상 급여는 완료 수업 기준 자동계산 · 실지급은 원장 확정액 기준. 클로징률은 전체 기간 누적. 생성 {ym} 기준.</p>
+        <p className="mt-4 text-[10px] text-muted">※ 예상 급여는 완료 수업 기준 자동계산 · 실지급은 대표 확정액 기준. 등록률은 전체 기간 누적. 생성 {ym} 기준.</p>
       </div>
     </div>
   );

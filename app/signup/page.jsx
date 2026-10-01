@@ -58,12 +58,12 @@ export default function SignupPage() {
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
         <div className="mb-5 text-center">
           <div className="text-lg font-semibold text-ink">새 계정 만들기</div>
-          <div className="mt-1 text-sm text-muted">개인 트레이너 또는 센터 원장으로 시작</div>
+          <div className="mt-1 text-sm text-muted">개인 트레이너 또는 센터 대표로 시작</div>
         </div>
 
         {/* 유형 선택 */}
         <div className="mb-4 grid grid-cols-2 gap-2">
-          {[{ k: "solo", l: "개인 트레이너" }, { k: "center", l: "센터 원장" }].map((o) => (
+          {[{ k: "solo", l: "개인 트레이너" }, { k: "center", l: "센터 대표" }].map((o) => (
             <button key={o.k} onClick={() => setType(o.k)}
               className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
                 type === o.k ? "border border-primary/30 bg-primary-soft text-primary-strong" : "border border-line bg-elevate text-muted hover:text-ink"}`}>

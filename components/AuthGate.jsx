@@ -226,7 +226,7 @@ export default function AuthGate({ children }) {
           </Button>
         </div>
         <div className="mt-4 text-center text-[11px] text-muted">
-          트레이너는 원장 초대로 참여합니다 ·{" "}
+          트레이너는 대표 초대로 참여합니다 ·{" "}
           <a href="/signup" className="font-semibold text-primary-strong hover:underline">새 계정 만들기</a>
         </div>
       </div>

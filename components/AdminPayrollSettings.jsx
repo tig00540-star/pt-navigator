@@ -237,7 +237,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
 
             {type === "manual" ? (
               <p className="rounded-lg border border-line bg-elevate px-3 py-2.5 text-[12px] leading-relaxed text-sub">
-                매월 확정 화면에서 원장이 최종 급여액을 직접 입력합니다. (자동 계산 없음)
+                매월 확정 화면에서 대표가 최종 급여액을 직접 입력합니다. (자동 계산 없음)
               </p>
             ) : (
               <>

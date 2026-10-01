@@ -162,7 +162,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         {confirmed ? (
           <>
             <div className="mt-2 tabular-nums text-4xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
-            <div className="mt-1 text-xs text-muted">원장 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동계산 ${won(pay.computed)}` : ""}</div>
+            <div className="mt-1 text-xs text-muted">대표 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동계산 ${won(pay.computed)}` : ""}</div>
           </>
         ) : pay.computed != null ? (
           <>
@@ -171,7 +171,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
           </>
         ) : (
           <>
-            <div className="mt-2 text-2xl font-extrabold text-muted">{isSolo ? "급여 방식 미설정" : "원장 확정 대기"}</div>
+            <div className="mt-2 text-2xl font-extrabold text-muted">{isSolo ? "급여 방식 미설정" : "대표 확정 대기"}</div>
             <div className="mt-1 text-xs text-muted">{isSolo ? "급여 방식을 설정하면 자동계산돼요" : "자동계산 없음(수동 급여)"}</div>
           </>
         )}
@@ -188,7 +188,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
             )}
           </div>
         </StatTile>
-        <StatTile icon={Target} label="클로징률" value={rate}>
+        <StatTile icon={Target} label="등록률" value={rate}>
           <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공</div>
         </StatTile>
       </div>
@@ -293,7 +293,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         )}
       </details>
 
-      <p className="text-[10px] text-muted">{isSolo ? "※ 자동계산은 이달 완료 수업 기준입니다." : "※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 원장이 확정한 금액 기준입니다."}</p>
+      <p className="text-[10px] text-muted">{isSolo ? "※ 자동계산은 이달 완료 수업 기준입니다." : "※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 대표가 확정한 금액 기준입니다."}</p>
         </>
       )}
 

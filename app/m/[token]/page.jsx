@@ -844,7 +844,7 @@ function ConfirmFlow({ logs, onReload }) {
     >
       <CalendarCheck className="h-5 w-5 shrink-0 text-primary-strong" />
       <span className="flex-1 text-sm font-semibold text-primary-strong">
-        확인 안 한 수업일지 {pending.length}건
+        확인 안 한 운동일지 {pending.length}건
       </span>
       <span className="shrink-0 text-[11px] font-bold text-primary-strong">확인하기 ›</span>
     </button>
@@ -856,7 +856,7 @@ function ConfirmFlow({ logs, onReload }) {
     <>
       {banner}
       {modalOpen && cur && (
-        <Modal variant="sheet" onClose={() => setModalOpen(false)} title="수업일지 확인" subtitle={`남은 ${pending.length}건`}>
+        <Modal variant="sheet" onClose={() => setModalOpen(false)} title="운동일지 확인" subtitle={`남은 ${pending.length}건`}>
           <Card padding="md" className="bg-elevate">
             <div className="text-xs font-semibold text-muted">
               {cur.session_at ? new Date(cur.session_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }) : "날짜 미상"}
@@ -986,10 +986,10 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {/* 수업일지 타임라인 */}
         <section className="mb-8">
-          <Eyebrow icon={NotebookPen}>내 수업일지</Eyebrow>
+          <Eyebrow icon={NotebookPen}>내 운동일지</Eyebrow>
           {logs.length === 0 ? (
             <EmptyState className="rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
-              아직 기록된 수업일지가 없어요.
+              아직 기록된 운동일지가 없어요.
             </EmptyState>
           ) : (
             <ul className="space-y-2">
