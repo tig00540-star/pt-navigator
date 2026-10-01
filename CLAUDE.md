@@ -49,6 +49,17 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - Icons: `lucide-react`만.
 - Sales/OT script·briefing은 **서버 AI**(`ot-brief`·`voice-log`) — 옛 클라 빌더(`PHASES`·`CRM_SCRIPT`·`buildClosing`…)는 v2에서 제거. 생존 클라 빌더는 `buildVoiceReport`(`VoiceLogTab.jsx`, 데모 폴백)뿐.
 
+### 문구·숫자 기준 (2026-10-01 전체 점검 · 새 화면도 이걸 따른다)
+
+기능을 하나씩 붙이면서 같은 것을 화면마다 다르게 부르고 다르게 셌다. 아래가 정본이다.
+
+- **안내·오류 문구 = 해요체.** 성공 "~했어요"(❌"저장됨") · 실패 "~하지 못했어요." + 다음 행동: 일반 "다시 시도해 주세요." / 권한(RLS 0행) "권한이 없거나 구독이 만료됐을 수 있어요." / 네트워크 "인터넷 연결을 확인하고 다시 시도해 주세요." / 대표 전용 "대표만 저장할 수 있어요." · 입력 검증 "~을 입력해 주세요"(드롭다운 자리표시 "선택하세요"만 예외).
+- **사용자 문구에 개발자 용어 금지** — 정책·마이그레이션·0행·테이블명·`error.message` 원문(영어 DB 에러)·"unknown". 원인은 콘솔로. ("급여 정책"처럼 도메인 뜻이면 OK, "(데모)"는 키 없는 개발 모드 전용이라 OK.)
+- **용어 띄어쓰기:** 이탈 위험 · 만료 임박 · OT 회원 · PT 회원.
+- **금액은 `lib/format.js`만** — `won`(반올림 포함)·`wonApprox`(추정치 1,000원 단위)·`manwon`(좁은 칸 만원 축약). 화면에 로컬 WON/manwon 만들지 말 것. **추정치는 반드시 `wonApprox`**, 실제 계약·지출·급여는 `won`.
+- **'진행 수업' = voided·노쇼 제외**(`sessionsCount`·`sessionsThisMonthByTrainer` 동일). 수업 수를 보여줄 땐 OT(`ot_log` 1·2차)+PT를 같이 — 한쪽만 세면 옆 화면과 숫자가 달라진다. ⚠️ 급여용 `sessionCountByTrainer`만 별개 기준(노쇼 포함).
+- **좌석:** `lib/plans.js` `trainerSeats`(solo 0 · center 3 · 관리자 제외) — 관문은 `app/api/create-trainer`(409 `seat_limit`).
+
 ### 디자인 시스템 프리미티브 (v2 · 2026-07-21 · `components/ui/`)
 
 **인라인 카드/폼/모달 손수 제작 금지 — 아래 사용.** 규격 출처 「오직 트레이너 DS」(`ONLY FOR TRAINER/` 미러). 상세: 요약 정본 `docs/v2-스펙-디자인시스템-구현정본.md`, 코드대조 상세판 `docs/v2-스펙-디자인시스템-구현-코드대조판.md`. 모든 색 클래스 purge-safe 정적 리터럴.
