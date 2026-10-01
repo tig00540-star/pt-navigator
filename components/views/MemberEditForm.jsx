@@ -19,7 +19,7 @@ const O = {
 };
 const FIELDS = [
   { k: "name", label: "이름", ph: "김철수" },
-  { k: "phone_number", label: "휴대폰 번호 (회원앱 로그인용)", ph: "010-1234-5678", type: "tel" },
+  { k: "phone_number", label: "휴대폰 번호 (회원 전용 페이지 로그인용)", ph: "010-1234-5678", type: "tel" },
   { k: "age", label: "나이", ph: "34", type: "number" },
   { k: "job", label: "직업", ph: "IT 개발자" },
   { k: "residence", label: "거주지", ph: "센터 인근 오피스텔" },

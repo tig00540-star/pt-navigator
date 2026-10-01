@@ -100,7 +100,7 @@ export default function OunwanRewardSettings() {
       <Card as="section">
         <Eyebrow icon={Trophy}>포상 만들기</Eyebrow>
         <p className="mt-2 text-[11px] leading-relaxed text-muted">
-          회원이 오운완을 누적 N회 채우면 줄 보상이에요. 회원앱에 진행 바로 표시됩니다.
+          회원이 오운완을 누적 N회 채우면 줄 보상이에요. 회원 전용 페이지에 진행 바로 표시됩니다.
         </p>
         <div className="mt-3 space-y-3">
           <label className="block sm:max-w-[12rem]">
@@ -178,7 +178,7 @@ export default function OunwanRewardSettings() {
           </ul>
         )}
         <p className="mt-3 text-[10px] leading-relaxed text-muted">
-          숨김으로 두면 회원앱에 안 보여요(기록은 남습니다). 지급 여부 기록은 준비 중입니다.
+          숨김으로 두면 회원 전용 페이지에 안 보여요(기록은 남습니다). 지급 여부 기록은 준비 중입니다.
         </p>
       </Card>
 

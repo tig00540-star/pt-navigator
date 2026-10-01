@@ -82,7 +82,7 @@ export async function POST(req) {
   if (!premiumActive) {
     console.warn(`[member-auth] 403 회원앱 중단 — 계정 premium/활성 아님 member_id=${member.id}`);
     return Response.json(
-      { error: "회원앱 이용이 일시 중단되었어요. 담당 트레이너에게 문의해 주세요." },
+      { error: "회원 전용 페이지 이용이 잠시 중단됐어요. 담당 트레이너에게 문의해 주세요." },
       { status: 403 }
     );
   }

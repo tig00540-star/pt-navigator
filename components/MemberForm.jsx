@@ -166,7 +166,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
   // 기본(항상 표시) — 필수·핵심만. 나머지는 아래 '사전 문진' 접기.
   const BASIC = [
     { k: "name", label: "이름", ph: "김철수" },
-    { k: "phone_number", label: "휴대폰 번호 (회원앱 로그인용)", ph: "010-1234-5678", type: "tel" },
+    { k: "phone_number", label: "휴대폰 번호 (회원 전용 페이지 로그인용)", ph: "010-1234-5678", type: "tel" },
     { k: "age", label: "나이", ph: "34", type: "number" },
     { k: "goal", label: "목적", ph: "바디프로필", opts: OPTS.goal },
     { k: "pain", label: "불편 부위", ph: "우측 무릎 통증" },

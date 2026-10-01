@@ -101,7 +101,7 @@ const ADMIN_ETC = [
 
 // ⚠️ 가격은 lib/plans.js(실제 결제 금액)와 반드시 일치시킬 것 — 랜딩↔결제 불일치 금지.
 const TIERS = [
-  { t: "solo", name: "솔로", tagline: "개인 트레이너 1인", price: 59000, regular: 79000, feats: [["1·2차 OT · 재등록 서포트", false], ["음성일지 · AI 리포트", false], ["회원앱 (성과 그래프·비포애프터)", true], ["실적 · 급여 자동계산", false]], cta: "7일 무료 체험", href: "/signup", highlight: true },
+  { t: "solo", name: "솔로", tagline: "개인 트레이너 1인", price: 59000, regular: 79000, feats: [["1·2차 OT · 재등록 서포트", false], ["음성일지 · AI 리포트", false], ["회원 전용 페이지 (성과 그래프·비포애프터)", true], ["실적 · 급여 자동계산", false]], cta: "7일 무료 체험", href: "/signup", highlight: true },
   { t: "center", name: "센터", tagline: "트레이너 3인 + 대표 1인", price: 149000, regular: 199000, feats: [["솔로 전체 포함", false], ["대표 대시보드 (매출·정산·등록·이탈)", true], ["트레이너 3인 좌석 + 대표 1인", false], ["트레이너 코칭 · 팀 관리", false]], cta: "7일 무료 체험", href: "/signup", highlight: false },
 ];
 

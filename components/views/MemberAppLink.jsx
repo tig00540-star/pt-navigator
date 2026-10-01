@@ -35,7 +35,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
     if (error || !newToken) {
       setBusy(false);
       if (error?.message === "premium_required") {
-        showToast("회원앱은 프리미엄 전용이에요 — 업그레이드가 필요해요.");
+        showToast("회원 전용 페이지는 프리미엄 플랜에서 쓸 수 있어요. 업그레이드가 필요해요.");
       } else {
         showToast("발급하지 못했어요. 다시 시도해 주세요." + (error ? ": " + error.message : ""));
       }
@@ -76,7 +76,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
         return;
       }
       onMemberPatch?.(member.id, { member_token: null, member_auth_id: null }); // 배지 사라짐·[링크 생성]으로 복귀
-      showToast("PT를 종료했어요. 회원앱 접속도 막았어요");
+      showToast("PT를 종료했어요. 회원 전용 페이지 접속도 막았어요");
     } catch {
       showToast("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
     }
@@ -88,7 +88,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
     <div className="rounded-xl border border-line bg-card px-3 py-2.5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Link2 className="h-4 w-4 shrink-0 text-primary-strong" />
-        <span className="text-xs font-semibold text-ink">회원앱 링크</span>
+        <span className="text-xs font-semibold text-ink">회원 전용 페이지 링크</span>
         {token && (
           <Badge tone={linked ? "sky" : "primary"} className="ml-0.5">
             {linked ? "연결됨" : "발급됨"}
@@ -119,7 +119,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
       </div>
       {confirmEnd && (
         <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
-          PT를 종료하면 이 회원의 앱 접근이 차단됩니다(로그인 세션 무효 + 링크 폐기). 회원 기록(운동일지·인바디)은 그대로 보존돼요. 다시 열려면 [링크 생성]으로 새 링크를 발급하면 됩니다.
+          PT를 종료하면 이 회원의 전용 페이지 접근이 차단됩니다(로그인 세션 무효 + 링크 폐기). 회원 기록(운동일지·인바디)은 그대로 보존돼요. 다시 열려면 [링크 생성]으로 새 링크를 발급하면 됩니다.
         </p>
       )}
       <Toast message={toast} />
