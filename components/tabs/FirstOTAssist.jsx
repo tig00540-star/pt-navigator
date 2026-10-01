@@ -168,7 +168,7 @@ export default function FirstOTAssist({ member }) {
         }
       }
     } catch (e) {
-      setNotice("네트워크 오류: " + (e?.message || "unknown"));
+      setNotice("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
       setData(null);
     } finally {
       setLoading(false);

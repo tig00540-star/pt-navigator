@@ -74,7 +74,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
   // 모달 [확정] — 금액 검증 후 부모(onConfirm)가 계약 INSERT + 상태 전이(둘 다 하드닝, boolean 반환).
   const doConfirm = async () => {
     if (!(Number(sessions) > 0 && Number(price) > 0)) {
-      setErr("세션수·회당단가를 입력하세요");
+      setErr("세션수·회당단가를 입력해 주세요");
       return; // 모달 유지·입력 보존
     }
     setErr("");
@@ -90,7 +90,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
       if (!ok) {
         if (mounted.current) {
           setBusy(false);
-          setErr("저장 실패 — 다시 시도하세요");
+          setErr("저장하지 못했어요. 다시 시도해 주세요.");
         }
         return; // 모달 유지·입력 보존
       }
@@ -102,7 +102,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
     } catch {
       if (mounted.current) {
         setBusy(false);
-        setErr("저장 실패 — 다시 시도하세요");
+        setErr("저장하지 못했어요. 다시 시도해 주세요.");
       }
     } finally {
       if (mounted.current) setBusy(false);

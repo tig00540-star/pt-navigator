@@ -53,7 +53,7 @@ const SORTS = [
   { key: "r2",    label: "2차 등록 순" },
   { key: "rereg", label: "재등록 순" },
   { key: "burn",  label: "출석 순" },
-  { key: "churn", label: "이탈위험 순" },
+  { key: "churn", label: "이탈 위험 순" },
 ];
 
 const EMPTY_REV = { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 };
@@ -225,7 +225,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
             {s.label}
           </button>
         ))}
-        {sortKey === "churn" && <span className="text-[10px] text-muted">· 이탈위험 높은 순</span>}
+        {sortKey === "churn" && <span className="text-[10px] text-muted">· 이탈 위험 높은 순</span>}
       </div>
 
       {/* 데스크톱(sm+) — 표 */}
@@ -243,7 +243,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                 <th className="px-2.5 py-2.5 text-right font-semibold">재등록</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">출석</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">일지</th>
-                <th className="px-2.5 py-2.5 text-right font-semibold">이탈위험</th>
+                <th className="px-2.5 py-2.5 text-right font-semibold">이탈 위험</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">이달매출</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">성과급</th>
                 <th className="px-2.5 py-2.5" />
@@ -295,7 +295,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
           </table>
         </div>
         <p className="mt-2 px-1 text-[11px] leading-relaxed text-muted">
-          담당 회원 = 지금 맡고 있는 활성 회원(OT/PT) · 이달 수업 = OT 상담 기록 + PT 수업일지 · 1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 PT 수업 수 · 이탈위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
+          담당 회원 = 지금 맡고 있는 활성 회원(OT/PT) · 이달 수업 = OT 상담 기록 + PT 수업일지 · 1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 PT 수업 수 · 이탈 위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
         </p>
       </div>
 
@@ -325,7 +325,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                 <MetricTile label="재등록" value={pct(t.rereg.rate)} g={g.re} />
                 <MetricTile label="출석(월 수업)" value={burnText(t.burn)} g={g.burn} />
                 <MetricTile label="일지 작성" value={pct(t.logRate.rate)} g={g.log} />
-                <MetricTile label="이탈위험" value={pct(t.churn.rate)} g={g.churn} />
+                <MetricTile label="이탈 위험" value={pct(t.churn.rate)} g={g.churn} />
                 <MetricTile label="성과급" value={payText(t)} />
               </div>
               <button onClick={() => setExpandedId(open ? null : t.id)}

@@ -46,11 +46,11 @@ export default function TodoManual() {
     try {
       const { data, error } = await supabase.from("trainer_todo").insert(payload).select();
       setSaving(false);
-      if (error || !data || data.length === 0) { setErr("추가 실패 — 저장 안 됨"); return; }
+      if (error || !data || data.length === 0) { setErr("추가하지 못했어요. 다시 시도해 주세요."); return; }
       setTodos((t) => [data[0], ...t]);
       setBody(""); setDue("");
     } catch {
-      setErr("추가 실패 — 저장 안 됨");
+      setErr("추가하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -65,10 +65,10 @@ export default function TodoManual() {
     const patch = { done: nextDone, done_at: nextDone ? new Date().toISOString() : null };
     try {
       const { data, error } = await supabase.from("trainer_todo").update(patch).eq("id", todo.id).select();
-      if (error || !data || data.length === 0) { setErr("반영 실패 — 정책 확인"); return; }
+      if (error || !data || data.length === 0) { setErr("반영하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       setTodos((t) => t.map((x) => (x.id === todo.id ? data[0] : x)));
     } catch {
-      setErr("반영 실패 — 네트워크 확인");
+      setErr("반영하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
   };
 
@@ -77,10 +77,10 @@ export default function TodoManual() {
     if (!supabase) { setTodos((t) => t.filter((x) => x.id !== todo.id)); return; }
     try {
       const { data, error } = await supabase.from("trainer_todo").delete().eq("id", todo.id).select();
-      if (error || !data || data.length === 0) { setErr("삭제 실패 — 정책 확인"); return; }
+      if (error || !data || data.length === 0) { setErr("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       setTodos((t) => t.filter((x) => x.id !== todo.id));
     } catch {
-      setErr("삭제 실패 — 네트워크 확인");
+      setErr("삭제하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
   };
 

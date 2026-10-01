@@ -121,7 +121,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
         if (error) {
           setForm(emptyForm());
           setExistingRowId(null);
-          showToast("불러오기 실패: " + error.message);
+          showToast("불러오지 못했어요: " + error.message);
           return;
         }
         const row = data?.[0];
@@ -135,7 +135,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
           setExistingFirstAssist(null);
         }
       } catch {
-        if (!cancelled) { setForm(emptyForm()); setExistingRowId(null); showToast("불러오기 실패 — 네트워크 확인"); }
+        if (!cancelled) { setForm(emptyForm()); setExistingRowId(null); showToast("불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."); }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -246,7 +246,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
           .select();
         if (error) throw error;
         if (!data || data.length === 0) {
-          showToast("저장 안 됨 — 권한/정책을 확인하세요 (0행 갱신)");
+          showToast("저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
           return;
         }
         showToast("관찰 기록이 수정되었습니다");
@@ -263,7 +263,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
       // 여기 도달 = 성공만(update 0행은 위에서 return, 에러는 throw) → 부모가 배너 재조회(1차 즉등록 성공 포함).
       onClosingSaved?.();
     } catch (e) {
-      showToast("저장 실패: " + (e?.message || "unknown"));
+      showToast("저장하지 못했어요: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setSaving(false);
     }
@@ -298,7 +298,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
           {!supabase
             ? "데모 모드 — Supabase 키가 없어 저장은 비활성화됩니다. 입력은 가능하지만 저장되지 않아요."
-            : "회원을 먼저 선택하세요. (회원 탭에서 선택하면 이 회원에 관찰 기록이 저장됩니다.)"}
+            : "회원을 먼저 선택해 주세요. (회원 탭에서 선택하면 이 회원에 관찰 기록이 저장됩니다.)"}
         </div>
       )}
 

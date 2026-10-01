@@ -76,8 +76,8 @@ export default function PtPricingSettings() {
   // 저장 — 신규=insert / 수정=update. account_id·trainer_id는 DB DEFAULT라 미포함.
   const save = async () => {
     if (saving) return;
-    if (!name.trim()) return showToast("패키지명을 입력하세요");
-    if (price === "" || isNaN(Number(price))) return showToast("금액을 입력하세요");
+    if (!name.trim()) return showToast("패키지명을 입력해 주세요");
+    if (price === "" || isNaN(Number(price))) return showToast("금액을 입력해 주세요");
     const payload = {
       name: name.trim(),
       sessions: sessions === "" ? null : Number(sessions),
@@ -106,19 +106,19 @@ export default function PtPricingSettings() {
     if (editingId) {
       // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패. .select() length>0로 확정.
       const { data, error } = await supabase.from("pt_package").update(payload).eq("id", editingId).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setRows((p) => sortRows(p.map((r) => (r.id === data[0].id ? data[0] : r))));
-      showToast("패키지 수정됨");
+      showToast("패키지를 수정했어요");
     } else {
       const { data, error } = await supabase.from("pt_package").insert(payload).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setRows((p) => sortRows([...p, data[0]]));
-      showToast("패키지 추가됨");
+      showToast("패키지를 추가했어요");
     }
     resetForm();
     setSaving(false);
     } catch {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -149,14 +149,14 @@ export default function PtPricingSettings() {
     }
     const { data, error } = await supabase.from("pt_package").delete().eq("id", id).select();
     if (error || !data || data.length === 0) {
-      showToast("삭제 실패 — 권한/정책을 확인하세요");
+      showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
       setConfirmId(null);
       return;
     }
     setRows((p) => p.filter((r) => r.id !== id));
     if (editingId === id) resetForm();
     setConfirmId(null);
-    showToast("삭제됨");
+    showToast("삭제했어요");
   };
 
   return (

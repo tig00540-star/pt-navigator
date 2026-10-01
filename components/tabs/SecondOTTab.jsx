@@ -279,7 +279,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
         if (sbResult) { setSalesbook(sbResult.data); setSalesbookMeta(sbResult.meta); }
       }
     } catch (e) {
-      setAiError("네트워크 오류: " + (e?.message || "unknown"));
+      setAiError("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setGenerating(false);
     }
@@ -293,7 +293,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     setSbError("");
     try {
       const sbResult = await callSalesbook(brief.recommended_program);
-      if (!sbResult) { setSbError("세일즈북 생성에 실패했어요. 잠시 후 다시 시도하세요."); return; }
+      if (!sbResult) { setSbError("세일즈북 생성에 실패했어요. 잠시 후 다시 시도해 주세요."); return; }
       const reportToSave = { ...(row2Report || {}), salesbook: sbResult.data, salesbookMeta: sbResult.meta };
       if (existingRow2Id) {
         const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", existingRow2Id).select();
@@ -308,7 +308,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       setRow2Report(reportToSave);
       showToast("세일즈북을 새로 만들었어요");
     } catch {
-      setSbError("네트워크 오류예요. 잠시 후 다시 시도하세요.");
+      setSbError("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setSbGenerating(false);
     }
@@ -328,12 +328,12 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     const reportToSave = { ...(row2Report || {}), salesbook: edited, salesbookMeta: nextMeta };
     try {
       const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", existingRow2Id).select();
-      if (!up || up.length === 0) { showToast("세일즈북 저장 실패 — 권한/정책 확인 (0행)"); return false; }
+      if (!up || up.length === 0) { showToast("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return false; }
       setSalesbook(edited); setSalesbookMeta(nextMeta); setRow2Report(reportToSave);
-      showToast("세일즈북 수정 저장됨");
+      showToast("세일즈북 수정을 저장했어요");
       return true;
     } catch {
-      showToast("세일즈북 저장 실패 — 네트워크 확인");
+      showToast("세일즈북을 저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
       return false;
     }
   };
@@ -385,7 +385,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
           .select();
         if (error) throw error;
         if (!data || data.length === 0) {
-          showToast("저장 안 됨 — 권한/정책을 확인하세요 (0행)");
+          showToast("저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
           return;
         }
       } else {
@@ -401,7 +401,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
       showToast("2차 클로징 결과가 저장되었습니다");
       onClosingSaved?.(); // 하드닝 통과(update 0행 return·insert throw 이후)한 성공 시점에만 → 부모가 배너 재조회
     } catch (e) {
-      showToast("저장 실패: " + (e?.message || "unknown"));
+      showToast("저장하지 못했어요: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setSavingClose(false);
     }
@@ -1004,7 +1004,7 @@ export default function SecondOTTab({ member, onClosingSaved }) {
     return renderDemo(
       !supabase
         ? "데모 모드 — Supabase 키가 없어 AI가 동작하지 않습니다. 아래는 예시(하드코딩)입니다."
-        : "회원을 먼저 선택하세요. 아래는 예시(하드코딩)입니다."
+        : "회원을 먼저 선택해 주세요. 아래는 예시(하드코딩)입니다."
     );
   }
   if (loading) {

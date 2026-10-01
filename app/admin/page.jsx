@@ -50,7 +50,7 @@ const ATABS = [
   { id: "revenue",   label: "매출" },
   { id: "settle",       label: "정산 보기" },   // 기간 정산(PT+FC+기타−지출=순이익)
   { id: "settle_entry", label: "장부 적기" },   // FC·기타 매출·지출 입력(폼 1개) + 기간 내역
-  { id: "flow",      label: "등록·이탈" },   // 구 OT회원 현황 + PT회원 현황(합침 · MemberFlow)
+  { id: "flow",      label: "등록·이탈" },   // 구 OT 회원 현황 + PT 회원 현황(합침 · MemberFlow)
   { id: "schedule",  label: "스케줄" },
   { id: "payroll",   label: "급여" },
   { id: "ops",       label: "운영" },
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
         ]);
         const firstErr = u.error || o.error || c.error || l.error;
         if (firstErr) {
-          setDbNote("불러오기 실패: " + firstErr.message);
+          setDbNote("불러오지 못했어요: " + firstErr.message);
           return;
         }
         setRows(u.data || []);
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
         setIncomes(inc.data || []);  // 비차단 — income 테이블 없으면 []로 폴백(FC·기타 매출만 빈값)
         setStartDay(acc.data?.settlement_start_day ?? 1); // 컬럼 없으면 1(달력 월)
       } catch {
-        setDbNote("불러오기 실패 — 새로고침해 주세요.");
+        setDbNote("불러오지 못했어요. 새로고침해 주세요.");
         setRole((r) => r ?? "denied"); // role 고착 방지(에러=잠금, 안전측)
       }
     })();
@@ -257,7 +257,7 @@ export default function AdminDashboard() {
     const { error } = await supabase.rpc("set_settlement_start_day", { d });
     if (error) {
       setStartDay(prev);
-      setDbNote("정산 시작일 저장 실패 — 마이그레이션(2026-09-29-income.sql) 실행 여부를 확인하세요.");
+      setDbNote("정산 기준일을 저장하지 못했어요. 다시 시도해 주세요.");
     }
   };
 

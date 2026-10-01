@@ -68,8 +68,8 @@ export default function AdminAnnouncements({ trainers = [] }) {
 
   const post = async () => {
     if (posting) return;
-    if (!title.trim() || !body.trim()) { setErr("제목과 본문을 입력하세요"); return; }
-    if (targetMode === "specific" && targetIds.length === 0) { setErr("지정할 트레이너를 선택하세요"); return; }
+    if (!title.trim() || !body.trim()) { setErr("제목과 본문을 입력해 주세요"); return; }
+    if (targetMode === "specific" && targetIds.length === 0) { setErr("지정할 트레이너를 선택해 주세요"); return; }
     setErr("");
     // 전체=null(인덱스·의미 명확) · 지정=선택 id 배열. account_id·author_id는 DB DEFAULT.
     const payload = {
@@ -88,16 +88,16 @@ export default function AdminAnnouncements({ trainers = [] }) {
     try {
       if (editingId) {
         const { data, error } = await supabase.from("announcement").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", editingId).select();
-        if (error || !data || data.length === 0) { setErr("게시 실패 — 권한/정책 확인"); return; }
+        if (error || !data || data.length === 0) { setErr("게시하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
         setAnns((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
       } else {
         const { data, error } = await supabase.from("announcement").insert(payload).select();
-        if (error || !data || data.length === 0) { setErr("게시 실패 — 원장 아님/정책"); return; }
+        if (error || !data || data.length === 0) { setErr("대표만 게시할 수 있어요."); return; }
         setAnns((p) => [data[0], ...p]);
       }
       resetForm();
     } catch {
-      setErr("게시 실패 — 네트워크 확인");
+      setErr("게시하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setPosting(false);
     }
@@ -120,10 +120,10 @@ export default function AdminAnnouncements({ trainers = [] }) {
     if (!supabase) { setAnns((p) => p.map((x) => (x.id === a.id ? { ...x, pinned: nextPinned } : x))); return; }
     try {
       const { data, error } = await supabase.from("announcement").update({ pinned: nextPinned, updated_at: new Date().toISOString() }).eq("id", a.id).select();
-      if (error || !data || data.length === 0) { setErr("핀 변경 실패 — 정책 확인"); return; }
+      if (error || !data || data.length === 0) { setErr("고정 상태를 바꾸지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       setAnns((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
     } catch {
-      setErr("핀 변경 실패 — 네트워크 확인");
+      setErr("고정 상태를 바꾸지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
   };
 
@@ -132,11 +132,11 @@ export default function AdminAnnouncements({ trainers = [] }) {
     if (!supabase) { setAnns((p) => p.filter((x) => x.id !== a.id)); return; }
     try {
       const { data, error } = await supabase.from("announcement").delete().eq("id", a.id).select();
-      if (error || !data || data.length === 0) { setErr("삭제 실패 — 정책 확인"); return; }
+      if (error || !data || data.length === 0) { setErr("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       setAnns((p) => p.filter((x) => x.id !== a.id));
       if (editingId === a.id) resetForm();
     } catch {
-      setErr("삭제 실패 — 네트워크 확인");
+      setErr("삭제하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
   };
 

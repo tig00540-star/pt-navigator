@@ -72,11 +72,11 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
       return;
     }
     if (assignTrainers && !assignedTrainerId) {
-      setErr("담당 트레이너를 선택하세요");
+      setErr("담당 트레이너를 선택해 주세요");
       return;
     }
     if (!supabase) {
-      setErr("Supabase가 아직 설정되지 않았어요. .env.local의 키를 확인하세요.");
+      setErr("Supabase가 아직 설정되지 않았어요. .env.local의 키를 확인해 주세요.");
       return;
     }
     // 인계·외부는 이월 잔여가 필요 — user INSERT 전에 검증(잘못된 등록 방지).
@@ -117,7 +117,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
       .select(); // 새 회원 id를 받아 이월계약에 연결
     if (error || !u || u.length === 0) {
       setSaving(false);
-      setErr(error ? error.message : "등록 실패(0행)");
+      setErr(error ? "등록하지 못했어요. 다시 시도해 주세요." : "등록하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
       return;
     }
     // 이월계약 INSERT (handover/external만) — 실패해도 회원은 등록됨(PT 뷰 '계약 등록'으로 회복).
@@ -145,7 +145,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
     }
       setSaving(false);
     } catch {
-      setErr("등록 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      setErr("등록하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return;
     } finally {
       setSaving(false);

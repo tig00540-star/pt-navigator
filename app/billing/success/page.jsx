@@ -43,7 +43,7 @@ function Confirm() {
         if (res.ok) setState("done");
         else { setState("error"); setMsg(body.error || "결제 처리에 실패했어요."); }
       } catch {
-        setState("error"); setMsg("네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
+        setState("error"); setMsg("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
       }
     })();
   }, [sp]);

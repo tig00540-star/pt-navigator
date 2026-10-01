@@ -40,7 +40,7 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
         setAnns(a.data || []);
         setReadIds(new Set((r.data || []).map((x) => x.announcement_id)));
       } catch {
-        if (!cancelled) setErr("공지를 불러오지 못했어요 — 새로고침 해주세요.");
+        if (!cancelled) setErr("공지를 불러오지 못했어요. 새로고침해 주세요.");
       }
     })();
     return () => { cancelled = true; };
@@ -61,12 +61,12 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
         .from("announcement_read")
         .upsert(rows, { onConflict: "announcement_id,trainer_id", ignoreDuplicates: true })
         .select();
-      if (error) { setErr("확인 반영 실패 — 정책 확인"); setAcking(false); return; }
+      if (error) { setErr("확인을 반영하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setAcking(false); return; }
       setReadIds((prev) => { const n = new Set(prev); for (const a of list) n.add(a.id); return n; });
       setErr("");
       setAcking(false);
     } catch {
-      setErr("확인 반영 실패 — 정책 확인");
+      setErr("확인을 반영하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
     } finally {
       setAcking(false);
     }
@@ -87,10 +87,10 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
           .upsert(rows, { onConflict: "announcement_id,trainer_id", ignoreDuplicates: true })
           .select();
         if (cancelled) return;
-        if (error) { setErr("확인 반영 실패 — 정책 확인"); return; }
+        if (error) { setErr("확인을 반영하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
         setReadIds((prev) => { const n = new Set(prev); for (const a of unread) n.add(a.id); return n; });
       } catch {
-        if (!cancelled) setErr("확인 반영 실패 — 정책 확인");
+        if (!cancelled) setErr("확인을 반영하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
       }
     })();
     return () => { cancelled = true; };

@@ -139,17 +139,17 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
     if (existing?.id) {
       // ⚠️ 교훈1 — error 없이 0행 = 조용한 실패. .select() length>0로 확정.
       const { data, error } = await supabase.from("pay_scheme").update(payload).eq("id", existing.id).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setSchemes((p) => p.map((s) => (s.id === data[0].id ? data[0] : s)));
     } else {
       const { data, error } = await supabase.from("pay_scheme").insert(payload).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setSchemes((p) => [...p, data[0]]);
     }
     showToast("급여 스킴이 저장되었어요");
     setSaving(false);
     } catch {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -170,13 +170,13 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
     }
     try {
       const { data, error } = await supabase.from("pay_scheme").delete().eq("id", row.id).select();
-      if (error || !data || data.length === 0) { showToast("삭제 실패 — 권한/정책을 확인하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setSaving(false); return; }
       setSchemes((p) => p.filter((s) => s.id !== row.id));
       selectScope(null);
       showToast("이 트레이너 정책 삭제 — 계정 기본을 따릅니다");
       setSaving(false);
     } catch {
-      showToast("삭제 실패 — 권한/정책을 확인하세요");
+      showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
     } finally {
       setSaving(false);
     }

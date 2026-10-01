@@ -137,10 +137,10 @@ export default function PostureAssessment({ member }) {
     setBusySlot(slot); setMsg("");
     let blob;
     try { blob = await compressImage(file); }
-    catch { setBusySlot(""); setMsg("이 사진을 읽지 못했어요. 다른 사진으로 시도하세요."); return; }
+    catch { setBusySlot(""); setMsg("이 사진을 읽지 못했어요. 다른 사진으로 시도해 주세요."); return; }
     const path = `${memberId}/posture/${crypto.randomUUID()}.jpg`;
     const { error: upErr } = await supabase.storage.from("member-photos").upload(path, blob, { contentType: "image/jpeg" });
-    if (upErr) { setBusySlot(""); setMsg("업로드 실패: " + upErr.message); return; }
+    if (upErr) { setBusySlot(""); setMsg("업로드하지 못했어요: " + upErr.message); return; }
     const next = { ...photos, [slot]: path };
     setPhotos(next);
     await signPaths(SLOTS.map((s) => next[s.key]));
@@ -172,7 +172,7 @@ export default function PostureAssessment({ member }) {
       .select();
     setSaving(false);
     if (error || !data || data.length === 0) {
-      setMsg("저장 실패 — 체형평가 마이그레이션이 실행됐는지 확인하세요. " + (error?.message || ""));
+      setMsg("저장하지 못했어요. 다시 시도해 주세요. " + (error?.message || ""));
       return;
     }
     // 새 평가가 기준이 된다 — 이전 평가로 만든 분석 캐시는 이 시점부터 안 쓴다.
@@ -199,7 +199,7 @@ export default function PostureAssessment({ member }) {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (AI 키/구독 상태를 확인하세요)");
+        setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (구독 상태를 확인해 주세요)");
         return;
       }
       const result = await res.json();
@@ -211,7 +211,7 @@ export default function PostureAssessment({ member }) {
       if (merged) setOtRow((r) => ({ ...r, report: merged }));
       else if (otRow) setAnaNotice("분석은 나왔지만 저장에 실패했어요 — 이 화면에서만 보입니다. (권한/정책 확인)");
     } catch (e) {
-      setAnaNotice("네트워크 오류: " + (e?.message || "unknown"));
+      setAnaNotice("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setAnaLoading(false);
     }

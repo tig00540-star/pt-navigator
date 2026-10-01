@@ -165,11 +165,11 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     try {
       const { data, error } = await supabase
         .from("daily_workout_log").update({ ai_summary: next }).eq("id", log.id).select();
-      if (error || !data || data.length === 0) { showToast("수정 실패 — 다시 시도하세요"); return; }
+      if (error || !data || data.length === 0) { showToast("수정하지 못했어요. 다시 시도해 주세요."); return; }
       setLogs((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
-      cancelEdit(); showToast("수정됨");
+      cancelEdit(); showToast("수정했어요");
     } catch {
-      showToast("수정 실패 — 네트워크 확인");
+      showToast("수정하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setLogBusy(false);
     }
@@ -282,7 +282,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       .insert(payload)
       .select();
     if (error || !data || data.length === 0) {
-      showToast("저장 실패 — 차감 안 됨. 다시 시도하세요");
+      showToast("저장하지 못했어요(세션은 차감되지 않았어요). 다시 시도해 주세요.");
       setSaving(false);
       return;
     }
@@ -297,7 +297,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     );
       setSaving(false);
     } catch {
-      showToast("저장 실패 — 차감 안 됨. 다시 시도하세요");
+      showToast("저장하지 못했어요(세션은 차감되지 않았어요). 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -307,7 +307,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const saveContract = async () => {
     if (cSaving) return;
     if (!(Number(cSessions) > 0 && Number(cPrice) > 0)) {
-      setCErr("세션수·회당단가를 입력하세요");
+      setCErr("세션수·회당단가를 입력해 주세요");
       return;
     }
     setCErr("");
@@ -331,7 +331,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     try {
     const { data, error } = await supabase.from("session_log").insert(payload).select();
     if (error || !data || data.length === 0) {
-      setCErr("저장 실패 — 다시 시도하세요");
+      setCErr("저장하지 못했어요. 다시 시도해 주세요.");
       setCSaving(false);
       return;
     }
@@ -340,7 +340,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     setCSaving(false);
     showToast(isReReg ? "재등록됨 · 기존 잔여 소진 후 적용" : "계약 등록됨 · 잔여 반영");
     } catch {
-      setCErr("계약 저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      setCErr("계약을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setCSaving(false);
     }
@@ -365,16 +365,16 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       .eq("id", member.id)
       .select();
     if (error || !data || data.length === 0) {
-      showToast("방향 저장 실패 — 다시 시도하세요");
+      showToast("방향을 저장하지 못했어요. 다시 시도해 주세요.");
       setDirSaving(false);
       return;
     }
     onMemberPatch?.(member.id, { pt_direction: next });
     setEditingDir(false);
     setDirSaving(false);
-    showToast("현재 방향 저장됨");
+    showToast("현재 방향을 저장했어요");
     } catch {
-      showToast("방향 저장 실패 — 다시 시도하세요");
+      showToast("방향을 저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setDirSaving(false);
     }
@@ -406,7 +406,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       setAcuteBrief(data);
       setAcuteMeta({ generatedAt: new Date().toISOString() });
     } catch (e) {
-      setAcuteError("네트워크 오류: " + (e?.message || "unknown"));
+      setAcuteError("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setAcuteGenerating(false);
     }

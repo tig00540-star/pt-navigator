@@ -100,7 +100,7 @@ export default function AuthGate({ children }) {
       password: pw,
     });
     setBusy(false);
-    if (error) setErr("로그인 실패 — 이메일/비밀번호를 확인하세요.");
+    if (error) setErr("로그인하지 못했어요. 이메일과 비밀번호를 확인해 주세요.");
     // 성공 시 onAuthStateChange가 session을 채워 자동 전환.
   };
 

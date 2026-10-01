@@ -139,7 +139,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
               {forecast.expectedRe != null ? (
                 <>
                   <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedRe)}</div>
-                  <div className="mt-1 text-[10px] leading-relaxed text-muted">만료임박 {forecast.expiringCount}명 × 재등록률 {pctText(forecast.reregRate)} × 평균 {wonApprox(forecast.avgRe)}</div>
+                  <div className="mt-1 text-[10px] leading-relaxed text-muted">만료 임박 {forecast.expiringCount}명 × 재등록률 {pctText(forecast.reregRate)} × 평균 {wonApprox(forecast.avgRe)}</div>
                 </>
               ) : <div className="mt-1 text-[11px] text-muted">아직 부족 — 재등록 이력 쌓이면 표시</div>}
             </div>

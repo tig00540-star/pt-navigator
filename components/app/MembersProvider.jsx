@@ -103,14 +103,14 @@ export default function MembersProvider({ children }) {
         .eq("hidden", false) // 소프트 삭제(환불) 회원 제외
         .order("created_at", { ascending: false });
       if (error) {
-        setDbNote("불러오기 실패: " + error.message);
+        setDbNote("불러오지 못했어요: " + error.message);
         setReady(true);
         return;
       }
       setMembers((data || []).map(mapMemberRow));
       setDbNote("");
     } catch {
-      setDbNote("회원 목록을 불러오지 못했어요 — 잠시 후 새로고침 해주세요.");
+      setDbNote("회원 목록을 불러오지 못했어요. 잠시 후 새로고침해 주세요.");
     } finally {
       setReady(true);
     }
@@ -161,7 +161,7 @@ export default function MembersProvider({ children }) {
           .insert(payload)
           .select();
         if (insErr || !ins || ins.length === 0) {
-          setDbNote("계약 생성 실패 — session_log INSERT (정책/0행)" + (insErr ? ": " + insErr.message : ""));
+          setDbNote("계약을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요." + (insErr ? ": " + insErr.message : ""));
           return false; // status 안 건드림(clean)
         }
       }
@@ -172,13 +172,13 @@ export default function MembersProvider({ children }) {
         .eq("id", member.id)
         .select();
       if (error || !data || data.length === 0) {
-        setDbNote("PT 등록 확정 실패 — user_table UPDATE (정책/0행)" + (error ? ": " + error.message : ""));
+        setDbNote("PT 등록을 확정하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요." + (error ? ": " + error.message : ""));
         return false;
       }
       setMemberStatus(member.id, "pt_active"); // 확정 성공 후에만 뷰 전환(깜빡임 방지)
       return true;
     } catch {
-      setDbNote("PT 등록 확정 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      setDbNote("PT 등록을 확정하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return false;
     }
   }, [setMemberStatus]);

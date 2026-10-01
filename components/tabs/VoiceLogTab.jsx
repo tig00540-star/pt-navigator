@@ -230,7 +230,7 @@ export default function VoiceLogTab({ member, onResult }) {
         },
       });
     } catch {
-      setNotice("마이크 권한이 필요합니다. 브라우저에서 권한을 허용한 뒤 다시 시도하세요.");
+      setNotice("마이크 권한이 필요합니다. 브라우저에서 권한을 허용한 뒤 다시 시도해 주세요.");
       return;
     }
 

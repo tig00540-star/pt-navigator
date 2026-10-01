@@ -36,22 +36,22 @@ export default function RefundMember({ member, contracts, onDone }) {
     if (!supabase) return showToast("데모 모드 — 키 설정 시 사용 가능");
     if (!target) return showToast("환불 가능한 유료 계약이 없어요");
     const amt = Number(amount);
-    if (!(amt > 0)) return showToast("환불 금액을 입력하세요");
+    if (!(amt > 0)) return showToast("환불 금액을 입력해 주세요");
     if (!confirming) { setConfirming(true); return; } // 1탭: 확인 대기
     setSaving(true);
     try {
     // 1) 계약에 환불 기록(처리월 = 오늘) — .select() 하드닝(0행 = 조용한 실패).
     const { data: up, error: ue } = await supabase.from("session_log")
       .update({ refund_amount: amt, refunded_at: kstToday() }).eq("id", target.id).select();
-    if (ue || !up || up.length === 0) { showToast("환불 기록 실패 — 다시 시도"); setSaving(false); setConfirming(false); return; }
+    if (ue || !up || up.length === 0) { showToast("환불을 기록하지 못했어요. 다시 시도해 주세요."); setSaving(false); setConfirming(false); return; }
     // 2) 회원 소프트 삭제(hidden) — .select() 하드닝.
     const { data: hd, error: he } = await supabase.from("user_table")
       .update({ hidden: true }).eq("id", member.id).select();
-    if (he || !hd || hd.length === 0) { showToast("회원 숨김 실패 — 환불은 기록됐어요(권한 확인)"); setSaving(false); return; }
+    if (he || !hd || hd.length === 0) { showToast("환불은 기록했지만 회원 정리는 하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setSaving(false); return; }
     showToast("환불 처리 및 회원 정리 완료");
       setSaving(false);
     } catch {
-      showToast("환불 처리 중 오류 — 다시 시도하세요");
+      showToast("환불을 처리하지 못했어요. 다시 시도해 주세요.");
       return; // 실패 시 onDone(목록복귀) 호출 금지 — 성공으로 오인 방지(3-a-1·3-b-2와 동일 규칙)
     } finally {
       setSaving(false);

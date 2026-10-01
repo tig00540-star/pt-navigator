@@ -132,7 +132,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
     if (saving) return;
     if (!measuredAt) return;
     if (INBODY_FIELDS.every((f) => vals[f.key] === "")) {
-      showToast("측정치를 하나 이상 입력하세요");
+      showToast("측정치를 하나 이상 입력해 주세요");
       return;
     }
     setSaving(true);
@@ -150,16 +150,16 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
     try {
     const { data, error } = await supabase.from("inbody_log").insert(payload).select();
     if (error || !data || data.length === 0) {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
       setSaving(false);
       return;
     }
     setRows((p) => [data[0], ...p].sort((a, b) => (a.measured_at < b.measured_at ? 1 : -1))); // measured_at 내림차순 — back-date 대비 재정렬
     resetForm();
-    showToast("인바디 저장됨");
+    showToast("인바디를 저장했어요");
       setSaving(false);
     } catch {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -176,13 +176,13 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
     }
     const { data, error } = await supabase.from("inbody_log").delete().eq("id", id).select();
     if (error || !data || data.length === 0) {
-      showToast("삭제 실패 — 권한/정책을 확인하세요");
+      showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
       setConfirmId(null);
       return;
     }
     setRows((p) => p.filter((r) => r.id !== id));
     setConfirmId(null);
-    showToast("삭제됨");
+    showToast("삭제했어요");
   };
   // delta 표시값 — ±값(소수 1자리 반올림) + 방향 아이콘.
   const fmtDelta = (d) => (d > 0 ? "+" : "") + (Math.round(d * 10) / 10);
@@ -200,7 +200,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (AI 키/구독 상태를 확인하세요)");
+        setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (구독 상태를 확인해 주세요)");
         return;
       }
       const result = await res.json();
@@ -213,7 +213,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       if (merged) setOtRow((r) => ({ ...r, report: merged }));
       else if (otRow) setAnaNotice("분석은 나왔지만 저장에 실패했어요 — 이 화면에서만 보입니다. (권한/정책 확인)");
     } catch (e) {
-      setAnaNotice("네트워크 오류: " + (e?.message || "unknown"));
+      setAnaNotice("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setAnaLoading(false);
     }
@@ -315,7 +315,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">아직 인바디 기록이 없습니다. 위에서 첫 측정을 입력하세요.</p>
+          <p className="mt-2 text-sm text-muted">아직 인바디 기록이 없습니다. 위에서 첫 측정을 입력해 주세요.</p>
         ) : (
           <ul className="mt-2 space-y-2">
             {rows.map((row) => (

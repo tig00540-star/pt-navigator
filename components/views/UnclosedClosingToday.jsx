@@ -1,7 +1,7 @@
 "use client";
 /* =========================================================================
    기능2 할일 C3 — "클로징 미마감": OT 회원 중 2차(round=2) 관찰만 하고 클로징 결과 미기록.
-   판정=lib/memberStatus의 unclosedClosings(round=2·빈 결과·OT회원 교집합). 선택 시 2차 OT로.
+   판정=lib/memberStatus의 unclosedClosings(round=2·빈 결과·OT 회원 교집합). 선택 시 2차 OT로.
    ReapproachToday 형제(원본 안 건드림). 빈배열이면 null. hold/success/fail은 제외(빈 결과만).
    ========================================================================= */
 import { useEffect, useState } from "react";

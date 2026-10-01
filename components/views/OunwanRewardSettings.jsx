@@ -48,8 +48,8 @@ export default function OunwanRewardSettings() {
   const add = async () => {
     if (saving) return;
     const n = Number(milestone);
-    if (!Number.isFinite(n) || n <= 0) return showToast("달성 횟수를 1 이상으로 입력하세요");
-    if (!rewardText.trim()) return showToast("포상 내용을 입력하세요");
+    if (!Number.isFinite(n) || n <= 0) return showToast("달성 횟수를 1 이상으로 입력해 주세요");
+    if (!rewardText.trim()) return showToast("포상 내용을 입력해 주세요");
     const payload = { milestone: n, reward_text: rewardText.trim() };
 
     setSaving(true);
@@ -59,12 +59,12 @@ export default function OunwanRewardSettings() {
     }
     try {
       const { data, error } = await supabase.from("trainer_reward").insert(payload).select();
-      if (error || !data || data.length === 0) { showToast("추가 실패 — 권한/정책 확인"); return; }
+      if (error || !data || data.length === 0) { showToast("추가하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       setRows((p) => [...p, data[0]].sort((a, b) => a.milestone - b.milestone));
       setMilestone(""); setRewardText("");
-      showToast("추가됨");
+      showToast("추가했어요");
     } catch {
-      showToast("추가 실패 — 네트워크 확인");
+      showToast("추가하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -75,10 +75,10 @@ export default function OunwanRewardSettings() {
     if (!supabase) { setRows((p) => p.map((x) => (x.id === r.id ? { ...x, active: next } : x))); return; }
     try {
       const { data, error } = await supabase.from("trainer_reward").update({ active: next }).eq("id", r.id).select();
-      if (error || !data || data.length === 0) { showToast("변경 실패 — 정책 확인"); return; }
+      if (error || !data || data.length === 0) { showToast("변경하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       setRows((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
     } catch {
-      showToast("변경 실패 — 네트워크 확인");
+      showToast("변경하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
   };
 
@@ -87,11 +87,11 @@ export default function OunwanRewardSettings() {
     if (!supabase) { setRows((p) => p.filter((x) => x.id !== r.id)); return; }
     try {
       const { data, error } = await supabase.from("trainer_reward").delete().eq("id", r.id).select();
-      if (error || !data || data.length === 0) { showToast("삭제 실패 — 정책 확인"); return; }
+      if (error || !data || data.length === 0) { showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       setRows((p) => p.filter((x) => x.id !== r.id));
-      showToast("삭제됨");
+      showToast("삭제했어요");
     } catch {
-      showToast("삭제 실패 — 네트워크 확인");
+      showToast("삭제하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
   };
 

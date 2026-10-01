@@ -52,9 +52,9 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
 
   const reassign = async () => {
     if (saving) return;
-    if (!member) { setErr("회원을 선택하세요"); return; }
-    if (!trainerId) { setErr("새 담당 트레이너를 선택하세요"); return; }
-    if (trainerId === member.trainer_id) { setErr("현재 담당과 다른 트레이너를 선택하세요"); return; }
+    if (!member) { setErr("회원을 선택해 주세요"); return; }
+    if (!trainerId) { setErr("새 담당 트레이너를 선택해 주세요"); return; }
+    if (trainerId === member.trainer_id) { setErr("현재 담당과 다른 트레이너를 선택해 주세요"); return; }
     if (!supabase) { setErr("Supabase가 설정되지 않았어요"); return; }
     const n = Number(sessions) || 0;
     const p = Number(price) || 0;
@@ -69,7 +69,7 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
           trainer_id: trainerId,
         };
         const { data, error } = await supabase.from("session_log").insert(payload).select();
-        if (error || !data || data.length === 0) { setErr("① 이월계약 생성 실패 — 다시 시도하세요(아직 아무것도 안 바뀜)."); setSaving(false); return; }
+        if (error || !data || data.length === 0) { setErr("① 이월계약 생성 실패 — 다시 시도해 주세요(아직 아무것도 안 바뀜)."); setSaving(false); return; }
         // ② A 잔여>0 계약 전부 닫기(보통 1건).
         const toClose = memberContracts.filter((c) => remainingSessions(c, logs).total > 0);
         for (const c of toClose) {

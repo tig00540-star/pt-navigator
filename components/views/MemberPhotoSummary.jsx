@@ -79,12 +79,12 @@ export default function MemberPhotoSummary({ member, mode }) {
     setBusy(true); setErr("");
     let blob;
     try { blob = await compressImage(file); }
-    catch { setBusy(false); setErr("이 사진을 읽지 못했어요. 다른 사진으로 시도하세요."); return; }
+    catch { setBusy(false); setErr("이 사진을 읽지 못했어요. 다른 사진으로 시도해 주세요."); return; }
     const path = `${member.id}/${crypto.randomUUID()}.jpg`;
     const { error: upErr } = await supabase.storage
       .from("member-photos")
       .upload(path, blob, { contentType: "image/jpeg" });
-    if (upErr) { setBusy(false); setErr("업로드에 실패했어요: " + upErr.message); return; }
+    if (upErr) { setBusy(false); setErr("업로드하지 못했어요: " + upErr.message); return; }
     const { data, error } = await supabase
       .from("member_photo")
       .insert({ user_id: member.id, storage_path: path, label, taken_on: takenOn, uploaded_by: "trainer" })
@@ -92,7 +92,7 @@ export default function MemberPhotoSummary({ member, mode }) {
     if (error || !data || data.length === 0) {
       await supabase.storage.from("member-photos").remove([path]); // 고아 방지
       setBusy(false);
-      setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행 — 권한/정책)"));
+      setErr("기록을 저장하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     await loadRows();
@@ -104,11 +104,11 @@ export default function MemberPhotoSummary({ member, mode }) {
     if (busy) return;
     setBusy(true); setErr("");
     const { error: sErr } = await supabase.storage.from("member-photos").remove([photo.storage_path]);
-    if (sErr) { setBusy(false); setErr("삭제에 실패했어요: " + sErr.message); return; }
+    if (sErr) { setBusy(false); setErr("삭제하지 못했어요: " + sErr.message); return; }
     const { data, error } = await supabase.from("member_photo").delete().eq("id", photo.id).select();
     if (error || !data || data.length === 0) {
       setBusy(false);
-      setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행 — 권한)"));
+      setErr("삭제하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     await loadRows();

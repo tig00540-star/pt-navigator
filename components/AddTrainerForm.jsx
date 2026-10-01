@@ -19,7 +19,7 @@ export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreat
     : `트레이너 좌석 ${seatLimit}개를 모두 쓰고 있어요. 더 추가하려면 문의해 주세요.`;
   const submit = async () => {
     if (!supabase || busy) return;
-    if (!email.trim() || !name.trim()) { setErr("이메일과 이름을 입력하세요."); return; }
+    if (!email.trim() || !name.trim()) { setErr("이메일과 이름을 입력해 주세요."); return; }
     if (full) { setErr(fullMsg); return; }
     setBusy(true); setErr(""); setResult(null);
     try {
@@ -35,7 +35,7 @@ export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreat
       onCreated?.({ id: d.id, name: name.trim(), role: "trainer", active: true }); // 좌석 표시 즉시 반영
       setEmail(""); setName("");
     } catch (e) {
-      setErr("오류: " + (e?.message || "unknown"));
+      setErr("문제가 생겼어요: " + (e?.message || "알 수 없는 오류"));
     } finally { setBusy(false); }
   };
 

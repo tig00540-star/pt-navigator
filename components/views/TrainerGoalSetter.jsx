@@ -45,18 +45,18 @@ export default function TrainerGoalSetter() {
 
   const save = async () => {
     if (saving) return;
-    if (value === "" || isNaN(Number(value)) || Number(value) <= 0) return showToast("목표 금액을 입력하세요");
+    if (value === "" || isNaN(Number(value)) || Number(value) <= 0) return showToast("목표 금액을 입력해 주세요");
     const payload = { trainer_id: uid, ym, target_revenue: Number(value), updated_at: new Date().toISOString() };
     setSaving(true);
     if (!supabase) { setCurrent(Number(value)); showToast("저장됨(데모)"); setSaving(false); return; }
     try {
       const { data, error } = await supabase.from("trainer_goal").upsert(payload, { onConflict: "trainer_id,ym" }).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setCurrent(data[0].target_revenue);
-      showToast("이달 목표 저장됨");
+      showToast("이달 목표를 저장했어요");
       setSaving(false);
     } catch {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }

@@ -37,13 +37,13 @@ export default function MemberAppLink({ member, onMemberPatch }) {
       if (error?.message === "premium_required") {
         showToast("회원앱은 프리미엄 전용이에요 — 업그레이드가 필요해요.");
       } else {
-        showToast("발급 실패" + (error ? ": " + error.message : ""));
+        showToast("발급하지 못했어요. 다시 시도해 주세요." + (error ? ": " + error.message : ""));
       }
       return;
     }
     onMemberPatch?.(member.id, { member_token: newToken }); // 로컬 낙관 갱신(배지·버튼 즉시 반영)
     const ok = await copyText(linkFor(newToken));
-    showToast(ok ? "링크 생성·복사됨" : "발급됨 (복사 실패 — 링크 복사 다시 눌러줘)");
+    showToast(ok ? "링크를 만들고 복사했어요" : "링크는 만들었어요. 복사가 안 됐으니 '링크 복사'를 다시 눌러 주세요");
     setBusy(false);
   };
 
@@ -51,7 +51,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
   const copyExisting = async () => {
     if (!token) return;
     const ok = await copyText(linkFor(token));
-    showToast(ok ? "링크 복사됨" : "복사 실패 — 길게 눌러 복사");
+    showToast(ok ? "링크를 복사했어요" : "복사하지 못했어요. 링크를 길게 눌러 복사해 주세요");
   };
 
   // PT 종료 = 서버가 회원 auth 유저 삭제(세션 무효) + member_token/auth_id=null. (완전 차단)
@@ -76,9 +76,9 @@ export default function MemberAppLink({ member, onMemberPatch }) {
         return;
       }
       onMemberPatch?.(member.id, { member_token: null, member_auth_id: null }); // 배지 사라짐·[링크 생성]으로 복귀
-      showToast("PT 종료됨 · 회원앱 접근 차단");
+      showToast("PT를 종료했어요. 회원앱 접속도 막았어요");
     } catch {
-      showToast("네트워크 오류 · 다시 시도");
+      showToast("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
     }
     setBusy(false);
     setConfirmEnd(false);

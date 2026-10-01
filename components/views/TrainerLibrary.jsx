@@ -62,8 +62,8 @@ export default function TrainerLibrary() {
 
   const save = async () => {
     if (saving) return;
-    if (!title.trim()) return showToast("제목을 입력하세요");
-    if (!url.trim()) return showToast("링크를 입력하세요");
+    if (!title.trim()) return showToast("제목을 입력해 주세요");
+    if (!url.trim()) return showToast("링크를 입력해 주세요");
     const payload = {
       category: category.trim() || null,
       title: title.trim(),
@@ -80,18 +80,18 @@ export default function TrainerLibrary() {
     try {
     if (editingId) {
       const { data, error } = await supabase.from("library_item").update(payload).eq("id", editingId).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setRows((p) => p.map((r) => (r.id === data[0].id ? data[0] : r)));
-      showToast("수정됨");
+      showToast("수정했어요");
     } else {
       const { data, error } = await supabase.from("library_item").insert(payload).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setRows((p) => [...p, data[0]]);
-      showToast("추가됨");
+      showToast("추가했어요");
     }
     resetForm(); setSaving(false);
     } catch {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -106,10 +106,10 @@ export default function TrainerLibrary() {
     if (confirmId !== id) { setConfirmId(id); return; }
     if (!supabase) { setRows((p) => p.filter((r) => r.id !== id)); setConfirmId(null); showToast("삭제됨(데모)"); return; }
     const { data, error } = await supabase.from("library_item").delete().eq("id", id).select();
-    if (error || !data || data.length === 0) { showToast("삭제 실패 — 권한/정책 확인"); setConfirmId(null); return; }
+    if (error || !data || data.length === 0) { showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setConfirmId(null); return; }
     setRows((p) => p.filter((r) => r.id !== id));
     if (editingId === id) resetForm();
-    setConfirmId(null); showToast("삭제됨");
+    setConfirmId(null); showToast("삭제했어요");
   };
 
   // 즐겨찾기 토글 — 별표한 자료는 1차 OT 운동 추천에 '우선' 반영. .select() 하드닝.
@@ -118,7 +118,7 @@ export default function TrainerLibrary() {
     const next = !r.favorite;
     if (!supabase) { setRows((p) => p.map((x) => (x.id === r.id ? { ...x, favorite: next } : x))); return; }
     const { data, error } = await supabase.from("library_item").update({ favorite: next }).eq("id", r.id).select();
-    if (error || !data || data.length === 0) { showToast("즐겨찾기 변경 실패 — 마이그레이션을 확인하세요"); return; }
+    if (error || !data || data.length === 0) { showToast("즐겨찾기를 바꾸지 못했어요. 다시 시도해 주세요."); return; }
     setRows((p) => p.map((x) => (x.id === r.id ? data[0] : x)));
   };
 

@@ -60,7 +60,7 @@ export default function CenterMachineSettings() {
   // 머신별 실행 큐 AI 초안 — /api/machine-cues(생성만). 기존 입력에 덧붙이고 트레이너가 다듬어 저장.
   const genCues = async () => {
     if (cueLoading) return;
-    if (!name.trim()) return showToast("먼저 장비 이름을 입력하세요");
+    if (!name.trim()) return showToast("먼저 장비 이름을 입력해 주세요");
     setCueLoading(true);
     try {
       const res = await fetch("/api/machine-cues", {
@@ -70,14 +70,14 @@ export default function CenterMachineSettings() {
       });
       const data = await res.json();
       if (!res.ok || !Array.isArray(data.cues) || !data.cues.length) showToast(data.error || "초안 생성 실패");
-      else { setCues((p) => (p.trim() ? p.trim() + "\n" : "") + data.cues.join("\n")); showToast("초안 생성됨 — 다듬어 저장하세요"); }
-    } catch { showToast("초안 생성 실패 — 네트워크 확인"); }
+      else { setCues((p) => (p.trim() ? p.trim() + "\n" : "") + data.cues.join("\n")); showToast("초안을 만들었어요. 다듬어서 저장해 주세요"); }
+    } catch { showToast("초안을 만들지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."); }
     setCueLoading(false);
   };
 
   const save = async () => {
     if (saving) return;
-    if (!name.trim()) return showToast("장비 이름을 입력하세요");
+    if (!name.trim()) return showToast("장비 이름을 입력해 주세요");
     const cueArr = cues.split("\n").map((s) => s.trim()).filter(Boolean);
     const payload = { name: name.trim(), brand: brand.trim() || null, kind, spec: spec.trim() || null, cues: cueArr.length ? cueArr : null };
     setSaving(true);
@@ -89,20 +89,20 @@ export default function CenterMachineSettings() {
     try {
     if (editingId) {
       const { data, error } = await supabase.from("center_machine").update(payload).eq("id", editingId).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 권한(대표만)·정책 확인"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("대표만 저장할 수 있어요."); setSaving(false); return; }
       setRows((p) => p.map((r) => (r.id === data[0].id ? data[0] : r)));
       invalidateCenterMachines(); // 읽기 캐시 무효화 — 다음 VoiceLog/PtWorkout 마운트 시 새 목록
-      showToast("수정됨");
+      showToast("수정했어요");
     } else {
       const { data, error } = await supabase.from("center_machine").insert(payload).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 권한(대표만)·정책 확인"); setSaving(false); return; }
+      if (error || !data || data.length === 0) { showToast("대표만 저장할 수 있어요."); setSaving(false); return; }
       setRows((p) => [...p, data[0]]);
       invalidateCenterMachines();
-      showToast("추가됨");
+      showToast("추가했어요");
     }
     resetForm(); setSaving(false);
     } catch {
-      showToast("저장 실패 — 권한(대표만)·정책 확인");
+      showToast("대표만 저장할 수 있어요.");
     } finally {
       setSaving(false);
     }
@@ -114,11 +114,11 @@ export default function CenterMachineSettings() {
     if (confirmId !== id) { setConfirmId(id); return; }
     if (!supabase) { setRows((p) => p.filter((r) => r.id !== id)); setConfirmId(null); showToast("삭제됨(데모)"); return; }
     const { data, error } = await supabase.from("center_machine").delete().eq("id", id).select();
-    if (error || !data || data.length === 0) { showToast("삭제 실패 — 권한/정책 확인"); setConfirmId(null); return; }
+    if (error || !data || data.length === 0) { showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setConfirmId(null); return; }
     setRows((p) => p.filter((r) => r.id !== id));
     invalidateCenterMachines(); // 읽기 캐시 무효화
     if (editingId === id) resetForm();
-    setConfirmId(null); showToast("삭제됨");
+    setConfirmId(null); showToast("삭제했어요");
   };
 
   const groups = {};

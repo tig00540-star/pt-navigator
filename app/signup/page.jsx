@@ -22,7 +22,7 @@ export default function SignupPage() {
     if (busy) return;
     if (!supabase) { setErr("Supabase 미설정 — 가입은 키 설정 후 가능합니다."); return; }
     if (!email.trim() || !pw || !displayName.trim()) { setErr("이메일·비밀번호·이름은 필수입니다."); return; }
-    if (type === "center" && !accountName.trim()) { setErr("센터명을 입력하세요."); return; }
+    if (type === "center" && !accountName.trim()) { setErr("센터명을 입력해 주세요."); return; }
     setBusy(true); setErr("");
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
@@ -36,7 +36,7 @@ export default function SignupPage() {
       },
     });
     setBusy(false);
-    if (error) { setErr("가입 실패 — " + (error.message || "다시 시도하세요")); return; }
+    if (error) { setErr("가입하지 못했어요: " + (error.message || "다시 시도해 주세요")); return; }
     if (data?.session) { router.replace("/"); return; }        // 이메일 인증 OFF → 즉시 로그인 → 앱으로
     setSent(true);                                             // 인증 ON → 메일 확인 안내
   };
@@ -45,7 +45,7 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
         <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
-          <div className="text-base font-semibold text-ink">메일함을 확인하세요</div>
+          <div className="text-base font-semibold text-ink">메일함을 확인해 주세요</div>
           <p className="mt-2 text-sm text-muted">{email}로 보낸 확인 링크를 누르면 가입이 완료됩니다.</p>
           <Link href="/" className="mt-4 inline-block text-xs font-semibold text-primary-strong hover:underline">로그인으로</Link>
         </div>

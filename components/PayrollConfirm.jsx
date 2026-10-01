@@ -28,7 +28,7 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
 
   const confirm = async () => {
     if (saving) return;
-    if (final === "" || isNaN(Number(final))) return showToast("최종 급여액을 입력하세요");
+    if (final === "" || isNaN(Number(final))) return showToast("최종 급여액을 입력해 주세요");
     const payload = {
       trainer_id: trainerId, ym,
       computed_total: pay?.computed ?? null,
@@ -40,16 +40,16 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
     try {
       if (run?.id) {
         const { data, error } = await supabase.from("payroll_run").update(payload).eq("id", run.id).select();
-        if (error || !data || data.length === 0) { showToast("확정 실패 — 다시 시도하세요"); return; }
+        if (error || !data || data.length === 0) { showToast("확정하지 못했어요. 다시 시도해 주세요."); return; }
         onSaved?.(data[0]);
       } else {
         const { data, error } = await supabase.from("payroll_run").insert(payload).select();
-        if (error || !data || data.length === 0) { showToast("확정 실패 — 다시 시도하세요"); return; }
+        if (error || !data || data.length === 0) { showToast("확정하지 못했어요. 다시 시도해 주세요."); return; }
         onSaved?.(data[0]);
       }
-      showToast("급여 확정됨");
+      showToast("급여를 확정했어요");
     } catch {
-      showToast("확정 실패 — 다시 시도하세요");
+      showToast("확정하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }

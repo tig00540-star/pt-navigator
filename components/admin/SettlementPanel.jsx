@@ -238,7 +238,7 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
 
   const save = async () => {
     const amt = Math.round(Number(String(amount).replace(/[^0-9]/g, "")));
-    if (!date || !Number.isFinite(amt) || amt <= 0) { setNote("날짜와 금액을 입력하세요."); return; }
+    if (!date || !Number.isFinite(amt) || amt <= 0) { setNote("날짜와 금액을 입력해 주세요."); return; }
     if (!supabase) { setNote("데모 모드 — 저장하려면 Supabase 키가 필요합니다."); return; }
     setSaving(true); setNote("");
     try {
@@ -247,13 +247,13 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
         : { table: "income", row: { earned_on: date, kind, amount: amt, memo: memo.trim() || null } };
       const { data, error } = await supabase.from(payload.table).insert(payload.row).select();
       if (error || !data || data.length === 0) {
-        setNote("저장 실패 — 마이그레이션이 실행됐는지 확인하세요." + (error ? ` (${error.message})` : ""));
+        setNote("저장하지 못했어요. 다시 시도해 주세요." + (error ? ` (${error.message})` : ""));
         return;
       }
       setAmount(""); setMemo("");
       (isExpense ? onExpenseChanged : onIncomeChanged)?.();
     } catch (e) {
-      setNote("저장 중 오류: " + (e?.message || "unknown"));
+      setNote("저장하지 못했어요: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setSaving(false);
     }
@@ -262,7 +262,7 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
   const remove = async (row) => {
     if (!supabase) return;
     const { data, error } = await supabase.from(row.table).delete().eq("id", row.rowId).select();
-    if (error || !data || data.length === 0) { setNote("삭제 실패 — 권한/정책을 확인하세요."); return; }
+    if (error || !data || data.length === 0) { setNote("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
     (row.table === "expense" ? onExpenseChanged : onIncomeChanged)?.();
   };
 

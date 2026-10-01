@@ -111,11 +111,11 @@ export default function TrainerProfileSettings() {
       // account_id는 DEFAULT auth_account_id() — 생략(with_check 통과). onConflict=trainer_id → upsert.
       const { data, error } = await supabase.from("trainer_profile")
         .upsert(payload, { onConflict: "trainer_id" }).select();
-      if (error || !data || data.length === 0) { showToast("저장 실패 — 다시 시도하세요"); setSaving(false); return; }
-      showToast("프로필 저장됨");
+      if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
+      showToast("프로필을 저장했어요");
       setSaving(false);
     } catch {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }

@@ -87,9 +87,9 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
     try {
       const { data, error } = await supabase.from("user_table").update(payload).eq("id", member.id).select();
       setSaving(false);
-      if (error || !data || data.length === 0) { setErr(error ? error.message : "저장 실패 (0행 — 권한/정책 확인)"); return; }
+      if (error || !data || data.length === 0) { setErr(error ? "저장하지 못했어요. 다시 시도해 주세요." : "저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
     } catch {
-      setErr("저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      setErr("저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return;
     } finally {
       setSaving(false);

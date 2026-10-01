@@ -189,7 +189,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     setAppts((p) => [...p, data[0]]);
     setPick(null); setQ(""); setSaving(false);
     } catch {
-      showToast("예약 실패 — 다시 시도하세요");
+      showToast("예약하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -238,7 +238,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
         .from("daily_workout_log")
         .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: usedVoice ? "voice" : "manual", ai_summary: body || null, raw_voice_text: usedVoice ? (rawText || null) : null, sent_at: sentAt })
         .select();
-      if (logErr || !logIns || logIns.length === 0) { showToast("완료 실패 — 다시 시도하세요"); setActing(false); return; }
+      if (logErr || !logIns || logIns.length === 0) { showToast("완료 처리하지 못했어요. 다시 시도해 주세요."); setActing(false); return; }
       logId = logIns[0].id;
     }
     const { data: up, error: upErr } = await supabase
@@ -246,11 +246,11 @@ export default function ScheduleBoard({ members = [], onSelect }) {
       .update({ status: "done", log_id: logId })
       .eq("id", appt.id)
       .select();
-    if (upErr || !up || up.length === 0) { showToast("완료 저장 실패 — 다시 시도하세요"); setActing(false); return; }
+    if (upErr || !up || up.length === 0) { showToast("완료를 저장하지 못했어요. 다시 시도해 주세요."); setActing(false); return; }
     setAppts((p) => p.map((a) => (a.id === appt.id ? up[0] : a)));
     doneMsg(); setAction(null); setActing(false);
     } catch {
-      showToast("완료 실패 — 다시 시도하세요");
+      showToast("완료 처리하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setActing(false);
     }
@@ -266,11 +266,11 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     }
     try {
     const { data, error } = await supabase.from("appointment").update({ status: "canceled" }).eq("id", appt.id).select();
-    if (error || !data || data.length === 0) { showToast("취소 실패 — 다시 시도하세요"); setActing(false); return; }
+    if (error || !data || data.length === 0) { showToast("취소하지 못했어요. 다시 시도해 주세요."); setActing(false); return; }
     setAppts((p) => p.filter((a) => a.id !== appt.id));
     setAction(null); setActing(false);
     } catch {
-      showToast("취소 실패 — 다시 시도하세요");
+      showToast("취소하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setActing(false);
     }
@@ -295,11 +295,11 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     }
     try {
       const { data, error } = await supabase.from("appointment").update({ status: "done" }).eq("id", appt.id).select();
-      if (error || !data || data.length === 0) { showToast("완료 실패 — 다시 시도하세요"); setActing(false); return; }
+      if (error || !data || data.length === 0) { showToast("완료 처리하지 못했어요. 다시 시도해 주세요."); setActing(false); return; }
       setAppts((p) => p.map((a) => (a.id === appt.id ? data[0] : a)));
       showToast("OT 수업 완료"); setAction(null); setActing(false);
     } catch {
-      showToast("완료 실패 — 다시 시도하세요");
+      showToast("완료 처리하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setActing(false);
     }

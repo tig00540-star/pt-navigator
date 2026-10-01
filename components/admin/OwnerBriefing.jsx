@@ -13,8 +13,8 @@ import Card from "@/components/ui/Card";
 
 // kind별 카드 메타(아이콘·강조색·이동 라벨). 전부 정적 리터럴.
 // hideDetail/hideAmount: 제목만으로 뜻이 통하는 카드는 설명글·금액을 지운다.
-//   · 재등록·이탈위험은 '몇 명'이 전부다. 밑에 붙던 근거 한 줄은 카드만 무겁게 했다.
-//   · 이탈위험 금액은 다른 카드와 성격이 달랐다(앞으로 들어올 돈 vs 이미 받은 미소진 수업료)
+//   · 재등록·이탈 위험은 '몇 명'이 전부다. 밑에 붙던 근거 한 줄은 카드만 무겁게 했다.
+//   · 이탈 위험 금액은 다른 카드와 성격이 달랐다(앞으로 들어올 돈 vs 이미 받은 미소진 수업료)
 //     → 나란히 두면 더 헷갈려서 화면에서 뺀다. 랭킹·AI 입력에는 그대로 쓴다.
 const META = {
   otToday:    { icon: CalendarCheck, accent: "cyan", go: "누가 오는지 보기", expand: true }, // 탭=제자리 펼침(이동 아님)
@@ -61,7 +61,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     return out.sort((x, y) => x.sort - y.sort);
   }, [appts, visible, nowISO]);
   const otTodayCount = otTodayList.length;
-  // 이탈위험·만료임박 명단 — ownerBriefing이 개수를 셀 때 쓰는 함수 그대로.
+  // 이탈 위험·만료 임박 명단 — ownerBriefing이 개수를 셀 때 쓰는 함수 그대로.
   // 다른 함수로 뽑으면 "3명"이라 써놓고 명단은 4줄이 되는 사고가 난다.
   const churnList = useMemo(
     () => churnRiskMembers(visible, contracts, logs, { nowISO })
@@ -251,7 +251,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                           <button type="button"
                             onClick={(e) => { e.stopPropagation(); onGoTab?.(c.tab); }}
                             className="mt-2 inline-flex items-center text-[11px] font-semibold text-muted underline underline-offset-2">
-                            PT회원 현황에서 전체 보기 <ChevronRight className="h-3 w-3" />
+                            PT 회원 현황에서 전체 보기 <ChevronRight className="h-3 w-3" />
                           </button>
                         )}
                       </div>
@@ -381,14 +381,14 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                 <div className="space-y-1 text-[12px]">
                   {report.watchLists.churn.map((c) => (
                     <div key={"c" + c.user_id} className="flex flex-wrap items-center gap-1.5">
-                      <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] text-danger-text">이탈위험</span>
+                      <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] text-danger-text">이탈 위험</span>
                       <span className="font-medium text-sub">{memberName(c.user_id)}</span>
                       <span className="text-[11px] text-muted">{nameOf(c.trainerId)} · 잔여 {c.remTotal ?? "—"}회{c.gap != null ? ` · ${c.gap}일 무수업` : ""}</span>
                     </div>
                   ))}
                   {report.watchLists.expiring.map((e) => (
                     <div key={"e" + e.user_id} className="flex flex-wrap items-center gap-1.5">
-                      <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">만료임박</span>
+                      <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">만료 임박</span>
                       <span className="font-medium text-sub">{memberName(e.user_id)}</span>
                       <span className="text-[11px] text-muted">{nameOf(e.trainerId)} · 잔여 {e.remTotal ?? "—"}회</span>
                     </div>

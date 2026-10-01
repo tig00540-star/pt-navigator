@@ -157,8 +157,8 @@ function CardioSection({ me, cardio, onReload, mode }) {
   const add = async () => {
     if (busy) return;
     if (!memberSupabase) { setErr("데모 모드 — 실제 기록은 불가해요."); return; }
-    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도하세요."); return; }
-    if (!on) { setErr("날짜를 선택하세요."); return; }
+    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
+    if (!on) { setErr("날짜를 선택해 주세요."); return; }
     setBusy(true); setErr("");
     // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). user_id는 me.id만(RLS with check가 스푸핑 차단).
     const { data, error } = await memberSupabase
@@ -173,7 +173,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
       .select();
     if (error || !data || data.length === 0) {
       setBusy(false);
-      setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      setErr("기록을 저장하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     setKind(""); setMinutes(""); setNote(""); // 날짜는 유지(연속 입력 편의)
@@ -193,7 +193,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
       .select(); // 하드닝: 0행이면 실패
     if (error || !data || data.length === 0) {
       setBusy(false);
-      setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      setErr("삭제하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     showToast("기록을 삭제했어요");
@@ -299,7 +299,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
     e.target.value = ""; // 같은 파일 재선택 허용
     if (!file || busy) return;
     if (!memberSupabase) { setErr("데모 모드 — 실제 업로드는 불가해요."); return; }
-    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도하세요."); return; }
+    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
     setBusy(true); setErr("");
     // 1) 업로드 전 압축(필수) — 원본 그대로 올리지 않음.
     let blob;
@@ -317,7 +317,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
       .upload(path, blob, { contentType: "image/jpeg" });
     if (upErr) {
       setBusy(false);
-      setErr("업로드에 실패했어요: " + upErr.message);
+      setErr("업로드하지 못했어요: " + upErr.message);
       return;
     }
     // 3) DB insert(하드닝) — 실패 시 방금 올린 파일 롤백(고아 방지).
@@ -328,7 +328,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
     if (error || !data || data.length === 0) {
       await memberSupabase.storage.from("member-photos").remove([path]);
       setBusy(false);
-      setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      setErr("기록을 저장하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     showToast("사진을 저장했어요");
@@ -347,7 +347,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
       .select(); // 하드닝: 0행이면 실패
     if (error || !data || data.length === 0) {
       setBusy(false);
-      setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      setErr("삭제하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     await memberSupabase.storage.from("member-photos").remove([photo.storage_path]); // 스토리지 파일도 정리
@@ -452,8 +452,8 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
   const add = async () => {
     if (busy) return;
     if (!memberSupabase) { setErr("데모 모드 — 실제 기록은 불가해요."); return; }
-    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도하세요."); return; }
-    if (!on) { setErr("날짜를 선택하세요."); return; }
+    if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
+    if (!on) { setErr("날짜를 선택해 주세요."); return; }
     setBusy(true); setErr("");
     // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). kind는 personal 고정.
     const { data, error } = await memberSupabase
@@ -462,7 +462,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
       .select();
     if (error || !data || data.length === 0) {
       setBusy(false);
-      setErr("기록 저장에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      setErr("기록을 저장하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     setNote(""); // 날짜는 유지(연속 입력 편의)
@@ -482,7 +482,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
       .select(); // 하드닝: 0행이면 실패
     if (error || !data || data.length === 0) {
       setBusy(false);
-      setErr("삭제에 실패했어요" + (error ? ": " + error.message : " (0행)"));
+      setErr("삭제하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     showToast("기록을 삭제했어요");
@@ -1211,7 +1211,7 @@ export default function MemberHome() {
   const submit = async () => {
     if (busy) return;
     if (!memberSupabase) { setErr("데모 모드 — 키가 없어 로그인할 수 없어요."); return; }
-    if (!/^\d{4}$/.test(last4)) { setErr("휴대폰 뒤 4자리를 입력하세요."); return; }
+    if (!/^\d{4}$/.test(last4)) { setErr("휴대폰 뒤 4자리를 입력해 주세요."); return; }
     setBusy(true); setErr("");
     try {
       const res = await fetch("/api/member-auth", {
@@ -1227,7 +1227,7 @@ export default function MemberHome() {
       });
       await loadHome();
     } catch {
-      setErr("네트워크 오류. 잠시 후 다시 시도하세요.");
+      setErr("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
     }
     setBusy(false);
   };

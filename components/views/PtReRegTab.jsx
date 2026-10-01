@@ -148,15 +148,15 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       .eq("id", latest.id)
       .select();
     if (error || !data || data.length === 0) {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
       setRegSaving(false);
       return;
     }
       setContracts((p) => p.map((c) => (c.id === data[0].id ? data[0] : c)));
-      showToast("재등록 결과 저장됨");
+      showToast("재등록 결과를 저장했어요");
       setRegSaving(false);
     } catch {
-      showToast("저장 실패 — 다시 시도하세요");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setRegSaving(false);
     }
@@ -204,7 +204,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
         else setContracts((p) => p.map((c) => (c.id === up[0].id ? up[0] : c)));
       }
     } catch (e) {
-      setRegAiError("네트워크 오류: " + (e?.message || "unknown"));
+      setRegAiError("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setRegGenerating(false);
     }
@@ -237,7 +237,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
         else setContracts((p) => p.map((c) => (c.id === up[0].id ? up[0] : c)));
       }
     } catch (e) {
-      setSbErr("네트워크 오류: " + (e?.message || "unknown"));
+      setSbErr("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
     } finally {
       setSbGenerating(false);
     }
