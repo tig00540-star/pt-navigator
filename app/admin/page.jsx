@@ -396,7 +396,7 @@ export default function AdminDashboard() {
         {atab === "overview" && (
         <section className="mb-8">
           <OwnerOverview
-            members={rows} contracts={contracts} logs={logs}
+            members={rows} otRows={otRows} contracts={contracts} logs={logs}
             trainers={trainers} appts={appts} expenses={expenses} ym={ym}
             onGoTab={goTab} />
         </section>

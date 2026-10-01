@@ -25,6 +25,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Card from "@/components/ui/Card";
+import { won } from "@/lib/format";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
 import { inputCls } from "@/components/ui/Field";
@@ -33,7 +34,6 @@ import { EXPENSE_CATEGORIES } from "@/lib/expenses";
 import { incomeKindLabel, settlementRange, settlementTotals } from "@/lib/income";
 import { revenueCompositionInRange } from "@/lib/memberStatus";
 
-const WON = (n) => Math.round(n || 0).toLocaleString("ko-KR") + "원";
 
 // 장부에 적는 것 3종 — 칸 구성이 같아서 폼 하나로 받는다. 지출만 분류를 더 고른다.
 const ENTRY_KINDS = [
@@ -178,7 +178,7 @@ function ViewPane({
         </div>
 
         <div className="mt-4 divide-y divide-line rounded-xl border border-line">
-          <Row label="PT 매출" value={pt.net} sub={`신규 ${pt.cntNew}건 · 재등록 ${pt.cntRe}건${pt.refund ? ` · 환불 ${WON(pt.refund)} 차감` : ""}`} />
+          <Row label="PT 매출" value={pt.net} sub={`신규 ${pt.cntNew}건 · 재등록 ${pt.cntRe}건${pt.refund ? ` · 환불 ${won(pt.refund)} 차감` : ""}`} />
           <Row label="FC 매출" value={t.fc} sub="회원권 등 센터 FC부서" />
           <Row label="기타 매출" value={t.etc} />
           <Row label="총 매출" value={t.revenue} strong />
@@ -190,7 +190,7 @@ function ViewPane({
           <div className="mt-3 flex flex-wrap gap-1.5">
             {byCat.map((c) => (
               <span key={c.category} className="rounded-full border border-line bg-elevate px-2.5 py-1 text-[11px] text-sub">
-                {c.category} <b className="font-mono text-ink">{WON(c.amount)}</b>
+                {c.category} <b className="font-mono text-ink">{won(c.amount)}</b>
               </span>
             ))}
           </div>
@@ -319,7 +319,7 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-sub">{r.memo || ""}</span>
                 <span className={`shrink-0 font-mono text-[13px] font-bold ${r.income ? "text-ink" : "text-danger-text"}`}>
-                  {r.income ? "" : "−"}{WON(r.amount)}
+                  {r.income ? "" : "−"}{won(r.amount)}
                 </span>
                 <button type="button" onClick={() => remove(r)} aria-label="삭제"
                   className="shrink-0 rounded-lg p-1 text-muted transition hover:text-danger-text">
@@ -344,7 +344,7 @@ function Row({ label, value, sub, strong, accent }) {
       <span className={`shrink-0 font-mono tabular-nums ${
         accent ? "text-[17px] font-extrabold text-primary-strong" : strong ? "text-[15px] font-extrabold text-ink" : "text-[14px] text-sub"
       }`}>
-        {WON(value)}
+        {won(value)}
       </span>
     </div>
   );

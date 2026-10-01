@@ -7,7 +7,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { RefreshCw, CalendarCheck, ChevronDown, Filter, TrendingDown, CalendarClock, UserX, Target, CheckCircle2, ChevronRight, FileText, Loader2, Printer, Wallet, AlertTriangle, Sparkles } from "lucide-react";
 import { ownerBriefing, ownerReportData, churnRiskMembers, expiringMembers } from "@/lib/memberStatus";
-import { won, wonApprox, personName } from "@/lib/format";
+import { won, wonApprox, manwon, personName } from "@/lib/format";
 import { supabase } from "@/lib/supabaseClient";
 import Card from "@/components/ui/Card";
 
@@ -25,8 +25,6 @@ const META = {
   pastdue:    { icon: CalendarClock, accent: "muted", go: "스케줄 보기" },
   trainer:    { icon: UserX,         accent: "rose", go: "트레이너 보기" },
 };
-// 타일 보조줄용 만원 축약 — 좁은 칸에 원 단위를 다 쓰면 줄이 터진다(OwnerHub와 같은 규칙).
-const manwon = (n) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString("ko-KR")}만원` : won(n));
 // 이 페이지 세션에서 자동 생성을 시도한 날(KST ymd). 탭을 오갈 때마다 컴포넌트가 새로 마운트되는데,
 // 생성이 실패하면 캐시가 안 남아 왕복할 때마다 AI를 다시 부르게 된다. 하루 한 번만 시도한다.
 let autoRunDay = null;

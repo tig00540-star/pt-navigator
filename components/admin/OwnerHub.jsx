@@ -15,7 +15,7 @@
 
 import { AlertTriangle, ChevronRight, Users, Wallet, Repeat2, Settings2, Receipt } from "lucide-react";
 import Card from "@/components/ui/Card";
-import { won } from "@/lib/format";
+import { manwon } from "@/lib/format";
 import {
   ownerBriefing,
   revenueCompositionInMonth,
@@ -24,8 +24,6 @@ import {
 } from "@/lib/memberStatus";
 
 const pct = (v) => (v == null ? "—" : `${Math.round(v * 100)}%`);
-// 큰 금액은 만원 단위로 접어 읽기 쉽게(대시보드 막대 라벨과 같은 규칙).
-const manwon = (n) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString("ko-KR")}만원` : won(n));
 
 function Tile({ icon: Icon, title, desc, tone, onClick }) {
   return (

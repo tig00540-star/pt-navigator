@@ -14,10 +14,10 @@
 import { useMemo } from "react";
 import { Users, Wallet, Receipt, PiggyBank, CalendarDays, UserCircle, ChevronRight, Clock } from "lucide-react";
 import Card from "@/components/ui/Card";
-import { revenueInMonth, revenueByTrainer, sessionsThisMonthByTrainer, sessionsCount } from "@/lib/memberStatus";
+import { won } from "@/lib/format";
+import { revenueInMonth, revenueByTrainer, sessionsThisMonthByTrainer, otSessionsThisMonthByTrainer } from "@/lib/memberStatus";
 import { expenseInMonth } from "@/lib/expenses";
 
-const WON = (n) => Math.round(n || 0).toLocaleString("ko-KR") + "원";
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
 const kstDate = (s) => new Date(new Date(s).getTime() + 9 * 3600e3).toISOString().slice(0, 10);
 const kstWeekday = (s) => new Date(new Date(s).getTime() + 9 * 3600e3).getUTCDay();
@@ -42,7 +42,7 @@ function GoLink({ tab, onGoTab, children }) {
   );
 }
 
-export default function OwnerOverview({ members = [], contracts = [], logs = [], trainers = [], appts = [], expenses = [], ym, onGoTab }) {
+export default function OwnerOverview({ members = [], otRows = [], contracts = [], logs = [], trainers = [], appts = [], expenses = [], ym, onGoTab }) {
   // hidden 제외 · 회원→담당 트레이너 맵(TrainerScorecard와 동일 규율)
   const visible = useMemo(() => members.filter((m) => !m?.hidden), [members]);
   const memberTrainer = useMemo(() => {
@@ -52,11 +52,16 @@ export default function OwnerOverview({ members = [], contracts = [], logs = [],
   }, [visible]);
 
   const monthRev = useMemo(() => revenueInMonth(contracts, ym), [contracts, ym]);
-  const monthSess = useMemo(() => sessionsCount(logs, { ym }), [logs, ym]);
   const monthExpense = useMemo(() => expenseInMonth(expenses, ym), [expenses, ym]);
   const netProfit = monthRev - monthExpense;
   const revMap = useMemo(() => new Map(revenueByTrainer(contracts, ym).map((r) => [r.trainer_id, r])), [contracts, ym]);
   const sessMap = useMemo(() => sessionsThisMonthByTrainer(logs, memberTrainer, ym), [logs, memberTrainer, ym]);
+  // 이번달 수업 = 트레이너 탭 '센터 요약'과 같은 정의(OT 1·2차 + PT · 노쇼·void 제외).
+  // 예전엔 PT만, 그것도 노쇼 포함으로 세서 아래 트레이너별 합과 숫자가 달랐다.
+  const otSessMap = useMemo(() => otSessionsThisMonthByTrainer(otRows, memberTrainer, ym), [otRows, memberTrainer, ym]);
+  const monthPt = useMemo(() => [...sessMap.values()].reduce((s, n) => s + n, 0), [sessMap]);
+  const monthOt = useMemo(() => [...otSessMap.values()].reduce((s, n) => s + n, 0), [otSessMap]);
+  const monthSess = monthPt + monthOt;
   const countByTrainer = useMemo(() => {
     const m = new Map();
     for (const r of visible) { const t = r.trainer_id ?? "unknown"; m.set(t, (m.get(t) || 0) + 1); }
@@ -98,10 +103,10 @@ export default function OwnerOverview({ members = [], contracts = [], logs = [],
     <div className="space-y-5">
       {/* ── KPI 상단바 ── */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
-        <KPI icon={Wallet} label="이번달 매출" value={WON(monthRev)} sub="등록일 기준" />
-        <KPI icon={Receipt} label="이번달 지출" value={WON(monthExpense)} sub="인앱 장부" />
-        <KPI icon={PiggyBank} label="순이익" value={WON(netProfit)} sub="매출−지출" />
-        <KPI icon={CalendarDays} label="이번달 수업" value={`${monthSess.toLocaleString("ko-KR")}회`} />
+        <KPI icon={Wallet} label="이번달 매출" value={won(monthRev)} sub="등록일 기준" />
+        <KPI icon={Receipt} label="이번달 지출" value={won(monthExpense)} sub="인앱 장부" />
+        <KPI icon={PiggyBank} label="순이익" value={won(netProfit)} sub="매출−지출" />
+        <KPI icon={CalendarDays} label="이번달 수업" value={`${monthSess.toLocaleString("ko-KR")}회`} sub={`OT ${monthOt} · PT ${monthPt}`} />
         <KPI icon={Users} label="회원" value={`${visible.length.toLocaleString("ko-KR")}명`} />
         <KPI icon={UserCircle} label="트레이너" value={`${trainers.length}명`} />
       </div>
@@ -132,7 +137,7 @@ export default function OwnerOverview({ members = [], contracts = [], logs = [],
                       <td className="py-2.5 pr-2 text-left font-semibold text-ink">{t.name}</td>
                       <td className="px-2 py-2.5 text-right font-mono tabular-nums text-sub">{t.count}</td>
                       <td className="px-2 py-2.5 text-right font-mono tabular-nums text-sub">{t.sess}</td>
-                      <td className="py-2.5 pl-2 text-right font-mono tabular-nums font-semibold text-ink">{WON(t.rev)}</td>
+                      <td className="py-2.5 pl-2 text-right font-mono tabular-nums font-semibold text-ink">{won(t.rev)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -178,7 +183,7 @@ export default function OwnerOverview({ members = [], contracts = [], logs = [],
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-line">
                   <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 to-fuchsia-600" style={{ width: `${Math.round((weekdayRev[d] / wdMax) * 100)}%` }} />
                 </div>
-                <span className="w-20 shrink-0 text-right font-mono text-[12px] tabular-nums text-ink">{WON(weekdayRev[d])}</span>
+                <span className="w-20 shrink-0 text-right font-mono text-[12px] tabular-nums text-ink">{won(weekdayRev[d])}</span>
               </div>
             ))}
           </div>
