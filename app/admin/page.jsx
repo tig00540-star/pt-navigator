@@ -18,6 +18,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { closingApproachStats, reregisterReasonStats, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
+import { trainerSeatLimit } from "@/lib/plans";
 import MemberForm from "@/components/MemberForm";
 import MemberReassign from "@/components/admin/MemberReassign";
 import Button from "@/components/ui/Button";
@@ -116,6 +117,7 @@ export default function AdminDashboard() {
   const router = useRouter(); // solo면 /admin 접근 시 통합 화면(/)으로 바운스
   const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
   const [centerName, setCenterName] = useState(""); // 소속 account 이름(헤더 표기)
+  const [planKey, setPlanKey] = useState("center");   // 좌석 등급(billing_plan || type) — 트레이너 추가 안내용
   const [trainers, setTrainers] = useState([]);
   const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
   const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
@@ -144,9 +146,10 @@ export default function AdminDashboard() {
         let myRole = "denied";
         if (uid) {
           const { data: t } = await supabase
-            .from("trainer").select("role, account:account_id(type, name)").eq("id", uid).maybeSingle();
+            .from("trainer").select("role, account:account_id(type, name, billing_plan)").eq("id", uid).maybeSingle();
           if (t?.account?.type === "solo") { router.replace("/"); return; } // solo는 통합 화면만(admin 누수 차단)
           setCenterName(t?.account?.name || "");
+          setPlanKey(t?.account?.billing_plan || t?.account?.type || "solo"); // 좌석 등급(결제 전엔 type)
           if (t?.role === "owner") myRole = "owner";
         }
         setRole(myRole);
@@ -164,7 +167,7 @@ export default function AdminDashboard() {
           //    나머지(user_table·ot_log·trainer·pay_scheme·payroll_run)는 증가가 느려 당장 무관.
           fetchAllRows(() => supabase.from("session_log").select("*")),
           fetchAllRows(() => supabase.from("daily_workout_log").select("*")),
-          supabase.from("trainer").select("id, name"),
+          supabase.from("trainer").select("id, name, role, active"), // role·active = 좌석 표시용
           supabase.from("pay_scheme").select("*"),
           supabase.from("payroll_run").select("*"),
           supabase.from("trainer_goal").select("*"),   // 매출 탭 게이지용 목표. 원장 RLS가 계정 전체 SELECT 허용.
@@ -452,7 +455,10 @@ export default function AdminDashboard() {
         {/* ===== 트레이너 초대 온보딩 (A) ===== */}
         {atab === "ops" && (
         <section className="mb-8">
-          <AddTrainerForm />
+          <AddTrainerForm
+            seatLimit={trainerSeatLimit(planKey)}
+            seatUsed={trainers.filter((t) => t.role === "trainer" && t.active !== false).length}
+            onCreated={(row) => setTrainers((p) => [...p, row])} />
         </section>
         )}
 

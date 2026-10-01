@@ -6,15 +6,21 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { inputClsOwner as inputCls } from "@/components/ui/Field";
 
-export default function AddTrainerForm() {
+// seatLimit·seatUsed는 안내용 — 진짜 관문은 서버(create-trainer)가 409로 막는다.
+export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreated }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [result, setResult] = useState(null);
+  const full = seatLimit != null && seatUsed >= seatLimit;
+  const fullMsg = seatLimit === 0
+    ? "솔로 플랜은 트레이너를 추가할 수 없어요. 센터 플랜으로 바꾸면 트레이너 3명까지 함께 쓸 수 있어요."
+    : `트레이너 좌석 ${seatLimit}개를 모두 쓰고 있어요. 더 추가하려면 문의해 주세요.`;
   const submit = async () => {
     if (!supabase || busy) return;
     if (!email.trim() || !name.trim()) { setErr("이메일과 이름을 입력하세요."); return; }
+    if (full) { setErr(fullMsg); return; }
     setBusy(true); setErr(""); setResult(null);
     try {
       const { data: s } = await supabase.auth.getSession();
@@ -26,6 +32,7 @@ export default function AddTrainerForm() {
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { setErr(d.error || "추가 실패"); return; }
       setResult({ email: d.email, pw: d.tempPassword });
+      onCreated?.({ id: d.id, name: name.trim(), role: "trainer", active: true }); // 좌석 표시 즉시 반영
       setEmail(""); setName("");
     } catch (e) {
       setErr("오류: " + (e?.message || "unknown"));
@@ -36,11 +43,17 @@ export default function AddTrainerForm() {
     <Card>
       <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
         <UserPlus className="h-3.5 w-3.5" /> 트레이너 추가
+        {seatLimit != null && seatLimit > 0 && (
+          <span className={`ml-auto font-mono ${full ? "text-danger-text" : "text-muted"}`}>
+            좌석 {seatUsed} / {seatLimit}
+          </span>
+        )}
       </div>
+      {full && <p className="mt-2 text-[12px] leading-relaxed text-sub">{fullMsg}</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
         <input type="email" placeholder="이메일" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
         <input type="text" placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
-        <Button variant="primary" accent="owner" size="md" onClick={submit} disabled={busy}>
+        <Button variant="primary" accent="owner" size="md" onClick={submit} disabled={busy || full}>
           {busy ? "추가 중…" : "추가"}
         </Button>
       </div>

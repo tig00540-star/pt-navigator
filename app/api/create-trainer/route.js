@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { trainerSeatLimit } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,32 @@ export async function POST(req) {
     return Response.json({ error: "원장(owner)만 트레이너를 추가할 수 있습니다." }, { status: 403 });
   }
 
+  // 좌석 — 센터 플랜은 트레이너 3인(관리자 제외), 솔로는 추가 없음.
+  // 결제 전(체험·파일럿)이면 billing_plan이 비어 있어 account.type으로 판단한다.
+  // ⚠️ 이게 유일한 관문이다(트레이너 추가 경로는 이 라우트뿐). 화면 표시는 안내용.
+  const { data: acct } = await sb.from("account").select("type, billing_plan").eq("id", me.account_id).maybeSingle();
+  const planKey = acct?.billing_plan || acct?.type || "solo";
+  const seatLimit = trainerSeatLimit(planKey);
+  const { count: used, error: cErr } = await sb
+    .from("trainer")
+    .select("id", { count: "exact", head: true })
+    .eq("account_id", me.account_id)
+    .eq("role", "trainer")
+    .eq("active", true);
+  if (cErr) {
+    console.error("[create-trainer] 좌석 집계 실패:", cErr.message);
+    return Response.json({ error: "좌석을 확인하지 못했습니다. 잠시 후 다시 시도하세요." }, { status: 500 });
+  }
+  if ((used ?? 0) >= seatLimit) {
+    console.warn(`[create-trainer] 409 좌석 초과 account=${me.account_id} plan=${planKey} used=${used} limit=${seatLimit}`);
+    return Response.json({
+      error: seatLimit === 0
+        ? "솔로 플랜은 트레이너를 추가할 수 없어요. 센터 플랜으로 바꾸면 트레이너 3명까지 함께 쓸 수 있어요."
+        : `트레이너 좌석 ${seatLimit}개를 모두 쓰고 있어요. 더 추가하려면 문의해 주세요.`,
+      code: "seat_limit", used: used ?? 0, limit: seatLimit,
+    }, { status: 409 });
+  }
+
   const body = await req.json().catch(() => ({}));
   const email = (body.email || "").trim().toLowerCase();
   const name = (body.name || "").trim();
@@ -62,5 +89,5 @@ export async function POST(req) {
     return Response.json({ error: "trainer 등록 실패: " + te.message }, { status: 400 });
   }
 
-  return Response.json({ ok: true, email, tempPassword: password });
+  return Response.json({ ok: true, id: created.user.id, email, tempPassword: password });
 }
