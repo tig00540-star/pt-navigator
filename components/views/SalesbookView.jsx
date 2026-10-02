@@ -30,6 +30,9 @@ function resolvePackage(planIndex, plan, recommendedProgram, packages) {
   const valid = (n) => Number.isInteger(n) && n >= 0 && n < list.length;
   // 1순위: recommendedProgram의 확정 ref. 2순위(alt가 null 등): 모델이 고른 ref(검증 후).
   let ref = planIndex === 0 ? rp.pick_ref : rp.alt_ref;
+  // 확정 ref가 없으면 = 패키지가 없던 때 만든 세일즈북 → 모델 추측으로 가격을 붙이지 않는다
+  //   ('20회' 설명에 30회 가격이 붙던 문제 · 2026-10-02). 다시 만들면 맞는 가격이 붙는다.
+  if (recommendedProgram && !valid(ref)) return null;
   if (!valid(ref)) ref = plan?.ref;
   return valid(ref) ? list[ref] : null;
 }

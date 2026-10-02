@@ -36,10 +36,12 @@ export function buildFirstProposal({ member, report, packages, cases, saved }) {
   const rp = report?.first_assist?.data?.recommended_program || {};
   const goal = hasVal(m.goal) && m.goal !== "미설정" ? m.goal : "나에게 맞는 운동 시작";
   const valid = (n) => Number.isInteger(n) && n >= 0 && n < (packages || []).length;
-  const pick = valid(rp.pick_ref) ? packages[rp.pick_ref] : (packages || [])[0] || null;
-  const alt = valid(rp.alt_ref) ? packages[rp.alt_ref] : null;
+  // 1차 리포트의 추천이 지금 패키지 목록과 맞을 때만 AI 추천 이유를 쓴다(목록이 바뀐 뒤면 이유 글과 패키지가 엇갈린다).
+  const fits = valid(rp.pick_ref);
+  const pick = fits ? packages[rp.pick_ref] : (packages || [])[0] || null;
+  const alt = fits && valid(rp.alt_ref) && rp.alt_ref !== rp.pick_ref ? packages[rp.alt_ref] : null;
   const plans = [
-    pick && { ref: valid(rp.pick_ref) ? rp.pick_ref : 0, name: pick.name, meta: pick.duration_label || "", sessions_label: pick.sessions ? `${pick.sessions}회` : "", recommended: true, why: rp.why_fit || "", includes: [] },
+    pick && { ref: fits ? rp.pick_ref : 0, name: pick.name, meta: pick.duration_label || "", sessions_label: pick.sessions ? `${pick.sessions}회` : "", recommended: true, why: fits ? rp.why_fit || "" : "", includes: [] },
     alt && { ref: rp.alt_ref, name: alt.name, meta: alt.duration_label || "", sessions_label: alt.sessions ? `${alt.sessions}회` : "", recommended: false, why: rp.alt_why || "", includes: [] },
   ].filter(Boolean);
   // 회원이 보는 장 — 트레이너 메모(member_note·"~하다고 함")는 쓰지 않는다. 목표 시점만.
@@ -111,7 +113,7 @@ export default function FirstProposalLauncher({ member, editable = false, startP
       member={member}
       trainer={trainer}
       packages={packages}
-      recommendedProgram={row1?.report?.first_assist?.data?.recommended_program || null}
+      recommendedProgram={null} /* 플랜마다 ref를 위에서 직접 붙였다(목록과 맞는 것만) */
       benefits={trainer?.salesbook_benefits?.enabled ? (trainer.salesbook_benefits.items || []) : []}
       // 패키지가 없으면 플랜 장은 비어 보이니 뺀다(설정 › 가격에 패키지를 등록하면 들어간다).
       slideKeys={sb.plans.length ? FIRST_SLIDES : FIRST_SLIDES.filter((k) => k !== "plans")}
