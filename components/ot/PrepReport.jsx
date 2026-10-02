@@ -15,6 +15,7 @@ import { useState } from "react";
 import { ChevronDown, CreditCard, Dumbbell, ExternalLink, Flag, History, MessageCircle, ShieldCheck, Sparkles, Lightbulb } from "lucide-react";
 import ClosingSequence from "@/components/ui/ClosingSequence";
 import { won } from "@/lib/format";
+import Emph, { plainText } from "@/components/ui/Emph";
 
 const OBJ_LABEL = { price: "가격", hesitation: "생각해볼게요", doubt: "효과 의심", time: "시간 부족", compare: "다른 곳 비교" };
 
@@ -24,13 +25,13 @@ function Say({ children, tag }) {
   return (
     <p className="m-0 rounded-[16px_16px_16px_4px] bg-primary-soft px-3.5 py-2.5 text-[15px] font-medium leading-[1.6] text-ink">
       {tag && <span className="mr-1.5 align-middle text-[11px] font-bold text-primary-strong">{tag}</span>}
-      &ldquo;{children}&rdquo;
+      &ldquo;<Emph>{children}</Emph>&rdquo;
     </p>
   );
 }
 function Why({ label = "왜", children }) {
   if (!children) return null;
-  return <p className="m-0 text-[12.5px] leading-[1.55] text-muted"><span className="font-medium text-sub">{label} · </span>{children}</p>;
+  return <p className="m-0 text-[12.5px] leading-[1.55] text-muted"><span className="font-medium text-sub">{label} · </span>{plainText(children)}</p>;
 }
 
 function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
@@ -43,7 +44,7 @@ function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
           <span className="flex items-center gap-1.5 text-[14px] font-semibold text-ink">
             {Icon && <Icon className="h-4 w-4 text-primary-strong" aria-hidden="true" />}{title}
           </span>
-          {!open && preview && <span className="mt-0.5 block truncate text-[12px] text-muted">{preview}</span>}
+          {!open && preview && <span className="mt-0.5 block truncate text-[12px] text-muted">{plainText(preview)}</span>}
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
@@ -60,8 +61,8 @@ function cheatLines(kind, d) {
     ? (d.exercises || []).find((e) => e?.proof) || (d.exercises || [])[0]
     : (d.proof?.moves || [])[0];
   const proofLine = kind === "first"
-    ? proof && `${proof.name}${proof.cue ? ` — "${proof.cue}"` : ""}`
-    : proof && `${proof.exercise}${proof.point_it_out ? ` — "${proof.point_it_out}"` : ""}`;
+    ? proof && `${proof.name}${proof.cue ? `: "${proof.cue}"` : ""}`
+    : proof && `${proof.exercise}${proof.point_it_out ? `: "${proof.point_it_out}"` : ""}`;
   const ask = seq.ask || d.closing_line;
   return { lines: [d.member_read, proofLine, ask && `"${ask}"`].filter(Boolean), derived: true };
 }
@@ -98,17 +99,42 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
       preview: names.filter(Boolean).join(" · "),
       body: kind === "first" ? (
         <>
+          {d.workout_structure && (
+            <p className="m-0 rounded-lg bg-elevate px-3 py-2 text-[13px] leading-[1.5] text-ink">
+              <span className="mr-1.5 text-[11px] font-semibold text-sub">오늘 구성</span>{plainText(d.workout_structure)}
+            </p>
+          )}
           {exercises.map((ex, i) => {
             const lib = Number.isInteger(ex.lib_ref) ? favorites[ex.lib_ref] || null : null;
+            const alts = (Array.isArray(ex.alts) ? ex.alts : []).filter((a) => a && a.name);
             return (
               <div key={i} className={`space-y-1.5 ${i ? "border-t border-line pt-2.5" : ""}`}>
+                {ex.slot && <span className="inline-block rounded-md bg-elevate px-1.5 py-0.5 text-[11px] font-semibold text-sub">{i + 1}. {ex.slot}</span>}
                 <p className="m-0 text-[14px] font-semibold text-ink">
-                  {i + 1}. {ex.name}
+                  {ex.slot ? "" : `${i + 1}. `}{plainText(ex.name)}
                   {ex.proof && <span className="ml-1.5 rounded bg-primary-soft px-1.5 py-0.5 align-middle text-[10px] font-bold text-primary-strong">증명</span>}
                 </p>
                 <Say>{ex.cue}</Say>
                 <Why>{ex.reason}</Why>
                 <Why label="바로 느낌">{ex.feel}</Why>
+                {alts.length > 0 && (
+                  /* 참고 운동 — 기구가 차 있거나 회원 상태가 다를 때 바꿔 끼운다. 정보가 많다는 피드백이라 접어 둔다. */
+                  <details className="group rounded-lg border border-line">
+                    <summary className="flex min-h-[36px] cursor-pointer list-none items-center justify-between px-3 text-[12px] font-semibold text-sub [&::-webkit-details-marker]:hidden">
+                      바꿔 쓸 운동 {alts.length}개
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden="true" />
+                    </summary>
+                    <ul className="m-0 list-none space-y-2 border-t border-line px-3 py-2.5">
+                      {alts.map((a, j) => (
+                        <li key={j} className="space-y-0.5">
+                          <p className="m-0 text-[13px] font-semibold text-ink">{plainText(a.name)}</p>
+                          <Why>{a.why}</Why>
+                          <Why label="바로 느낌">{a.feel}</Why>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
                 {lib && (
                   <a href={lib.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-pt-text hover:underline">
                     <ExternalLink className="h-3 w-3" /> 내 자료: {lib.title}
@@ -125,7 +151,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             <ol className="m-0 list-none space-y-1 p-0">
               {plan.map((p, i) => (
                 <li key={i} className="text-[13.5px] leading-[1.5] text-ink">
-                  <span className="font-semibold">{i + 1}. {p.exercise}</span>{p.point && <span className="text-muted"> — {p.point}</span>}
+                  <span className="font-semibold">{i + 1}. {plainText(p.exercise)}</span>{p.point && <span className="block text-[12.5px] text-muted">{plainText(p.point)}</span>}
                 </li>
               ))}
             </ol>
@@ -133,7 +159,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
           {moves.map((mv, i) => (
             <div key={i} className="space-y-1.5 border-t border-line pt-2.5">
               <p className="m-0 text-[14px] font-semibold text-ink">
-                <span className="mr-1.5 rounded bg-primary-soft px-1.5 py-0.5 align-middle text-[10px] font-bold text-primary-strong">증명 {i + 1}</span>{mv.exercise}
+                <span className="mr-1.5 rounded bg-primary-soft px-1.5 py-0.5 align-middle text-[10px] font-bold text-primary-strong">증명 {i + 1}</span>{plainText(mv.exercise)}
               </p>
               <Say>{mv.point_it_out}</Say>
               <Why label="노릴 반응">{mv.target_reaction}</Why>
@@ -164,7 +190,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
           <Why label="빈도">{rp.frequency}</Why>
           <Why label="기간">{rp.duration}</Why>
           <Why label="그래서">{rp.session_logic}</Why>
-          {alt && <Why label="대안">{`${alt.name} · ${won(alt.price)}${rp.alt_why ? ` — ${rp.alt_why}` : ""}`}</Why>}
+          {alt && <Why label="대안">{`${alt.name} · ${won(alt.price)}${rp.alt_why ? `. ${rp.alt_why}` : ""}`}</Why>}
         </>
       ) : <p className="m-0 text-[13px] text-muted">설정 › 가격에서 PT 패키지를 등록하면 이 회원에게 맞는 걸 골라 드려요.</p>,
     });
@@ -218,7 +244,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             {lines.map((t, i) => (
               <li key={i} className="flex gap-2 text-[15px] font-medium leading-[1.55] text-ink">
                 <span className="mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card text-[11px] font-semibold text-primary-strong">{i + 1}</span>
-                <span>{t}</span>
+                <span><Emph>{t}</Emph></span>
               </li>
             ))}
           </ol>

@@ -6,6 +6,7 @@ import { CreditCard } from "lucide-react";
 import { labelOf, REG_REASON_OPTS } from "@/lib/labels";
 import { won } from "@/lib/format";
 import ClosingSequence from "@/components/ui/ClosingSequence";
+import Emph, { plainText } from "@/components/ui/Emph";
 
 export default function RegBriefView({ brief, highlightReason, packages = [] }) {
   if (!brief) return null;
@@ -33,7 +34,7 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
       {b.member_read && (
         <div className="rounded-xl border border-line bg-elevate p-4">
           <div className="flex items-center gap-2 text-[10px] font-semibold tracking-label-ko text-muted"><span className="text-base">✨</span> 3분 각인</div>
-          <p className="mt-1.5 leading-relaxed text-ink">{b.member_read}</p>
+          <p className="mt-1.5 leading-relaxed text-ink">{plainText(b.member_read)}</p>
         </div>
       )}
       {(wn.proven || wn.risk_if_stop || wn.next_roadmap || wn.satisfaction || wn.future_change) && (
@@ -43,31 +44,31 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
             {wn.proven && (
               <div>
                 <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">첫 수업부터 지금까지</span>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.proven}</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink"><Emph>{wn.proven}</Emph></p>
               </div>
             )}
             {wn.satisfaction && (
               <div>
                 <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">회원이 만족한 점</span>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.satisfaction}</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink"><Emph>{wn.satisfaction}</Emph></p>
               </div>
             )}
             {wn.risk_if_stop && (
               <div>
                 <span className="inline-block rounded-md bg-rose-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600">멈추면</span>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.risk_if_stop}</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink"><Emph>{wn.risk_if_stop}</Emph></p>
               </div>
             )}
             {wn.next_roadmap && (
               <div>
                 <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">앞으로 더 할 것</span>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.next_roadmap}</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink"><Emph>{wn.next_roadmap}</Emph></p>
               </div>
             )}
             {wn.future_change && (
               <div>
                 <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">앞으로 달라질 것</span>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.future_change}</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink"><Emph>{wn.future_change}</Emph></p>
               </div>
             )}
           </div>
@@ -77,17 +78,17 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
         <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
           <div className="flex items-center gap-2"><span className="text-base">🔑</span><span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">오늘 수업 흐름 · 재등록으로 잇기</span></div>
           <div className="mt-2 space-y-2">
-            {sf.gap_awareness && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">부족분 인지 · </span>{sf.gap_awareness}</p>}
-            {sf.goal_raise && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">목표 상향 · </span>{sf.goal_raise}</p>}
-            {sf.timing && <p className="text-[12px] leading-relaxed text-muted"><span className="font-semibold text-sub">꺼낼 타이밍 · </span>{sf.timing}</p>}
+            {sf.gap_awareness && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">부족분 인지 · </span><Emph>{sf.gap_awareness}</Emph></p>}
+            {sf.goal_raise && <p className="text-[13px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">목표 상향 · </span><Emph>{sf.goal_raise}</Emph></p>}
+            {sf.timing && <p className="text-[12px] leading-relaxed text-muted"><span className="font-semibold text-sub">꺼낼 타이밍 · </span>{plainText(sf.timing)}</p>}
           </div>
         </div>
       )}
       {sm.metaphor && (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
           <div className="flex items-center gap-2"><span className="text-base">💬</span><span className="text-[11px] font-semibold tracking-label-ko text-amber-700">세일즈 비유</span></div>
-          <p className="mt-1.5 leading-relaxed text-ink">&ldquo;{sm.metaphor}&rdquo;</p>
-          {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{sm.bridge}</p>}
+          <p className="mt-1.5 leading-relaxed text-ink">&ldquo;<Emph>{sm.metaphor}</Emph>&rdquo;</p>
+          {sm.bridge && <p className="mt-1 text-[12px] leading-relaxed text-muted">{plainText(sm.bridge)}</p>}
         </div>
       )}
       {/* 클로징 흐름(4비트) + 혜택(덤). 옛 캐시(closing_line만)면 그 한 줄로 폴백. */}
@@ -120,7 +121,7 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
           )}
           {alt && (
             <p className="mt-2 text-[11px] leading-relaxed text-muted">
-              <span className="rounded bg-elevate px-1.5 py-0.5 font-semibold">대안</span> {alt.name} · {won(alt.price)}{rp.alt_why ? ` — ${rp.alt_why}` : ""}
+              <span className="rounded bg-elevate px-1.5 py-0.5 font-semibold">대안</span> {alt.name} · {won(alt.price)}{rp.alt_why ? `. ${plainText(rp.alt_why)}` : ""}
             </p>
           )}
         </div>
@@ -139,10 +140,10 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
                 <div key={i} className={`rounded-lg border p-2.5 ${on ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`}>
                   <div className="mb-0.5 flex flex-wrap items-center gap-2">
                     <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${on ? "bg-primary-soft text-primary-strong" : "bg-card text-sub"}`}>{labelOf(REG_REASON_OPTS, o.reason)}</span>
-                    {o.trigger && <span className="text-[12px] italic text-muted">&ldquo;{o.trigger}&rdquo;</span>}
+                    {o.trigger && <span className="text-[12px] italic text-muted">&ldquo;{plainText(o.trigger)}&rdquo;</span>}
                   </div>
-                  {o.defense && <div className="text-sub"><span className="font-semibold text-sub">대응 · </span>{o.defense}</div>}
-                  {o.line && <div className="mt-1 rounded-md bg-primary-soft px-2 py-1 text-[12px] leading-relaxed text-ink"><span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>&ldquo;{o.line}&rdquo;</div>}
+                  {o.defense && <div className="text-sub"><span className="font-semibold text-sub">대응 · </span>{plainText(o.defense)}</div>}
+                  {o.line && <div className="mt-1 rounded-md bg-primary-soft px-2 py-1 text-[12px] leading-relaxed text-ink"><span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>&ldquo;<Emph>{o.line}</Emph>&rdquo;</div>}
                 </div>
               );
             })}

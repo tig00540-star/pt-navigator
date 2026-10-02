@@ -8,12 +8,14 @@
    ★hold(침묵)는 '회원 대사'가 아니라 '트레이너 행동 지시' — 대사처럼 안 보이게 회색 이탤릭 지시로 구분.
    ========================================================================= */
 
+import Emph, { plainText } from "@/components/ui/Emph";
+
 // 회원에게 그대로 말하는 대사(떠보기·요청·플러시) — 칩 라벨 + 인용. strong=요청(가장 크게).
 function SpeechBit({ label, text, strong = false }) {
   return (
     <div>
       <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">{label}</span>
-      <p className={`mt-1 leading-relaxed text-ink ${strong ? "text-base font-semibold" : "text-[13px]"}`}>&ldquo;{text}&rdquo;</p>
+      <p className={`mt-1 leading-relaxed text-ink ${strong ? "text-base font-semibold" : "text-[13px]"}`}>&ldquo;<Emph>{text}</Emph>&rdquo;</p>
     </div>
   );
 }
@@ -45,8 +47,8 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           {hasMetaphor && (
             <div>
               <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">쉽게 비유하면</span>
-              <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;{mp.metaphor}&rdquo;</p>
-              {mp.bridge && <p className="mt-0.5 text-[11px] leading-relaxed text-muted">{mp.bridge}</p>}
+              <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;<Emph>{mp.metaphor}</Emph>&rdquo;</p>
+              {mp.bridge && <p className="mt-0.5 text-[11px] leading-relaxed text-muted">{plainText(mp.bridge)}</p>}
             </div>
           )}
           {seq.trial_close && <SpeechBit label="② 확인 질문" text={seq.trial_close} />}
@@ -55,7 +57,7 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           {seq.hold && (
             /* 트레이너 행동 지시 — 대사 아님(회색 이탤릭 + 🔇로 명확히 구분). */
             <p className="rounded-md border border-line bg-elevate px-2.5 py-1.5 text-[12px] italic leading-relaxed text-muted">
-              🔇 {seq.hold}
+              🔇 {plainText(seq.hold)}
             </p>
           )}
           {seq.flush && <SpeechBit label="⑤ 망설이면" text={seq.flush} />}
@@ -63,15 +65,15 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
             /* OT 전용 — 오늘 결정이 안 될 때: 붙잡지 않고 다음 OT를 잡고, 다음 수업 전까지 부탁할 것. */
             <div className="rounded-lg border border-line bg-card p-3">
               <span className="inline-block rounded-md bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">⑥ 오늘 결정이 어려우면</span>
-              {fb.next_line && <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;{fb.next_line}&rdquo;</p>}
+              {fb.next_line && <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;<Emph>{fb.next_line}</Emph>&rdquo;</p>}
               {hw.length > 0 && (
                 <>
                   <p className="mt-2 text-[11px] font-medium text-sub">다음 수업 전까지 회원에게 부탁할 것</p>
                   <ul className="mt-1 space-y-1.5">
                     {hw.map((h, i) => (
                       <li key={i} className="text-[13px] leading-relaxed text-ink">
-                        <span className="mr-1 text-primary-strong">{i + 1}.</span>&ldquo;{h.do}&rdquo;
-                        {h.why && <span className="block text-[11px] text-muted">{h.why}</span>}
+                        <span className="mr-1 text-primary-strong">{i + 1}.</span>&ldquo;<Emph>{h.do}</Emph>&rdquo;
+                        {h.why && <span className="block text-[11px] text-muted">{plainText(h.why)}</span>}
                       </li>
                     ))}
                   </ul>
@@ -81,12 +83,12 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           )}
         </div>
       ) : line ? (
-        <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{line}&rdquo;</p>
+        <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;<Emph>{line}</Emph>&rdquo;</p>
       ) : null}
 
       {sweetener && (
         <p className="mt-2 rounded-md bg-card px-2 py-1 text-[12px] leading-relaxed text-sub">
-          <span className="font-semibold text-primary-strong">혜택(덤) · </span>{sweetener}
+          <span className="font-semibold text-primary-strong">혜택(덤) · </span>{plainText(sweetener)}
         </p>
       )}
     </div>
