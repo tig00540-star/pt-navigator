@@ -34,9 +34,11 @@ async function saveResult(token, phase, save, brief, model) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const meta = { ...(save.meta && typeof save.meta === "object" ? save.meta : {}), generatedAt: new Date().toISOString(), model };
-  if (save.kind === "ot" && (phase === "first" || phase === "second") && typeof save.memberId === "string") {
-    const round = phase === "first" ? 1 : Math.min(Math.max(Number(save.round) || 2, 2), 20);
-    const patch = phase === "first" ? { first_assist: { data: brief, meta } } : { brief, briefMeta: meta };
+  if (save.kind === "ot" && (phase === "first" || phase === "second" || phase === "first_salesbook") && typeof save.memberId === "string") {
+    const round = phase === "second" ? Math.min(Math.max(Number(save.round) || 2, 2), 20) : 1;
+    const patch = phase === "first" ? { first_assist: { data: brief, meta } }
+      : phase === "first_salesbook" ? { first_salesbook: { data: brief, meta } }
+      : { brief, briefMeta: meta };
     const { data: rows, error: re } = await sb.from("ot_log").select("id, report")
       .eq("user_id", save.memberId).eq("ot_round", round).order("created_at", { ascending: false }).limit(1);
     if (re) console.error("[ot-brief] 저장 전 조회 실패:", re.message);
@@ -813,6 +815,66 @@ ${pkgBlock}
 ※ mode는 within_session·baseline 중 하나. ref는 정수(패키지 참조번호). 금액 텍스트 금지.`;
 }
 
+// ⑥-b phase="first_salesbook" — 1차 OT 세일즈북(2026-10-02 대표: "1차 제안이 너무 부실하다").
+//   1차 OT 클로징 요청 직전에 회원에게 보여준다. 관찰이 아직 없으니 근거는 사전 문진 + 1차 준비 리포트(오늘 할 운동·추천 프로그램).
+//   2차 세일즈북(관찰 근거)과 겹치지 않게: 1차 = 목표·오늘 해본 운동의 이유·앞으로의 길·플랜. '확인했다'는 단정 금지.
+//   독자=회원 본인 → SALESBOOK_PREAMBLE. 금액은 값 텍스트 금지(앱이 패키지 가격으로 렌더).
+function firstSalesbookPrompt(member, firstAssist, recommendedProgram, packages) {
+  const m = member || {};
+  const fa = firstAssist || {};
+  const rp = recommendedProgram || fa.recommended_program || {};
+  const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
+  const pkgBlock = pkgs.length
+    ? pkgs.map((pk, i) => `[${i}] name=${g(pk.name)} · sessions=${pk.sessions ?? "기간제"} · duration=${g(pk.duration_label)}${pk.note ? ` · note=${pk.note}` : ""}`).join("\n")
+    : "등록된 패키지 없음";
+  const ex = (Array.isArray(fa.exercises) ? fa.exercises : []).filter(Boolean)
+    .map((e, i) => `${i + 1}. [${g(e.slot)}] ${g(e.name)} · 이유=${g(e.reason)} · 바로 느낌=${g(e.feel)}`).join("\n") || "없음";
+  return `[상황] 1차 OT 마무리, 등록 이야기를 꺼내기 직전에 트레이너가 태블릿으로 회원에게 2~3분 보여주는 자료(1차 세일즈북)다.
+너는 회원이 볼 화면의 '텍스트'만 채운다. 디자인은 정해져 있다. 회원이 직접 읽으니 따뜻한 구어체(~해요)로.
+★1차라 아직 관찰 기록이 없다. "확인했다·측정했다·~하셨죠" 같은 단정 금지. 사전 문진과 오늘 함께 한 운동의 '이유'로 설득한다.
+★이 자료의 목적은 오늘 PT 등록이다. 단 압박·공포·허위 긴급성 금지. "이 트레이너가 내 목표를 정확히 이해했다"가 느껴지게.
+
+[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
+[사전 문진(회원이 등록 때 작성 · 있는 것만)] 목표 시점=${g(m.goal_deadline)}, 원하는 페이스=${g(m.training_pace)}, 부상·수술=${g(m.injury_history)},
+ 운동 경험=${g(m.exercise_level)}, 예전에 그만둔 이유=${g(m.quit_reason)}, 받아본 유료 운동=${g(m.past_exercise)}, 가능 빈도·시간=${g(m.availability)}
+
+[오늘 함께 한 운동(1차 준비 리포트의 4칸)]
+${ex}
+
+[추천 프로그램(이미 확정) — 이 값만 사용, 새 숫자·금액 창작 금지]
+${JSON.stringify({ pick_ref: rp.pick_ref ?? null, alt_ref: rp.alt_ref ?? null, frequency: rp.frequency ?? "", duration: rp.duration ?? "", session_logic: rp.session_logic ?? "", why_fit: rp.why_fit ?? "", alt_why: rp.alt_why ?? "" }, null, 2)}
+
+[내 패키지 목록] (★이 목록에서만 참조. [n]=참조번호 · ★금액은 값 텍스트 금지, 앱이 채움)
+${pkgBlock}
+
+각 장 채우기:
+① cover: subtitle 1줄(이 회원 목표를 향한 첫 계획이라는 톤). ※회원명·트레이너 정보·서명은 앱이 채우니 생성 금지.
+② goal: headline(회원 목표를 회원 언어로, 목표 시점이 있으면 넣어서 1줄) · body(왜 지금 이 목표인지 · 예전에 그만둔 이유가 있으면
+   "이번엔 그 지점을 같이 넘어요" 결로 2문장) · current_issues(지금 겪는 것 3개 · 짧은 명사구 · 문진·불편 부위 기반 · 없으면 목표에서 자연스러운 것).
+③ today(오늘 해본 운동 · 핵심 장): intro(1문장 · "오늘 한 운동은 아무거나 고른 게 아니에요" 결) · items[4](위 4칸 순서 그대로 · 각
+   {name: 회원이 알아듣는 짧은 이름(전문용어·세팅 설명 빼고) · why: 이 회원이 이걸 해야 하는 이유 1문장(목표·문진 기반) · feel: "이런 느낌이 왔다면
+   제대로 된 거예요" 결 1문장}) · so_what(1~2문장 · 혼자 하면 이 느낌을 못 찾는 이유 = 왜 같이 해야 하는지. 사실 기반·압박 아님).
+④ roadmap: 근시일 3단계(steps) + 중장기 3단계(longterm). current_step=1. steps[3] 각 {title · how('제 방법' 1문장 · 트레이너 1인칭 순서 언어) ·
+   feel("느낄 변화: …")}. longterm[3] 각 {title(짧게) · goal(한 줄 · 회원 최종 목표를 향한 약속 톤 · 마지막은 '혼자서도 유지' 자립 톤)}.
+⑤ plans[2]: A=추천 프로그램의 pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 패키지 1개). 각 {ref(정수) · name("집중 코스" 결) · recommended(불린) ·
+   meta("주 N회 · 약 M개월" — A는 frequency·duration에서) · sessions_label("함께 K회" — 패키지 sessions) · why(2문장 · session_logic을 회원 언어로) ·
+   includes[3](포함 서비스 · 회원 전용 페이지 기록 포함)}. ★금액(원) 값 텍스트 금지. 패키지가 없으면 plans는 빈 배열.
+⑥ closing: services[4](매 수업 점검·기록 / 홈케어 피드백 / 진행 사진 / 회원 전용 페이지에 기록 쌓기 · goal 톤) · vow(트레이너 다짐 1~2문장 · 등록 권유가 아니라
+   책임지겠다는 약속 · 판매 동사 금지 · 손글씨로 렌더됨).
+
+[금지] 숫자 처방(세트·횟수·중량·각도·시간) · 의료 단정(치료·완치·진단명 · 통증은 '불편/부담'까지) · 없는 결과·수치·에피소드 창작 · 긴 줄표(—).
+[출력 언어] 한국어만. 영문 키/코드값 값 텍스트 노출 금지. 아래 JSON만 출력(설명·마크다운·코드펜스 금지).
+{
+  "cover": { "subtitle": "..." },
+  "goal": { "headline": "...", "body": "...", "current_issues": ["...","...","..."] },
+  "today": { "intro": "...", "items": [ {"name":"...","why":"...","feel":"..."}, {"name":"...","why":"...","feel":"..."}, {"name":"...","why":"...","feel":"..."}, {"name":"...","why":"...","feel":"..."} ], "so_what": "..." },
+  "roadmap": { "current_step": 1, "steps": [ {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."} ], "longterm": [ {"title":"...","goal":"..."}, {"title":"...","goal":"..."}, {"title":"...","goal":"..."} ] },
+  "plans": [ { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "주 2회 · 약 3개월", "sessions_label": "함께 24회", "why": "...", "includes": ["...","...","..."] } ],
+  "closing": { "services": ["...","...","...","..."], "vow": "..." }
+}
+※ ref는 정수(패키지 참조번호). 금액 텍스트 금지.`;
+}
+
 // ⑦ phase="reg_salesbook" user 프롬프트 — 재등록 회원 대면 세일즈북. 독자=회원 본인.
 // ⚠️ 숫자(변화량·횟수·무게·금액)는 앱이 데이터에서 렌더한다. 너는 그 숫자를 '해석·프레이밍'하는 텍스트만.
 // ⚠️ 표에 나올 수치를 값 텍스트에 새 숫자로 만들지 마라(주어진 change 요약 범위에서만 언급). 금액 금지.
@@ -1341,7 +1403,7 @@ export async function POST(request) {
   }
 
   const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
-  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "inbody" && phase !== "posture") {
+  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture") {
     return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
   }
   // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
@@ -1357,11 +1419,12 @@ export async function POST(request) {
     : phase === "reregister" ? reregisterPrompt(member, ptContext, packages)
     : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
     : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)
+    : phase === "first_salesbook" ? firstSalesbookPrompt(member, report, recommendedProgram, packages)
     : phase === "inbody" ? inbodyPrompt(member, inbody)
     : phase === "posture" ? posturePrompt(member, posture)
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute·salesbook 제외(회원 대면엔 불필요).
-  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody" || phase === "posture") ? [] : await fetchCenterMachines(request);
+  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture") ? [] : await fetchCenterMachines(request);
   const prompt =
     (phase === "acute" || centerMachines.length === 0)
       ? basePrompt
@@ -1374,7 +1437,7 @@ export async function POST(request) {
   const maxTokens = thinkBudget + (
     phase === "first" ? 8192
     : phase === "inbody" || phase === "posture" ? 3072
-    : phase === "salesbook" || phase === "reg_salesbook" ? 4096
+    : phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" ? 4096
     : (phase === "second" && boundedCases?.length ? 7168 : 6144)); // 2026-10-02 클로징 이유·가격 이유·오늘 안 되면(숙제) 추가로 출력이 길어짐
 
   const token = (request.headers.get("authorization") || "").replace(/^Bearer /, "") || null;
@@ -1394,7 +1457,7 @@ export async function POST(request) {
     const req = {
       model,
       max_tokens: maxTokens,
-      system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody" || phase === "posture") ? SALESBOOK_PREAMBLE : PREAMBLE,
+      system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture") ? SALESBOOK_PREAMBLE : PREAMBLE,
       messages: [{ role: "user", content: userContent }],
     };
     req.thinking = thinkingFor(model);
@@ -1411,9 +1474,10 @@ export async function POST(request) {
     const REQUIRED_REREG = ["member_read", "why_now", "session_flow", "sales_metaphor", "closing_sequence", "objection_defense"];
     const REQUIRED_SALESBOOK = ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
     const REQUIRED_REG_SALESBOOK = ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"];
+    const REQUIRED_FIRST_SALESBOOK = ["cover", "goal", "today", "roadmap", "closing"];
     const REQUIRED_INBODY = ["headline", "metrics", "diet", "lifestyle", "exercise", "why_now"];
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
-    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : [];
+    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "first_salesbook" ? REQUIRED_FIRST_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : [];
     const brief = tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase));
     console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);
     let savedId = null;
@@ -1421,7 +1485,22 @@ export async function POST(request) {
     catch (se) { console.error("[ot-brief] 저장 실패 · phase=" + phase + ":", se?.message || se); }
     return { brief, savedId };
   })();
-  after(() => job.catch(() => {}));
+  // 1차 리포트를 저장했으면 이어서 1차 세일즈북도 만들어 둔다 — 수업 끝 클로징 때 기다림 없이 바로 열리게(2026-10-02).
+  //   응답은 1차 리포트만 기다린다. 세일즈북은 뒤에서(after) 끝까지 돌고 같은 1차 행에 저장된다(순서대로라 저장 충돌 없음).
+  const follow = phase === "first" && save ? job.then(async ({ brief, savedId }) => {
+    if (!savedId) return;
+    const t1 = Date.now();
+    const anthropic = new Anthropic({ apiKey });
+    const msg = await anthropic.messages.create({
+      model: MODEL_FAST, max_tokens: 4096, system: SALESBOOK_PREAMBLE, thinking: thinkingFor(MODEL_FAST),
+      messages: [{ role: "user", content: firstSalesbookPrompt(member, brief, brief?.recommended_program, packages) }],
+    });
+    const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+    const sb = tidyDeep(sanitizeFieldNames(parseBrief(text, ["cover", "goal", "today", "roadmap", "closing"])), false);
+    await saveResult(token, "first_salesbook", { kind: "ot", memberId: save.memberId, round: 1, meta: {} }, sb, MODEL_FAST);
+    console.log(`[ot-brief] 1차 세일즈북 이어서 생성 · ${Math.round((Date.now() - t1) / 1000)}s`);
+  }).catch((e) => console.error("[ot-brief] 1차 세일즈북 이어서 생성 실패:", e?.message || e)) : null;
+  after(() => Promise.all([job.catch(() => {}), follow]));
 
   try {
     const { brief, savedId } = await job;

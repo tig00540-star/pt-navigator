@@ -12,20 +12,20 @@ import { supabase } from "@/lib/supabaseClient";
 import SalesbookView from "@/components/views/SalesbookView";
 
 export function useSalesbookAssets() {
-  const [assets, setAssets] = useState({ packages: [], trainer: null });
+  const [assets, setAssets] = useState({ packages: [], trainer: null, ready: false });
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!supabase) return;
+      if (!supabase) { if (!cancelled) setAssets((a) => ({ ...a, ready: true })); return; }
       const { data: au } = await supabase.auth.getUser();
       const uid = au?.user?.id ?? null;
-      if (!uid) return;
+      if (!uid) { if (!cancelled) setAssets((a) => ({ ...a, ready: true })); return; }
       const [{ data: pkgs }, { data: prof }] = await Promise.all([
         supabase.from("pt_package").select("*").eq("trainer_id", uid).eq("active", true)
           .order("sort", { ascending: true }).order("created_at", { ascending: true }),
         supabase.from("trainer_profile").select("*").eq("trainer_id", uid).maybeSingle(),
       ]);
-      if (!cancelled) setAssets({ packages: pkgs || [], trainer: prof || null });
+      if (!cancelled) setAssets({ packages: pkgs || [], trainer: prof || null, ready: true });
     })();
     return () => { cancelled = true; };
   }, []);

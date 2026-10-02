@@ -12,6 +12,7 @@ export const SLIDE_LABELS = {
   cover: "표지",
   goal: "당신의 목표",
   confirmed: "오늘 함께 확인한 것",
+  today: "오늘 해본 운동",
   photo: "사진 기록",
   roadmap: "로드맵",
   plans: "추천 플랜",

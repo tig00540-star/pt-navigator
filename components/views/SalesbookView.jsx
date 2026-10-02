@@ -402,6 +402,27 @@ export default function SalesbookView({
               })()}
             </Slide>}
 
+            {/* 오늘 해본 운동(1차 세일즈북 전용 · 2026-10-02) — 오늘 한 4가지가 왜 이 회원에게 필요한지 + 이런 느낌이면 제대로 된 것. */}
+            {show("today") && <Slide n={pos("today")} idx={idx} total={total} editable={editable}>
+              <div className="flex h-full flex-col">
+                <SlideHead eyebrow="오늘 해본 운동" className="sb-stg" style={{ "--sb-i": 0 }} />
+                {sb.today?.intro && <p className="sb-stg mb-3 max-w-[60ch] text-[clamp(13px,1.6vw,16px)] leading-relaxed text-sub" style={{ "--sb-i": 1 }}>{sb.today.intro}</p>}
+                <ol className="grid flex-1 gap-2.5 sm:grid-cols-2">
+                  {(Array.isArray(sb.today?.items) ? sb.today.items : []).slice(0, 4).map((it, i) => (
+                    <li key={i} className="sb-stg flex flex-col rounded-2xl border border-line bg-elevate p-3.5" style={{ "--sb-i": i + 2 }}>
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[12px] font-bold text-white">{i + 1}</span>
+                        <span className="text-[clamp(14px,1.8vw,17px)] font-bold text-ink">{it.name}</span>
+                      </div>
+                      <p className="mt-1.5 text-[12.5px] leading-relaxed text-sub">{it.why}</p>
+                      {it.feel && <p className="mt-auto pt-2 text-[12.5px] font-medium leading-relaxed text-primary-strong">{it.feel}</p>}
+                    </li>
+                  ))}
+                </ol>
+                {sb.today?.so_what && <p className="sb-stg mt-3 rounded-xl bg-primary-soft px-3.5 py-2.5 text-[clamp(13px,1.6vw,15px)] font-semibold leading-relaxed text-ink" style={{ "--sb-i": 6 }}>{sb.today.so_what}</p>}
+              </div>
+            </Slide>}
+
             {/* ④ 사진 */}
             {show("photo") && <Slide n={pos("photo")} idx={idx} total={total} editable={editable}>
               <SlideHead eyebrow={sb.photo_slide?.title || "사진 기록"} className="sb-stg" style={{ "--sb-i": 0 }} />
