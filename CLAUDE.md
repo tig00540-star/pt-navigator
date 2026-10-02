@@ -108,6 +108,10 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **OT 피드백 = `ObservationTab`(2026-10-02 개편 · 탭 위주 3블록):** ① 오늘 어떻게 끝났나(등록했어요/다음 OT 이어가요/그만하기로 했어요 + 등록 제안 했나 + 망설인 이유 + 회원의 말 + 다음 OT 날짜) ② 오늘 본 것(준비 리포트 운동이 미리 채워짐 → 반응 칩·★다음에 다시·성향) ③ 다음 OT 방향(진짜 원하는 것+이유 · 다음 OT 제안 수위=`sales_intensity` · AI에게 한마디). 저장은 옛 키 그대로(호환): 등록=success · 이어감+제안=hold · 이어감+제안 못함=none+`report.next` · 그만=fail · `report.feedback_v=2`. **'이어가요'면 다음 차수 자동.** 앞 차수가 '제안했는데 보류'면 다음 준비 리포트는 **클로징 우선 모드**(`secondPrompt` closingFirst), '제안 못 함'이면 '이번엔 반드시 제안'.
 - **통계:** 3차 이상은 '2차 이상'에 묶음(`_otResultByMember.r2`·`closingStatsByRoundByTrainer`) · OT 수업 수는 전 차수. `ot_log` 제약은 PK·account FK·user FK(cascade)뿐 — `ot_round` CHECK 없음(2026-10-02 pg_constraint 확인) → 3차 이상 저장 가능.
 
+### 세일즈북 1단계: 사례 보관함 (2026-10-02)
+
+`/salesbook`(`components/salesbook/CaseLibrary` · 왼쪽 메뉴 '세일즈북' · 폰은 홈 타일 · 하단바 5칸은 그대로). 다른 회원의 **비포·애프터(member_photo 경로 참조)·인바디 변화·운동 무게 변화·회원 후기 캡처**를 모아 2단계 세일즈북(회원별 발표 자료)에 넣는다. 표 `sales_case`(kind photo/inbody/lift/review · `data` jsonb 스냅샷 · 계정 스코프 RLS) + 비공개 버킷 `sales-cases/{account_id}/…`(`docs/migrations/2026-10-02-sales-case.sql`). 후보·스냅샷·익명 라벨은 `lib/salesCase.js` 한 곳 — **숫자는 기록에서만(손 수정 불가)** · 저장 라벨은 익명("30대 여성 · 12주") · **회원 동의·개인정보는 트레이너 책임(대표 결정)**, 앱은 안내 한 줄만. 표시는 `CaseCard`(2단계 장에서도 재사용).
+
 ### 수업일지 회원 확인·서명 (v2 · 2026-07-21)
 
 `daily_workout_log`(수업확인서 겸 운동일지)를 **회원이 회원앱에서 '확인'** → 종이 수업확인 서명 대체. 데이터·근거는 `docs/v2-스펙-수업일지-회원확인서명+진입게이트.md`(v2.1).

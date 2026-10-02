@@ -1,5 +1,5 @@
 "use client";
-import { Home, CalendarDays, Users, Award, Settings } from "lucide-react";
+import { Home, CalendarDays, Users, Award, Settings, Presentation } from "lucide-react";
 
 // 하단바 = 홈(허브) + 글로벌 4탭. 숫자 id는 기존 TABS와 동일, 허브만 "hub".
 export const NAV_ITEMS = [
@@ -7,12 +7,14 @@ export const NAV_ITEMS = [
   { id: 9,     label: "오늘",    Icon: CalendarDays },
   { id: 0,     label: "회원",    Icon: Users },
   { id: 8,     label: "내 실적", Icon: Award },
+  // 세일즈북(2026-10-02) — 태블릿·PC 왼쪽 메뉴에만. 폰 하단바는 5칸이 꽉 차 홈 타일로 들어간다.
+  { id: "salesbook", label: "세일즈북", Icon: Presentation, wideOnly: true },
   { id: 7,     label: "설정",    Icon: Settings },
 ];
 
 // 현재 tab → 활성 섹션. 워크플로우 탭(1,5,2,10,11,12)·회원목록(0) 전부 '회원' 섹션(0)으로.
 export const sectionOf = (tab) =>
-  tab === "hub" ? "hub" : tab === 9 ? 9 : tab === 8 ? 8 : tab === 7 ? 7 : 0;
+  tab === "hub" ? "hub" : tab === "salesbook" ? "salesbook" : tab === 9 ? 9 : tab === 8 ? 8 : tab === 7 ? 7 : 0;
 
 // 폰 전용 — 태블릿·PC(md 768px~)는 왼쪽 세로 메뉴(components/app/SideNav)가 대신한다.
 export default function BottomNav({ tab, onTab }) {
@@ -23,7 +25,7 @@ export default function BottomNav({ tab, onTab }) {
       aria-label="주요 메뉴"
     >
       <div className="mx-auto grid max-w-5xl grid-cols-5">
-        {NAV_ITEMS.map(({ id, label, Icon }) => {
+        {NAV_ITEMS.filter((it) => !it.wideOnly).map(({ id, label, Icon }) => {
           const on = active === id;
           return (
             <button

@@ -14,7 +14,7 @@
    ========================================================================= */
 "use client";
 
-import { CalendarDays, ChevronRight, Award, Settings, UserPlus } from "lucide-react";
+import { CalendarDays, ChevronRight, Award, Presentation, UserPlus } from "lucide-react";
 import Card from "@/components/ui/Card";
 import { viewFor } from "@/lib/memberStatus";
 
@@ -86,10 +86,11 @@ export default function TrainerHub({ members = [], trainerName, onGo, onAdd }) {
           tone="bg-pt-soft text-pt-text"
           onClick={() => onGo(0, { segment: "pt" })}
         />
+        {/* 설정은 하단바에 있어 타일 자리를 세일즈북(사례 보관함)에 내준다(2026-10-02 · 폰엔 하단바 칸이 없음). */}
         <Tile
-          icon={Settings} title="설정" desc="목표 · 자료 · 가격"
+          icon={Presentation} title="세일즈북" desc="변화 사례 · 후기 모음"
           tone="bg-bg text-sub"
-          onClick={() => onGo(7)}
+          onClick={() => onGo("salesbook")}
         />
       </div>
 
