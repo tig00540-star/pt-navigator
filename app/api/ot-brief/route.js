@@ -529,7 +529,7 @@ ${pkgBlock}
 ${SAMEDAY_PLAN}
 ${GENDER_HINT}
 ${EXERCISE_BAR}
-   각 항목: exercise(구체 동작 + 한 줄 세팅) / point(왜 시키나 or 핵심 큐 1문장).
+   각 항목: exercise(짧은 동작 이름만 · 15자 안팎 · 세팅을 붙이지 마라) / how(세팅·하는 법 한 문장) / point(왜 시키나 or 핵심 큐 1문장).
 
 ③ proof(증명 포인트 2개): 위 수업 구성 중/직후, 회원이 '어? 되네'를 부인 못 하게 터뜨릴 결정적 순간 2개.
    ★동작은 이 회원의 goal·pain·1차 관찰(movements/reaction)에서 도출하라 — 고정 동작 습관 반복 금지,
@@ -537,7 +537,7 @@ ${EXERCISE_BAR}
    잡아줌→확 달라짐, 그 큐가 혼자선 못 잡는 지점).
 ${SAMEDAY_PROOF}
 ${REHAB_TONE}
-   moves[] 각: exercise(구체 동작+한 줄 세팅) / target_reaction(before→after 분명한 차이) /
+   moves[] 각: exercise(짧은 동작 이름만 · 15자 안팎) / how(어떻게 시켜 비교하는지 한 문장) / target_reaction(before→after 분명한 차이) /
    point_it_out(그 순간 그대로 말할 대사 — "아까랑 다르죠?" + '혼자선 이 각도(혼자선 못 찾는 지점) 못 잡는다' 심기).
    so_what: 두 증명을 묶어 'PT를 받아야 한다'는 회원 스스로의 결론으로 잇는 한 줄.
    if_weak: 증거 반응이 약하게 올 때 살릴 큐·조정 한 줄(숫자 없이·방향만).
@@ -590,8 +590,8 @@ ${SAY_STYLE}
   "cheat": ["회원 핵심 한 줄", "오늘 꼭 할 것 한 줄", "클로징 한 마디(대사)"],
   "member_read": "지금까지 확인된 것 + 지금 클로징 국면 한 줄",
   "recall": { "line": "...", "why": "..." },
-  "session_plan": [ { "exercise": "...", "point": "..." } ],
-  "proof": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
+  "session_plan": [ { "exercise": "...", "how": "...", "point": "..." } ],
+  "proof": { "moves": [ { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON_OT},
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],

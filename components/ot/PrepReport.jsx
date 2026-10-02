@@ -79,12 +79,15 @@ function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
 }
 
 // 운동 이름 — 새 형식은 name(짧게)+how, 옛 캐시는 "이름: 하는 법" 한 줄이라 ':' 앞뒤로 나눈다.
-function splitName(ex) {
-  const name = plainText(ex?.name || "");
-  if (ex?.how) return { name, how: ex.how };
+function splitText(text, how) {
+  const name = plainText(text || "");
+  if (how) return { name, how };
   const i = name.indexOf(":");
   return i > 0 && i < 30 ? { name: name.slice(0, i).trim(), how: name.slice(i + 1).trim() } : { name, how: "" };
 }
+const splitName = (ex) => splitText(ex?.name, ex?.how);
+// 2차 — session_plan·proof.moves는 이름이 exercise 칸(옛 캐시는 "이름: 세팅" 한 줄).
+const splitEx = (x) => splitText(x?.exercise, x?.how);
 
 // 30초 요약 — AI의 cheat(3줄). 옛 캐시엔 없으니 기존 항목에서 3줄을 뽑는다.
 function cheatLines(kind, d) {
@@ -132,7 +135,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
     });
   }
   if (exercises.length || plan.length || moves.length) {
-    const names = kind === "first" ? exercises.map((e) => splitName(e).name) : plan.map((p) => p.exercise);
+    const names = kind === "first" ? exercises.map((e) => splitName(e).name) : plan.map((p) => splitEx(p).name);
     sections.push({
       k: "work", icon: Dumbbell, title: kind === "first" ? `오늘 운동 ${exercises.length}개` : `오늘 운동 ${plan.length}개 · 증명 ${moves.length}개`,
       preview: names.filter(Boolean).join(" · "),
@@ -179,7 +182,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             <ol className="m-0 list-none space-y-1 p-0">
               {plan.map((p, i) => (
                 <li key={i} className="text-[14px] leading-[1.55] text-ink">
-                  <span className="font-semibold">{i + 1}. {plainText(p.exercise)}</span>
+                  <span className="font-semibold">{i + 1}. {splitEx(p).name}</span>
                 </li>
               ))}
             </ol>
@@ -188,14 +191,17 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             <div key={i} className="space-y-2 border-t border-line pt-3">
               <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10.5px] font-bold text-white">증명 {i + 1}</span>
-                <span className="text-[15px] font-bold text-ink">{plainText(mv.exercise)}</span>
+                <span className="text-[15px] font-bold text-ink">{splitEx(mv).name}</span>
               </p>
               <Say strong>{mv.point_it_out}</Say>
-              <More><Note label="노릴 반응">{mv.target_reaction}</Note></More>
+              <More><Note label="하는 법">{splitEx(mv).how}</Note><Note label="노릴 반응">{mv.target_reaction}</Note></More>
             </div>
           ))}
-          <More label="운동별 포인트 · 반응 약하면">
-            {plan.map((p, i) => <Note key={i} label={`${i + 1}.`}>{p.point}</Note>)}
+          <More label="운동별 하는 법 · 포인트 · 반응 약하면">
+            {plan.map((p, i) => {
+              const { name, how } = splitEx(p);
+              return <Note key={i} label={`${i + 1}. ${name}`}>{[how, plainText(p.point)].filter(Boolean).join(" · ")}</Note>;
+            })}
             <Note label="반응 약하면">{d.proof?.if_weak}</Note>
           </More>
         </>
