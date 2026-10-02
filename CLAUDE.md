@@ -99,6 +99,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 
 ### OT 회원 화면 — 대시보드 + N차 OT (2026-10-02 개편)
 
+- **탭(2026-10-02 대표 지정):** 화면 안 두 줄 — `대시보드 | 1차 OT | 2차 OT …` 아래에 고른 차수의 `OT 준비하기 | 인바디 분석 | OT 피드백`(`OtTabs`). 헤더 서브탭은 OT에선 없음(PT만). OT 회원의 "정보 수정"은 대시보드 회원 카드 안.
 - **주소:** `/ot/{회원}` = 대시보드(`components/ot/OtDashboard` · 회원 정보·최근 OT·다음 예약·인바디·차수 진행·'지금 할 일') · `/ot/{회원}/{prep|inbody|feedback}-{n}` = n차의 3칸(OT 준비하기·인바디 분석·OT 피드백). 차수 생략·못 여는 차수면 `OtWorkspace`가 지금 차수로 `replace`. 구 주소 `second`=2차 준비. 탭 번호 계약은 유지(1·2→지금 차수 준비 · 5→지금 차수 피드백 · `lib/nav.js`).
 - **차수 규칙은 `lib/otRounds.js` 한 곳:** 차수=ot_log 행(ot_round=n, 최신 행). 1차는 항상 · 마지막 결과 **보류면 다음 차수 자동** · 등록/실패면 끝 · 그 외엔 피드백까지 남긴 뒤 'N차 OT 시작' 버튼.
 - **준비하기:** 1차=`FirstOTAssist`(phase first) · 2차+=`SecondOTTab round=n`(phase second + `round`·`history`[1~n-1차 결과·사유·클로징 메모·2차+ 관찰]). 2차 스테일 해시는 종전(1차 관찰만), 3차+는 이전 차수 포함. **결과 기록 폼은 준비하기에서 빠짐 → 모든 차수 `ObservationTab round=n`(같은 양식).**

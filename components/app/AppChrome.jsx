@@ -18,8 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, ShieldCheck } from "lucide-react";
 import { useAccount } from "@/lib/useAccount";
 import { useMembers } from "@/components/app/MembersProvider";
-import { hrefFor, routeInfo, tabForPath, OT_STEPS, PT_STEPS } from "@/lib/nav";
-import { parseOtStep, otStepPath } from "@/lib/otRounds";
+import { hrefFor, routeInfo, tabForPath, PT_STEPS } from "@/lib/nav";
 import { viewFor } from "@/lib/memberStatus";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import BottomNav from "@/components/ui/BottomNav";
@@ -89,12 +88,8 @@ export default function AppChrome({ children }) {
   // 회원 워크플로우 서브탭 — 그 회원의 뷰(OT/PT)에 맞는 것만.
   const view = member ? viewFor(member) : null;
   const steps =
-    info.section === "ot" && view !== "pt" ? OT_STEPS.map((s) => {
-        // 지금 보고 있는 차수(주소의 -n)를 다른 칸에도 유지 — 2차 준비 → 2차 피드백.
-        const { round } = parseOtStep(info.step);
-        return { ...s, href: s.step ? otStepPath(info.memberId, s.step, round) : `/ot/${info.memberId}` };
-      })
-    : info.section === "pt" && view === "pt" ? PT_STEPS.map((s) => ({ ...s, href: `/pt/${info.memberId}/${s.step}` }))
+    // OT 회원은 화면 안 두 줄 탭(components/ot/OtWorkspace · OtTabs)이 맡는다 — 헤더 서브탭 없음.
+    info.section === "pt" && view === "pt" ? PT_STEPS.map((s) => ({ ...s, href: `/pt/${info.memberId}/${s.step}` }))
     : null;
 
   return (

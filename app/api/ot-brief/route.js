@@ -481,8 +481,16 @@ function reregisterPrompt(member, ctx, packages = []) {
         return `[${i}] name=${g3(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g3(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
       }).join("\n")
     : "등록된 패키지 없음";
+  const j = c.journey || {};
+  const ib = Array.isArray(c.inbody_change) ? c.inbody_change.filter(Boolean) : [];
+  const wc = Array.isArray(c.weight_change) ? c.weight_change.filter(Boolean) : [];
+  const firstLogs = Array.isArray(c.first_logs) ? c.first_logs.filter(Boolean) : [];
+  const sat = c.satisfaction || null;
+  const SAT_KO = { very: "아주 만족", good: "만족", neutral: "보통", low: "아쉬워함" };
   return `[상황·대전제] PT 재등록 대화 준비(재등록은 보통 '오늘 PT 수업 중'에 이뤄진다). 유일한 목적 =
-이 회원의 재등록 확률 극대화. 근거는 관찰(1차)이 아니라 '그동안의 PT 관리 데이터(운동 빈도·수업 일지)'다.
+이 회원의 재등록 확률 극대화. 근거는 관찰(1차)이 아니라 '첫 수업부터 지금까지의 변화'와 '회원 만족도'다.
+★회원이 납득하는 순서: 그동안 이만큼 변했다(숫자) → 회원이 만족한 점 → 그래서 앞으로 무엇을 더 하고 →
+그러면 앞으로 무엇이 달라지는지 → 그 플랜(횟수·가격 이유) → 요청.
 재등록은 '새로 파는 것'이 아니라 '그동안 쌓은 만족·변화를 이어가는 것'. 트레이너가 30초에 훑어 외우고 오늘
 수업을 재등록으로 자연히 잇는 컨닝페이퍼 — 바로 말할 완성 대사로.
 
@@ -496,15 +504,29 @@ function reregisterPrompt(member, ctx, packages = []) {
  완료 수업수=${g3(c.sessions_done)}, 운동 빈도(주당 추정)=${g3(c.weekly_frequency)}
 [최근 수업 일지]
 ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
+[첫 수업 → 지금 · 앱이 계산한 숫자 — ★숫자는 이것만 그대로 인용(계산·반올림·창작 금지)]
+ 첫 수업일=${g3(j.first_session)}, 함께한 기간=${j.months ? `약 ${j.months}개월` : "없음"}, 노쇼=${g3(j.noshows)}회
+ 인바디 변화=${ib.length ? ib.map((x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`).join(", ") : "없음"}
+ 운동 무게 변화=${wc.length ? wc.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}
+[처음 수업 일지(시작점)]
+${firstLogs.length ? firstLogs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
+[회원 만족도 — 트레이너 입력] 수준=${sat?.level ? SAT_KO[sat.level] || sat.level : "입력 없음"}, 회원이 한 말=${g3(sat?.quote)}
+ ※ '아쉬워함'이면 감추지 말고 왜 아직인지 + 앞으로 어떻게 달라지게 할지를 정직하게(objection low_effect와 같은 결).
 
 [내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
 ${pkgBlock}
 
 [컨닝페이퍼 — 재등록은 '그동안의 근거 → 오늘 수업으로 잇기 → 클로징']
-① why_now(왜 지금 재등록 — 그동안의 근거): 운동 빈도·수업 일지에서 확인되는 것으로.
-   - proven: 그동안 PT로 확인·개선된 것. 빈도가 꾸준하면 근거로("주 N회씩 ○개월 하시면서 ○○ 좋아지셨어요"). 없으면 지어내지 말 것.
+① why_now(왜 더 해야 하는지 — 그동안의 변화 → 앞으로 · 각각 회원에게 그대로 말할 대사):
+   - proven: 첫 수업부터 지금까지의 변화. 위 [첫 수업 → 지금] 숫자를 그대로 인용하고 처음 수업 일지(시작점)와
+     대비해서("처음엔 ○○도 힘드셨는데 지금은 ○○kg까지 드세요", "체지방 ○→○%"). 숫자가 없으면 출석·빈도·
+     일지로. 없는 성과 창작 금지.
+   - satisfaction: 회원이 만족한 점을 짚어 주는 대사(회원이 한 말이 있으면 그 말로 되돌려 주기). 입력이 없으면
+     최근 일지에서 회원이 좋아한 지점으로, 그것도 없으면 빈 문자열.
    - risk_if_stop: 지금 멈추면 잃는 것(사실 기반 손실 — "쌓은 감각·리듬이 흩어진다"). 없는 위기 창작 금지.
-   - next_roadmap: 재등록해야 갈 수 있는 다음 지점(현재 PT 방향에서 출발).
+   - next_roadmap: 앞으로 무엇을 더 하는지 — 다음 기간의 구체 목표와 운동 방향(지금 단계 다음에 올 것, 아직 남은 것).
+   - future_change: 그러면 앞으로 무엇이 달라지는지 — 다음 기간이 끝났을 때 회원 몸·생활의 그림(goal 축 · 의료 단정·
+     성과 보장 금지 · "~를 목표로 가요" 톤).
 
 ② session_flow(오늘 수업 흐름/방향 — 재등록으로 잇기): 오늘 PT 수업을 재등록으로 자연히 잇는 진행법.
    압박이 아니라 회원이 스스로 '더 해야겠다'를 느끼게.
@@ -518,8 +540,8 @@ ${pkgBlock}
 
 ${closingSeqInstruction({
     num: "④",
-    leverage: "그동안의 변화(why_now의 근거)",
-    trialHint: `그동안의 변화를 회원이 스스로 인정하게 하는 떠보기 대사("그동안 ○○ 확실히 좋아진 거 느끼시죠?")`,
+    leverage: "첫 수업부터 지금까지의 변화와 회원 만족(why_now)",
+    trialHint: `그동안의 변화를 회원이 스스로 인정하게 하는 확인 질문("처음이랑 비교하면 ○○ 확실히 달라진 거 느끼시죠?")`,
     askTarget: "대상이 분명한 '재등록/연장 결제'(애매한 '이어가자' 금지)",
     askExample: `"그럼 지금 남은 수업 끝나는 대로 PT 주 2회, 3개월 과정으로 그대로 이어갈게요 — 지금처럼 화·목 저녁으로 잡을까요, 요일을 바꿀까요?"`,
   })}
@@ -553,7 +575,7 @@ ${MEMBER_LANG}
 키 그대로 둔다(화면 매칭용). 아래 JSON만 출력(설명·마크다운·코드펜스 금지). ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 {
   "member_read": "그동안 + 지금 재등록 국면 한 줄",
-  "why_now": { "proven": "...", "risk_if_stop": "...", "next_roadmap": "..." },
+  "why_now": { "proven": "첫 수업부터 지금까지(숫자 인용)", "satisfaction": "회원이 만족한 점 또는 빈 문자열", "risk_if_stop": "...", "next_roadmap": "앞으로 더 할 것", "future_change": "앞으로 달라질 것" },
   "session_flow": { "gap_awareness": "...", "goal_raise": "...", "timing": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON},

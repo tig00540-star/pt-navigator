@@ -27,6 +27,13 @@ import Badge from "@/components/ui/Badge";
 import { REG_RESULT_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 import Card from "@/components/ui/Card";
 
+const SAT_OPTS = [
+  { value: "very", label: "아주 만족" },
+  { value: "good", label: "만족" },
+  { value: "neutral", label: "보통" },
+  { value: "low", label: "아쉬워함" },
+];
+
 export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   // 재등록 결과 기록 — 최신 계약 행 session_log.reg_* UPDATE. 성공≠자동갱신(기록만).
   const [regResult, setRegResult] = useState("none");
@@ -45,6 +52,9 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   const [sbGenerating, setSbGenerating] = useState(false);
   const [sbErr, setSbErr] = useState("");
   const [sbOpen, setSbOpen] = useState(false);
+  // 회원 만족도(트레이너 입력 · 2026-10-02) — 재등록 브리핑의 근거. latest.report.reg_satisfaction에 브리핑과 함께 저장.
+  const [satLevel, setSatLevel] = useState("");
+  const [satQuote, setSatQuote] = useState("");
 
   // 본인 active 패키지 로드(마운트 1회 · uid 기준 · 회원 무관).
   useEffect(() => {
@@ -121,6 +131,8 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     setRegBrief(latest?.report?.reg_brief ?? null); // 캐시 시드(재방문 재호출 0)
     setRegBriefMeta(latest?.report?.regBriefMeta ?? null);
     setRegSb(latest?.report?.reg_salesbook ?? null); // 재등록 세일즈북 캐시 시드
+    setSatLevel(latest?.report?.reg_satisfaction?.level ?? "");
+    setSatQuote(latest?.report?.reg_satisfaction?.quote ?? "");
     setRegAiError("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latest?.id]);
@@ -175,12 +187,24 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
         const spanWeeks = (Math.max(...dts) - Math.min(...dts)) / (1000 * 60 * 60 * 24 * 7);
         if (spanWeeks > 0) weekly = (doneLogs.length / spanWeeks).toFixed(1);
       }
+      // 첫 수업 → 지금: 앱이 계산한 숫자(changeData)만 근거로 넘긴다(AI는 숫자 창작 금지).
+      const oldestFirst = [...doneLogs].reverse();
+      const satisfaction = satLevel || satQuote.trim() ? { level: satLevel || null, quote: satQuote.trim() || null } : null;
       const ptContext = {
         contract_count: contracts.length,
         remaining: { paid: rem.paid, service: rem.service },
         sessions_done: doneLogs.length,
         weekly_frequency: weekly,
         recent_logs: timeline.filter((l) => !l.voided && l.ai_summary).slice(0, 5).map((l) => l.ai_summary),
+        journey: {
+          first_session: oldestFirst[0] ? String(oldestFirst[0].session_at ?? oldestFirst[0].created_at).slice(0, 10) : null,
+          months: changeData.journey.months,
+          noshows: doneLogs.filter((l) => l.source === "noshow").length,
+        },
+        first_logs: oldestFirst.filter((l) => l.ai_summary && l.source !== "noshow").slice(0, 2).map((l) => l.ai_summary),
+        inbody_change: changeData.inbody.map((c) => ({ label: c.label, first: c.first, latest: c.latest, unit: c.unit, better: c.goodDir })),
+        weight_change: changeData.exercises,
+        satisfaction,
       };
       const res = await fetch("/api/ot-brief", {
         method: "POST",
@@ -198,7 +222,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       setRegBriefMeta(meta);
       // 캐시 — latest.report에 공존 저장(session_log UPDATE · .select() 하드닝).
       if (supabase && latest?.id) {
-        const nextReport = { ...(latest.report || {}), reg_brief: data, regBriefMeta: meta };
+        const nextReport = { ...(latest.report || {}), reg_brief: data, regBriefMeta: meta, ...(satisfaction ? { reg_satisfaction: satisfaction } : {}) };
         const { data: up } = await supabase.from("session_log").update({ report: nextReport }).eq("id", latest.id).select();
         if (!up || up.length === 0) setRegAiError("브리핑 저장 실패 — 권한/정책 확인(0행). 이번 세션엔 표시됩니다.");
         else setContracts((p) => p.map((c) => (c.id === up[0].id ? up[0] : c)));
@@ -258,6 +282,27 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             재등록 준비 · 수업 전
           </div>
 
+          {/* 회원 만족도 — 재등록 브리핑의 근거(변화 숫자는 앱이 계산해 함께 넘긴다). */}
+          <Card as="section" padding="sm">
+            <p className="text-[13px] font-semibold text-sub">회원 만족도 <span className="font-normal text-muted">브리핑이 이걸 근거로 &lsquo;왜 더 해야 하는지&rsquo;를 짜요</span></p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SAT_OPTS.map((o) => (
+                <button key={o.value} type="button" onClick={() => setSatLevel(satLevel === o.value ? "" : o.value)} aria-pressed={satLevel === o.value}
+                  className={`min-h-[36px] rounded-full border px-3 text-[13px] transition ${satLevel === o.value ? "border-ink bg-ink font-semibold text-white" : "border-line bg-card text-sub hover:text-ink"}`}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            <input value={satQuote} onChange={(e) => setSatQuote(e.target.value)}
+              className="mt-2 w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              placeholder="회원이 한 말 · 좋았던 점/아쉬운 점 (예: 허리 안 아파서 출근이 편해요)" />
+            {hasChange && (
+              <p className="mt-2 text-[12px] text-muted">
+                함께 넘기는 변화: {[...changeData.inbody.slice(0, 2).map((c) => `${c.label} ${c.first}→${c.latest}${c.unit}`), ...changeData.exercises.slice(0, 2).map((e) => `${e.exercise} ${e.first}→${e.latest}kg`)].join(" · ")}
+              </p>
+            )}
+          </Card>
+
           {/* AI 재등록 브리핑 — 상태 4종은 AIBriefBlock이 관리한다.
              이 탭은 재등록 타이밍(due) 뱃지가 추가로 붙는다(meta 슬롯).
              stale은 쓰지 않는다 — 재등록 브리핑은 관찰이 아니라 계약·수업 실적 기반이라
@@ -266,7 +311,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             status={regGenerating ? "loading" : regBrief ? "ready" : "idle"}
             title="재등록 AI 지원"
             generateLabel="AI 지원 준비 생성하기"
-            idleDescription={`${member.name} 회원의 최근 PT 관리 데이터를 근거로 재등록 AI 지원(당위성·클로징·거절 대처)을 준비합니다. 수업 전에 한 번 생성하면, 이후 다시 열 때는 저장돼 바로 떠요.`}
+            idleDescription={`${member.name} 회원의 첫 수업부터 지금까지의 변화(인바디·운동 무게·출석)와 위 만족도를 근거로, 왜 더 해야 하는지·앞으로 무엇이 달라지는지·재등록 제안까지 준비해요. 한 번 만들면 저장돼서 다시 열 때 바로 떠요.`}
             waitingHint="최대 1분 걸릴 수 있어요. 기다리는 동안 회원의 지난 수업 기록을 훑어보세요. (최초 1회만 · 이후는 저장된 걸 바로 보여드려요)"
             onGenerate={generateReReg}
             onRegenerate={generateReReg}

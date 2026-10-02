@@ -9,7 +9,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, CalendarCheck2, Check, ChevronRight, Plus, Scale } from "lucide-react";
+import { ArrowRight, CalendarClock, CalendarCheck2, Check, ChevronRight, Pencil, Plus, Scale } from "lucide-react";
+import { useAppUi } from "@/components/app/AppChrome";
 import { supabase } from "@/lib/supabaseClient";
 import { otStepPath, otStepLabel } from "@/lib/otRounds";
 import { hasVal } from "@/lib/format";
@@ -66,6 +67,7 @@ function Step({ done, children }) {
 }
 
 export default function OtDashboard({ member, info }) {
+  const { openMemberEdit } = useAppUi();
   const [nextAppt, setNextAppt] = useState(null);
   const [lastAppt, setLastAppt] = useState(null);
   const [inbody, setInbody] = useState({ latest: null, count: 0 });
@@ -115,6 +117,10 @@ export default function OtDashboard({ member, info }) {
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ot-soft text-[15px] font-bold text-ot-text" aria-hidden="true">
             {(member.name || "?").slice(-2)}
           </div>
+          <button type="button" onClick={() => openMemberEdit(member.id)}
+            className="order-last inline-flex min-h-[36px] shrink-0 items-center gap-1 rounded-lg border border-line bg-card px-2.5 text-[12px] text-sub transition hover:text-ink">
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" /> 정보 수정
+          </button>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-[22px] font-bold tracking-[-0.03em] text-ink">{member.name}</h1>

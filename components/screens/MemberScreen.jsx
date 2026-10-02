@@ -60,6 +60,8 @@ export default function MemberScreen({ kind, memberId, step }) {
         />
       )}
 
+      {/* 정보 수정 — OT 회원은 대시보드 회원 카드 안에 있다(2026-10-02). PT·보관 회원만 여기. */}
+      {kind !== "ot" && (
       <div className="mb-3 flex justify-end">
         <button
           onClick={() => openMemberEdit(member.id)}
@@ -68,6 +70,7 @@ export default function MemberScreen({ kind, memberId, step }) {
           <Pencil className="h-3.5 w-3.5" /> 정보 수정
         </button>
       </div>
+      )}
 
       <MemberViewShell
         member={member}

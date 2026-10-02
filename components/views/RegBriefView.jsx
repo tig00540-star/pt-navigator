@@ -36,14 +36,20 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
           <p className="mt-1.5 leading-relaxed text-ink">{b.member_read}</p>
         </div>
       )}
-      {(wn.proven || wn.risk_if_stop || wn.next_roadmap) && (
+      {(wn.proven || wn.risk_if_stop || wn.next_roadmap || wn.satisfaction || wn.future_change) && (
         <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
-          <div className="flex items-center gap-2"><span className="text-base">📈</span><span className="text-[11px] font-semibold tracking-label-ko text-sky-700">왜 지금 재등록 · 그동안의 근거</span></div>
+          <div className="flex items-center gap-2"><span className="text-base">📈</span><span className="text-[11px] font-semibold tracking-label-ko text-sky-700">왜 더 해야 하는지 · 그동안의 변화 → 앞으로</span></div>
           <div className="mt-2 space-y-2">
             {wn.proven && (
               <div>
-                <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">그동안 확인</span>
+                <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">첫 수업부터 지금까지</span>
                 <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.proven}</p>
+              </div>
+            )}
+            {wn.satisfaction && (
+              <div>
+                <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">회원이 만족한 점</span>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.satisfaction}</p>
               </div>
             )}
             {wn.risk_if_stop && (
@@ -54,8 +60,14 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
             )}
             {wn.next_roadmap && (
               <div>
-                <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">다음 단계</span>
+                <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">앞으로 더 할 것</span>
                 <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.next_roadmap}</p>
+              </div>
+            )}
+            {wn.future_change && (
+              <div>
+                <span className="inline-block rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">앞으로 달라질 것</span>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink">{wn.future_change}</p>
               </div>
             )}
           </div>
