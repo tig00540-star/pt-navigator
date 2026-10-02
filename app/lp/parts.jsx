@@ -11,11 +11,13 @@
      첫 화면은 효과 없음 · 동작 줄이기 설정이면 효과 없음 · 한 번만 재생.
    ========================================================================= */
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, Mic } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Mic, ZoomIn } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 
 export const COL = "mx-auto w-full max-w-[760px] px-5";
 export const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
@@ -177,52 +179,88 @@ export function GroupLabel({ children, dark }) {
   );
 }
 
-export function Shot({ src, alt }) {
+export function Shot({ src, alt, zoom = true }) {
+  const [open, setOpen] = useState(false);
   // 이미 1080×1350 WebP ~100KB로 최적화한 정적 캡처 — next/image 변환 없이 그대로 내보낸다.
+  // eslint-disable-next-line @next/next/no-img-element
+  const img = <img src={src} alt={alt} width={1080} height={1350} loading="lazy" decoding="async"
+    className="block h-auto w-full rounded-2xl border border-line bg-card" />;
+  if (!zoom) return img;
+  // 탭하면 크게 — 폰에서 글자를 읽을 수 있게.
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} width={1080} height={1350} loading="lazy" decoding="async"
-      className="block h-auto w-full rounded-2xl border border-line bg-card" />
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} — 크게 보기`}
+        className={`group relative block w-full cursor-zoom-in rounded-2xl p-0 ${FOCUS}`}>
+        {img}
+        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2.5 py-1 text-[12px] font-bold text-white">
+          <ZoomIn size={13} strokeWidth={2.6} aria-hidden="true" /> 크게 보기
+        </span>
+      </button>
+      {/* body로 포털 — 조상 transform(스크롤 등장 효과) 안에서 fixed가 어긋나지 않게. */}
+      {open && createPortal(<ImageLightbox src={src} alt={alt} onClose={() => setOpen(false)} />, document.body)}
+    </>
   );
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
 export function Visual({ img, demo, alt, dark }) {
   return (
-    <div className={`mx-auto w-full max-w-[480px] rounded-[24px] border p-3 sm:p-4 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
+    <div className={`mx-auto w-full max-w-[480px] rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
       {img ? <Shot src={img} alt={alt} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
     </div>
   );
 }
 
-/* 단계 화면 3장 나란히(폰은 가로로 넘겨보기) — 신규 OT·운동일지.
+/* 단계 화면 — 신규 OT·운동일지. 3장을 나란히 두면 한 장이 230px로 작아져 글자가 안 읽힌다 →
+   한 장씩 크게(최대 480px) 보여주고, 위 단계 칩으로 넘긴다(폰은 옆으로 밀어도 넘어감).
    step: { step, img, alt } 또는 { step, quote } (quote = 트레이너가 실제로 말한 문장 · 지어내지 않음). */
 export function StepShots({ steps }) {
+  const trackRef = useRef(null);
+  const [active, setActive] = useState(0);
+  const go = (i) => {
+    const el = trackRef.current;
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    setActive(i);
+  };
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el || !el.clientWidth) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== active) setActive(i);
+  };
   return (
-    <ol className="lp-steps -mx-5 flex list-none snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
-      {steps.map((s, i) => (
-        <li key={s.step} className="w-[74%] max-w-[300px] flex-none snap-center lg:w-auto lg:max-w-none">
-          <div className="mb-2.5 text-left text-[14px] font-extrabold">
-            <span className="text-muted">{i + 1}</span>{" "}
-            <span className={i === steps.length - 1 ? "text-primary-strong" : "text-ink"}>{s.step}</span>
-          </div>
-          <div className="rounded-[20px] border border-line bg-bg p-2.5">
-            {s.quote ? (
-              <figure className="m-0 flex aspect-[4/5] flex-col gap-2.5 overflow-hidden rounded-2xl border border-line bg-card p-3.5 text-left">
-                <figcaption className="flex items-center gap-1.5 text-[12px] font-bold text-primary-strong">
-                  <Mic size={14} strokeWidth={2.6} aria-hidden="true" /> 수업 끝나고 말한 그대로
-                </figcaption>
-                <blockquote className="m-0 rounded-[16px_16px_16px_4px] bg-elevate px-3 py-2.5 text-[13px] leading-[1.5] text-ink">
-                  {s.quote}
-                </blockquote>
-              </figure>
-            ) : (
-              <Shot src={s.img} alt={s.alt} />
-            )}
-          </div>
-        </li>
-      ))}
-    </ol>
+    <div className="mx-auto flex w-full max-w-[480px] flex-col gap-3">
+      <div className="grid grid-cols-3 gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="단계">
+        {steps.map((s, i) => (
+          <button key={s.step} type="button" role="tab" aria-selected={i === active} onClick={() => go(i)}
+            className={`min-h-[44px] rounded-full px-1 text-[13px] font-extrabold transition-colors sm:text-[14px] ${FOCUS} ${
+              i === active ? "bg-card text-ink shadow-sm" : "text-sub hover:text-ink"}`}>
+            <span className={i === active ? "text-primary" : "text-muted"}>{i + 1}</span> {s.step}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-[24px] border border-line bg-bg p-1.5 sm:p-3">
+        <ol ref={trackRef} onScroll={onScroll} className="lp-steps m-0 flex list-none snap-x snap-mandatory overflow-x-auto p-0">
+          {steps.map((s) => (
+            <li key={s.step} className="w-full flex-none snap-center" aria-label={s.step}>
+              {s.quote ? (
+                <figure className="m-0 flex aspect-[4/5] flex-col gap-3 overflow-hidden rounded-2xl border border-line bg-card p-[clamp(16px,5vw,28px)] text-left">
+                  <figcaption className="flex items-center gap-1.5 text-[13px] font-bold text-primary-strong">
+                    <Mic size={15} strokeWidth={2.6} aria-hidden="true" /> 수업 끝나고 말한 그대로
+                  </figcaption>
+                  <blockquote className="m-0 rounded-[18px_18px_18px_4px] bg-elevate px-4 py-3.5 text-[clamp(14px,3.9vw,17px)] leading-[1.6] text-ink">
+                    {s.quote}
+                  </blockquote>
+                </figure>
+              ) : (
+                <Shot src={s.img} alt={s.alt} />
+              )}
+            </li>
+          ))}
+        </ol>
+      </div>
+      <p className="m-0 text-[13px] text-muted">옆으로 넘기거나 단계를 누르세요 · 화면을 누르면 크게 보여요</p>
+    </div>
   );
 }
 
