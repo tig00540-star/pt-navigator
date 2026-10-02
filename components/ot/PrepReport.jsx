@@ -121,6 +121,8 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   const gaps = (d.data_gaps || []).filter((g) => typeof g === "string" && g.trim());
   const seq = d.closing_sequence || {};
   const entry = kind === "first" ? d.opening || {} : d.recall || {};
+  // 정보가 거의 없는 회원 — 대사에 ○○ 빈칸이 있다(수업 중 회원이 말한 목표를 넣어 말함).
+  const fillIn = Boolean(d.fill_in) || JSON.stringify(seq).includes("○○");
 
   const sections = [];
   if (entry.line || d.workout_intro) {
@@ -281,6 +283,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             ))}
           </ol>
           {derived && <p className="m-0 mt-2 text-[11.5px] text-sub">리포트를 다시 만들면 더 짧은 요약으로 바뀌어요.</p>}
+          {fillIn && <p className="m-0 mt-2.5 rounded-lg bg-card px-3 py-2 text-[12.5px] leading-relaxed text-ink"><b className="font-semibold text-primary-strong">○○</b>에는 수업 중 회원이 말한 목표를 넣어 말해요. 첫마디에서 목표를 먼저 물어보세요.</p>}
         </div>
       )}
 

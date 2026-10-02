@@ -13,6 +13,8 @@
 import { useEffect, useState } from "react";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import PrepReport from "@/components/ot/PrepReport";
+import { useAppUi } from "@/components/app/AppChrome";
+import { hasVal } from "@/lib/format";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { firstInputHash } from "@/lib/otHash";
@@ -24,6 +26,10 @@ export default function FirstOTAssist({ member, onSaved }) {
   const [meta, setMeta] = useState(null); // { generatedAt, model, inputHash }
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(""); // 실패/키미설정/세션전용 안내
+  const { openMemberEdit } = useAppUi();
+  // 목표도 직업도 비어 있으면 리포트가 근거·비유를 지어낼 수 없다 — 만들기 전에 한 번 알려준다(막지는 않음 · 2026-10-02).
+  const filled = (v) => hasVal(v) && v !== "미설정"; // 빈 칸은 "-"로 저장되기도 한다(hasVal이 거름)
+  const sparse = !filled(member?.goal) && !filled(member?.job);
   const [row1Id, setRow1Id] = useState(null); // round-1 행 id (없으면 캐시 스킵)
   const [row1Report, setRow1Report] = useState(null); // round-1 report(병합 대상 — 관찰 보존)
   const [packages, setPackages] = useState([]); // 본인 active 패키지(추천 재료 · pick_ref 조회)
@@ -166,7 +172,12 @@ export default function FirstOTAssist({ member, onSaved }) {
       waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
       onGenerate={generate}
       onRegenerate={generate}
-      notice={notice || undefined}
+      notice={notice || (sparse && !data ? (
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          목표 한 줄만 적어도 리포트가 훨씬 정확해져요.
+          <button type="button" onClick={() => openMemberEdit(member.id)} className="font-semibold underline underline-offset-2">정보 수정</button>
+        </span>
+      ) : undefined)}
       meta={
         data && (
           <span>
