@@ -1,6 +1,6 @@
 "use client";
 /* =========================================================================
-   ClosingSequence — 클로징 4비트(떠보기→근거→요청→플러시)+침묵 지시 단일 렌더.
+   ClosingSequence — 클로징 흐름(이유·근거→확인 질문→플랜(횟수·가격 이유)→요청→침묵→망설이면 + OT는 '오늘 안 되면') 단일 렌더.
    1차(FirstOTAssist)·2차(SecondOTTab)·재등록(RegBriefView) 공유. DS 톤(primary-soft 카드).
 
    ★백워드 호환(필수): closing_sequence(object)가 있으면 시퀀스로, 없고 옛 closing_line(string)만
@@ -24,6 +24,8 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
   const line = typeof fallbackLine === "string" ? fallbackLine : "";
   const mp = metaphor && typeof metaphor === "object" ? metaphor : null;
   const hasMetaphor = Boolean(mp?.metaphor);
+  const fb = seq?.fallback && typeof seq.fallback === "object" ? seq.fallback : null;
+  const hw = Array.isArray(fb?.homework) ? fb.homework.filter((h) => h && h.do) : [];
   if (!has && !line && !hasMetaphor) return null; // 아무것도 없으면 렌더 안 함
 
   return (
@@ -31,29 +33,24 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
       <div className="flex items-center gap-2">
         {icon}
         <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">
-          {has || hasMetaphor ? "세일즈 비유 → 클로징 흐름" : "클로징 한마디"}
+          {has || hasMetaphor ? "이유 → 플랜 → 요청" : "클로징 한마디"}
         </span>
       </div>
 
-      {/* 세일즈 비유 — 클로징의 자연스러운 문 여는 리드인(비유하고 바로 클로징으로 이어짐). */}
-      {hasMetaphor && (
-        <div className="mt-2">
-          <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">비유로 열기</span>
-          <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;{mp.metaphor}&rdquo;</p>
-          {mp.bridge && <p className="mt-0.5 text-[11px] leading-relaxed text-muted">{mp.bridge}</p>}
-        </div>
-      )}
-
+      {/* 2026-10-02 순서 개편(대표): 왜 PT가 필요한지(이유·근거)부터 → 확인 질문 → 플랜(횟수·가격 이유) → 요청.
+          비유는 이유를 쉽게 풀어주는 보조라 이유 바로 뒤. 옛 캐시(stakes가 짧은 근거 문장)도 같은 자리에 그대로 보인다. */}
       {has ? (
         <div className="mt-2.5 space-y-2.5">
-          {seq.trial_close && <SpeechBit label="① 떠보기" text={seq.trial_close} />}
-          {seq.stakes && (
+          {seq.stakes && <SpeechBit label="① 왜 PT가 필요한지" text={seq.stakes} />}
+          {hasMetaphor && (
             <div>
-              <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">② 근거</span>
-              <p className="mt-1 text-[13px] leading-relaxed text-ink">{seq.stakes}</p>
+              <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">쉽게 비유하면</span>
+              <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;{mp.metaphor}&rdquo;</p>
+              {mp.bridge && <p className="mt-0.5 text-[11px] leading-relaxed text-muted">{mp.bridge}</p>}
             </div>
           )}
-          {seq.plan_pitch && <SpeechBit label="③ 플랜 제시(주 N회·기간·총 회차)" text={seq.plan_pitch} />}
+          {seq.trial_close && <SpeechBit label="② 확인 질문" text={seq.trial_close} />}
+          {seq.plan_pitch && <SpeechBit label="③ 추천 플랜 · 횟수와 가격의 이유" text={seq.plan_pitch} />}
           {seq.ask && <SpeechBit label="④ 요청" text={seq.ask} strong />}
           {seq.hold && (
             /* 트레이너 행동 지시 — 대사 아님(회색 이탤릭 + 🔇로 명확히 구분). */
@@ -61,7 +58,27 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
               🔇 {seq.hold}
             </p>
           )}
-          {seq.flush && <SpeechBit label="⑤ 물러서면" text={seq.flush} />}
+          {seq.flush && <SpeechBit label="⑤ 망설이면" text={seq.flush} />}
+          {fb && (fb.next_line || hw.length > 0) && (
+            /* OT 전용 — 오늘 결정이 안 될 때: 붙잡지 않고 다음 OT를 잡고, 다음 수업 전까지 부탁할 것. */
+            <div className="rounded-lg border border-line bg-card p-3">
+              <span className="inline-block rounded-md bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">⑥ 오늘 결정이 어려우면</span>
+              {fb.next_line && <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;{fb.next_line}&rdquo;</p>}
+              {hw.length > 0 && (
+                <>
+                  <p className="mt-2 text-[11px] font-medium text-sub">다음 수업 전까지 회원에게 부탁할 것</p>
+                  <ul className="mt-1 space-y-1.5">
+                    {hw.map((h, i) => (
+                      <li key={i} className="text-[13px] leading-relaxed text-ink">
+                        <span className="mr-1 text-primary-strong">{i + 1}.</span>&ldquo;{h.do}&rdquo;
+                        {h.why && <span className="block text-[11px] text-muted">{h.why}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
         </div>
       ) : line ? (
         <p className="mt-1.5 text-base font-semibold leading-relaxed text-ink">&ldquo;{line}&rdquo;</p>

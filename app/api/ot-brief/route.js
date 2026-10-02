@@ -106,21 +106,27 @@ const REHAB_TONE = `   ★재활·교정 동작은 강하게 넣되(약한 동�
    → "굳은 목·어깨를 풀어 그날 목이 가벼워지는 걸 체감"(✅). 진단·치료·완치·교정완료 단정 금지. 통증은 '불편/부담'까지만.`;
 
 // ③ closing_sequence JSON 예시(스키마 · 3 프롬프트 공유).
-const CLOSING_SEQ_JSON = `"closing_sequence": { "trial_close": "떠보기 대사 + 끝에 (기다림)", "stakes": "goal 축에 맞는 손실·가치 근거", "plan_pitch": "추천 프로그램을 회원에게 말하는 대사 — 주 N회·약 M개월·총 K회 + 진행 로드맵/기대효과(가격 없이)", "ask": "무엇을(PT 프로그램·주 N회·기간) 언제부터(첫 수업 요일·시간 양자택일) 시작할지 정하는 질문 — 대상이 빠진 '시작하는 걸로' 금지", "hold": "요청 직후 침묵 — 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
+const CLOSING_SEQ_JSON = `"closing_sequence": { "stakes": "왜 PT가 필요한지 — 오늘 확인한 근거 1~2개 + 혼자 하면/안 하면 어떻게 되는지(그대로 말할 대사)", "trial_close": "방금 이유에 회원이 스스로 '맞아요' 하게 하는 확인 질문 + 끝에 (기다림)", "plan_pitch": "트레이너가 하나를 골라 권하는 플랜 — PT 주 N회·약 M개월·총 K회 + 왜 그 횟수인지 + 가격·회당 가격(목록 금액 그대로)과 왜 그 값어치인지", "ask": "무엇을(PT 주 N회·기간) 언제부터(첫 수업 요일·시간 양자택일) 시작할지 정하는 질문 — 대상이 빠진 '시작하는 걸로' 금지", "hold": "요청 직후 침묵 — 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
+// OT(1차·2차+) 전용 — 오늘 결정이 안 될 때: 다음 OT를 그 자리에서 잡고, 다음 수업 전까지 회원에게 부탁할 것(숙제).
+const CLOSING_SEQ_JSON_OT = CLOSING_SEQ_JSON.replace(/ \}$/, `, "fallback": { "next_line": "다음 OT 날짜를 그 자리에서 잡는 대사(요일·시간 양자택일)", "homework": [ { "do": "다음 수업 전까지 회원에게 그대로 말할 부탁 한 문장", "why": "왜 하는지 한 줄" } ] } }`);
 
 // ④ 클로징 4비트 지시(재료만 phase별 주입 · trial_close→stakes→ask→hold→flush).
-function closingSeqInstruction({ num, leverage, trialHint, askTarget, askExample, tone = "" }) {
+function closingSeqInstruction({ num, leverage, trialHint, askTarget, askExample, tone = "", fallback = false }) {
   return `${num} closing_sequence(클로징 흐름 — 한 줄이 아니라 5비트 시퀀스 · 세일즈 비유에서 자연스럽게 이어짐): ${leverage}를 지렛대로, 회원을
-   커밋까지 데려가는 흐름을 준다. 각 비트는 '바로 말할 완성 대사'로. sales_metaphor(비유)를 던진 뒤 그 여운으로 trial_close가 자연히 이어지게 써라.${tone}
-   - trial_close: ${trialHint} + 끝에 (기다림). 작은 예스부터 받는다.
-   - stakes: 오늘/그동안 몸에서 일어난 일 + 안 하면 그게 어떻게 되는지를, 이 회원 goal 축으로(막연한
-     "좋아지실 거예요" 금지). 손실·가치는 goal 유형마다 다르게 —
+   커밋까지 데려가는 흐름을 준다. 각 비트는 '바로 말할 완성 대사'로. ★순서가 핵심 — 왜 PT가 필요한지(이유·근거)를
+   먼저 납득시키고 → 회원이 인정하게 하고 → 플랜(횟수·가격과 그 이유) → 요청. 이유 없이 플랜·요청부터 꺼내지 마라.${tone}
+   - stakes(① 왜 PT가 필요한지 · 그대로 말할 2~3문장): 근거 = 오늘(또는 지난 OT) 회원 몸에서 실제로 확인한 사실
+     1~2개("아까 ○○할 때 ~하셨죠"). 그다음 혼자 하면 왜 안 되는지·안 하면 어떻게 되는지를 이 회원 goal 축으로
+     (막연한 "좋아지실 거예요" 금지 · 없는 관찰 창작 금지). 손실·가치는 goal 유형마다 다르게 —
 ${STAKES_AXIS}
+   - trial_close(② 확인 질문): ${trialHint} — 방금 말한 이유에 회원이 스스로 "맞아요"라고 하게 + 끝에 (기다림).
    - plan_pitch: ★트레이너가 리드한다 — "제가 보기엔 ○○님은 이렇게 가시는 게 맞아요"처럼 전문가로서 하나를
      딱 골라 권하는 완성 대사(여러 선택지를 늘어놓고 회원에게 고르게 하지 마라). [recommended_program]의 pick_ref 패키지
-     기준 'PT 주 N회 · 약 M개월 · 총 K회'를 명확히 말하고, "그래서 이런 순서로 진행해 이런 효과까지 갑니다"라는
-     계획·로드맵을 한 호흡에 담아라. 회원이 '무엇을 얼마나 하는지' 그림이 잡히게. ★K(세션수)는 pick_ref 패키지의
-     실제 sessions 값에 맞춰라(새 숫자 창작 금지). ★가격(원)은 말하지 마라(앱이 채운다).
+     기준 'PT 주 N회 · 약 M개월 · 총 K회'를 명확히 말하고, ★왜 그 횟수인지(목표 시점·몸 상태·가능 빈도에서 역산)를
+     한 문장으로 붙여라. ★K(세션수)는 pick_ref 패키지의 실제 sessions 값에 맞춰라(새 숫자 창작 금지).
+     ★가격도 여기서 말한다(이 비트만 예외 허용): [내 PT 패키지] 목록의 금액·회당 금액을 글자 그대로만 쓰고(계산·반올림·
+     할인 창작 금지 · 패키지 없으면 가격 생략), 왜 그 값어치인지 한 문장 — 혼자 하다 멈췄을 때 잃는 시간·돈, 목표까지
+     걸리는 기간 단축, 회당으로 나눈 크기 같은 이 회원 기준의 이유. "비싸지 않아요" 같은 방어 말투 금지.
    - ask: ★트레이너가 리드해서 구체 커밋을 못 박는다 — 위 plan_pitch 플랜을 전제로 ${askTarget} + 시작/시점을 담아
      '회피 어려운 질문형'으로(${askExample}).
      ★★한 문장 안에 반드시 셋 다: (a)무엇을 = 'PT'라는 말 + 주 N회 · 기간(또는 총 회차) (b)언제부터 = 첫 수업
@@ -132,7 +138,14 @@ ${STAKES_AXIS}
    - hold: 요청 직후 '트레이너 행동 지시'(회원 대사 아님) — "여기서 먼저 말하지 말고 회원 답을 기다린다."
    - flush: 회원이 "생각해볼게요"로 물러설 때, 진짜 이유를 꺼내는 재요청 대사("뭐가 제일 걸리세요 —
      시간이에요, 비용이에요?"). 그 이유별 깊은 대응은 아래 objection_defense가 잇는다. 그래도 오늘 결정이
-     어려우면 붙잡지 말고, 다음 만남 날짜를 그 자리에서 정하는 말로 끝맺는다.`;
+     어려우면 붙잡지 말고, 다음 만남 날짜를 그 자리에서 정하는 말로 끝맺는다.${fallback ? `
+   - fallback(⑥ 오늘 결정이 안 될 때 · 붙잡지 않는다): next_line = 다음 OT 날짜를 그 자리에서 잡는 대사(요일·시간
+     양자택일, "그럼 다음 시간에 오늘 거 이어서 확인해볼게요 — 목요일 저녁 7시, 토요일 오전 중 언제가 좋으세요?" 결).
+     homework = 다음 수업 전까지 회원에게 부탁할 것 2~3개. 오늘 한 운동·확인한 문제와 이어지는 집에서 하는
+     스트레칭·자세 연습, 생활 습관, 기록해 올 것(예: 식사 사진·불편했던 순간) 중에서. 각 {do: 회원에게 그대로 말할
+     부탁 한 문장(방법과 느낌 위주), why: 왜 하는지 한 줄 — 다음 OT에서 무엇을 확인할지}. ★숫자 처방(세트·횟수·
+     시간·중량) 금지 · 통증 관련은 "불편하면 바로 멈추세요"를 덧붙여라. 다음 OT에서 이걸 확인하며 다시 클로징으로
+     잇는 다리다.` : ""}`;
 }
 
 // ── ① firstPrompt — 사전무장 컨닝페이퍼(3스텝: 인사 → 즉효운동 3~4개 → 클로징). 3분전 스캔용. ──
@@ -240,6 +253,7 @@ ${closingSeqInstruction({
     trialHint: "방금 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
     askTarget: "추천 패키지 방향(회차·빈도)",
     askExample: `"그럼 말씀드린 PT 주 2회, 3개월 과정으로 다음 주부터 시작할게요 — 화요일 저녁 7시랑 목요일 저녁 7시 중 언제가 편하세요?"`,
+    fallback: true,
     tone: " ★1차도 오늘 등록 요청까지 간다 — ask는 '생각해 보세요'가 아니라 오늘 시작을 정하는 질문. 물러서면 flush에서 진짜 이유를 꺼내고, 그래도 안 되면 다음 OT 날짜를 확정한다.",
   })}
 
@@ -285,7 +299,7 @@ ${MEMBER_LANG}
   "exercises": [ { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": true, "lib_ref": null }, { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null }, { "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null } ],
   "so_what": "...",
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
-  ${CLOSING_SEQ_JSON},
+  ${CLOSING_SEQ_JSON_OT},
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]
@@ -408,6 +422,7 @@ ${closingSeqInstruction({
     trialHint: "방금 증명된 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
     askTarget: "추천 패키지 방향(회차·빈도)",
     askExample: `"그럼 오늘 확인한 거 그대로 이어서, PT 주 2회 3개월 과정으로 다음 주부터 시작할게요 — 화요일이랑 목요일 저녁 중 언제가 편하세요?"`,
+    fallback: true,
     tone: " ★2차는 1차 관찰로 '증명'까지 끝낸 국면 — trial_close는 proof의 체감을, ask는 1차보다 확신 있게(마지막 OT급).",
   })}
 
@@ -444,7 +459,7 @@ ${MEMBER_LANG}
   "session_plan": [ { "exercise": "...", "point": "..." } ],
   "proof": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
-  ${CLOSING_SEQ_JSON},
+  ${CLOSING_SEQ_JSON_OT},
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]${caseSchemaLine}
@@ -1245,7 +1260,7 @@ export async function POST(request) {
     phase === "first" ? 8192
     : phase === "inbody" || phase === "posture" ? 3072
     : phase === "salesbook" || phase === "reg_salesbook" ? 4096
-    : (phase === "second" && boundedCases?.length ? 6144 : 5120);
+    : (phase === "second" && boundedCases?.length ? 7168 : 6144); // 2026-10-02 클로징 이유·가격 이유·오늘 안 되면(숙제) 추가로 출력이 길어짐
 
   try {
     const anthropic = new Anthropic({ apiKey });
