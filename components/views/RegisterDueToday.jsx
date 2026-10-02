@@ -60,7 +60,7 @@ export default function RegisterDueToday({ members, onSelect }) {
         icon={RefreshCw}
         title="재등록 타이밍"
         count={list.length}
-        hint="잔여 임계 도래분"
+        hint="잔여 10회 미만"
       />
       <div className="grid gap-2">
         {list.map((r) => (

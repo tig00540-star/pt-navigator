@@ -69,7 +69,7 @@ export default function ReapproachToday({ members, onSelect }) {
         icon={CalendarClock}
         title="오늘 재접근"
         count={list.length}
-        hint="보류 후 예정일 도래분"
+        hint="보류했던 회원 · 다시 연락할 날"
       />
       <div className="grid gap-2">
         {list.map((r) => {

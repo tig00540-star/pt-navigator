@@ -60,7 +60,7 @@ export default function RegisterReapproachToday({ members, onSelect }) {
         icon={CalendarClock}
         title="재등록 재접근"
         count={list.length}
-        hint="재등록 보류 후 예정일 도래분"
+        hint="재등록 보류 · 다시 연락할 날"
       />
       <div className="grid gap-2">
         {list.map((r) => {
