@@ -40,7 +40,7 @@ export default function AIBriefBlock({
   onGenerate,
   onRegenerate,
   generateLabel = "브리핑 생성",
-  bare = false,  // 리포트가 떠 있을 때 바깥 카드를 걷어낸다(안의 섹션 카드와 상자가 겹치지 않게 · OT 리포트 2026-10-02)
+  bare = false,  // 리포트가 떠 있을 때 '한 장의 문서'로(제목 머리 + 구분선 + 본문 · 안쪽은 카드 대신 줄 · OT 리포트 2026-10-02)
   className = "",
   children,
   ...rest
@@ -53,7 +53,7 @@ export default function AIBriefBlock({
   return (
     <section
       {...rest}
-      className={flat ? `relative ${className}` : `relative overflow-hidden rounded-2xl border bg-card shadow-sm p-5 ${RING[status] || RING.ready} ${className}`}
+      className={flat ? `relative overflow-hidden rounded-2xl border border-line bg-card shadow-sm ${className}` : `relative overflow-hidden rounded-2xl border bg-card shadow-sm p-5 ${RING[status] || RING.ready} ${className}`}
     >
       {/* 좌측 브랜드 강조선 — before로 그린다.
          border-l-[3px]와 border를 같이 쓰면 둘 다 특이도 (0,1,0)이라
@@ -63,10 +63,11 @@ export default function AIBriefBlock({
       {/* 헤더 — 뱃지는 같은 줄에 두지 않는다.
          폰 폭(430px)에서 아이콘+긴 한글 제목+긴 뱃지+버튼을 한 줄에 넣으면
          제목이 2줄로 접히고 버튼이 "재생/성"으로 쪼개진다(목업에서 실측). */}
+      <div className={flat ? "px-4 pb-3.5 pt-4 sm:px-5" : ""}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <Sparkles className="h-[18px] w-[18px] shrink-0 text-primary" strokeWidth={2.5} />
-          <h3 className="truncate text-[15px] font-bold tracking-[-0.03em] text-ink">{title}</h3>
+          <h3 className={`truncate font-bold tracking-[-0.03em] text-ink ${flat ? "text-[17px]" : "text-[15px]"}`}>{title}</h3>
         </div>
 
         {/* 재생성 — 좁은 폭에서는 아이콘만(인라인 스타일로는 못 하던 반응형 처리).
@@ -88,7 +89,7 @@ export default function AIBriefBlock({
       )}
 
       {meta && !loading && (
-        <div className="mt-2 text-[10px] leading-relaxed text-muted">{meta}</div>
+        <div className={`leading-relaxed text-muted ${flat ? "mt-1 text-[12px]" : "mt-2 text-[10px]"}`}>{meta}</div>
       )}
 
       {notice && !loading && (
@@ -96,6 +97,7 @@ export default function AIBriefBlock({
           {notice}
         </div>
       )}
+      </div>
 
       {/* idle — 무엇을 만들지 설명하고 생성 버튼 */}
       {status === "idle" && (
@@ -129,7 +131,7 @@ export default function AIBriefBlock({
         </div>
       )}
 
-      {showBody && children && <div className="mt-3.5 space-y-3.5">{children}</div>}
+      {showBody && children && <div className={flat ? "space-y-3.5 border-t border-line px-4 pb-5 pt-4 sm:px-5" : "mt-3.5 space-y-3.5"}>{children}</div>}
     </section>
   );
 }

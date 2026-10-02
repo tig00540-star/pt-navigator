@@ -58,11 +58,12 @@ function More({ label = "자세히", children }) {
   );
 }
 
+// 문서 안의 한 칸 — 카드가 아니라 구분선으로 나뉜 줄(리포트가 한 장의 문서로 보이게 · 2026-10-02).
 function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
   return (
-    <div className="rounded-2xl border border-line bg-card">
+    <div>
       <button type="button" onClick={onToggle} aria-expanded={open}
-        className="flex min-h-[54px] w-full items-center gap-3 px-4 py-3 text-left">
+        className="flex min-h-[56px] w-full items-center gap-3 py-3 text-left">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-elevate text-[12px] font-semibold text-sub">{n}</span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-[15px] font-semibold text-ink">
@@ -72,7 +73,7 @@ function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
-      {open && <div className="space-y-3 border-t border-line px-4 pb-4 pt-3.5">{children}</div>}
+      {open && <div className="space-y-3 pb-5 sm:pl-10">{children}</div>}
     </div>
   );
 }
@@ -291,11 +292,13 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
               {allOpen ? "모두 접기" : "모두 펼치기"}
             </button>
           </div>
-          {sections.map((s, i) => (
-            <Section key={s.k} n={i + 1} icon={s.icon} title={s.title} preview={s.preview} open={!!open[s.k]} onToggle={() => toggle(s.k)}>
-              {s.body}
-            </Section>
-          ))}
+          <div className="divide-y divide-line border-y border-line">
+            {sections.map((s, i) => (
+              <Section key={s.k} n={i + 1} icon={s.icon} title={s.title} preview={s.preview} open={!!open[s.k]} onToggle={() => toggle(s.k)}>
+                {s.body}
+              </Section>
+            ))}
+          </div>
         </>
       )}
     </div>
