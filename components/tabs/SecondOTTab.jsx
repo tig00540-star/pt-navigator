@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { otStepPath } from "@/lib/otRounds";
+import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
 import {
   CheckCircle2,
   Footprints,
@@ -230,7 +231,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       });
       if (!res.ok) return null;
       const data = await res.json();
-      return { data, meta: { generatedAt: new Date().toISOString(), model: "claude-sonnet-5", rpSnapshot: sbRpSnapshot(recommendedProgram) } };
+      return { data, meta: { generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "", rpSnapshot: sbRpSnapshot(recommendedProgram) } };
     } catch {
       return null;
     }
@@ -240,12 +241,17 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   //   최초(캐시 세일즈북 없음)면 세일즈북을 동반 자동생성해 '한 번의 update'로 저장(하이브리드 ①).
   //   이미 세일즈북 있으면 안 덮음(스프레드로 보존) → rp 바뀌면 렌더가 '최신 아님' 배지(하이브리드 ②).
   //   ★세일즈북 생성 실패해도 브리핑은 {...prev, brief, briefMeta}로 그냥 저장(브리핑을 세일즈북에 인질 금지).
-  const generateBrief = async (obsReport, row2Id) => {
+  // 생성·저장은 서버가 끝까지(다른 화면·창 닫기에도 안 끊김 · 2026-10-02). 세일즈북은 그다음 화면이 이어 만든다
+  //   (도중에 나가면 세일즈북만 빠지고 리포트는 남는다 — '세일즈북 만들기' 버튼으로 다시).
+  const pendingKey = member?.id ? `second:${member.id}:${round}` : null;
+  const generateBrief = async (obsReport) => {
     setGenerating(true);
     setAiError("");
+    if (pendingKey) markPending(pendingKey);
     try {
       // D-3 — 게이트 ON이고 케이스가 있을 때만 additive 첨부(없으면 필드 자체를 안 넣어 서버가 지금처럼 동작).
       const useCases = caseGate?.on && caseData?.length;
+      const metaIn = { obsHash: briefHash(obsReport, history), ...(useCases ? { caseTier: caseGate.tier } : {}) };
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
@@ -257,52 +263,59 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           history,
           packages,
           ...(useCases ? { closingCases: caseData, caseTier: caseGate.tier } : {}),
+          save: { kind: "ot", memberId: member.id, round, meta: metaIn },
         }),
       });
+      // 서버가 답을 준 순간에만 '만드는 중' 표시를 지운다 — 화면 이동·창 닫기로 끊긴 경우엔 남겨 두고 돌아왔을 때 이어 받는다.
+      if (pendingKey) clearPending(pendingKey);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setAiError(d.error || "AI 생성에 실패했습니다.");
+        setAiError(d.error || "리포트를 만들지 못했어요. 다시 시도해 주세요.");
         return;
       }
       const data = await res.json();
-      const meta = {
-        generatedAt: new Date().toISOString(),
-        model: "claude-sonnet-5",
-        obsHash: briefHash(obsReport, history), // 생성 시점 관찰(+이전 차수) 스냅샷 → 스테일 감지
-        ...(useCases ? { caseTier: caseGate.tier } : {}), // 렌더 배지·캐시용
-      };
-      // 최초(세일즈북 미존재)면 동반 자동생성. 이미 있으면 재생성 안 함(스프레드로 보존 · 스테일 배지 유도).
-      const firstTime = !(row2Report && row2Report.salesbook);
-      const sbResult = firstTime ? await callSalesbook(data.recommended_program) : null;
-      // ⚠️ 스프레드 — 기존 report(특히 salesbook) 보존 + 이번 키만 덮기. closing_*는 top-level 컬럼이라 무관.
-      const reportToSave = {
-        ...(row2Report || {}),
-        brief: data,
-        briefMeta: meta,
-        ...(sbResult ? { salesbook: sbResult.data, salesbookMeta: sbResult.meta } : {}),
-      };
-      let savedOk = false;
-      if (row2Id) {
-        const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", row2Id).select();
-        if (!up || up.length === 0) setAiError("브리핑 저장 실패 — 권한/정책 확인 (0행).");
-        else savedOk = true;
-      } else {
-        const { data: ins } = await supabase.from("ot_log").insert({ user_id: member.id, ot_round: round, report: reportToSave }).select("id").single();
-        if (ins?.id) { setExistingRow2Id(ins.id); savedOk = true; }
-      }
+      const meta = { ...metaIn, generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "" };
+      const savedRow = res.headers.get("x-saved-row");
       setBrief(data);
       setBriefMeta(meta);
-      if (savedOk) {
-        setRow2Report(reportToSave); // 후속 저장이 최신 prevReport 참조(§5)
-        if (sbResult) { setSalesbook(sbResult.data); setSalesbookMeta(sbResult.meta); }
-        onSaved?.(); // 대시보드 진행(준비 ✓) 갱신
+      if (!savedRow) { setAiError("리포트를 저장하지 못했어요 — 지금은 이 화면에서만 보여요."); return; }
+      setExistingRow2Id(savedRow);
+      // 서버가 저장한 최신 report를 다시 읽어 그 위에 세일즈북을 얹는다(다른 키 덮어쓰기 방지).
+      const { data: fresh } = await supabase.from("ot_log").select("report").eq("id", savedRow).maybeSingle();
+      const base = fresh?.report || { ...(row2Report || {}), brief: data, briefMeta: meta };
+      setRow2Report(base);
+      onSaved?.(); // 대시보드 진행(준비 ✓) 갱신
+      // 최초(세일즈북 미존재)면 동반 자동생성. 이미 있으면 재생성 안 함(스테일 배지 유도).
+      if (!base.salesbook) {
+        const sbResult = await callSalesbook(data.recommended_program);
+        if (sbResult) {
+          const withSb = { ...base, salesbook: sbResult.data, salesbookMeta: sbResult.meta };
+          const { data: up } = await supabase.from("ot_log").update({ report: withSb }).eq("id", savedRow).select("id");
+          if (up?.length) { setRow2Report(withSb); setSalesbook(sbResult.data); setSalesbookMeta(sbResult.meta); }
+        }
       }
-    } catch (e) {
-      setAiError("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
+    } catch {
+      setAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
     } finally {
       setGenerating(false);
     }
   };
+
+  // 돌아왔을 때 이어 받기 — 다른 화면에 갔다 오는 사이 서버가 저장한 리포트.
+  const waiting = usePendingResult(pendingKey, async (since) => {
+    const { data: rows } = await supabase.from("ot_log").select("id, report")
+      .eq("user_id", member.id).eq("ot_round", round).order("created_at", { ascending: false }).limit(1);
+    const row = rows?.[0];
+    return isNewerThan(row?.report?.briefMeta?.generatedAt, since) ? row : null;
+  }, (row) => {
+    setExistingRow2Id(row.id);
+    setRow2Report(row.report);
+    setBrief(row.report.brief);
+    setBriefMeta(row.report.briefMeta);
+    setSalesbook(row.report.salesbook || null);
+    setSalesbookMeta(row.report.salesbookMeta || null);
+    onSaved?.();
+  });
 
   // 세일즈북만 재생성(수동 '세일즈북 다시 만들기' · 하이브리드 ①). 현재 브리핑의 recommended_program 사용.
   //   brief 보존(스프레드) · 교훈1 하드닝. 브리핑을 안 건드린다.
@@ -572,7 +585,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
         <AIBriefBlock
           status={stale ? "stale" : "ready"}
           title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
-          onRegenerate={() => generateBrief(obs, existingRow2Id)}
+          onRegenerate={() => generateBrief(obs)}
           meta={
             meta?.generatedAt && (
               <span>
@@ -679,7 +692,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     <AIBriefBlock
       status="loading"
       title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
-      waitingHint="최대 1분 걸려요. 기다리는 동안 지난 OT 피드백을 다시 훑어보세요. (처음 한 번만 만들고, 다음부터는 저장된 걸 바로 보여드려요)"
+      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요 — 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
     />
   );
 
@@ -690,7 +703,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
       generateLabel={`${round}차 OT 준비 리포트 만들기`}
       idleDescription={`${member.name} 회원의 ${round > 2 ? `1~${round - 1}차` : "1차"} OT 기록·피드백을 모두 근거로 ${round}차 OT를 준비해요. 수업 전에 한 번 만들면, 다음부터는 저장된 걸 바로 보여드려요.`}
-      onGenerate={() => generateBrief(obs, existingRow2Id)}
+      onGenerate={() => generateBrief(obs)}
     />
   );
 
@@ -732,7 +745,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   }
 
   // 관찰 있음 · 미성공 → ③ 실 AI (캐시 우선, 캐시 없으면 버튼 트리거).
-  if (generating) return renderGenerating();
+  if (generating || waiting) return renderGenerating();
   if (brief) return renderBrief(brief, briefMeta);
   if (aiError)
     return renderDemo(`데모 폴백 (AI 실패: ${aiError}) — 아래는 예시(하드코딩)입니다.`);

@@ -26,6 +26,7 @@ import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import Badge from "@/components/ui/Badge";
 import { REG_RESULT_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 import Card from "@/components/ui/Card";
+import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
 
 const SAT_OPTS = [
   { value: "very", label: "아주 만족" },
@@ -175,10 +176,13 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   };
 
   // 재등록 AI 브리핑 생성 — /api/ot-brief phase:"reregister" 호출 + latest.report 캐시.
+  // 생성·저장은 서버가 끝까지(다른 화면·창 닫기에도 안 끊김 · 2026-10-02). 돌아오면 저장된 걸 이어 받는다.
+  const pendingKey = latest?.id ? `rereg:${latest.id}` : null;
   const generateReReg = async () => {
     if (regGenerating) return;
     setRegGenerating(true);
     setRegAiError("");
+    if (pendingKey) markPending(pendingKey);
     try {
       const doneLogs = timeline.filter((l) => !l.voided);
       const dts = doneLogs.map((l) => new Date(l.session_at ?? l.created_at)).filter((d) => !isNaN(+d));
@@ -209,30 +213,41 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "reregister", member, ptContext, packages }),
+        body: JSON.stringify({ phase: "reregister", member, ptContext, packages, ...(latest?.id ? { save: { kind: "contract", contractId: latest.id, satisfaction } } : {}) }),
       });
+      // 서버가 답을 준 순간에만 '만드는 중' 표시를 지운다 — 화면 이동·창 닫기로 끊긴 경우엔 남겨 두고 돌아왔을 때 이어 받는다.
+      if (pendingKey) clearPending(pendingKey);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         setRegAiError(d.error || "AI 생성에 실패했습니다.");
         return;
       }
       const data = await res.json();
-      const meta = { generatedAt: new Date().toISOString(), model: "claude-sonnet-5" };
+      const meta = { generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "" };
       setRegBrief(data);
       setRegBriefMeta(meta);
-      // 캐시 — latest.report에 공존 저장(session_log UPDATE · .select() 하드닝).
+      // 저장은 서버가 했다 — 최신 계약 행을 다시 읽어 화면 상태(contracts)를 맞춘다.
       if (supabase && latest?.id) {
-        const nextReport = { ...(latest.report || {}), reg_brief: data, regBriefMeta: meta, ...(satisfaction ? { reg_satisfaction: satisfaction } : {}) };
-        const { data: up } = await supabase.from("session_log").update({ report: nextReport }).eq("id", latest.id).select();
-        if (!up || up.length === 0) setRegAiError("브리핑 저장 실패 — 권한/정책 확인(0행). 이번 세션엔 표시됩니다.");
-        else setContracts((p) => p.map((c) => (c.id === up[0].id ? up[0] : c)));
+        if (!res.headers.get("x-saved-row")) setRegAiError("브리핑을 저장하지 못했어요 — 지금은 이 화면에서만 보여요.");
+        const { data: row } = await supabase.from("session_log").select("*").eq("id", latest.id).maybeSingle();
+        if (row) setContracts((p) => p.map((c) => (c.id === row.id ? row : c)));
       }
-    } catch (e) {
-      setRegAiError("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
+    } catch {
+      setRegAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 브리핑은 이어서 저장돼요)");
     } finally {
       setRegGenerating(false);
     }
   };
+
+  // 돌아왔을 때 이어 받기.
+  const regWaiting = usePendingResult(pendingKey, async (since) => {
+    const { data: row } = await supabase.from("session_log").select("*").eq("id", latest.id).maybeSingle();
+    return isNewerThan(row?.report?.regBriefMeta?.generatedAt, since) ? row : null;
+  }, (row) => {
+    setContracts((p) => p.map((c) => (c.id === row.id ? row : c)));
+    setRegBrief(row.report.reg_brief);
+    setRegBriefMeta(row.report.regBriefMeta);
+  });
 
   // 재등록 세일즈북 생성 — phase:"reg_salesbook" + changeData·recommended_program·packages·photoLabels.
   //   숫자는 changeData(앱 계산)로 렌더 · AI는 텍스트만. latest.report.reg_salesbook 캐시(spread-write 하드닝).
@@ -308,11 +323,11 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
              stale은 쓰지 않는다 — 재등록 브리핑은 관찰이 아니라 계약·수업 실적 기반이라
              '무엇이 바뀌면 낡았는가'의 기준이 없다(2차 OT의 obsHash에 해당하는 게 없음). */}
           <AIBriefBlock
-            status={regGenerating ? "loading" : regBrief ? "ready" : "idle"}
+            status={regGenerating || regWaiting ? "loading" : regBrief ? "ready" : "idle"}
             title="재등록 AI 지원"
             generateLabel="AI 지원 준비 생성하기"
             idleDescription={`${member.name} 회원의 첫 수업부터 지금까지의 변화(인바디·운동 무게·출석)와 위 만족도를 근거로, 왜 더 해야 하는지·앞으로 무엇이 달라지는지·재등록 제안까지 준비해요. 한 번 만들면 저장돼서 다시 열 때 바로 떠요.`}
-            waitingHint="최대 1분 걸릴 수 있어요. 기다리는 동안 회원의 지난 수업 기록을 훑어보세요. (최초 1회만 · 이후는 저장된 걸 바로 보여드려요)"
+            waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요 — 만들던 브리핑은 저장돼 있다가 돌아오면 바로 떠요."
             onGenerate={generateReReg}
             onRegenerate={generateReReg}
             notice={regAiError || undefined}

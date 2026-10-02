@@ -15,7 +15,7 @@ export const runtime = "nodejs"; // SDK는 Node 런타임 필요 (Edge 불가)
 export const maxDuration = 180;  // STT+Sonnet 2연속(최장 라우트). Hobby+fluid compute 300s 내 여유 + 폭주 상한.
 
 const STT_MODEL = "gpt-4o-mini-transcribe";
-const SUMMARY_MODEL = "claude-sonnet-5"; // 운동방법 깊이 위해 Sonnet(ot-brief 2차와 동일). Haiku 테스트 시 이 줄만 원복.
+const SUMMARY_MODEL = "claude-sonnet-5-5"; // 2026-10-02 Sonnet 5.5로 상향. // 운동방법 깊이 위해 Sonnet(ot-brief 2차와 동일). Haiku 테스트 시 이 줄만 원복.
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024; // 4MB — 클라 업로드 가드와 동일. Vercel 4.5MB 한도 아래 서버 백스톱.
 
 // STT 어휘 힌트 — 헬스 PT 도메인 용어를 prompt로 흘려 오인식 저감(gpt-4o-*-transcribe의 prompt 파라미터).
@@ -170,7 +170,7 @@ export async function POST(request) {
     const msg = await anthropic.messages.create({
       model: SUMMARY_MODEL,
       max_tokens: 4096, // 운동별 method 다건 → 여유
-      thinking: { type: "disabled" }, // sonnet-5 기본 adaptive thinking 끔(JSON 생성엔 불필요·ot-brief 패턴)
+      thinking: { type: "between_tools" }, // Sonnet 5.5는 'disabled' 대신 between_tools가 끄기(JSON 생성엔 불필요)
       system: SUMMARY_SYSTEM,
       messages: [
         {

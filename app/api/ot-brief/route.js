@@ -9,11 +9,61 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
 import { createClient } from "@supabase/supabase-js";
+import { after } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // Hobby+fluid compute 기본 300s. 실측 ~45s의 4배 마진 + 업스트림 무응답 폭주 상한(선언제거=300s는 비권장).
 
-const MODEL_SECOND = "claude-sonnet-5";
+// 모델(2026-10-02 대표 결정): 등록이 걸린 리포트(1차·2차+ OT 준비 · 재등록 브리핑)는 Opus 5.5,
+//   나머지(세일즈북·인바디·응급)는 Sonnet 5.5. 리포트는 회원·차수당 한 번 만들고 저장해 다시 쓰므로 호출이 적다.
+const MODEL_REPORT = "claude-opus-5-5";
+const MODEL_FAST = "claude-sonnet-5-5";
+const REPORT_PHASES = new Set(["first", "second", "reregister"]);
+// 모델마다 '생각(thinking)' 설정이 다르다 — Opus 5.5는 adaptive만(끄기 불가), Sonnet 5.5는 between_tools = 끔.
+const thinkingFor = (model) => (model.startsWith("claude-opus") ? { type: "adaptive" } : { type: "between_tools" });
+
+/* 결과를 서버가 직접 저장 — 트레이너가 다른 화면으로 가거나 창을 닫아도 만든 리포트가 남게(2026-10-02).
+   트레이너 본인 토큰으로 쓰므로 RLS는 클라 저장과 같다(service_role 아님). report는 기존 키 보존 병합.
+   save = { kind: "ot", memberId, round, meta } | { kind: "contract", contractId, meta, satisfaction } */
+async function saveResult(token, phase, save, brief, model) {
+  if (!save) return null;
+  if (!token || !process.env.NEXT_PUBLIC_SUPABASE_URL) { console.error("[ot-brief] 저장 불가 — 토큰/환경변수 없음"); return null; }
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const meta = { ...(save.meta && typeof save.meta === "object" ? save.meta : {}), generatedAt: new Date().toISOString(), model };
+  if (save.kind === "ot" && (phase === "first" || phase === "second") && typeof save.memberId === "string") {
+    const round = phase === "first" ? 1 : Math.min(Math.max(Number(save.round) || 2, 2), 20);
+    const patch = phase === "first" ? { first_assist: { data: brief, meta } } : { brief, briefMeta: meta };
+    const { data: rows, error: re } = await sb.from("ot_log").select("id, report")
+      .eq("user_id", save.memberId).eq("ot_round", round).order("created_at", { ascending: false }).limit(1);
+    if (re) console.error("[ot-brief] 저장 전 조회 실패:", re.message);
+    const row = rows?.[0];
+    if (row) {
+      const { data, error } = await sb.from("ot_log").update({ report: { ...(row.report || {}), ...patch } }).eq("id", row.id).select("id");
+      if (error || !data?.length) console.error("[ot-brief] 저장 실패(update):", error?.message || "0행(권한)");
+      return data?.[0]?.id ?? null;
+    }
+    const { data, error: ie } = await sb.from("ot_log").insert({
+      user_id: save.memberId, ot_round: round, report: patch,
+      ...(round === 1 ? { goal_type: "appearance", goal_identified: false, closing_result: "none", closing_approach: "other" } : {}),
+    }).select("id");
+    if (ie || !data?.length) console.error("[ot-brief] 저장 실패(insert):", ie?.message || "0행(권한)");
+    return data?.[0]?.id ?? null;
+  }
+  if (save.kind === "contract" && phase === "reregister" && typeof save.contractId === "string") {
+    const { data: row } = await sb.from("session_log").select("id, report").eq("id", save.contractId).maybeSingle();
+    if (!row) return null;
+    const sat = save.satisfaction && typeof save.satisfaction === "object" ? { reg_satisfaction: save.satisfaction } : {};
+    const { data, error } = await sb.from("session_log").update({ report: { ...(row.report || {}), reg_brief: brief, regBriefMeta: meta, ...sat } })
+      .eq("id", row.id).select("id");
+    if (error || !data?.length) console.error("[ot-brief] 저장 실패(재등록):", error?.message || "0행(권한)");
+    return data?.[0]?.id ?? null;
+  }
+  console.error("[ot-brief] 저장 요청 형식이 맞지 않음 · phase=" + phase);
+  return null;
+}
 
 // §5 가드레일 프리앰블 — 도메인 분리(운동=스파링 / 세일즈=실전 클로저). 톤 전체의 뿌리라 신중.
 const PREAMBLE = `너는 피트니스 트레이너의 파트너다. 도메인에 따라 두 얼굴을 갖는다.
@@ -1249,7 +1299,7 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
   }
 
-  const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history } = body || {};
+  const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "inbody" && phase !== "posture") {
     return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
   }
@@ -1259,7 +1309,7 @@ export async function POST(request) {
   const boundedHistory = Array.isArray(history) ? history.slice(0, 10) : [];
   const otRound = Number.isInteger(round) ? Math.min(Math.max(round, 2), 20) : 2;
 
-  const model = MODEL_SECOND; // 전 phase Sonnet(1차도 승급).
+  const model = REPORT_PHASES.has(phase) ? MODEL_REPORT : MODEL_FAST;
   const basePrompt =
     phase === "first" ? firstPrompt(member, packages, favorites)
     : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages, otRound, boundedHistory)
@@ -1278,13 +1328,18 @@ export async function POST(request) {
   // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120,
   // 단 D-3 케이스 동봉 시 case_feedback ~300~500토큰 더 → 6144(잘림 방지).
   // salesbook은 거절5·클로징시퀀스 없어 가볍지만 한국어 총량 은근 커 4096(꼬리 잘림 마진 · max는 상한이라 과금 무관).
-  const maxTokens =
+  // Opus 5.5는 adaptive thinking(끄기 불가) — 생각 토큰이 max_tokens 안에서 쓰이므로 리포트는 여유를 크게(상한일 뿐 과금 무관).
+  const thinkBudget = REPORT_PHASES.has(phase) ? 8000 : 0;
+  const maxTokens = thinkBudget + (
     phase === "first" ? 8192
     : phase === "inbody" || phase === "posture" ? 3072
     : phase === "salesbook" || phase === "reg_salesbook" ? 4096
-    : (phase === "second" && boundedCases?.length ? 7168 : 6144); // 2026-10-02 클로징 이유·가격 이유·오늘 안 되면(숙제) 추가로 출력이 길어짐
+    : (phase === "second" && boundedCases?.length ? 7168 : 6144)); // 2026-10-02 클로징 이유·가격 이유·오늘 안 되면(숙제) 추가로 출력이 길어짐
 
-  try {
+  const token = (request.headers.get("authorization") || "").replace(/^Bearer /, "") || null;
+  // 생성+저장을 한 작업으로 — after()에 걸어 두면 브라우저가 끊겨도(다른 화면·창 닫기) 플랫폼이 끝까지 돌린다.
+  const t0 = Date.now();
+  const job = (async () => {
     const anthropic = new Anthropic({ apiKey });
     // posture: 회원 체형 사진을 비전으로 직접 관찰(이미지 블록 · 서명 URL 소스 · 최대 3장).
     let userContent = prompt;
@@ -1301,8 +1356,7 @@ export async function POST(request) {
       system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "inbody" || phase === "posture") ? SALESBOOK_PREAMBLE : PREAMBLE,
       messages: [{ role: "user", content: userContent }],
     };
-    // sonnet-5는 기본이 adaptive thinking이라 JSON 생성엔 불필요 → 전 phase 끔(1차도 Sonnet).
-    req.thinking = { type: "disabled" };
+    req.thinking = thinkingFor(model);
 
     const msg = await anthropic.messages.create(req);
     const textOut = msg.content
@@ -1320,7 +1374,18 @@ export async function POST(request) {
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : [];
     const brief = sanitizeFieldNames(parseBrief(textOut, reqKeys));
-    return Response.json(brief);
+    console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);
+    let savedId = null;
+    try { savedId = await saveResult(token, phase, save, brief, model); }
+    catch (se) { console.error("[ot-brief] 저장 실패 · phase=" + phase + ":", se?.message || se); }
+    return { brief, savedId };
+  })();
+  after(() => job.catch(() => {}));
+
+  try {
+    const { brief, savedId } = await job;
+    const headers = { "x-ai-model": model, ...(savedId ? { "x-saved-row": String(savedId) } : {}) };
+    return Response.json(brief, { headers });
   } catch (e) {
     console.error("[ot-brief] 생성 실패 · phase=" + phase + ":", e?.message || e);
     return Response.json({ error: "AI 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });

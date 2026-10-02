@@ -6,7 +6,7 @@ import { requireTrainer } from "@/lib/requireTrainer";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // Sonnet 호출. Hobby+fluid compute 300s 내 여유 + 업스트림 무응답 폭주 상한.
-const CUE_MODEL = "claude-sonnet-5"; // voice-log SUMMARY_MODEL과 동일 id 사용
+const CUE_MODEL = "claude-sonnet-5-5"; // 2026-10-02 Sonnet 5.5로 상향. // voice-log SUMMARY_MODEL과 동일 id 사용
 const KIND_LABEL = { machine: "머신", free_weight: "프리웨이트", bodyweight: "맨몸/도구" };
 
 const SYSTEM = `당신은 PT 트레이너를 돕는 도우미입니다. 주어진 운동 기구 정보로, 트레이너가 회원 운동일지에 쓸 '실전 실행 큐' 초안을 만듭니다.
@@ -43,7 +43,7 @@ export async function POST(request) {
     const msg = await anthropic.messages.create({
       model: CUE_MODEL,
       max_tokens: 1024,
-      thinking: { type: "disabled" },
+      thinking: { type: "between_tools" }, // Sonnet 5.5 끄기 값
       system: SYSTEM,
       messages: [{ role: "user", content: `다음 기구의 실행 큐 초안을 만들어 주세요.\n\n${info}` }],
     });

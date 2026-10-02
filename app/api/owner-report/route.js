@@ -11,7 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
-const MODEL = "claude-sonnet-5";
+const MODEL = "claude-sonnet-5-5"; // 2026-10-02 Sonnet 5.5로 상향.
 const MAX_BODY_BYTES = 96 * 1024;
 
 async function accountIsPremium(request) {
@@ -115,7 +115,7 @@ export async function POST(request) {
       max_tokens: 1024,
       system: PREAMBLE,
       messages: [{ role: "user", content: buildPrompt(d) }],
-      thinking: { type: "disabled" },
+      thinking: { type: "between_tools" }, // Sonnet 5.5 끄기 값
     });
     const textOut = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
     const parsed = parseOwnerReport(textOut);

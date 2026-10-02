@@ -16,6 +16,7 @@ import PrepReport from "@/components/ot/PrepReport";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { firstInputHash } from "@/lib/otHash";
+import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
 
 
 export default function FirstOTAssist({ member, onSaved }) {
@@ -89,76 +90,59 @@ export default function FirstOTAssist({ member, onSaved }) {
     return () => { cancelled = true; };
   }, []);
 
+  // 생성은 서버가 끝까지 돌리고 저장까지 한다(다른 화면·창 닫기에도 안 끊김 · 2026-10-02).
+  //   화면은 '만드는 중'만 기억해 두고, 돌아오면 저장된 결과를 이어 받는다(lib/aiPending).
+  const pendingKey = member?.id ? `first:${member.id}` : null;
   const generate = async () => {
     setLoading(true);
     setNotice("");
+    if (pendingKey) markPending(pendingKey);
     try {
+      const inputHash = firstInputHash(member);
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "first", member, packages, favorites }),
+        body: JSON.stringify({ phase: "first", member, packages, favorites, save: { kind: "ot", memberId: member.id, round: 1, meta: { inputHash } } }),
       });
+      // 서버가 답을 준 순간에만 '만드는 중' 표시를 지운다 — 화면 이동·창 닫기로 끊긴 경우엔 남겨 두고 돌아왔을 때 이어 받는다.
+      if (pendingKey) clearPending(pendingKey);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setNotice(
-          (d.error || "AI 생성에 실패했습니다.") +
-            " (① 지원은 데모 폴백이 없어 표시만 생략됩니다.)"
-        );
-        setData(null);
+        setNotice(d.error || "리포트를 만들지 못했어요. 다시 시도해 주세요.");
         return;
       }
       const result = await res.json();
-      const newMeta = {
-        generatedAt: new Date().toISOString(),
-        model: "claude-sonnet-5",
-        inputHash: firstInputHash(member),
-      };
+      const newMeta = { generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "", inputHash };
       setData(result);
       setMeta(newMeta);
-
-      // 캐시 저장 = round-1 행이 있을 때만(Option B). report 병합으로 관찰 데이터 보존.
-      if (supabase && member?.id && row1Id) {
-        const merged = { ...(row1Report || {}), first_assist: { data: result, meta: newMeta } };
-        const { data: up } = await supabase
-          .from("ot_log")
-          .update({ report: merged }) // .select() 하드닝 — 0행이면 실패
-          .eq("id", row1Id)
-          .select();
-        if (!up || up.length === 0) {
-          setNotice("저장에 실패했어요 — 지금은 이 화면에서만 보이고, 다음에 오면 사라질 수 있어요. (권한/정책 확인)");
-        } else {
-          setRow1Report(merged);
-          onSaved?.();
-        }
-      } else if (supabase && member?.id && !row1Id) {
-        // 관찰 저장 전이라도 1차 브리핑을 항상 남긴다 — 빈 1차 행(ot_round=1)을 만들어 붙임(관찰은 나중에 채움).
-        const { data: ins } = await supabase
-          .from("ot_log")
-          .insert({
-            user_id: member.id,
-            ot_round: 1,
-            goal_type: "appearance",
-            goal_identified: false,
-            closing_result: "none",
-            closing_approach: "other",
-            report: { first_assist: { data: result, meta: newMeta } },
-          })
-          .select("id, report");
-        if (ins && ins.length) {
-          setRow1Id(ins[0].id);
-          setRow1Report(ins[0].report || null);
-          onSaved?.();
-        } else {
-          setNotice("저장에 실패했어요 — 지금은 이 화면에서만 보이고, 다음에 오면 사라질 수 있어요. (권한/정책 확인)");
-        }
+      const savedRow = res.headers.get("x-saved-row");
+      if (savedRow) {
+        setRow1Id(savedRow);
+        setRow1Report((r) => ({ ...(r || {}), first_assist: { data: result, meta: newMeta } }));
+        onSaved?.();
+      } else if (supabase) {
+        setNotice("리포트를 저장하지 못했어요 — 지금은 이 화면에서만 보여요. 권한이 없거나 구독이 만료됐을 수 있어요.");
       }
-    } catch (e) {
-      setNotice("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
-      setData(null);
+    } catch {
+      setNotice("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
     } finally {
       setLoading(false);
     }
   };
+
+  // 돌아왔을 때 이어 받기 — 다른 화면에 갔다 오는 사이 서버가 저장한 결과.
+  const waiting = usePendingResult(pendingKey, async (since) => {
+    const { data: rows } = await supabase.from("ot_log").select("id, report")
+      .eq("user_id", member.id).eq("ot_round", 1).order("created_at", { ascending: false }).limit(1);
+    const row = rows?.[0];
+    return isNewerThan(row?.report?.first_assist?.meta?.generatedAt, since) ? row : null;
+  }, (row) => {
+    setRow1Id(row.id);
+    setRow1Report(row.report);
+    setData(row.report.first_assist.data);
+    setMeta(row.report.first_assist.meta);
+    onSaved?.();
+  });
 
   // 캐시 스테일: 저장된 inputHash ≠ 현재 회원 입력 해시 → 재생성 권장.
   const persisted = Boolean(row1Report?.first_assist);
@@ -172,7 +156,7 @@ export default function FirstOTAssist({ member, onSaved }) {
 
   /* AIBriefBlock 상태 매핑 — 이 탭은 데모 폴백이 없다(실패 시 미표시).
      그래서 "demo"는 쓰지 않고 idle/loading/ready/stale 네 가지만 쓴다. */
-  const briefStatus = loading ? "loading" : !data ? "idle" : stale ? "stale" : "ready";
+  const briefStatus = loading || waiting ? "loading" : !data ? "idle" : stale ? "stale" : "ready";
 
   return (
     <AIBriefBlock
@@ -180,7 +164,7 @@ export default function FirstOTAssist({ member, onSaved }) {
       title="오늘의 OT 사전 준비 리포트"
       generateLabel="OT 준비 리포트 만들기"
       idleDescription="1차 OT도 목표는 오늘 PT 등록이에요. 회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 리포트를 만들어요 — 맨 위 30초 요약, 그다음 입장 · 운동 · 클로징 · 거절 대응 순서예요."
-      waitingHint="최대 1분 걸릴 수 있어요. 기다리는 동안 회원 문진표를 다시 훑어보세요. (관찰이 아니라 ‘가설’을 만드는 중)"
+      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요 — 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
       onGenerate={generate}
       onRegenerate={generate}
       notice={notice || undefined}
