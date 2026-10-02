@@ -14,7 +14,8 @@ import Modal from "@/components/ui/Modal";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 
 export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
-  const [rounds, setRounds] = useState({ round1: null, round2: null });
+  // 어느 차수든 클로징 성공 행이 있으면 배너(차수 수 무관 · 2026-10-02 N차 OT).
+  const [rounds, setRounds] = useState({ anySuccess: false });
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false); // 중앙 확인 모달 open (확정 앞단 게이트)
   const [sessions, setSessions] = useState(""); // 계약 세션수(필수)
@@ -29,7 +30,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
   useEffect(() => {
     if (!supabase || !member?.id) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRounds({ round1: null, round2: null });
+      setRounds({ anySuccess: false });
       return;
     }
     let cancelled = false;
@@ -37,14 +38,10 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
       const { data } = await supabase
         .from("ot_log")
         .select("ot_round, closing_result")
-        .eq("user_id", member.id)
-        .in("ot_round", [1, 2]);
+        .eq("user_id", member.id);
       if (cancelled) return;
       const rows = data || [];
-      setRounds({
-        round1: rows.find((r) => r.ot_round === 1) || null,
-        round2: rows.find((r) => r.ot_round === 2) || null,
-      });
+      setRounds({ anySuccess: rows.some((r) => r.closing_result === "success") });
     })();
     return () => {
       cancelled = true;
@@ -64,7 +61,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
 
   // ⚠️ 값은 CLOSING_RESULT_OPTS 영문('success') — 저장 경로와 동일(한글 아님).
   const success =
-    rounds.round1?.closing_result === "success" || rounds.round2?.closing_result === "success";
+    rounds.anySuccess;
   // 게이트: ot_active + 성공(both round). pt_active면 안 뜸(§1 성공≠PT).
   if (member?.status !== "ot_active" || !success) return null;
 

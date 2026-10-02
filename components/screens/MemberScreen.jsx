@@ -1,7 +1,7 @@
 "use client";
 
 /* =========================================================================
-   MemberScreen — 회원 한 명의 워크플로우 화면(OT 3단계 / PT 3단계).
+   MemberScreen — 회원 한 명의 워크플로우 화면(OT 대시보드·차수별 3칸 / PT 3단계).
 
    구 page.jsx의 회원 영역을 그대로 옮긴 것:
    PtConfirmBanner(OT 클로징 후 등록 확정) → 정보 수정 → MemberViewShell(뷰 스위치).
@@ -19,9 +19,7 @@ import { tabForStep, hrefForMember } from "@/lib/nav";
 import SkeletonScreen from "@/components/ui/Skeleton";
 import MemberViewShell from "@/components/views/MemberViewShell";
 import PtConfirmBanner from "@/components/views/PtConfirmBanner";
-import FirstOTTab from "@/components/tabs/FirstOTTab";
-import SecondOTTab from "@/components/tabs/SecondOTTab";
-import ObservationTab from "@/components/tabs/ObservationTab";
+import OtWorkspace from "@/components/ot/OtWorkspace";
 
 export default function MemberScreen({ kind, memberId, step }) {
   const router = useRouter();
@@ -79,10 +77,9 @@ export default function MemberScreen({ kind, memberId, step }) {
         onMemberPatch={onMemberPatch}
         onMembersChanged={loadMembers}
       >
-        {/* 'ot' 뷰일 때만 아래가 쓰인다(PT·보관은 MemberViewShell이 자체 화면으로 교체). */}
-        {tab === 1 && <FirstOTTab member={member} />}
-        {tab === 5 && <ObservationTab member={member} onClosingSaved={bumpClosingVersion} />}
-        {tab === 2 && <SecondOTTab member={member} onClosingSaved={bumpClosingVersion} />}
+        {/* 'ot' 뷰일 때만 쓰인다(PT·보관은 MemberViewShell이 자체 화면으로 교체).
+            대시보드 + 차수별 3칸(준비하기·인바디 분석·피드백) — components/ot/OtWorkspace. */}
+        {kind === "ot" && <OtWorkspace member={member} step={step} onClosingSaved={bumpClosingVersion} />}
       </MemberViewShell>
     </>
   );

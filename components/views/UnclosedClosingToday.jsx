@@ -24,7 +24,7 @@ export default function UnclosedClosingToday({ members, onSelect }) {
       const { data } = await supabase
         .from("ot_log")
         .select("user_id, ot_round, closing_result")
-        .eq("ot_round", 2)
+        .gte("ot_round", 2)
         .in("user_id", ids);
       if (cancelled) return;
       setRows(unclosedClosings(data || [], new Set(ids)));
@@ -42,7 +42,7 @@ export default function UnclosedClosingToday({ members, onSelect }) {
         icon={AlertCircle}
         title="클로징 미마감"
         count={rows.length}
-        hint="2차까지 갔는데 결과 미기록"
+        hint="2차 이상 OT 했는데 결과 미기록"
       />
       <div className="grid gap-2">
         {rows.map((r) => (
@@ -52,7 +52,7 @@ export default function UnclosedClosingToday({ members, onSelect }) {
             name={nameOf(r.user_id)}
             onClick={() => onSelect(r.user_id)}
           >
-            <div className="mt-0.5 text-[11px] text-sub">2차 클로징 결과 입력</div>
+            <div className="mt-0.5 text-[11px] text-sub">{r.round}차 OT 결과 입력</div>
           </ListRow>
         ))}
       </div>

@@ -222,7 +222,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
               const coach = cands[0]?.msg || null;
 
               // 드릴다운 데이터
-              const otFails = otRows.filter((r) => r && r.ot_round === 2 && (r.closing_result === "fail" || r.closing_result === "hold") && memberTrainer.get(r.user_id) === t.id);
+              const otFails = otRows.filter((r) => r && r.ot_round >= 2 && (r.closing_result === "fail" || r.closing_result === "hold") && memberTrainer.get(r.user_id) === t.id);
               const regFails = contracts.filter((r) => r && r.trainer_id === t.id && (r.reg_result === "fail" || r.reg_result === "hold"));
               const hasDrill = (o?.thinList?.length || 0) + (g?.gapItems?.length || 0) + otFails.length + regFails.length > 0;
               const open = !!openIds[t.id];

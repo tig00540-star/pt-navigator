@@ -1,9 +1,10 @@
 "use client";
 
 /* =========================================================================
-   TAB 5  —  1차 OT 관찰 기록 (데이터 뼈대, AI 없음)
+   OT 피드백 — n차 OT 관찰 기록 + 클로징 결과 (데이터 뼈대, AI 없음)
    트레이너가 회원 관찰 3덩어리(움직임·반응·목적)를 입력 → ot_log 저장/업서트.
-   회원당 1차(ot_round=1) 1행 유지. supabase/회원 미설정 시 저장 비활성 + 안내.
+   회원·차수당 1행(ot_round=round). 2026-10-02부터 모든 차수가 같은 양식(구: 2차는 결과만).
+   supabase/회원 미설정 시 저장 비활성 + 안내.
    ========================================================================= */
 
 import { useEffect, useState } from "react";
@@ -85,11 +86,12 @@ function rowToForm(row) {
   };
 }
 
-export default function ObservationTab({ member, onClosingSaved }) {
+export default function ObservationTab({ member, round = 1, onClosingSaved }) {
   const [form, setForm] = useState(emptyForm);
   const [existingRowId, setExistingRowId] = useState(null);
-  // ① 캐시 공존 — 저장 시 report.first_assist를 안 덮게 보존(각 writer 자기 필드만).
-  const [existingFirstAssist, setExistingFirstAssist] = useState(null);
+  // 캐시 공존 — 저장 시 report의 다른 키(first_assist·inbody_analysis·brief·salesbook…)를 안 덮게
+  // 기존 report 전체를 들고 있다가 관찰 키만 덮는다. (구: first_assist만 보존 → 인바디 분석이 지워졌다.)
+  const [existingReport, setExistingReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast, showToast } = useToast();
@@ -104,7 +106,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
         if (!cancelled) {
           setForm(emptyForm());
           setExistingRowId(null);
-          setExistingFirstAssist(null);
+          setExistingReport(null);
         }
         return;
       }
@@ -114,25 +116,26 @@ export default function ObservationTab({ member, onClosingSaved }) {
           .from("ot_log")
           .select("*")
           .eq("user_id", member.id)
-          .eq("ot_round", 1)
+          .eq("ot_round", round)
           .order("created_at", { ascending: false })
           .limit(1);
         if (cancelled) return;
         if (error) {
           setForm(emptyForm());
           setExistingRowId(null);
-          showToast("불러오지 못했어요: " + error.message);
+          console.error("ot_log 불러오기 실패", error);
+          showToast("불러오지 못했어요. 다시 시도해 주세요.");
           return;
         }
         const row = data?.[0];
         if (row) {
           setForm(rowToForm(row));
           setExistingRowId(row.id);
-          setExistingFirstAssist(row.report?.first_assist ?? null); // ① 캐시 보존용
+          setExistingReport(row.report || null); // 캐시 보존용(다른 키 덮지 않기)
         } else {
           setForm(emptyForm());
           setExistingRowId(null);
-          setExistingFirstAssist(null);
+          setExistingReport(null);
         }
       } catch {
         if (!cancelled) { setForm(emptyForm()); setExistingRowId(null); showToast("불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."); }
@@ -144,7 +147,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [member?.id]);
+  }, [member?.id, round]);
 
   // ---- 폼 setter들 ----
   const setMovement = (i, key, val) =>
@@ -186,14 +189,14 @@ export default function ObservationTab({ member, onClosingSaved }) {
     setSaving(true);
     try {
       const report = {
+        // 기존 report 키(first_assist·inbody_analysis·brief·salesbook…) 보존 → 관찰 키만 덮는다.
+        ...(existingReport || {}),
         movements: form.movements,
         reaction: form.reaction,
         goal: form.goal,
         memberQuote: form.memberQuote,
         trainer_note: form.trainerNote, // 트레이너 종합 소견(B2-a) — first_assist와 함께 report 공존
         sales_intensity: form.salesIntensity, // 트레이너 지시 강도(B2-a2)
-        // ① 캐시 공존 — 기존 first_assist가 있으면 보존(관찰 저장이 캐시를 덮지 않게).
-        ...(existingFirstAssist ? { first_assist: existingFirstAssist } : {}),
       };
       // goal_type / goal_identified 는 report.goal 값을 미러링(조회 편의).
       // closing_result / closing_approach 는 top-level 컬럼(㉠ 1차 클로징 결과).
@@ -201,7 +204,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
       const hasDetail = form.detailApproach || form.detailReaction || form.detailOutcome;
       const payload = {
         user_id: member.id,
-        ot_round: 1,
+        ot_round: round,
         goal_type: form.goal.type,
         goal_identified: form.goal.identified,
         closing_result: form.closingResult,
@@ -249,7 +252,8 @@ export default function ObservationTab({ member, onClosingSaved }) {
           showToast("저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
           return;
         }
-        showToast("관찰 기록이 수정되었습니다");
+        setExistingReport(report);
+        showToast("피드백을 저장했어요");
       } else {
         const { data, error } = await supabase
           .from("ot_log")
@@ -258,12 +262,14 @@ export default function ObservationTab({ member, onClosingSaved }) {
           .single();
         if (error) throw error;
         if (data?.id) setExistingRowId(data.id);
-        showToast("관찰 기록이 저장되었습니다");
+        setExistingReport(report);
+        showToast("피드백을 저장했어요");
       }
       // 여기 도달 = 성공만(update 0행은 위에서 return, 에러는 throw) → 부모가 배너 재조회(1차 즉등록 성공 포함).
       onClosingSaved?.();
     } catch (e) {
-      showToast("저장하지 못했어요: " + (e?.message || "알 수 없는 오류"));
+      console.error("ot_log 저장 실패", e);
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -273,12 +279,12 @@ export default function ObservationTab({ member, onClosingSaved }) {
 
   return (
     <div className="space-y-6">
-      <Eyebrow icon={Footprints}>1차 OT 관찰 기록</Eyebrow>
+      <Eyebrow icon={Footprints}>{round}차 OT 관찰 기록</Eyebrow>
 
       {/* 헤더 */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm text-sub">
-          <span className="font-semibold text-ink">{member.name}</span> 회원 · 1차 OT 관찰
+          <span className="font-semibold text-ink">{member.name}</span> 회원 · {round}차 OT 관찰
         </div>
         {canEdit && (
           <span
@@ -364,7 +370,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
               </label>
 
               <label className="mt-2 mb-1 block text-[11px] font-medium text-muted">
-                2차에 풀 것
+                다음 OT에 풀 것
               </label>
               <textarea
                 value={m.plan2nd}
@@ -435,7 +441,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
 
           <div>
             <label className="mb-1 block text-[11px] font-medium text-muted">
-              회원 한마디 <span className="text-muted">(2차 OT 때 다시 꺼내 쓸 회원의 말)</span>
+              회원 한마디 <span className="text-muted">(다음 OT 때 다시 꺼내 쓸 회원의 말)</span>
             </label>
             <input
               type="text"
@@ -506,11 +512,11 @@ export default function ObservationTab({ member, onClosingSaved }) {
             value={form.trainerNote}
             onChange={(e) => setTop("trainerNote", e.target.value)}
             rows={4}
-            placeholder="이 회원 전체에 대한 종합 소견·가설·2차에서 파고들 방향"
+            placeholder="이 회원 전체에 대한 종합 소견·가설·다음 OT에서 파고들 방향"
             className={inputCls}
           />
           <p className="mt-2 text-[10px] leading-relaxed text-muted">
-            2차 OT 준비 시 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게.
+            다음 OT 준비하기의 재료가 됩니다. 정형 항목에 안 담기는 종합 판단을 자유롭게.
           </p>
 
           <div className="mt-4">
@@ -531,7 +537,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
                 2차 브리핑의 말투 하나뿐이니 그것만 말한다. 마지막 문장은 남겼다 —
                 '강하게'를 고를 때 없는 문제를 지어내는 건 아닌지가 트레이너의 실제 걱정이다. */}
             <p className="mt-1 text-[10px] leading-relaxed text-muted">
-              2차 브리핑의 말투를 정해요. &lsquo;강하게&rsquo;는 등록이 왜 필요한지 분명히 짚고, &lsquo;부드럽게&rsquo;는 오늘은 친해지는 데 집중해요. 어느 쪽이든 없는 문제를 지어내지는 않아요.
+              다음 OT 준비 리포트의 말투를 정해요. &lsquo;강하게&rsquo;는 등록이 왜 필요한지 분명히 짚고, &lsquo;부드럽게&rsquo;는 오늘은 친해지는 데 집중해요. 어느 쪽이든 없는 문제를 지어내지는 않아요.
             </p>
           </div>
         </div>
@@ -539,7 +545,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
 
       {/* ㉠ 1차 클로징 결과 */}
       <section className="rounded-xl border border-line bg-card shadow-sm p-4">
-        <Eyebrow icon={Handshake}>㉠ 1차 클로징 결과</Eyebrow>
+        <Eyebrow icon={Handshake}>㉠ {round}차 클로징 결과</Eyebrow>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-[11px] font-medium text-muted">
@@ -614,7 +620,7 @@ export default function ObservationTab({ member, onClosingSaved }) {
           )}
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-muted">
-          1차에서 클로징을 시도했다면 결과·방향을 기록하세요. &lsquo;성공&rsquo;이면 2차 OT 탭이 등록 완료로 표시되어 AI 브리핑을 건너뜁니다.
+          클로징을 시도했다면 결과를 남겨 주세요. &lsquo;보류&rsquo;면 다음 차수 OT가 바로 열리고, &lsquo;성공&rsquo;이면 PT 등록 확정 안내가 떠요.
         </p>
       </section>
 

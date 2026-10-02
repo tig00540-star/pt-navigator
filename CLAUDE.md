@@ -97,6 +97,14 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **지표 정의(정본):** OT 클로징률=`closingStats`(회원기준·라운드통합) / 라운드별=`closingStatsByRoundByTrainer` · 재등록률=`reregisterStats`(reg_result) · 이탈률="14일+ 무수업·잔여>0 활성PT" 비율(`ChurnRiskToday` 원천 공유) · 세션소진="이달 진행수업÷담당 활성PT수"(회/월·회원) · 일지작성률="이달 비노쇼 수업 중 ai_summary/sets 있는 비율" · 전환율=`otFunnel.confirmed/intake`(status pt_active 기준·시점 스냅샷).
 - **성과/색 컨벤션:** 우수=`text-cyan-700`·주의=`text-danger-text`(rose) — DS 초록제거 정책 준수(성과 good을 emerald로 쓰지 않음). 퍼널 단계막대만 OT흐름(amber→primary) 예외. 임계값은 컴포넌트 상단 상수(`TH`/`convGrade` · 원장 조정 가능). **표본 부족(분모<최소)은 "—" neutral — no-data≠주의.**
 
+### OT 회원 화면 — 대시보드 + N차 OT (2026-10-02 개편)
+
+- **주소:** `/ot/{회원}` = 대시보드(`components/ot/OtDashboard` · 회원 정보·최근 OT·다음 예약·인바디·차수 진행·'지금 할 일') · `/ot/{회원}/{prep|inbody|feedback}-{n}` = n차의 3칸(OT 준비하기·인바디 분석·OT 피드백). 차수 생략·못 여는 차수면 `OtWorkspace`가 지금 차수로 `replace`. 구 주소 `second`=2차 준비. 탭 번호 계약은 유지(1·2→지금 차수 준비 · 5→지금 차수 피드백 · `lib/nav.js`).
+- **차수 규칙은 `lib/otRounds.js` 한 곳:** 차수=ot_log 행(ot_round=n, 최신 행). 1차는 항상 · 마지막 결과 **보류면 다음 차수 자동** · 등록/실패면 끝 · 그 외엔 피드백까지 남긴 뒤 'N차 OT 시작' 버튼.
+- **준비하기:** 1차=`FirstOTAssist`(phase first) · 2차+=`SecondOTTab round=n`(phase second + `round`·`history`[1~n-1차 결과·사유·클로징 메모·2차+ 관찰]). 2차 스테일 해시는 종전(1차 관찰만), 3차+는 이전 차수 포함. **결과 기록 폼은 준비하기에서 빠짐 → 모든 차수 `ObservationTab round=n`(같은 양식).**
+- **리포트 화면 = `components/ot/PrepReport`**(1차·2차+ 공용) — 맨 위 **30초 요약**(AI `cheat` 3줄 · 옛 캐시는 기존 항목에서 뽑음) → 수업 순서대로 접힌 섹션 → 펼치면 대사=말풍선(크게)·이유=작게. 제목 '오늘의 OT 사전 준비 리포트'.
+- **통계:** 3차 이상은 '2차 이상'에 묶음(`_otResultByMember.r2`·`closingStatsByRoundByTrainer`) · OT 수업 수는 전 차수. ⚠️ DB의 `ot_round` CHECK 제약 여부 미확인(표 정의가 저장소에 없음) — 3차 저장 실패 시 제약부터 확인.
+
 ### 수업일지 회원 확인·서명 (v2 · 2026-07-21)
 
 `daily_workout_log`(수업확인서 겸 운동일지)를 **회원이 회원앱에서 '확인'** → 종이 수업확인 서명 대체. 데이터·근거는 `docs/v2-스펙-수업일지-회원확인서명+진입게이트.md`(v2.1).

@@ -30,7 +30,7 @@ export default function TodoTab({ members, uid, onSelect }) {
       <RegisterReapproachToday members={scoped} onSelect={(id) => onSelect(id, 11)} />
 
       {/* 자동 4~5 — 신규 파생 섹션(미확정 클로징=2차 OT, 미처리 예약=스케줄) */}
-      <UnclosedClosingToday members={scoped} onSelect={(id) => onSelect(id, 2)} />
+      <UnclosedClosingToday members={scoped} onSelect={(id) => onSelect(id, 5)} />
       <PastDueAppointments members={scoped} uid={uid} onSelect={(id) => onSelect(id, 9)} />
       <NoNextBookingToday members={scoped} uid={uid} onSelect={(id) => onSelect(id, 9)} />
 

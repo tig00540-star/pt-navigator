@@ -264,11 +264,13 @@ ${closingSeqInstruction({
 [data_gaps — 성장 프레임] 기본정보로 위 전부를 반드시 생성한다("정보 부족" 반환 금지). data_gaps는 결핍이
    아니라 "○○를 관찰해오면 △△까지" 형태 긍정 코칭. 충실하면 빈 배열.
 
+[cheat — 30초 요약 3줄 · 화면 맨 위] 바빠서 이것만 보고 들어가도 되게: ① 이 회원 핵심(누구·뭘 원함·뭐가 걸림) ② 오늘 꼭 할 것(증명·핵심 운동) ③ 클로징에서 그대로 말할 한 마디(따옴표 대사). 각 한 줄·30자 안팎·명사형 말고 바로 외울 말로. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [분량 — 외우기 쉽게] 각 대사는 짧고 입에 붙게. line류 1~2문장, why/bridge/so_what 1문장.
 [필드명 인용 금지] 값 텍스트에 스키마 키(point_it_out·so_what·objection_defense 등)를 쓰지 마라.
 ${MEMBER_LANG}
 [출력 언어] 자연스러운 한국어. 영문 코드값·필드명 노출 금지. 아래 JSON만(설명·마크다운·코드펜스 금지). ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 {
+  "cheat": ["회원 핵심 한 줄", "오늘 꼭 할 것 한 줄", "클로징 한 마디(대사)"],
   "member_read": "이 회원 한 줄 — 누구고/뭘 원하고/뭐가 걸리나 (3분전 각인 앵커)",
   "opening": { "line": "...", "why": "..." },
   "workout_intro": "오늘 할 운동들을 회원에게 소개 + 왜 하는지 납득시키는 대사",
@@ -286,9 +288,20 @@ ${MEMBER_LANG}
 // ③ phase="second" user 프롬프트
 // D-3: cases(내 과거 클로징 케이스)가 있을 때만 case 입력블록·case_feedback 스키마를 additive로 삽입.
 //      cases 없거나 빈 배열이면 지금과 바이트 동일한 프롬프트(회귀 안전 제1원칙).
-function secondPrompt(member, report, cases = [], caseTier = "tentative", packages = []) {
+const RESULT_KO = { success: "등록", hold: "보류", fail: "실패", none: "결과 미기록" };
+const REASON_KO = { money: "가격 부담", time: "시간 부족", schedule: "일정", consider: "생각해볼게요", compare: "다른 곳 비교", partner: "가족·배우자 상의", personal: "개인 사정" };
+function secondPrompt(member, report, cases = [], caseTier = "tentative", packages = [], round = 2, history = []) {
   const m = member || {};
   const r = report || {};
+  const n = Number.isInteger(round) && round >= 2 ? round : 2;
+  const hist = Array.isArray(history) ? history.filter(Boolean) : [];
+  const historyBlock = hist.length
+    ? `
+[이전 OT 기록 — 차수별 결과·사유${n > 2 ? "·2차 이후 관찰" : ""}] (트레이너가 실제 남긴 기록 · 창작 금지)
+${hist.map((h) => `${h.round}차: 결과=${RESULT_KO[h.closing_result] || "결과 미기록"}${h.closing_reason ? ` · 사유=${REASON_KO[h.closing_reason] || h.closing_reason}` : ""}${h.closing_detail ? ` · 클로징 메모=${JSON.stringify(h.closing_detail)}` : ""}${h.observation ? ` · 관찰=${JSON.stringify(h.observation)}` : ""}${h.prev_read ? ` · 지난 리포트 요지=${h.prev_read}` : ""}`).join("\n")}
+${n > 2 ? `★이번은 ${n}차 — 앞 차수에서 등록이 미뤄진 이유(사유·회원 반응)를 정면으로 풀어라. 앞에서 쓴 증명·대사를 그대로 반복하지 말고, 이번에 새로 확인시킬 것을 골라라.` : "★1차 결과·사유가 있으면 그 걸림돌을 오늘 증명과 클로징에서 먼저 풀어라."}
+`
+    : "";
   const g2 = (v) => (v == null || v === "" ? "없음" : v);
   const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
   const pkgBlock = pkgs.length
@@ -311,7 +324,7 @@ ${validCases.map((c, i) => `${i + 1}. [${c.result}] 프로파일=${JSON.stringif
     ? `,
   "case_feedback": { "diagnosis": "과거 케이스에 비춘 이 회원의 진짜 장애물(표면 아닌 근본)", "proven_lead": "비슷한 프로파일에 통한 접근 기반, 회원이 욕구를 자기 말로 꺼내게 할 리딩 방향", "avoid_repeat": "과거 막힌 벡터 있으면 '이번엔 그거 말고 X' + 왜(없으면 null)", "your_read": "트레이너에게 되묻는 넛지 1문장" }`
     : "";
-  return `[상황·대전제] 2차 OT 입장 3분 전. 유일한 목적 = 이 회원의 등록(클로징) 확률 극대화. 1차와 달리
+  return `[상황·대전제] ${n}차 OT 입장 3분 전. 유일한 목적 = 이 회원의 등록(클로징) 확률 극대화. 1차와 달리
 아래 '1차 관찰'이라는 실제 근거가 있다 — 이번엔 '증명'으로 클로징을 확실히 닫는다. 트레이너가 30초에
 훑어 외우고 폰을 넣는 컨닝페이퍼니, 바로 말할 완성 대사로.
 
@@ -329,8 +342,8 @@ ${JSON.stringify({
     trainer_note: r.trainer_note ?? "",
     sales_intensity: r.sales_intensity ?? "standard",
   }, null, 2)}
-${caseInputBlock}
-이 1차 관찰을 유일 근거로 2차를 설계하라. 없는 관찰·수치·에피소드 창작 금지. ⚠️위 [1차 관찰]의 JSON 키(movements·reaction·memo·stimulus·attitudeTags·goal 등)는 내부 라벨이다 — 값 텍스트·대사에 그 영어 단어를 절대 쓰지 마라. 한국어로 풀어라("관찰된 동작에서…", "메모에 적으신…").
+${historyBlock}${caseInputBlock}
+이 1차 관찰${hist.length ? "과 이전 OT 기록" : ""}을 근거로 ${n}차를 설계하라. 없는 관찰·수치·에피소드 창작 금지. ⚠️위 [1차 관찰]의 JSON 키(movements·reaction·memo·stimulus·attitudeTags·goal 등)는 내부 라벨이다 — 값 텍스트·대사에 그 영어 단어를 절대 쓰지 마라. 한국어로 풀어라("관찰된 동작에서…", "메모에 적으신…").
 
 [내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
 ${pkgBlock}
@@ -394,13 +407,15 @@ ${closingSeqInstruction({
      '왜 이 투자가 합리적인지'(혼자 하다 멈춘 손실 대비·목표 도달 시간 단축 등)를 먼저 짚어 부담을 눅인 뒤 회차를
      제시하라. 무리한 최소량으로 미리 물러서지 말 것.
 
-[member_read] 1차에서 확인된 것 + 지금 클로징 국면을 한 줄로(앵커).
+[member_read] 지금까지 확인된 것 + 지금 클로징 국면을 한 줄로(앵커).
+[cheat — 30초 요약 3줄 · 화면 맨 위] 바빠서 이것만 보고 들어가도 되게: ① 이 회원 핵심(누구·뭘 원함·뭐가 걸림) ② 오늘 꼭 할 것(증명·핵심 운동) ③ 클로징에서 그대로 말할 한 마디(따옴표 대사). 각 한 줄·30자 안팎·명사형 말고 바로 외울 말로. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 ${MEMBER_LANG}
 [출력 언어] 자연스러운 한국어. 영문 코드값·필드명(memberQuote·point_it_out·movements·reaction·memo·observation 등) 값 텍스트 노출 금지. ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 아래 JSON만 출력(설명·마크다운·코드펜스 금지).
 {
-  "member_read": "1차 확인된 것 + 지금 클로징 국면 한 줄",
+  "cheat": ["회원 핵심 한 줄", "오늘 꼭 할 것 한 줄", "클로징 한 마디(대사)"],
+  "member_read": "지금까지 확인된 것 + 지금 클로징 국면 한 줄",
   "recall": { "line": "...", "why": "..." },
   "session_plan": [ { "exercise": "...", "point": "..." } ],
   "proof": { "moves": [ { "exercise": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
@@ -1173,17 +1188,20 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
   }
 
-  const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change } = body || {};
+  const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "inbody" && phase !== "posture") {
     return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
   }
   // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
   const boundedCases = Array.isArray(closingCases) ? closingCases.slice(0, MAX_CLOSING_CASES) : closingCases;
+  // n차 OT(2차+) — 이전 차수 기록. 차수 수는 현실적으로 한 자리수라 10개로 상한.
+  const boundedHistory = Array.isArray(history) ? history.slice(0, 10) : [];
+  const otRound = Number.isInteger(round) ? Math.min(Math.max(round, 2), 20) : 2;
 
   const model = MODEL_SECOND; // 전 phase Sonnet(1차도 승급).
   const basePrompt =
     phase === "first" ? firstPrompt(member, packages, favorites)
-    : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages)
+    : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages, otRound, boundedHistory)
     : phase === "reregister" ? reregisterPrompt(member, ptContext, packages)
     : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
     : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)

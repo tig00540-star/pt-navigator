@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     // 디자인 시스템 참조 미러 — claude.ai/design에서 내려받은 벤더 코드다.
     // 앱 소스가 아니고(프로덕션 이식 금지) 목업용 인라인 스타일이라 앱 규칙을 적용할 대상이 아니다.
     "ONLY FOR TRAINER/**",
+    // Claude Design에서 내보낸 랜딩 시안 원본(참고 보관용 · 앱 코드 아님).
+    "docs/design/**",
   ]),
 ]);
 

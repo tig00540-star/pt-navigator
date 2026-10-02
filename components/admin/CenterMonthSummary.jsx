@@ -33,7 +33,7 @@ export default function CenterMonthSummary({ members = [], otRows = [], logs = [
   const ptTotal = useMemo(() => [...ptSess.values()].reduce((s, n) => s + n, 0), [ptSess]);
   // 누적도 '합계'와 같은 범위(OT+PT)로 — 예전엔 PT만 세서 옆 합계와 기준이 달랐다.
   const allTime = useMemo(
-    () => sessionsCount(logs) + otRows.filter((r) => r && (r.ot_round === 1 || r.ot_round === 2)).length,
+    () => sessionsCount(logs) + otRows.filter((r) => r && r.ot_round >= 1).length,
     [logs, otRows]
   );
   const otMembers = useMemo(() => visible.filter((m) => m.status === "ot_active").length, [visible]);

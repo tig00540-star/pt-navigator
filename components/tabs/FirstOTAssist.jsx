@@ -11,31 +11,14 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import {
-  Sparkles,
-  ShieldCheck,
-  CreditCard,
-  Flag,
-  Dumbbell,
-  ExternalLink,
-} from "lucide-react";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
-import ClosingSequence from "@/components/ui/ClosingSequence";
+import PrepReport from "@/components/ot/PrepReport";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
-import { won } from "@/lib/format";
 import { firstInputHash } from "@/lib/otHash";
 
-// 거절 이유 한글 라벨(purge-safe 정적 맵). objection_defense[].reason 5키와 물림.
-const OBJ_LABEL = {
-  price: "가격 부담",
-  hesitation: "생각해볼게요 (망설임)",
-  doubt: "효과·필요성 의심",
-  time: "시간 부족",
-  compare: "타 센터 비교",
-};
 
-export default function FirstOTAssist({ member }) {
+export default function FirstOTAssist({ member, onSaved }) {
   const [data, setData] = useState(null); // ① brief JSON (캐시 또는 세션)
   const [meta, setMeta] = useState(null); // { generatedAt, model, inputHash }
   const [loading, setLoading] = useState(false);
@@ -145,6 +128,7 @@ export default function FirstOTAssist({ member }) {
           setNotice("저장에 실패했어요 — 지금은 이 화면에서만 보이고, 다음에 오면 사라질 수 있어요. (권한/정책 확인)");
         } else {
           setRow1Report(merged);
+          onSaved?.();
         }
       } else if (supabase && member?.id && !row1Id) {
         // 관찰 저장 전이라도 1차 브리핑을 항상 남긴다 — 빈 1차 행(ot_round=1)을 만들어 붙임(관찰은 나중에 채움).
@@ -163,6 +147,7 @@ export default function FirstOTAssist({ member }) {
         if (ins && ins.length) {
           setRow1Id(ins[0].id);
           setRow1Report(ins[0].report || null);
+          onSaved?.();
         } else {
           setNotice("저장에 실패했어요 — 지금은 이 화면에서만 보이고, 다음에 오면 사라질 수 있어요. (권한/정책 확인)");
         }
@@ -181,19 +166,7 @@ export default function FirstOTAssist({ member }) {
   // E: 입력(회원정보 해시)이 직전 생성과 동일 → 반복 호출 억제(버튼 흐리게 + 힌트). 하드락 아님(클릭은 됨) — 입력 바뀌면 stale로 자동 해제.
   const sameInput = Boolean(data && meta?.inputHash) && !stale;
 
-  const mr = data?.member_read || "";
-  const op = data?.opening || {};
   const exercises = Array.isArray(data?.exercises) ? data.exercises.filter(Boolean) : [];
-  const soWhat = data?.so_what || "";
-  const wi = data?.workout_intro || ""; // 오늘 운동 시작 전 회원에게 말할 안내(왜 하는지)
-  const sm = data?.sales_metaphor || {};
-  const cline = data?.closing_line || "";
-  const obj = Array.isArray(data?.objection_defense) ? data.objection_defense.filter(Boolean) : [];
-  const rp = data?.recommended_program || {};
-  const pick = Number.isInteger(rp.pick_ref) ? (packages[rp.pick_ref] || null) : null;
-  const alt = Number.isInteger(rp.alt_ref) ? (packages[rp.alt_ref] || null) : null;
-  const perSession = (p) => (p && p.sessions ? won(Math.round(p.price / p.sessions)) : null);
-  const gaps = Array.isArray(data?.data_gaps) ? data.data_gaps.filter((g) => typeof g === "string" && g.trim()) : [];
   // 구캐시(구 스키마: session_plan·target_exercise) 감지 — exercises 없으면 '이전 형식' 안내 후 재생성.
   const legacyCache = Boolean(data) && exercises.length === 0 && Boolean(data?.target_exercise || Array.isArray(data?.session_plan));
 
@@ -204,9 +177,9 @@ export default function FirstOTAssist({ member }) {
   return (
     <AIBriefBlock
       status={briefStatus}
-      title="① AI 1차 OT 지원 (가설)"
-      generateLabel="1차 OT 준비하기"
-      idleDescription="회원 기본정보 + 내 패키지·즐겨찾기 자료로 3분 컨닝페이퍼를 만듭니다 — 인사 → 즉효 운동 3~4개(왜 해야 하는지) → 클로징. (관찰 아님 · 가설)"
+      title="오늘의 OT 사전 준비 리포트"
+      generateLabel="OT 준비 리포트 만들기"
+      idleDescription="회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 리포트를 만들어요. 맨 위 30초 요약 → 입장 · 운동 · 클로징 · 거절 대응 순서예요."
       waitingHint="최대 1분 걸릴 수 있어요. 기다리는 동안 회원 문진표를 다시 훑어보세요. (관찰이 아니라 ‘가설’을 만드는 중)"
       onGenerate={generate}
       onRegenerate={generate}
@@ -229,169 +202,12 @@ export default function FirstOTAssist({ member }) {
         <div className="space-y-3">
           {legacyCache && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
-              이전 형식 브리핑이에요 — &lsquo;다시 생성&rsquo;을 누르면 새 사전무장 컨닝페이퍼로 바뀝니다.
+              이전 형식 리포트예요 — &lsquo;다시 생성&rsquo;을 누르면 새 형식으로 바뀝니다.
             </div>
           )}
-
-          {/* 앵커 — 3분 각인 */}
-          {mr && (
-            <div className="rounded-xl border border-line bg-elevate p-3.5">
-              <div className="flex items-center gap-2 text-[10px] font-semibold tracking-label-ko text-muted">
-                <Sparkles className="h-3.5 w-3.5" /> 3분 각인
-              </div>
-              <p className="mt-1 text-sm leading-relaxed text-ink">{mr}</p>
-            </div>
-          )}
-
-          {/* ① 오프닝 */}
-          {op.line && (
-            <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
-              <div className="flex items-center gap-2">
-                <span className="text-base">👋</span>
-                <span className="text-[11px] font-semibold tracking-label-ko text-sky-700">오프닝 · 긴장 풀기</span>
-              </div>
-              <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-ink">&ldquo;{op.line}&rdquo;</p>
-              {op.why && <p className="mt-1 text-[11px] leading-relaxed text-muted">{op.why}</p>}
-            </div>
-          )}
-
-          {/* ② 오늘 시킬 즉효 운동 3~4개 — 회원이 '왜 해야 하는지' 이해시키는 게 핵심 */}
-          {exercises.length > 0 && (
-            <div className="rounded-xl border border-sky-500/25 bg-sky-500/[0.04] p-4">
-              <div className="flex items-center gap-2">
-                <Dumbbell className="h-4 w-4 text-sky-700" />
-                <span className="text-[11px] font-semibold tracking-label-ko text-sky-700">오늘 시킬 즉효 운동 · {exercises.length}</span>
-              </div>
-              {wi && (
-                <p className="mt-2 rounded-lg bg-sky-500/10 px-3 py-2 text-[13px] leading-relaxed text-ink">
-                  <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-sky-700">회원에게</span>
-                  &ldquo;{wi}&rdquo;
-                </p>
-              )}
-              <div className="mt-2.5 space-y-3">
-                {exercises.map((ex, i) => {
-                  const lib = Number.isInteger(ex.lib_ref) ? (favorites[ex.lib_ref] || null) : null;
-                  return (
-                    <div key={i} className={i > 0 ? "border-t border-line/70 pt-3" : ""}>
-                      <div className="flex items-start gap-1.5">
-                        <span className="mt-0.5 shrink-0 rounded bg-elevate px-1.5 py-0.5 text-[10px] font-bold text-sub">{i + 1}</span>
-                        <p className="flex-1 text-sm font-semibold text-ink">
-                          {ex.name}
-                          {ex.proof && <span className="ml-1.5 align-middle rounded bg-primary-soft px-1.5 py-0.5 text-[9px] font-bold text-primary-strong">증거</span>}
-                        </p>
-                      </div>
-                      {ex.reason && (
-                        <p className="mt-1 text-[13px] leading-relaxed text-sub"><span className="font-semibold text-ink">왜 · </span>{ex.reason}</p>
-                      )}
-                      {ex.feel && (
-                        <p className="mt-1 text-[12px] leading-relaxed text-muted"><span className="font-semibold">바로 느낌 · </span>{ex.feel}</p>
-                      )}
-                      {ex.cue && (
-                        <p className="mt-1.5 rounded-lg bg-primary-soft px-3 py-2 text-[13px] leading-relaxed text-ink">
-                          <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">짚어줄 말</span>
-                          &ldquo;{ex.cue}&rdquo;
-                        </p>
-                      )}
-                      {lib && (
-                        <a href={lib.url} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 hover:underline">
-                          <ExternalLink className="h-3 w-3" /> 내 자료: {lib.title}
-                        </a>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {soWhat && (
-                <p className="mt-3 rounded-lg bg-elevate px-3 py-2 text-[12px] leading-relaxed text-sub"><span className="font-semibold text-ink">그래서 · </span>{soWhat}</p>
-              )}
-            </div>
-          )}
-
-          {/* ③ 세일즈 비유 → 클로징 흐름(비유 리드인 + plan_pitch 포함). 옛 캐시는 closing_line 폴백. */}
-          <ClosingSequence
-            sequence={data?.closing_sequence}
-            fallbackLine={cline}
-            metaphor={sm}
-            icon={<Flag className="h-4 w-4 text-primary-strong" />}
-          />
-
-          {/* 추천 프로그램 — 클로징 직후에 배치 · 왜 이 횟수 근거(가격은 내 목록에서) */}
-          {pick ? (
-            <div className="rounded-xl border border-primary/30 bg-card p-4">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-3.5 w-3.5 text-primary-strong" />
-                <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">추천 프로그램 · 왜 이 횟수</span>
-              </div>
-              <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm text-ink">
-                <span className="font-bold">{pick.name}</span>
-                <span className="font-mono font-semibold">{won(pick.price)}</span>
-                {pick.sessions != null && <span className="text-[11px] text-muted">· {pick.sessions}회</span>}
-                {perSession(pick) && <span className="text-[11px] text-muted">· {perSession(pick)}/회</span>}
-              </p>
-              {rp.why_fit && <p className="mt-1 text-[12px] leading-relaxed text-sub">{rp.why_fit}</p>}
-              {(rp.frequency || rp.duration || rp.session_logic) && (
-                <div className="mt-2 space-y-1 rounded-lg bg-elevate px-3 py-2">
-                  {rp.frequency && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">빈도 · </span>{rp.frequency}</p>}
-                  {rp.duration && <p className="text-[12px] leading-relaxed text-sub"><span className="font-semibold text-primary-strong">기간 · </span>{rp.duration}</p>}
-                  {rp.session_logic && <p className="text-[12px] leading-relaxed text-ink"><span className="font-semibold text-primary-strong">그래서 · </span>{rp.session_logic}</p>}
-                </div>
-              )}
-              {alt && (
-                <p className="mt-2 text-[11px] leading-relaxed text-muted">
-                  <span className="rounded bg-elevate px-1.5 py-0.5 font-semibold">대안</span> {alt.name} · {won(alt.price)}{rp.alt_why ? ` — ${rp.alt_why}` : ""}
-                </p>
-              )}
-            </div>
-          ) : packages.length === 0 ? (
-            <div className="rounded-xl border border-line bg-card p-4 text-[12px] leading-relaxed text-muted">
-              가격 설정 탭에서 패키지를 등록하면 이 회원에게 맞는 프로그램을 추천해드려요.
-            </div>
-          ) : null}
-
-          {/* 거절 5방어 — 기본 펼침(현장 핵심) */}
-          {obj.length > 0 && (
-            <details className="rounded-xl border border-line bg-card">
-              <summary className="flex cursor-pointer items-center gap-2 p-3.5 text-xs font-semibold tracking-label-ko text-sub">
-                <ShieldCheck className="h-3.5 w-3.5 text-primary-strong" /> 거절 선제 방어 ({obj.length}) · 필요할 때 펼치기
-              </summary>
-              <div className="space-y-2 px-3.5 pb-3.5">
-                {obj.map((o, i) => (
-                  <div key={i} className="rounded-lg border border-line bg-elevate p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-md bg-card px-2 py-0.5 text-[10px] font-semibold text-sub">{OBJ_LABEL[o.reason] || o.reason}</span>
-                      {o.trigger && <span className="text-[11px] italic text-muted">&ldquo;{o.trigger}&rdquo;</span>}
-                    </div>
-                    {o.defense && (
-                      <p className="mt-1.5 text-[13px] leading-relaxed text-sub"><span className="font-semibold text-sub">대응 · </span>{o.defense}</p>
-                    )}
-                    {o.line && (
-                      <p className="mt-1.5 rounded-md bg-primary-soft px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
-                        <span className="mr-1 rounded bg-card px-1 py-0.5 text-[9px] font-semibold text-primary-strong">멘트</span>
-                        &ldquo;{o.line}&rdquo;
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </details>
-          )}
-
-          {/* data_gaps — 접힘 */}
-          {gaps.length > 0 && (
-            <details className="rounded-xl border border-primary/30 bg-primary-soft p-4">
-              <summary className="cursor-pointer text-xs font-semibold tracking-label-ko text-primary-strong">
-                이렇게 하면 더 좋아져요 (선택 · {gaps.length})
-              </summary>
-              <ul className="mt-3 space-y-1.5">
-                {gaps.map((gp, i) => (
-                  <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-sub"><span className="mt-0.5 text-primary-strong">＋</span> {gp}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-
-          <p className="text-[10px] leading-relaxed text-muted">
-            ※ 관찰 전 &lsquo;가설&rsquo;이에요 — 현장에서 회원 반응 보며 조정하세요. 생성하면 저장돼 다시 와도 남습니다.
+          <PrepReport kind="first" data={data} packages={packages} favorites={favorites} />
+          <p className="text-[11px] leading-relaxed text-muted">
+            ※ 관찰 전 &lsquo;가설&rsquo;이에요 — 현장에서 회원 반응을 보며 조정하세요.
           </p>
         </div>
       )}
