@@ -13,7 +13,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Mic } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
 
@@ -192,6 +192,37 @@ export function Visual({ img, demo, alt, dark }) {
     <div className={`mx-auto w-full max-w-[480px] rounded-[24px] border p-3 sm:p-4 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
       {img ? <Shot src={img} alt={alt} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
     </div>
+  );
+}
+
+/* 단계 화면 3장 나란히(폰은 가로로 넘겨보기) — 신규 OT·운동일지.
+   step: { step, img, alt } 또는 { step, quote } (quote = 트레이너가 실제로 말한 문장 · 지어내지 않음). */
+export function StepShots({ steps }) {
+  return (
+    <ol className="lp-steps -mx-5 flex list-none snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
+      {steps.map((s, i) => (
+        <li key={s.step} className="w-[74%] max-w-[300px] flex-none snap-center lg:w-auto lg:max-w-none">
+          <div className="mb-2.5 text-left text-[14px] font-extrabold">
+            <span className="text-muted">{i + 1}</span>{" "}
+            <span className={i === steps.length - 1 ? "text-primary-strong" : "text-ink"}>{s.step}</span>
+          </div>
+          <div className="rounded-[20px] border border-line bg-bg p-2.5">
+            {s.quote ? (
+              <figure className="m-0 flex aspect-[4/5] flex-col gap-2.5 overflow-hidden rounded-2xl border border-line bg-card p-3.5 text-left">
+                <figcaption className="flex items-center gap-1.5 text-[12px] font-bold text-primary-strong">
+                  <Mic size={14} strokeWidth={2.6} aria-hidden="true" /> 수업 끝나고 말한 그대로
+                </figcaption>
+                <blockquote className="m-0 rounded-[16px_16px_16px_4px] bg-elevate px-3 py-2.5 text-[13px] leading-[1.5] text-ink">
+                  {s.quote}
+                </blockquote>
+              </figure>
+            ) : (
+              <Shot src={s.img} alt={s.alt} />
+            )}
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
 

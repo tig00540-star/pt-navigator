@@ -21,7 +21,7 @@ import { PLANS } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, FeatureRow, GroupLabel, Shot, BeforeAfter, Faq, Arrow, LP_CSS,
+  Pill, Checks, FeatureRow, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -61,11 +61,20 @@ const RENEW = {
 const LOG = {
   pill: "운동일지",
   title: ["쓰지 말고,", "말하세요."],
-  flow: ["수업", "말로 복기", "회원에게 전송"],
+  flow: ["말로 복기", "일지 정리", "무게 추이"],
   checks: ["운동별 무게·횟수·세트를 알아서 정리", "회원에게 보낼 일지까지 한 번에", "세션 차감·출석 기록도 자동"],
   note: "회원이 확인하면 종이 수업 확인 서명을 대신해요",
-  visual: { demo: "/lp/demos/ot-voicelog-embed.html", alt: "운동일지 실제 화면 — 말로 남기면 정리됩니다" },
 };
+
+// 데모 계정 최준호 수업 — ① 대표가 실제로 녹음한 문장(앞부분 그대로 · 칸에 맞춰 뒤는 …) ② 그 녹음을 AI가 정리한 실제 결과 ③ 쌓인 무게 추이.
+const LOG_STEPS = [
+  {
+    step: "말로 30초",
+    quote: "오늘 최준호 회원님 하체 했어요. 스쿼트 60킬로 10개씩 2세트, 70킬로 10개씩 2세트, 80킬로 10개씩 2세트 총 6세트 진행했고 다음으로 루마니안 데드리프트 40키로로 시작해서 10kg씩 올려서 12개 1세트로 총 3세트, 마지막으로 레그프레스 120킬로 고정으로 15개 3세트 했어요. …",
+  },
+  { step: "일지로 정리", img: "/lp/shots/log-result.webp", alt: "운동일지 화면 — 녹음을 운동·무게·세트와 자세 포인트로 정리한 결과" },
+  { step: "무게 추이까지", img: "/lp/shots/log-graph.webp", alt: "회원자료 화면 — 종목별 무게 추이 그래프" },
+];
 
 const MEMBER = {
   pill: "회원 전용 페이지",
@@ -208,23 +217,13 @@ export default function LandingPage() {
               note="1차 OT 기록이 2차 OT 준비로 그대로 이어져요"
             >
               {/* 단계가 핵심이라 화면 3장을 나란히(폰은 가로로 넘겨보기). */}
-              <ol className="lp-steps -mx-5 flex list-none snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
-                {OT_STEPS.map((s, i) => (
-                  <li key={s.step} className="w-[74%] flex-none snap-center sm:w-auto">
-                    <div className="mb-2.5 text-left text-[14px] font-extrabold">
-                      <span className="text-muted">{i + 1}</span>{" "}
-                      <span className={i === OT_STEPS.length - 1 ? "text-primary-strong" : "text-ink"}>{s.step}</span>
-                    </div>
-                    <div className="rounded-[20px] border border-line bg-bg p-2.5">
-                      <Shot src={s.img} alt={s.alt} />
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <StepShots steps={OT_STEPS} />
             </FeatureRow>
 
             <FeatureRow {...RENEW} />
-            <FeatureRow {...LOG} />
+            <FeatureRow {...LOG}>
+              <StepShots steps={LOG_STEPS} />
+            </FeatureRow>
 
             <GroupLabel>회원 전용 페이지</GroupLabel>
 
