@@ -18,7 +18,7 @@ import { won } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 
-const SLIDE_COUNT = 7;
+const SLIDE_COUNT = 7; // 기본 장 수 — 트레이너가 '신규 등록 혜택 장'을 켜면 +1(benefits prop)
 
 // ── 가격 해석(#2) — 모델 plan.ref를 안 믿는다. A=pick_ref, B=alt_ref 우선, 유효성 검증. ──
 function resolvePackage(planIndex, plan, recommendedProgram, packages) {
@@ -78,7 +78,7 @@ function useFitScale() {
 //   ★.sb-fit/.sb-track엔 안 걸고 그 '내부 자식'에만(fit-scale scale·트랙 translateX와 무충돌).
 //   ★active 토글로 재생 — 넘길 때마다 .sb-play가 붙었다 떨어져 애니메이션이 다시 돈다(playNonce 불필요).
 //   편집(editable)이면 래퍼 없이 그대로 → EditField 리마운트/포커스 유실 방지.
-function Slide({ n, children, className = "", idx = 0, editable = false }) {
+function Slide({ n, children, className = "", idx = 0, total = SLIDE_COUNT, editable = false }) {
   const fitRef = useFitScale();
   const active = idx === n - 1;
   const inner = editable ? children : <div className={`sb-build ${active ? "sb-play" : ""}`}>{children}</div>;
@@ -88,7 +88,7 @@ function Slide({ n, children, className = "", idx = 0, editable = false }) {
         <div className="sb-pad"><div ref={fitRef} className="sb-fit">{inner}</div></div>
         <div className="sb-corner">
           <BrandMark className="h-4 w-4" />
-          <span className="text-[10px] font-semibold tracking-[0.02em] text-muted">{n} / {SLIDE_COUNT}</span>
+          <span className="text-[10px] font-semibold tracking-[0.02em] text-muted">{n} / {total}</span>
         </div>
       </div>
     </section>
@@ -117,7 +117,11 @@ export default function SalesbookView({
   editable = false, // present(false)=회원 대면(깨끗) · true=트레이너 인라인 편집
   onSave,
   onClose,
+  benefits = [],
 }) {
+  // 신규 등록 혜택 장(선택) — 있으면 플랜 다음에 한 장 추가.
+  const hasBenefits = Array.isArray(benefits) && benefits.filter(Boolean).length > 0;
+  const total = SLIDE_COUNT + (hasBenefits ? 1 : 0);
   const [idx, setIdx] = useState(0);
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({});
@@ -158,8 +162,8 @@ export default function SalesbookView({
     finally { setSaving(false); }
   };
 
-  const go = useCallback((n) => setIdx(() => Math.max(0, Math.min(SLIDE_COUNT - 1, n))), []);      // 절대 이동(점 클릭)
-  const step = useCallback((d) => setIdx((p) => Math.max(0, Math.min(SLIDE_COUNT - 1, p + d))), []); // 상대 이동(화살표·키·스와이프 · 함수형이라 stale idx 없음)
+  const go = useCallback((n) => setIdx(() => Math.max(0, Math.min(total - 1, n))), [total]);      // 절대 이동(점 클릭)
+  const step = useCallback((d) => setIdx((p) => Math.max(0, Math.min(total - 1, p + d))), [total]); // 상대 이동(화살표·키·스와이프 · 함수형이라 stale idx 없음)
 
   // 회원 사진 로드(서명 URL) — 데모/무회원이면 스킵(플레이스홀더 렌더).
   useEffect(() => {
@@ -272,7 +276,7 @@ export default function SalesbookView({
         <div className="sb-stage">
           <div className="sb-track" style={{ "--sb-tx": `${-idx * 100}%` }}>
             {/* ① 표지 — fit 래퍼는 자연 높이라 justify-between 대신 상단정렬 스택(간격으로 여백). */}
-            <Slide n={1} className="sb-cover" idx={idx} editable={editable}>
+            <Slide n={1} className="sb-cover" idx={idx} total={total} editable={editable}>
               <div className="flex flex-col gap-6 sm:gap-8">
                 <div className="sb-stg flex items-center gap-2">
                   <BrandMark accent="trainer" title="오직 트레이너" className="h-7 w-7 shrink-0 rounded-lg" />
@@ -296,7 +300,7 @@ export default function SalesbookView({
             </Slide>
 
             {/* ② 목표 — 큰 목표 카드로 채움 + 지금 겪는 것. */}
-            <Slide n={2} idx={idx} editable={editable}>
+            <Slide n={2} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="당신의 목표" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="sb-stg flex flex-1 flex-col justify-center rounded-2xl border border-primary/25 bg-primary-soft p-5" style={{ "--sb-i": 1 }}>
@@ -314,7 +318,7 @@ export default function SalesbookView({
             </Slide>
 
             {/* ③ 오늘 확인한 것 — ★트레이너 전문가 시선(원인·접근)이 주인공. before/after는 작은 근거. */}
-            <Slide n={3} idx={idx} editable={editable}>
+            <Slide n={3} idx={idx} total={total} editable={editable}>
               {(() => {
                 const cf = sb.confirmed || {};
                 // 옛 캐시 폴백: diagnosis/approach 없고 bridge만 있으면 bridge를 '원인' 박스에 표시(graceful).
@@ -375,7 +379,7 @@ export default function SalesbookView({
             </Slide>
 
             {/* ④ 사진 */}
-            <Slide n={4} idx={idx} editable={editable}>
+            <Slide n={4} idx={idx} total={total} editable={editable}>
               <SlideHead eyebrow={sb.photo_slide?.title || "사진 기록"} className="sb-stg" style={{ "--sb-i": 0 }} />
               {sb.photo_slide?.body && <p className="sb-stg mb-3 max-w-[52ch] text-[13px] leading-relaxed text-sub" style={{ "--sb-i": 1 }}>{sb.photo_slide.body}</p>}
               <div className="sb-stg grid grid-cols-2 gap-3" style={{ "--sb-i": 2 }}>
@@ -406,7 +410,7 @@ export default function SalesbookView({
             </Slide>
 
             {/* ⑤ 로드맵 + 현재 — 각 단계 '제 방법(how)' + '느낄 변화(feel)'. 카드 full-height 채움. */}
-            <Slide n={5} idx={idx} editable={editable}>
+            <Slide n={5} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="여기까지 함께 갑니다" aux="지금부터 중장기까지" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="flex flex-1 flex-col gap-3">
@@ -453,7 +457,7 @@ export default function SalesbookView({
             </Slide>
 
             {/* ⑥ 추천 플랜 — 카드 full-height · 가격 대형. */}
-            <Slide n={6} idx={idx} editable={editable}>
+            <Slide n={6} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="추천 플랜" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="grid flex-1 gap-3 sm:grid-cols-2">
@@ -487,8 +491,25 @@ export default function SalesbookView({
               </div>
             </Slide>
 
-            {/* ⑦ 마무리 — 서비스 2×2 + 손글씨 다짐 넉넉하게 채움. */}
-            <Slide n={7} idx={idx} editable={editable}>
+            {/* ⑦ 신규 등록 혜택(선택) — 설정 › 회원 세일즈북에서 트레이너가 켠 경우만. 재등록 세일즈북엔 없음. */}
+            {hasBenefits && (
+              <Slide n={7} idx={idx} total={total} editable={editable}>
+                <div className="flex h-full flex-col">
+                  <SlideHead eyebrow="PT 등록하시면 함께 드려요" className="sb-stg" style={{ "--sb-i": 0 }} />
+                  <ul className="grid flex-1 content-center gap-3 sm:grid-cols-2">
+                    {benefits.map((b, i) => (
+                      <li key={i} className="sb-stg flex items-start gap-3 rounded-2xl border border-line bg-elevate p-4 text-[clamp(14px,1.8vw,18px)] leading-snug text-ink" style={{ "--sb-i": i + 1 }}>
+                        <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary-strong" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Slide>
+            )}
+
+            {/* ⑦/⑧ 마무리 — 서비스 2×2 + 손글씨 다짐 넉넉하게 채움. */}
+            <Slide n={hasBenefits ? 8 : 7} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="약속드릴게요" className="sb-stg" style={{ "--sb-i": 0 }} />
                 {Array.isArray(sb.closing?.services) && (
@@ -537,11 +558,11 @@ export default function SalesbookView({
           <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="flex items-center gap-1.5">
-          {Array.from({ length: SLIDE_COUNT }, (_, i) => (
+          {Array.from({ length: total }, (_, i) => (
             <button key={i} onClick={() => go(i)} aria-label={`${i + 1}번 슬라이드`} className={`h-2 rounded-full transition-all ${i === idx ? "w-5 bg-white" : "w-2 bg-white/40"}`} />
           ))}
         </div>
-        <button onClick={() => step(1)} disabled={idx === SLIDE_COUNT - 1} aria-label="다음" className="rounded-full bg-white/15 p-2 text-white transition hover:bg-white/25 disabled:opacity-30">
+        <button onClick={() => step(1)} disabled={idx === total - 1} aria-label="다음" className="rounded-full bg-white/15 p-2 text-white transition hover:bg-white/25 disabled:opacity-30">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

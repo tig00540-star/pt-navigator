@@ -212,7 +212,8 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
         supabase.from("pt_package").select("*")
           .eq("trainer_id", uid).eq("active", true)
           .order("sort", { ascending: true }).order("created_at", { ascending: true }),
-        supabase.from("trainer_profile").select("display_name, credentials, signature_data_url").eq("trainer_id", uid).maybeSingle(),
+        // select("*") — 혜택 칸(salesbook_benefits)이 아직 없는 DB에서도 깨지지 않게.
+        supabase.from("trainer_profile").select("*").eq("trainer_id", uid).maybeSingle(),
       ]);
       if (!cancelled) { setPackages(pkgs || []); setTrainer(prof || null); }
     })();
@@ -676,6 +677,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
             trainer={trainer}
             packages={packages}
             recommendedProgram={b?.recommended_program}
+            benefits={trainer?.salesbook_benefits?.enabled ? (trainer.salesbook_benefits.items || []) : []}
             editable={sbEditable}
             onSave={saveSalesbookEdits}
             onClose={() => setSbOpen(false)}
