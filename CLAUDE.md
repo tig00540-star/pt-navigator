@@ -104,7 +104,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **준비하기:** 1차=`FirstOTAssist`(phase first) · 2차+=`SecondOTTab round=n`(phase second + `round`·`history`[1~n-1차 결과·사유·클로징 메모·2차+ 관찰]). 2차 스테일 해시는 종전(1차 관찰만), 3차+는 이전 차수 포함. **결과 기록 폼은 준비하기에서 빠짐 → 모든 차수 `ObservationTab round=n`(같은 양식).**
 - **리포트 화면 = `components/ot/PrepReport`**(1차·2차+ 공용) — 맨 위 **30초 요약**(AI `cheat` 3줄 · 옛 캐시는 기존 항목에서 뽑음) → 수업 순서대로 접힌 섹션 → 펼치면 대사=말풍선(크게)·이유=작게. 제목 '오늘의 OT 사전 준비 리포트'.
 - **OT 피드백 = `ObservationTab`(2026-10-02 개편 · 탭 위주 3블록):** ① 오늘 어떻게 끝났나(등록했어요/다음 OT 이어가요/그만하기로 했어요 + 등록 제안 했나 + 망설인 이유 + 회원의 말 + 다음 OT 날짜) ② 오늘 본 것(준비 리포트 운동이 미리 채워짐 → 반응 칩·★다음에 다시·성향) ③ 다음 OT 방향(진짜 원하는 것+이유 · 다음 OT 제안 수위=`sales_intensity` · AI에게 한마디). 저장은 옛 키 그대로(호환): 등록=success · 이어감+제안=hold · 이어감+제안 못함=none+`report.next` · 그만=fail · `report.feedback_v=2`. **'이어가요'면 다음 차수 자동.** 앞 차수가 '제안했는데 보류'면 다음 준비 리포트는 **클로징 우선 모드**(`secondPrompt` closingFirst), '제안 못 함'이면 '이번엔 반드시 제안'.
-- **통계:** 3차 이상은 '2차 이상'에 묶음(`_otResultByMember.r2`·`closingStatsByRoundByTrainer`) · OT 수업 수는 전 차수. ⚠️ DB의 `ot_round` CHECK 제약 여부 미확인(표 정의가 저장소에 없음) — 3차 저장 실패 시 제약부터 확인.
+- **통계:** 3차 이상은 '2차 이상'에 묶음(`_otResultByMember.r2`·`closingStatsByRoundByTrainer`) · OT 수업 수는 전 차수. `ot_log` 제약은 PK·account FK·user FK(cascade)뿐 — `ot_round` CHECK 없음(2026-10-02 pg_constraint 확인) → 3차 이상 저장 가능.
 
 ### 수업일지 회원 확인·서명 (v2 · 2026-07-21)
 
