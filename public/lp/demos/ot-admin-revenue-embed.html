@@ -108,13 +108,12 @@
           <div class="row1">
             <div class="lockup">
               <svg viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#c026d3"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
-              <div><div class="cname">강남 피트니스</div><div class="crole">Admin · 총괄 경영</div></div>
+              <div><div class="cname">강남 피트니스</div><div class="crole">대표 · 총괄 경영</div></div>
             </div>
             <div class="live"><i></i>LIVE</div>
           </div>
           <div class="atabs">
-            <div class="atab">브리핑</div><div class="atab">트레이너</div><div class="atab on">매출</div>
-            <div class="atab">OT회원</div><div class="atab">PT회원</div><div class="atab">스케줄</div><div class="atab">급여</div><div class="atab">운영</div>
+            <div class="atab">오늘 챙길 것</div><div class="atab on">매출</div><div class="atab">정산</div><div class="atab">트레이너</div><div class="atab">등록·이탈</div><div class="atab">운영</div>
           </div>
         </div>
 
@@ -124,9 +123,9 @@
 
             <!-- ① 이달 순매출 + 목표 게이지 -->
             <div class="card" id="c1">
-              <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/></svg> 이달 순매출</div>
+              <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/></svg> 이달 매출 현황</div>
               <div class="big"><span id="net">0</span>만원</div>
-              <div class="csub">2026.07 · 환불 차감 · 인계·외부 제외</div>
+              <div class="csub">2026.07 현재 총 매출</div>
               <div class="goalrow">
                 <div class="goaltop"><span class="l">목표 달성</span><span class="r"><span id="gpct">0%</span> <small>(4,820만 / 5,000만)</small></span></div>
                 <div class="gbar"><i id="gbar"></i></div>
@@ -137,12 +136,12 @@
             <!-- ② 다음달 예측 -->
             <div class="card" id="c2">
               <div class="clab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8M21 7v5h-5" stroke-linecap="round" stroke-linejoin="round"/></svg> 다음달 예상 매출 · 추정</div>
-              <div class="big bigc">≈ <span id="fc">0</span>만원<span class="badge">추정</span></div>
+              <div class="big bigc"><span id="fc">0</span>만원<span class="badge">추정</span></div>
               <div class="fbox">
-                <div class="fb"><div class="l">신규 유입에서</div><div class="n">≈ <span id="fnew">0</span>만</div><div class="f">OT 진행 12명 × 전환율 46% × 평균 580만</div></div>
-                <div class="fb"><div class="l">재등록에서</div><div class="n">≈ <span id="fre">0</span>만</div><div class="f">만료임박 5명 × 재등록률 82% × 평균 476만</div></div>
+                <div class="fb"><div class="l">신규 유입에서</div><div class="n"><span id="fnew">0</span>만</div><div class="f">OT 진행 12명 × 등록률 46% × 평균 580만</div></div>
+                <div class="fb"><div class="l">재등록에서</div><div class="n"><span id="fre">0</span>만</div><div class="f">만료 임박 5명 × 재등록률 82% × 평균 476만</div></div>
               </div>
-              <div class="fnote">과거 전환율·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있습니다.</div>
+              <div class="fnote">과거 등록률·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있습니다.</div>
             </div>
 
             <!-- ③ 구성비 -->
@@ -167,13 +166,13 @@
                 <div class="col"><div class="colbar"><i data-h="95"></i></div><div class="colv">4,600만</div><div class="colm">6월</div></div>
                 <div class="col"><div class="colbar"><i data-h="100"></i></div><div class="colv">4,820만</div><div class="colm">7월</div></div>
               </div>
-              <div class="chnote">막대=월 순매출(환불 차감) · 빨강=환불 · 숫자는 만원 단위.</div>
+              <div class="chnote">막대는 그 달 매출(환불 뺀 금액), 빨간 숫자는 환불이에요. 단위는 만원입니다.</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="caption" id="caption"><b>이달 순매출</b> — 목표 대비 한눈에</div>
+    <div class="caption" id="caption"><b>이달 매출 현황</b> — 목표 대비 한눈에</div>
   </div>
 
 <script>
@@ -186,7 +185,7 @@
   function panTo(y){ pan.style.transition='transform .95s cubic-bezier(.4,0,.25,1)'; pan.style.transform='translateY(-'+Math.max(0,y)+'px)'; }
   function resetPan(){ pan.style.transition='none'; pan.style.transform='translateY(0)'; }
   function countUp(el,to,dur,opt){ opt=opt||{}; const s=performance.now();
-    (function step(t){ const p=Math.min(1,(t-s)/dur), e=1-Math.pow(1-p,3), v=Math.round(to*e);
+    (function step(t){ const p=Math.max(0,Math.min(1,(t-s)/dur)), e=1-Math.pow(1-p,3), v=Math.round(to*e);
       el.textContent=(opt.money?v.toLocaleString():v)+(opt.suf||''); if(p<1) requestAnimationFrame(step); })(s); }
 
   const timers=[]; const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
@@ -207,7 +206,7 @@
   function run(){
     reset();
     // ① 순매출 + 게이지
-    setCaption('<b>이달 순매출</b> — 목표 대비 한눈에');
+    setCaption('<b>이달 매출 현황</b> — 목표 대비 한눈에');
     later(()=>{
       countUp(document.getElementById('net'),4820,1200,{money:true});
       document.getElementById('gbar').style.width='96%';

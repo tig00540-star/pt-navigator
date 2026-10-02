@@ -100,13 +100,12 @@
           <div class="row1">
             <div class="lockup">
               <svg viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#c026d3"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
-              <div><div class="cname">강남 피트니스</div><div class="crole">Admin · 총괄 경영</div></div>
+              <div><div class="cname">강남 피트니스</div><div class="crole">대표 · 총괄 경영</div></div>
             </div>
             <div class="live"><i></i>LIVE</div>
           </div>
           <div class="atabs">
-            <div class="atab">브리핑</div><div class="atab">트레이너</div><div class="atab">매출</div>
-            <div class="atab on">OT회원</div><div class="atab">PT회원</div><div class="atab">스케줄</div><div class="atab">급여</div><div class="atab">운영</div>
+            <div class="atab">오늘 챙길 것</div><div class="atab">매출</div><div class="atab">정산</div><div class="atab">트레이너</div><div class="atab on">등록·이탈</div><div class="atab">운영</div>
           </div>
         </div>
 
@@ -159,7 +158,7 @@
   function panTo(y){ pan.style.transition='transform .95s cubic-bezier(.4,0,.25,1)'; pan.style.transform='translateY(-'+Math.max(0,y)+'px)'; }
   function resetPan(){ pan.style.transition='none'; pan.style.transform='translateY(0)'; }
   function countUp(el,to,dur,suf){ const s=performance.now();
-    (function step(t){ const p=Math.min(1,(t-s)/dur), e=1-Math.pow(1-p,3), v=Math.round(to*e);
+    (function step(t){ const p=Math.max(0,Math.min(1,(t-s)/dur)), e=1-Math.pow(1-p,3), v=Math.round(to*e);
       el.textContent=v+(suf||''); if(p<1) requestAnimationFrame(step); })(s); }
 
   const timers=[]; const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
@@ -179,7 +178,7 @@
     bars.forEach((b,k)=> later(()=>b.style.width=b.dataset.w+'%', 700+k*230));
 
     // 2) 이번 주 임박
-    later(()=>{ panTo(c2.offsetTop-8); setCaption('<b>이번 주 챙길 등록</b> — 관리자가 직접 챙길 3명'); }, 3600);
+    later(()=>{ panTo(c2.offsetTop-8); setCaption('<b>이번 주 챙길 등록</b> — 대표가 직접 챙길 3명'); }, 3600);
     drows.forEach((d,k)=> later(()=>d.classList.add('on'), 4100+k*320));
 
     later(run, 7200);

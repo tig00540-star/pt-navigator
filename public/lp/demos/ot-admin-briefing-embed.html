@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>오직 트레이너 · 관리자 브리핑(오늘 챙길 것) 모션</title>
+<title>오직 트레이너 · 대표 브리핑(오늘 챙길 것) 모션</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <style>
   :root{
@@ -127,13 +127,12 @@
           <div class="row1">
             <div class="lockup">
               <svg viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><g transform="translate(96,96) scale(5)"><circle cx="32" cy="32" r="27" fill="none" stroke="#13151b" stroke-width="3.4"/><path d="M32 7 L37.5 33 L26.5 33 Z" fill="#c026d3"/><circle cx="32" cy="32" r="4.2" fill="#13151b"/></g></svg>
-              <div><div class="cname">강남 피트니스</div><div class="crole">Admin · 총괄 경영</div></div>
+              <div><div class="cname">강남 피트니스</div><div class="crole">대표 · 총괄 경영</div></div>
             </div>
             <div class="live"><i></i>LIVE</div>
           </div>
           <div class="atabs">
-            <div class="atab on">브리핑</div><div class="atab">트레이너</div><div class="atab">매출</div>
-            <div class="atab">OT회원</div><div class="atab">PT회원</div><div class="atab">스케줄</div><div class="atab">급여</div><div class="atab">운영</div>
+            <div class="atab on">오늘 챙길 것</div><div class="atab">매출</div><div class="atab">정산</div><div class="atab">트레이너</div><div class="atab">등록·이탈</div><div class="atab">운영</div>
           </div>
         </div>
 
@@ -154,7 +153,7 @@
                     <div class="tdetail">이번 주 계약 종료 — 지금이 재등록 브리핑 돌릴 타이밍</div>
                   </div>
                   <div class="tright">
-                    <div class="tamt c-cyan">≈ 750만원</div>
+                    <div class="tamt c-cyan">750만원</div>
                     <div class="tgo">리텐션 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                   </div>
                 </div>
@@ -206,20 +205,20 @@
                 <div class="blk">
                   <div class="blkh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/><path d="M6 12h.01M18 12h.01"/></svg>오늘의 매출 파이프라인</div>
                   <div class="prow" data-p="0">
-                    <div class="ptop"><span class="pname">박준형</span><span class="psub-amt">≈ 520만원</span></div>
+                    <div class="ptop"><span class="pname">박준형</span><span class="psub-amt">520만원</span></div>
                     <div class="pmeta">신규 2 · 재등록 3</div>
-                    <div class="pchips"><span>김민재<span class="re">(재등록)</span> ≈180만</span><span>서지우<span class="re">(재등록)</span> ≈150만</span><span>이한결<span class="nw">(신규)</span> ≈95만</span></div>
+                    <div class="pchips"><span>김민재<span class="re">(재등록)</span> 180만</span><span>서지우<span class="re">(재등록)</span> 150만</span><span>이한결<span class="nw">(신규)</span> 95만</span></div>
                   </div>
                   <div class="prow" data-p="1">
-                    <div class="ptop"><span class="pname">김서연</span><span class="psub-amt">≈ 310만원</span></div>
+                    <div class="ptop"><span class="pname">김서연</span><span class="psub-amt">310만원</span></div>
                     <div class="pmeta">신규 1 · 재등록 2</div>
-                    <div class="pchips"><span>박도윤<span class="re">(재등록)</span> ≈160만</span><span>최유나<span class="nw">(신규)</span> ≈90만</span></div>
+                    <div class="pchips"><span>박도윤<span class="re">(재등록)</span> 160만</span><span>최유나<span class="nw">(신규)</span> 90만</span></div>
                   </div>
                   <div class="prow" data-p="2">
-                    <div class="ptop"><span class="pname">이도현</span><span class="psub-amt">≈ 150만원</span></div>
+                    <div class="ptop"><span class="pname">이도현</span><span class="psub-amt">150만원</span></div>
                     <div class="pmeta">신규 1 · 재등록 1</div>
                   </div>
-                  <div class="ptotal"><span class="l">총 예상 매출</span><span class="v" id="ptot">≈ 0원</span></div>
+                  <div class="ptotal"><span class="l">총 예상 매출</span><span class="v" id="ptot">0원</span></div>
                   <div class="pnote">성사 시 합계 · 재등록=회원 현재 계약 기준 · 신규=센터 평균 추정.</div>
                 </div>
 
@@ -234,9 +233,9 @@
                 <!-- 주의 회원 -->
                 <div class="blk" id="wblk">
                   <div class="blkh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>지금 주의할 회원</div>
-                  <div class="wrow" data-w="0"><span class="wtag churn">이탈위험</span><span class="wn">정하늘</span><span class="wm">박준형 · 잔여 6회 · 18일 무수업</span></div>
-                  <div class="wrow" data-w="1"><span class="wtag churn">이탈위험</span><span class="wn">오세훈</span><span class="wm">김서연 · 잔여 4회 · 16일 무수업</span></div>
-                  <div class="wrow" data-w="2"><span class="wtag exp">만료임박</span><span class="wn">김민재</span><span class="wm">박준형 · 잔여 2회</span></div>
+                  <div class="wrow" data-w="0"><span class="wtag churn">이탈 위험</span><span class="wn">정하늘</span><span class="wm">박준형 · 잔여 6회 · 18일 무수업</span></div>
+                  <div class="wrow" data-w="1"><span class="wtag churn">이탈 위험</span><span class="wn">오세훈</span><span class="wm">김서연 · 잔여 4회 · 16일 무수업</span></div>
+                  <div class="wrow" data-w="2"><span class="wtag exp">만료 임박</span><span class="wn">김민재</span><span class="wm">박준형 · 잔여 2회</span></div>
                 </div>
 
                 <!-- 오늘 챙길 코칭 -->
@@ -275,7 +274,7 @@
 
   function countUp(el, to, dur, opt){
     opt=opt||{}; const start=performance.now();
-    (function step(t){ const p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,3), v=Math.round(to*e);
+    (function step(t){ const p=Math.max(0,Math.min(1,(t-start)/dur)), e=1-Math.pow(1-p,3), v=Math.round(to*e);
       el.textContent=(opt.pre||'')+(opt.money?v.toLocaleString():v)+(opt.suf||''); if(p<1) requestAnimationFrame(step); })(start);
   }
 
@@ -290,7 +289,7 @@
     wrows.forEach(w=>w.classList.remove('on'));
     clis.forEach(c=>c.classList.remove('on'));
     rline.classList.remove('on');
-    document.getElementById('ptot').textContent='≈ 0원';
+    document.getElementById('ptot').textContent='0원';
     document.getElementById('tl0').textContent='0건';
     document.getElementById('tl1').textContent='0건';
     document.getElementById('tl2').textContent='0';
@@ -314,7 +313,7 @@
     // 3) 매출 파이프라인
     later(()=>{ setCaption('<b>오늘의 매출 파이프라인</b> — 들어올 돈, 트레이너별로'); }, 4700);
     prows.forEach((p,k)=> later(()=>p.classList.add('on'), 4800+k*380));
-    later(()=> countUp(document.getElementById('ptot'),980,1100,{money:true,pre:'≈ ',suf:'만원'}), 6000);
+    later(()=> countUp(document.getElementById('ptot'),980,1100,{money:true,pre:'',suf:'만원'}), 6000);
 
     // 4) 4타일 — 팬 후 count-up
     later(()=>{ panTo(tblk.offsetTop-14); setCaption('<b>어제·이번 달</b> — 수업·예약·매출 한눈에'); }, 7200);
@@ -326,7 +325,7 @@
     }, 7700);
 
     // 5) 주의 회원 — 팬
-    later(()=>{ panTo(wblk.offsetTop-14); setCaption('<b>지금 주의할 회원</b> — 이탈위험·만료임박'); }, 9300);
+    later(()=>{ panTo(wblk.offsetTop-14); setCaption('<b>지금 주의할 회원</b> — 이탈 위험·만료 임박'); }, 9300);
     wrows.forEach((w,k)=> later(()=>w.classList.add('on'), 9700+k*300));
 
     // 6) 오늘 챙길 코칭 — 팬
