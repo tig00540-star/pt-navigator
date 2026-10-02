@@ -55,7 +55,7 @@ const RENEW = {
   flow: ["만료 임박 알림", "변화 근거", "제안까지"],
   checks: ["잔여가 줄어든 회원을 '오늘 할일'에 먼저", "인바디·운동일지로 그동안의 변화 정리", "재등록 제안 멘트까지 준비"],
   note: "잔여 10회 미만부터 알려줘요",
-  visual: { demo: "/lp/demos/ot-rereg-embed.html", alt: "재등록 흐름 실제 화면 — 만료 임박 알림부터 제안까지" },
+  visual: { img: "/lp/shots/renew-card.webp", alt: "오늘 할일 화면 — 재등록 타이밍 카드(잔여 10회 미만 회원)" },
 };
 
 const LOG = {
