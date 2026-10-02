@@ -141,7 +141,9 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
   }, [members, contracts, logs, otRows, schemes, runs, uid, goals, contractNames]);
 
   return (
-    <div className="space-y-4">
+    /* 넓은 화면(lg~): 왼쪽 급여·매출·수업 | 오른쪽 오운완 랭킹. 폰은 위아래 한 줄. */
+    <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+      <div className="space-y-4">
       {loading ? (
         <div className="py-10 text-center text-sm text-muted">불러오는 중…</div>
       ) : (
@@ -296,10 +298,13 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       <p className="text-[10px] text-muted">{isSolo ? "※ 자동계산은 이달 완료 수업 기준입니다." : "※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 대표가 확정한 금액 기준입니다."}</p>
         </>
       )}
+      </div>
 
       {/* 오운완 랭킹 — 자기완결 위젯(rpc 1콜). '오늘' 탭이 아니라 여기인 이유:
           '오늘'은 앱 열 때마다 로드돼 부담이 크고, 랭킹은 주 1~2회 보는 실적성 정보다. */}
-      <OunwanRanking members={members} onSelect={onSelect} />
+      <div className="lg:pt-[52px]">
+        <OunwanRanking members={members} onSelect={onSelect} />
+      </div>
 
       {/* 월간 리포트 오버레이 (4-a) — 읽기 전용 재집계, MyStats 데이터 그대로 전달. */}
       {reportOpen && (

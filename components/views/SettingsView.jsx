@@ -26,8 +26,10 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
   return (
     <div className="space-y-6">
       {sub === "me" && (
-        <>
+        /* 넓은 화면(lg~): 왼쪽 세일즈북(길다) | 오른쪽 목표·비밀번호·계정. 폰은 순서 그대로 한 줄. */
+        <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
           <TrainerProfileSettings />
+          <div className="space-y-6">
           <TrainerGoalSetter />
           <PasswordChange />
           {/* 로그아웃 — AuthGate의 전 화면 플로팅에서 이관(콘텐츠 가림 제거). signOut 시 onAuthStateChange가
@@ -41,13 +43,15 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
               로그아웃
             </button>
           </Card>
-        </>
+          </div>
+        </div>
       )}
       {sub === "money" && (
-        <>
+        /* 입력 폼이라 너무 넓으면 읽기 어렵다 — 넓은 화면에선 폭을 묶는다. */
+        <div className="space-y-6 lg:max-w-3xl">
           <PtPricingSettings />
           {isSolo && <AdminPayrollSettings trainers={[]} solo />}
-        </>
+        </div>
       )}
       {sub === "gear" && <CenterMachineSettings />}
       {sub === "library" && <TrainerLibrary />}

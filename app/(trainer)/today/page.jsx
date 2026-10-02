@@ -39,12 +39,14 @@ export default function TodayPage() {
   }
 
   return (
-    <div className="space-y-8">
+    /* 넓은 화면(lg~): 왼쪽 스케줄 | 오른쪽 이탈 위험·할 일. 폰은 위아래 한 줄. */
+    <div className="space-y-8 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <div ref={scheduleRef} className="scroll-mt-20">
         <Eyebrow icon={CalendarDays}>오늘 스케줄</Eyebrow>
         <ScheduleBoard members={members} onSelect={go} />
       </div>
-      <div className="border-t border-line" />
+      <div className="border-t border-line lg:hidden" />
+      <div className="space-y-8">
       <ChurnRiskToday members={members} onSelect={go} />
       <TodoTab
         members={members}
@@ -55,6 +57,7 @@ export default function TodayPage() {
           else go(id, toTab);
         }}
       />
+      </div>
     </div>
   );
 }
