@@ -2,7 +2,7 @@
 import { Home, CalendarDays, Users, Award, Settings } from "lucide-react";
 
 // 하단바 = 홈(허브) + 글로벌 4탭. 숫자 id는 기존 TABS와 동일, 허브만 "hub".
-const ITEMS = [
+export const NAV_ITEMS = [
   { id: "hub", label: "홈",      Icon: Home },
   { id: 9,     label: "오늘",    Icon: CalendarDays },
   { id: 0,     label: "회원",    Icon: Users },
@@ -11,18 +11,19 @@ const ITEMS = [
 ];
 
 // 현재 tab → 활성 섹션. 워크플로우 탭(1,5,2,10,11,12)·회원목록(0) 전부 '회원' 섹션(0)으로.
-const sectionOf = (tab) =>
+export const sectionOf = (tab) =>
   tab === "hub" ? "hub" : tab === 9 ? 9 : tab === 8 ? 8 : tab === 7 ? 7 : 0;
 
+// 폰 전용 — 태블릿·PC(md 768px~)는 왼쪽 세로 메뉴(components/app/SideNav)가 대신한다.
 export default function BottomNav({ tab, onTab }) {
   const active = sectionOf(tab);
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="주요 메뉴"
     >
       <div className="mx-auto grid max-w-5xl grid-cols-5">
-        {ITEMS.map(({ id, label, Icon }) => {
+        {NAV_ITEMS.map(({ id, label, Icon }) => {
           const on = active === id;
           return (
             <button

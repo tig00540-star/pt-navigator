@@ -17,7 +17,7 @@ import FilterChip from "@/components/ui/FilterChip";
 import { viewFor } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 
-export default function MemberList({ members, selectedId, onSelect, onAdd, uid, initialSegment = "all" }) {
+export default function MemberList({ members, selectedId, onSelect, onAdd, uid, initialSegment = "all", compact = false }) {
   const [q, setQ] = useState("");
   // 허브에서 'OT 회원'·'PT 회원'으로 들어오면 그 세그먼트로 열린다(하단바 '회원'은 전체).
   const [segment, setSegment] = useState(initialSegment); // all | ot | pt | inactive
@@ -112,7 +112,7 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
           )}
         </div>
       ) : (
-        <div className="stagger grid gap-3 sm:grid-cols-2">
+        <div className={compact ? "grid gap-2" : "stagger grid gap-3 sm:grid-cols-2"}>
           {list.map((m) => {
             const on = m.id === selectedId;
             const goalSet = hasVal(m.goal) && m.goal !== "미설정";
@@ -134,14 +134,14 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
                     <span className="text-sm font-semibold text-ink">{m.name}</span>
                     <MemberBadge view={viewFor(m)} />
                     {hasVal(m.age) && <span className="font-mono text-xs text-muted">{m.age}세</span>}
-                    {on && <Badge tone="primary">선택됨</Badge>}
+                    {on && !compact && <Badge tone="primary">선택됨</Badge>}
                   </div>
                   {hasVal(m.job) && <div className="mt-0.5 text-xs text-sub">{m.job}</div>}
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  {!compact && <div className="mt-2 flex flex-wrap gap-1">
                     {hasVal(m.mbti) && <Chip>{m.mbti}</Chip>}
                     {hasVal(m.pain) && <Chip>{m.pain}</Chip>}
                     <Chip muted={!goalSet}>{goalSet ? `목표 ${m.goal}` : "목표 미설정"}</Chip>
-                  </div>
+                  </div>}
                 </div>
                 <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted group-hover:text-primary-strong" />
               </Card>

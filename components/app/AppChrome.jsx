@@ -18,10 +18,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, ShieldCheck } from "lucide-react";
 import { useAccount } from "@/lib/useAccount";
 import { useMembers } from "@/components/app/MembersProvider";
-import { hrefFor, routeInfo, tabForPath, PT_STEPS } from "@/lib/nav";
+import { hrefFor, hrefForMember, routeInfo, tabForPath, PT_STEPS } from "@/lib/nav";
 import { viewFor } from "@/lib/memberStatus";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import BottomNav from "@/components/ui/BottomNav";
+import SideNav from "@/components/app/SideNav";
+import MemberList from "@/components/views/MemberList";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import MemberForm from "@/components/MemberForm";
@@ -70,6 +72,7 @@ export default function AppChrome({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { members, myUid, dbNote, loadMembers } = useMembers();
+  // 넓은 화면(lg 1024px~)에선 회원 화면을 2단으로 — 왼쪽 회원 목록, 오른쪽 고른 회원(2026-10-02 미리보기).
   const { isCenter, isOwner, trainerName } = useAccount();
   const [bellOpen, setBellOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -85,6 +88,7 @@ export default function AppChrome({ children }) {
     openMemberEdit: (id) => setEditId(id),
   }), []);
 
+  const wideMembers = info.section === "members" || info.section === "ot" || info.section === "pt";
   // 회원 워크플로우 서브탭 — 그 회원의 뷰(OT/PT)에 맞는 것만.
   const view = member ? viewFor(member) : null;
   const steps =
@@ -94,7 +98,7 @@ export default function AppChrome({ children }) {
 
   return (
     <UiCtx.Provider value={ui}>
-    <div className="min-h-screen bg-bg pb-28 text-ink antialiased selection:bg-primary/20">
+    <div className="min-h-screen bg-bg pb-28 text-ink antialiased selection:bg-primary/20 md:pb-10 md:pl-[84px] xl:pl-56">
       {/* 공지 — 게이트(필수확인 강제) + 재열람(벨). gateList 0·!supabase·uid null이면 오버레이 없음. */}
       <AnnouncementGate
         uid={myUid}
@@ -103,9 +107,10 @@ export default function AppChrome({ children }) {
         onReviewClose={() => setBellOpen(false)}
       />
 
-      <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex items-center justify-between py-3">
+      {/* 헤더 — 폰: 로고·공지·대표 화면 + 서브탭. 태블릿·PC: 로고·공지·대표 화면은 왼쪽 메뉴로 가고 서브탭만 남는다(없으면 헤더도 없음). */}
+      <header className={`sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)] ${steps || info.section === "settings" ? "" : "md:hidden"}`}>
+        <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${wideMembers ? "lg:max-w-none lg:px-8" : ""}`}>
+          <div className="flex items-center justify-between py-3 md:hidden">
             {/* 로고 락업 = 홈(허브)으로. 어느 화면에서든 한 번에 첫 화면으로 돌아온다. */}
             <Link href="/" aria-label="홈으로" className="flex min-w-0 shrink-0 items-center gap-2.5 transition active:scale-95">
               <BrandMark accent="trainer" title="오직 트레이너" className="h-9 w-9 shrink-0 rounded-lg" />
@@ -162,9 +167,25 @@ export default function AppChrome({ children }) {
         </div>
       )}
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <main className={`mx-auto px-4 py-6 sm:px-6 ${wideMembers ? "max-w-5xl lg:grid lg:max-w-[1440px] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:px-8" : "max-w-5xl lg:max-w-6xl lg:px-8"}`}>
+        {wideMembers && (
+          /* 넓은 화면 전용 회원 목록 — 목록을 떠나지 않고 회원을 바꾼다. 폰·태블릿 세로에선 숨김. */
+          <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:pr-1" aria-label="회원 목록">
+            <MemberList
+              compact
+              members={members}
+              selectedId={info.memberId}
+              uid={myUid}
+              onAdd={() => setShowForm(true)}
+              onSelect={(id) => {
+                const m = members.find((x) => x.id === id);
+                router.push(hrefForMember(id, m ? viewFor(m) : "ot"));
+              }}
+            />
+          </aside>
+        )}
         {/* key=주소 — 화면이 바뀔 때마다 진입 모션을 다시 재생한다(기존 .tab-anim 그대로). */}
-        <div key={pathname} className="tab-anim">{children}</div>
+        <div key={pathname} className="tab-anim min-w-0">{children}</div>
       </main>
 
       {showForm && (
@@ -182,6 +203,14 @@ export default function AppChrome({ children }) {
       )}
 
       <BottomNav tab={tabForPath(pathname)} onTab={(tab) => router.push(hrefFor(tab, info.memberId))} />
+      <SideNav
+        tab={tabForPath(pathname)}
+        onTab={(tab) => router.push(hrefFor(tab, info.memberId))}
+        trainerName={trainerName}
+        unreadCount={unreadCount}
+        onBell={() => setBellOpen(true)}
+        showAdmin={isCenter && isOwner}
+      />
     </div>
     </UiCtx.Provider>
   );
