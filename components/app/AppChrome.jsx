@@ -167,7 +167,7 @@ export default function AppChrome({ children }) {
         </div>
       )}
 
-      <main className={`mx-auto px-4 py-6 sm:px-6 ${wideMembers ? "max-w-5xl lg:grid lg:max-w-[1440px] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:px-8" : "max-w-5xl lg:max-w-6xl lg:px-8"}`}>
+      <main className={`mx-auto px-4 py-6 sm:px-6 ${wideMembers ? "max-w-5xl lg:grid lg:max-w-[1440px] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:px-8" : `max-w-5xl lg:px-8 ${info.section === "hub" ? "lg:max-w-[1440px]" : "lg:max-w-6xl"}`}`}>
         {wideMembers && (
           /* 넓은 화면 전용 회원 목록 — 목록을 떠나지 않고 회원을 바꾼다. 폰·태블릿 세로에선 숨김. */
           <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:pr-1" aria-label="회원 목록">

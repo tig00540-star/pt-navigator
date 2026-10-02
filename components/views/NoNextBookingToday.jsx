@@ -13,7 +13,8 @@ import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
 
-export default function NoNextBookingToday({ members, uid, onSelect }) {
+// limit — 넓은 홈처럼 칸이 좁은 곳에서 앞의 N명만(나머지는 '외 N명'). 오래 안 온 순으로 이미 정렬돼 있다.
+export default function NoNextBookingToday({ members, uid, onSelect, limit }) {
   // ChurnRiskToday 패턴: fetch는 effect([uid])에서 한 번, 파생은 useMemo로 분리.
   // → members 신원이 매 렌더 바뀌어도(scoped 새 배열) 순수 재파생만, DB 재조회 X.
   const [appts, setAppts] = useState([]);
@@ -64,18 +65,21 @@ export default function NoNextBookingToday({ members, uid, onSelect }) {
         hint="잔여 있는데 다음 수업이 안 잡힘 — 먼저 예약을 잡으세요"
       />
       <div className="grid gap-2">
-        {rows.map((r) => (
+        {(limit ? rows.slice(0, limit) : rows).map((r) => (
           <ListRow key={r.user_id} tone="neutral" name={r.name || "회원"} onClick={() => onSelect(r.user_id)}>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-sub">
               <span className="font-medium">잔여 {r.rem}회</span>
               {r.gap != null ? (
-                <span className={r.gap >= 14 ? "font-medium text-amber-600" : "text-muted"}>마지막 수업 {r.gap}일 전</span>
+                <span className={r.gap >= 14 ? "font-medium text-amber-600" : "text-muted"}>{r.gap <= 0 ? "마지막 수업 오늘" : `마지막 수업 ${r.gap}일 전`}</span>
               ) : (
                 <span className="text-muted">아직 첫 수업 전</span>
               )}
             </div>
           </ListRow>
         ))}
+        {limit && rows.length > limit && (
+          <p className="px-1 text-[12px] text-muted">외 {rows.length - limit}명 — &lsquo;오늘&rsquo; 화면에서 전체 보기</p>
+        )}
       </div>
     </ToneCard>
   );
