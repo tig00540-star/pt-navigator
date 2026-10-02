@@ -9,6 +9,7 @@ import { createClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { createNotionPage } from "@/lib/notion";
 import { PLANS } from "@/lib/plans";
+import { isDemoAccount } from "@/lib/demo";
 import {
   otFunnel,
   reregisterStats,
@@ -55,11 +56,13 @@ export async function GET(req) {
   const firstErr = membersR.error || otR.error || contractsR.error || logsR.error || accountsR.error;
   if (firstErr) return Response.json({ error: `조회 실패: ${firstErr.message}` }, { status: 500 });
 
-  const membersAll = membersR.data || [];
-  const otRows = otR.data || [];
-  const contracts = contractsR.data || [];
-  const logs = logsR.data || [];
-  const accounts = accountsR.data || [];
+  // 데모 센터(랜딩·영업용 가짜 데이터)는 운영 지표에서 뺀다 — 안 빼면 유료 센터 수·매출이 부풀려진다.
+  const real = (rows) => (rows || []).filter((r) => !isDemoAccount(r?.account_id));
+  const membersAll = real(membersR.data);
+  const otRows = real(otR.data);
+  const contracts = real(contractsR.data);
+  const logs = real(logsR.data);
+  const accounts = (accountsR.data || []).filter((a) => !isDemoAccount(a?.id));
 
   const now = Date.now();
   const nowISO = new Date(now).toISOString();

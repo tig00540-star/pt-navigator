@@ -10,6 +10,7 @@
 //    billing_plan·cancel_at_period_end·created_at 는 스키마에 없어서 사용 안 함.
 // -----------------------------------------------------------------------------
 import { createClient } from "@supabase/supabase-js";
+import { isDemoAccount } from "@/lib/demo";
 import {
   notionReady,
   fetchNotionRowsByAccount,
@@ -99,7 +100,8 @@ export async function GET(req) {
     failed = 0;
   const errors = [];
 
-  for (const acc of accounts || []) {
+  // 데모 센터는 실제 고객이 아니라 노션 고객 관리에 올리지 않는다.
+  for (const acc of (accounts || []).filter((a) => !isDemoAccount(a.id))) {
     const title = acc.name || ownerName.get(acc.id) || "(이름없음)";
     const stage = deriveStage(acc, hasPaid.has(acc.id), now);
     const size = seatCount.get(acc.id) ?? (acc.type === "center" ? null : 1);
