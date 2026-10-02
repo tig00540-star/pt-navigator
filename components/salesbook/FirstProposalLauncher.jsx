@@ -42,8 +42,9 @@ export function buildFirstProposal({ member, report, packages, cases, saved }) {
     pick && { ref: valid(rp.pick_ref) ? rp.pick_ref : 0, name: pick.name, meta: pick.duration_label || "", sessions_label: pick.sessions ? `${pick.sessions}회` : "", recommended: true, why: rp.why_fit || "", includes: [] },
     alt && { ref: rp.alt_ref, name: alt.name, meta: alt.duration_label || "", sessions_label: alt.sessions ? `${alt.sessions}회` : "", recommended: false, why: rp.alt_why || "", includes: [] },
   ].filter(Boolean);
-  const body = [hasVal(m.goal_deadline) && `목표 시점: ${m.goal_deadline}`, hasVal(m.member_note) && m.member_note].filter(Boolean).join(" · ")
-    || "오늘 OT에서 지금 상태를 함께 봤어요. 여기서부터 시작해요.";
+  // 회원이 보는 장 — 트레이너 메모(member_note·"~하다고 함")는 쓰지 않는다. 목표 시점만.
+  const body = hasVal(m.goal_deadline) ? `목표 시점: ${m.goal_deadline}. 오늘 OT에서 지금 상태를 함께 봤어요. 여기서부터 시작해요.`
+    : "오늘 OT에서 지금 상태를 함께 봤어요. 여기서부터 시작해요.";
   return {
     cover: saved?.cover || { subtitle: `${goal}, 오늘부터 이렇게 시작해요` },
     goal: saved?.goal || { headline: goal, body, current_issues: hasVal(m.pain) ? [m.pain] : [] },
