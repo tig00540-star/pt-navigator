@@ -4,19 +4,21 @@
    「오직 트레이너」 랜딩 (/lp) — 시안 A "앱 화면 중심" (2026-10-02)
    -------------------------------------------------------------------------
    왜 다시 만들었나: "글자가 너무 많고 한눈에 어떤 앱인지 알아보기 힘들다."
-   레퍼런스 gymwork.pro의 원칙만 가져왔다 —
-     ① 첫 화면은 두 줄 + 앱이 돌아가는 장면 하나
-     ② 기능마다 '제목 한 줄 → 실제 앱 화면'(설명 문단 대신 화면이 증명)
-     ③ 숫자는 크게, 설명은 짧게
-   구 랜딩의 창업자 스토리·철학 비교·문제 카드·아이콘 기능 그리드는 걷어냈다
-   (git 히스토리 참고). 창업자 이야기는 마지막 CTA 위 한 줄로만 남긴다.
+   레퍼런스 gymwork.pro의 원칙 —
+     ① 첫 화면은 두 줄 + 행동 버튼
+     ② 기능마다 '제목 → 흐름 → 구체 효과 3줄 → 실제 앱 화면'
+     ③ 숫자는 크게, 설명은 짧게(문단 대신 한 줄짜리 체크)
+   ⚠️ 1차 재구성(236952d)은 너무 깎아서 "아무 내용이 없다"는 피드백 — 제목+칩만 남아
+   '왜 필요한지'와 '무엇을 해주는지'가 사라졌었다. 이번 판은 왜(전→후 4줄)와 기능별 효과
+   3줄을 되살리되 문단은 쓰지 않는다. 밀도 기준 = 짐워크(기능마다 제목 + 짧은 줄 2~3개 + 화면).
 
    규율:
    - 실제 앱 화면 = public/lp/demos/*.html(실제 화면 모션 데모 · DemoSlot iframe). 목업 아님.
+     데모는 각 1번만 쓴다(같은 화면 반복 금지).
    - 색은 전역 @theme 토큰 유틸만. 레드는 누르는 곳/강조에만. 그라데이션·글로우 0.
-   - 모션 없음(데모 자체가 움직임). 섹션 등장 애니메이션·스크롤 스냅 제거 —
-     문서 스크롤 그대로라 #앵커가 네이티브로 동작하고 빈 화면 위험도 없다.
-   - 가격은 lib/plans.js와 반드시 일치(랜딩↔결제 불일치 금지).
+   - 섹션 등장 애니메이션·스크롤 스냅 없음(데모 자체가 움직임 · 문서 스크롤이라 #앵커 네이티브).
+   - 가격은 lib/plans.js에서 직접 읽는다(랜딩↔결제 불일치 금지).
+   - 효과 문구는 실제 동작하는 기능만(CLAUDE.md·PRODUCT.md 실동작 목록 기준).
    ========================================================================= */
 
 import Link from "next/link";
@@ -34,17 +36,35 @@ const DEMO_W = 524;
 const DEMO_H = 766;
 
 const PROOF = [
-  { n: "30초", t: "말로 남기는 운동일지" },
-  { n: "5분", t: "AI와 끝내는 OT 준비" },
-  { n: "0건", t: "놓치는 재등록", accent: true },
+  { n: "30초", t: "말로 남기는\n운동일지" },
+  { n: "5분", t: "AI와 끝내는\nOT 준비" },
+  { n: "0건", t: "놓치는\n재등록", accent: true },
+];
+
+// 왜 — 수업 밖 업무가 시간을 먹는다. 전 → 후 한 줄씩.
+const WHY = [
+  { before: "일지·기록에 매일 40분", after: "말로 30초" },
+  { before: "OT 준비는 매번 백지에서", after: "AI가 대사·근거까지" },
+  { before: "재등록은 기억력에 의존", after: "앱이 먼저 알림" },
+  { before: "회원이 늘수록 관리도 두 배", after: "회원이 셀프로 관리" },
 ];
 
 const FEATURES = [
+  {
+    id: "log",
+    kicker: "운동일지",
+    title: ["쓰지 말고,", "말하세요."],
+    steps: ["수업", "말로 복기", "회원에게 전송"],
+    points: ["운동별 무게·횟수·세트를 알아서 정리", "회원에게 보낼 일지까지 한 번에", "세션 차감·출석 기록도 자동"],
+    demo: "/lp/demos/ot-voicelog-embed.html",
+    demoTitle: "운동일지 실제 화면 — 말로 남기면 정리됩니다",
+  },
   {
     id: "ot",
     kicker: "신규 OT · 세일즈",
     title: ["세일즈 잘 모르겠으면,", "따라만 하세요."],
     steps: ["OT 보고서", "클로징 멘트", "거절 대응"],
+    points: ["회원 정보로 만드는 맞춤 OT 진행 순서", "수업 직전 3분, 바로 말할 클로징 멘트", "가격·'생각해볼게요' 등 거절 5가지 대응"],
     demo: "/lp/demos/ot-mockup-embed.html",
     demoTitle: "신규 OT 실제 화면",
   },
@@ -53,6 +73,7 @@ const FEATURES = [
     kicker: "재등록",
     title: ["재등록 시기,", "앱이 먼저 알려줘요."],
     steps: ["만료 임박 알림", "변화 근거", "제안까지"],
+    points: ["잔여가 줄어든 회원을 '오늘 챙길 것'에 먼저", "인바디·운동일지로 그동안의 변화 정리", "재등록 제안 멘트까지 준비"],
     demo: "/lp/demos/ot-rereg-embed.html",
     demoTitle: "재등록 실제 화면",
   },
@@ -60,14 +81,32 @@ const FEATURES = [
     id: "member",
     kicker: "회원 전용 페이지",
     title: ["붙잡지 마세요.", "회원이 스스로 챙깁니다."],
-    steps: ["운동일지·인바디", "출석 집계", "변화 그래프"],
+    steps: ["링크 하나", "기록 열람", "출석 챌린지"],
+    points: ["설치 없이 링크로 여는 회원 전용 페이지", "운동일지·인바디·변화 그래프를 회원이 직접", "출석이 쌓이는 오운완 챌린지와 포상"],
     demo: "/lp/demos/ot-member-embed.html",
     demoTitle: "회원 전용 페이지 실제 화면",
   },
 ];
 
 // 아이콘 타일 그리드 대신 한 줄 — 있다는 것만 알리면 된다.
-const MORE = ["급여 자동계산", "스케줄·노쇼", "오운완 챌린지", "운동 라이브러리", "내 실적 리포트"];
+const MORE = ["급여 자동계산", "스케줄·노쇼", "운동 라이브러리", "내 실적 리포트", "센터 공지"];
+
+const OWNER = [
+  {
+    id: "numbers",
+    title: ["센터 숫자를", "한 화면에서."],
+    points: ["이달 매출과 목표 달성률, 다음달 예상", "정산 — 매출·지출·순이익을 기간별로", "트레이너별 등록률·재등록률·성과"],
+    demo: "/lp/demos/ot-admin-revenue-embed.html",
+    demoTitle: "대표 화면 실제 화면 — 이달 매출 현황",
+  },
+  {
+    id: "briefing",
+    title: ["오늘 챙길 것,", "아침에 바로."],
+    points: ["이탈 위험·재등록 대상 회원을 급한 순서로", "오늘 신규 OT 예정과 명단", "트레이너 코칭까지 담은 AI 운영 보고서"],
+    demo: "/lp/demos/ot-admin-briefing-embed.html",
+    demoTitle: "대표 화면 실제 화면 — 오늘 챙길 것",
+  },
+];
 
 const TIERS = [
   {
@@ -110,8 +149,9 @@ const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 const BTN_PRIMARY = `inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-primary px-7 text-[16px] font-extrabold tracking-[-0.01em] text-white no-underline transition-colors hover:bg-primary-strong ${FOCUS}`;
 const BTN_GHOST = `inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-line-strong bg-card px-6 text-[16px] font-bold tracking-[-0.01em] text-ink no-underline transition-colors hover:bg-elevate ${FOCUS}`;
 const H2 = "text-[clamp(28px,4.2vw,44px)] font-extrabold leading-[1.22] tracking-[-0.04em]";
+const DEMO_BOX = "mx-auto w-full max-w-[460px] lg:max-w-[520px]";
 
-/* ───────── 심볼 ───────── */
+/* ───────── 조각 ───────── */
 
 function Sym({ size = 26, dark = false }) {
   const c = dark ? "#fff" : "var(--color-ink)";
@@ -124,10 +164,10 @@ function Sym({ size = 26, dark = false }) {
   );
 }
 
-/* 단계 흐름 칩 — 설명 문장 대신. 마지막 칸이 '앱이 끝내주는 지점'. */
-function Steps({ steps, dark = false, center = false }) {
+/* 단계 흐름 칩 — 마지막 칸이 '앱이 끝내주는 지점'. 폰 폭에서 한 줄에 들어가게 라벨은 짧게. */
+function Steps({ steps, dark = false }) {
   return (
-    <div className={`flex flex-wrap items-center gap-x-1 gap-y-2 ${center ? "justify-center" : ""}`}>
+    <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 lg:justify-start">
       {steps.map((st, i) => {
         const last = i === steps.length - 1;
         return (
@@ -145,6 +185,37 @@ function Steps({ steps, dark = false, center = false }) {
           </span>
         );
       })}
+    </div>
+  );
+}
+
+/* 효과 3줄 — 문단 대신 한 줄짜리 체크. 폰에선 가운데 정렬 제목 아래 왼쪽 정렬 목록(읽기 쉬움). */
+function Points({ points, dark = false }) {
+  return (
+    <ul className="mx-auto mt-6 flex max-w-[420px] list-none flex-col gap-3 p-0 text-left lg:mx-0">
+      {points.map((p) => (
+        <li key={p} className={`flex gap-2.5 text-[16px] leading-[1.5] ${dark ? "text-white/90" : "text-ink"}`}>
+          <Check size={18} strokeWidth={3} className={`mt-[3px] flex-none ${dark ? "text-[#fca5a5]" : "text-primary"}`} aria-hidden="true" />
+          <span>{p}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/* 기능 한 행 — 텍스트 | 실제 화면. PC는 홀짝으로 좌우 교차. */
+function FeatureRow({ kicker, title, steps, points, demo, demoTitle, flip, dark, first }) {
+  return (
+    <div className={`${WRAP} grid items-center gap-10 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16 lg:py-24 ${first ? "" : dark ? "border-t border-white/10" : "border-t border-line"}`}>
+      <div className={`text-center lg:text-left ${flip ? "lg:order-2" : ""}`}>
+        {kicker && <div className={`text-[14px] font-extrabold ${dark ? "text-[#fca5a5]" : "text-primary-strong"}`}>{kicker}</div>}
+        <h3 className={`${H2} ${kicker ? "mt-2.5" : ""}`}>{title[0]}<br />{title[1]}</h3>
+        {steps && <div className="mt-6"><Steps steps={steps} dark={dark} /></div>}
+        <Points points={points} dark={dark} />
+      </div>
+      <div className={`${DEMO_BOX} ${flip ? "lg:order-1" : ""}`}>
+        <DemoSlot src={demo} title={demoTitle} w={DEMO_W} h={DEMO_H} />
+      </div>
     </div>
   );
 }
@@ -180,34 +251,24 @@ export default function LandingPage() {
       </header>
 
       <main id="top">
-        {/* ── 첫 화면: 두 줄 + 앱이 돌아가는 장면 ── */}
-        <section className={`${WRAP} grid items-center gap-10 pb-16 pt-12 sm:pt-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14 lg:pb-24 lg:pt-20`}>
-          <div className="text-center lg:text-left">
-            <h1 className="text-[clamp(34px,6.2vw,62px)] font-extrabold leading-[1.18] tracking-[-0.045em]">
-              수업만 하세요.<br />
-              <span className="text-primary">나머지는 앱이 합니다.</span>
-            </h1>
-            <p className="mt-5 text-[clamp(16px,1.9vw,19px)] leading-[1.6] text-sub">OT 준비 · 운동일지 · 재등록 · 정산까지</p>
-            <div className="mt-8 flex flex-col gap-2.5 sm:flex-row sm:justify-center lg:justify-start">
-              <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" /></a>
-              {/* InstallAppButton은 자체 클래스(레드 채움)를 갖고 있어 겹치는 속성은 !로 덮는다. */}
-              <InstallAppButton
-                className="!min-h-[52px] justify-center !rounded-xl !border !border-line-strong !bg-card !px-6 !py-0 !text-[16px] !text-ink hover:!bg-elevate"
-                label="앱처럼 설치"
-              />
-            </div>
-            <p className="mt-3.5 text-[14px] text-muted">설치 없이 폰에서 바로 · 7일 무료 체험</p>
+        {/* ── 첫 화면: 두 줄 + 행동 ── */}
+        <section className={`${WRAP} pb-14 pt-14 text-center sm:pt-20 lg:pb-20 lg:pt-24`}>
+          <h1 className="text-[clamp(34px,6.4vw,68px)] font-extrabold leading-[1.16] tracking-[-0.045em]">
+            수업만 하세요.<br />
+            <span className="text-primary">나머지는 앱이 합니다.</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-[560px] text-[clamp(16px,1.9vw,20px)] leading-[1.6] text-sub">
+            OT 준비부터 운동일지·재등록·정산까지,<br className="sm:hidden" /> 트레이너의 수업 밖 업무를 앱이 맡습니다.
+          </p>
+          <div className="mx-auto mt-8 flex max-w-[420px] flex-col gap-2.5 sm:max-w-none sm:flex-row sm:justify-center">
+            <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" /></a>
+            {/* InstallAppButton은 자체 클래스(레드 채움)를 갖고 있어 겹치는 속성은 !로 덮는다. */}
+            <InstallAppButton
+              className="!min-h-[52px] justify-center !rounded-xl !border !border-line-strong !bg-card !px-6 !py-0 !text-[16px] !text-ink hover:!bg-elevate"
+              label="앱처럼 설치"
+            />
           </div>
-
-          <figure className="m-0">
-            <div className="mx-auto w-full max-w-[460px] lg:max-w-[520px]">
-              <DemoSlot src="/lp/demos/ot-voicelog-embed.html" title="운동일지 실제 화면 — 말로 남기면 정리됩니다" w={DEMO_W} h={DEMO_H} />
-            </div>
-            <figcaption className="mx-auto mt-5 max-w-[460px] text-center lg:max-w-[520px]">
-              <div className="text-[19px] font-extrabold tracking-[-0.03em]">쓰지 말고, 말하세요.</div>
-              <div className="mt-3"><Steps steps={["수업", "말로 복기", "회원에게 전송"]} center /></div>
-            </figcaption>
-          </figure>
+          <p className="mt-3.5 text-[14px] text-muted">설치 없이 폰에서 바로 · 7일 무료 체험</p>
         </section>
 
         {/* ── 숫자 ── */}
@@ -216,25 +277,32 @@ export default function LandingPage() {
             {PROOF.map((p) => (
               <div key={p.t}>
                 <div className={`text-[clamp(30px,5vw,52px)] font-extrabold leading-none tracking-[-0.045em] tabular-nums ${p.accent ? "text-primary" : "text-ink"}`}>{p.n}</div>
-                <div className="mt-2.5 text-[clamp(13px,1.5vw,16px)] font-medium leading-[1.4] text-sub">{p.t}</div>
+                <div className="mt-2.5 whitespace-pre-line text-[clamp(13px,1.5vw,16px)] font-medium leading-[1.4] text-sub">{p.t}</div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── 기능: 제목 한 줄 → 실제 화면 ── */}
-        <section id="features" className="scroll-mt-16">
+        {/* ── 왜: 수업 밖 업무 ── */}
+        <section className={`${WRAP} py-16 sm:py-20 lg:py-24`}>
+          <h2 className={`${H2} text-center`}>수업은 2시간,<br /><span className="text-primary-strong">수업 밖 업무는 4시간.</span></h2>
+          <p className="mx-auto mt-4 max-w-[520px] text-center text-[16px] leading-[1.6] text-sub">일지·상담 준비·재등록 챙기기. 실력이 아니라 시간을 먹는 일들을 앱에 넘기세요.</p>
+          <ul className="mx-auto mt-10 grid max-w-[880px] list-none gap-3 p-0 sm:grid-cols-2">
+            {WHY.map((w) => (
+              <li key={w.before} className="flex flex-col items-start gap-1.5 rounded-2xl border border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <span className="text-[15px] text-muted line-through decoration-line-strong">{w.before}</span>
+                <span className="flex shrink-0 items-center gap-1.5 text-[15.5px] font-extrabold text-ink">
+                  <ArrowRight size={16} strokeWidth={2.6} className="text-primary" aria-hidden="true" />{w.after}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ── 기능: 제목 → 흐름 → 효과 3줄 → 실제 화면 ── */}
+        <section id="features" className="scroll-mt-16 border-t border-line">
           {FEATURES.map((f, i) => (
-            <div key={f.id} className={`${WRAP} grid items-center gap-8 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16 lg:py-24 ${i > 0 ? "border-t border-line" : ""}`}>
-              <div className={`text-center lg:text-left ${i % 2 === 1 ? "lg:order-2" : ""}`}>
-                <div className="text-[14px] font-extrabold text-primary-strong">{f.kicker}</div>
-                <h2 className={`${H2} mt-2.5`}>{f.title[0]}<br />{f.title[1]}</h2>
-                <div className="mt-6 flex justify-center lg:justify-start"><Steps steps={f.steps} center /></div>
-              </div>
-              <div className={`mx-auto w-full max-w-[460px] lg:max-w-[520px] ${i % 2 === 1 ? "lg:order-1" : ""}`}>
-                <DemoSlot src={f.demo} title={f.demoTitle} w={DEMO_W} h={DEMO_H} />
-              </div>
-            </div>
+            <FeatureRow key={f.id} {...f} flip={i % 2 === 1} first={i === 0} />
           ))}
 
           <div className={`${WRAP} border-t border-line py-12 text-center sm:py-14`}>
@@ -249,21 +317,17 @@ export default function LandingPage() {
 
         {/* ── 대표님께 ── */}
         <section id="owner" className="scroll-mt-16 bg-ink text-white">
-          <div className={`${WRAP} grid items-center gap-10 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16 lg:py-24`}>
-            <div className="text-center lg:text-left">
-              <div className="text-[14px] font-extrabold text-[#fca5a5]">센터 대표님께</div>
-              <h2 className={`${H2} mt-2.5`}>센터 숫자를<br />한 화면에서.</h2>
-              <div className="mt-6 flex justify-center lg:justify-start">
-                <Steps steps={["매출·정산", "등록과 이탈", "트레이너별 성과"]} dark center />
-              </div>
-              <a href={contactHref()} className={`mt-8 inline-flex min-h-[52px] items-center gap-2 rounded-xl bg-white px-6 text-[16px] font-extrabold text-ink no-underline transition-colors hover:bg-white/90 ${FOCUS} focus-visible:ring-offset-ink`}>
-                센터 도입 문의 <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
-              </a>
-            </div>
-            <div className="mx-auto w-full max-w-[460px] lg:max-w-[520px]">
-              <DemoSlot src="/lp/demos/ot-admin-revenue-embed.html" title="대표 대시보드 실제 화면 — 이달 매출 현황" w={DEMO_W} h={DEMO_H} />
-            </div>
+          <div className={`${WRAP} pt-16 text-center sm:pt-20 lg:pt-24`}>
+            <div className="text-[14px] font-extrabold text-[#fca5a5]">센터 대표님께</div>
+            <h2 className={`${H2} mt-2.5`}>감으로 보던 센터를,<br />숫자로 봅니다.</h2>
+            <p className="mx-auto mt-4 max-w-[520px] text-[16px] leading-[1.6] text-white/80">매출은 월말에야, 이탈은 회원이 떠난 뒤에야 알던 일을 먼저 보여드려요.</p>
+            <a href={contactHref()} className={`mt-7 inline-flex min-h-[52px] items-center gap-2 rounded-xl bg-white px-6 text-[16px] font-extrabold text-ink no-underline transition-colors hover:bg-white/90 ${FOCUS} focus-visible:ring-offset-ink`}>
+              센터 도입 문의 <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
+            </a>
           </div>
+          {OWNER.map((o, i) => (
+            <FeatureRow key={o.id} {...o} flip={i % 2 === 1} dark first={false} />
+          ))}
         </section>
 
         {/* ── 가격 ── */}
@@ -326,11 +390,15 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── 마무리 ── */}
+        {/* ── 만든 사람 · 마무리 ── */}
         <section className="border-t border-line">
           <div className={`${WRAP} py-16 text-center sm:py-24`}>
-            <p className="text-[15px] font-semibold text-sub">트레이너 10년, 팀장까지 해본 사람이 직접 만들었습니다.</p>
-            <h2 className={`${H2} mt-4`}>오늘 수업 끝나고<br />바로 써보세요.</h2>
+            <p className="mx-auto max-w-[560px] text-[clamp(18px,2.2vw,22px)] font-bold leading-[1.5] tracking-[-0.03em]">
+              트레이너 경력 10년. 팀장·관리자까지 다 해본 사람이<br />
+              <span className="text-primary-strong">답답해서 직접 만들었습니다.</span>
+            </p>
+            <p className="mx-auto mt-3 max-w-[480px] text-[15px] leading-[1.6] text-sub">어플·노션·스프레드시트를 다 써봤지만 타이핑은 그대로였습니다. 수업 밖 업무를 전부 여기에 녹였습니다.</p>
+            <h2 className={`${H2} mt-14`}>오늘 수업 끝나고<br />바로 써보세요.</h2>
             <div className="mt-8 flex justify-center">
               <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" /></a>
             </div>
