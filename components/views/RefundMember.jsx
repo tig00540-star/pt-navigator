@@ -10,7 +10,7 @@
 import { useState } from "react";
 import { Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
@@ -62,7 +62,7 @@ export default function RefundMember({ member, contracts, onDone }) {
   return (
     <details className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-5 shadow-sm">
       <summary className="cursor-pointer list-none">
-        <Eyebrow icon={Undo2}>환불 처리 · 회원 삭제</Eyebrow>
+        <SectionTitle icon={Undo2}>환불 처리 · 회원 삭제</SectionTitle>
       </summary>
       <div className="mt-3 space-y-3">
         <p className="text-[12px] leading-relaxed text-muted">

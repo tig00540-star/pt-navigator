@@ -7,7 +7,7 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import PtWorkoutTab from "@/components/views/PtWorkoutTab";
 import PtReRegTab from "@/components/views/PtReRegTab";
@@ -15,6 +15,8 @@ import PtInbodyTab from "@/components/views/PtInbodyTab";
 import RefundMember from "@/components/views/RefundMember";
 import MemberAppLink from "@/components/views/MemberAppLink";
 import MemberPhotoSummary from "@/components/views/MemberPhotoSummary";
+import PtDashboard from "@/components/pt/PtDashboard";
+import PtTabs from "@/components/pt/PtTabs";
 
 export default function PTView({ member, tab, onGoList, onMemberPatch, onMembersChanged }) {
   const [contracts, setContracts] = useState([]); // session_log (계약)
@@ -63,14 +65,8 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
 
   return (
     <div className="space-y-6">
-      {onGoList && (
-        <button
-          onClick={onGoList}
-          className="mb-1 inline-flex items-center gap-1.5 text-xs font-medium text-sub transition hover:text-primary-strong"
-        >
-          <ChevronLeft className="h-4 w-4" /> 회원 목록
-        </button>
-      )}
+      {/* 화면 안 탭(OT와 같은 모양) — 대시보드 | 자료남기기 | 재등록 */}
+      <PtTabs memberId={member.id} tab={tab === 11 || tab === 12 ? tab : 10} />
 
       <div key={tab} className="tab-anim">
         {tab === 11 ? (
@@ -105,20 +101,30 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
             confirms={confirms}
             loading={loading}
             mode="view"
+            header={<PtDashboard member={member} contracts={contracts} logs={logs} confirms={confirms} />}
           >
             <PtInbodyTab member={member} mode="view" />
           </PtWorkoutTab>
         )}
       </div>
 
-      {/* 회원앱 링크 발급 · 환불 — 자료남기기 탭 끝에만 */}
-      {isRecord && <MemberAppLink key={member.id} member={member} onMemberPatch={onMemberPatch} />}
+      {/* 회원 전용 페이지 링크 · 환불 — 자료남기기 탭 맨 끝, 접어 둔다(자주 안 쓰는 것 · 2026-10-02) */}
       {isRecord && (
-        <RefundMember
-          member={member}
-          contracts={contracts}
-          onDone={() => { onMembersChanged?.(); onGoList?.(); }}
-        />
+        <details className="group/extra">
+          <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-card px-5 shadow-sm [&::-webkit-details-marker]:hidden">
+            <span className="text-[15px] font-bold text-ink">더 보기</span>
+            <span className="truncate text-[13px] text-muted">회원 전용 페이지 링크 · 환불</span>
+            <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open/extra:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="mt-4 space-y-6">
+            <MemberAppLink key={member.id} member={member} onMemberPatch={onMemberPatch} />
+            <RefundMember
+              member={member}
+              contracts={contracts}
+              onDone={() => { onMembersChanged?.(); onGoList?.(); }}
+            />
+          </div>
+        </details>
       )}
     </div>
   );

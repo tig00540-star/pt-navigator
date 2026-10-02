@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { CalendarCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Card from "@/components/ui/Card";
 
 const SCHEDULE_KINDS = { personal: "개인운동", pt: "PT" };
@@ -63,7 +63,7 @@ export default function MemberScheduleSummary({ member }) {
 
   return (
     <Card as="section">
-      <Eyebrow icon={CalendarCheck}>운동 스케줄</Eyebrow>
+      <SectionTitle icon={CalendarCheck}>운동 스케줄</SectionTitle>
       {(mc.personal > 0 || mc.pt > 0) && (
         <div className="mt-1 text-xs font-semibold text-primary-strong">
           이번 달 개인운동 {mc.personal}회 · PT {mc.pt}회

@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { Scale, Plus, Trash2, TrendingUp, TrendingDown, Minus, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
@@ -224,7 +224,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       {/* 입력 카드 */}
       {mode !== "view" && (
       <Card as="section">
-        <Eyebrow icon={Scale}>인바디 기록</Eyebrow>
+        <SectionTitle icon={Scale}>인바디 기록</SectionTitle>
         <div className="mt-3 space-y-3">
           <label className="block">
             <span className="mb-1 block text-[11px] font-medium text-muted">측정일</span>
@@ -261,7 +261,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       {mode !== "record" && latest && (
         <Card as="section">
           <div className="flex items-center justify-between">
-            <Eyebrow icon={Scale}>최근 측정</Eyebrow>
+            <SectionTitle icon={Scale}>최근 측정</SectionTitle>
             <span className="font-mono text-[11px] text-muted">{latest.measured_at}</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -295,7 +295,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       {showAnalysis && latest && (
         <Card as="section">
           <div className="flex items-center justify-between gap-2">
-            <Eyebrow icon={Sparkles}>인바디 분석 · 회원에게 보여주기</Eyebrow>
+            <SectionTitle icon={Sparkles}>인바디 분석 · 회원에게 보여주기</SectionTitle>
             <Button variant="primary" size="sm" onClick={analyze} disabled={anaLoading}>
               {anaLoading ? "분석 중…" : shownAnalysis ? "다시 분석" : "AI 분석"}
             </Button>
@@ -311,7 +311,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       {/* 이력 리스트 */}
       {mode !== "record" && (
       <Card as="section">
-        <Eyebrow icon={Scale}>지난 측정</Eyebrow>
+        <SectionTitle icon={Scale}>지난 측정</SectionTitle>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (

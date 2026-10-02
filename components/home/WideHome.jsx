@@ -25,6 +25,7 @@ import ChurnRiskToday from "@/components/views/ChurnRiskToday";
 import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
 import TodoManual from "@/components/views/TodoManual";
+import AttendanceRanking from "@/components/home/AttendanceRanking";
 
 const ymdKST = (d) => new Date(d.getTime() + 9 * 3600000).toISOString().slice(0, 10);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -230,6 +231,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
             )}
           </Card>
 
+          <AttendanceRanking members={members} uid={uid} />
           <NoNextBookingToday members={scoped} uid={uid} onSelect={(id) => go(id, 9)} limit={5} />
           <PastDueAppointments members={scoped} uid={uid} onSelect={(id) => go(id, 9)} />
         </Column>

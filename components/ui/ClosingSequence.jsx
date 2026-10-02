@@ -1,7 +1,7 @@
 "use client";
 /* =========================================================================
    ClosingSequence — 클로징 흐름(이유·근거→확인 질문→플랜(횟수·가격 이유)→요청→침묵→망설이면 + OT는 '오늘 안 되면') 단일 렌더.
-   1차(FirstOTAssist)·2차(SecondOTTab)·재등록(RegBriefView) 공유. DS 톤(primary-soft 카드).
+   1차(FirstOTAssist)·2차(SecondOTTab)·재등록(PrepReport kind=reregister) 공유. DS 톤(primary-soft 카드).
 
    ★백워드 호환(필수): closing_sequence(object)가 있으면 시퀀스로, 없고 옛 closing_line(string)만
      있으면(옛 캐시 2차 브리핑 등) 그 한 줄만 종전대로 표시한다. 스키마 breaking change 방어.

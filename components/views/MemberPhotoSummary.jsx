@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { compressImage } from "@/lib/image";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import ImageLightbox from "@/components/ui/ImageLightbox";
 import Card from "@/components/ui/Card";
 
@@ -123,7 +123,7 @@ export default function MemberPhotoSummary({ member, mode }) {
   return (
     <>
     <Card as="section">
-      <Eyebrow icon={Camera}>비포애프터 사진</Eyebrow>
+      <SectionTitle icon={Camera}>비포애프터 사진</SectionTitle>
 
       {/* 트레이너 업로드 폼 */}
       {mode !== "list" && (

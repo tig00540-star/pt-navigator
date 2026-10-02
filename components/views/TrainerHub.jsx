@@ -7,7 +7,7 @@
    하단바는 그대로 둔다 — 허브는 첫 화면이고, 섹션 간 이동은 계속 하단바가 맡는다.
 
    ── 숫자는 파생만 ──
-   조회 0건. 이미 로드된 members에서 viewFor로 센 수만 보여준다.
+   조회 0건. 이미 로드된 members에서 viewFor로 센 수만 보여준다(예외: 출석 랭킹 카드 rpc 1콜 · 집계행만).
    실적·이탈 위험처럼 추가 조회가 필요한 숫자는 넣지 않는다(허브가 느려지면 의미가 없다).
 
    purge-safe: 색은 완성 클래스 정적 리터럴. 역할 색 위 글자는 -text 토큰(CLAUDE.md 규약).
@@ -17,6 +17,7 @@
 import { CalendarDays, ChevronRight, Award, Presentation, UserPlus } from "lucide-react";
 import Card from "@/components/ui/Card";
 import { viewFor } from "@/lib/memberStatus";
+import AttendanceRanking from "@/components/home/AttendanceRanking";
 
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -35,7 +36,7 @@ function Tile({ icon: Icon, label, title, desc, tone, onClick }) {
   );
 }
 
-export default function TrainerHub({ members = [], trainerName, onGo, onAdd }) {
+export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd }) {
   const counts = { ot: 0, pt: 0, inactive: 0 };
   for (const m of members) {
     const v = viewFor(m);
@@ -93,6 +94,9 @@ export default function TrainerHub({ members = [], trainerName, onGo, onAdd }) {
           onClick={() => onGo("salesbook")}
         />
       </div>
+
+      {/* 이번 달 출석 랭킹(오운완 기준 · 칭찬 · 포상할 회원) */}
+      <AttendanceRanking members={members} uid={uid} />
 
       <div className="flex flex-wrap items-center gap-2">
         <button

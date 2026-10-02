@@ -621,6 +621,23 @@ function reregisterPrompt(member, ctx, packages = []) {
   const firstLogs = Array.isArray(c.first_logs) ? c.first_logs.filter(Boolean) : [];
   const sat = c.satisfaction || null;
   const SAT_KO = { very: "아주 만족", good: "만족", neutral: "보통", low: "아쉬워함" };
+  // 2번째 이상 재등록(2026-10-02) — '첫 수업부터'만 말하면 지난번과 같은 이야기가 된다. 이번 계약 기간 변화 + 지난 재등록 때 한 말을 함께 준다.
+  const round = Number(c.round) || 1;
+  const tp = c.this_period || null;
+  const pr = c.prev_rereg || null;
+  const RES_KO = { success: "재등록함", hold: "보류했다가 이어감", fail: "안 하기로 했다가 다시 옴", none: "기록 없음" };
+  const roundBlock = round >= 2 ? `
+[★이번이 ${round}번째 재등록 — 지난 재등록 이후를 중심으로]
+ 이번 계약 기간(${g3(tp?.started)}부터): 진행 수업=${g3(tp?.sessions_done)}회
+ 이번 기간 인바디 변화=${tp?.inbody_change?.length ? tp.inbody_change.map((x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`).join(", ") : "없음"}
+ 이번 기간 운동 무게 변화=${tp?.weight_change?.length ? tp.weight_change.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}
+ 지난 재등록 때: 결과=${pr?.result ? RES_KO[pr.result] || pr.result : "기록 없음"}, 그때 만족도=${pr?.satisfaction?.level ? SAT_KO[pr.satisfaction.level] || pr.satisfaction.level : "없음"}${pr?.satisfaction?.quote ? ` · 회원이 한 말="${pr.satisfaction.quote}"` : ""}
+ 지난 재등록 때 약속한 다음 단계=${g3(pr?.next_roadmap)}
+ 지난 재등록 때 그린 앞으로의 모습=${g3(pr?.future_change)}
+ ※ proven은 '지난 재등록 이후 이번 기간'의 변화를 먼저 말하고, 첫 수업부터의 큰 그림은 한 마디로 덧붙인다.
+ ※ 지난번 약속한 다음 단계를 이번에 얼마나 이뤘는지 정직하게 짚어라(이뤘으면 인정, 아직이면 왜 아직인지와 이번엔 어떻게).
+ ※ next_roadmap·future_change는 지난번 것을 되풀이하지 말고 그 다음 단계로. 오래 함께한 회원이니 '처음 오신 분'처럼 말하지 마라.
+` : "";
   return `[상황·대전제] PT 재등록 대화 준비(재등록은 보통 '오늘 PT 수업 중'에 이뤄진다). 유일한 목적 =
 이 회원의 재등록 확률 극대화. 근거는 관찰(1차)이 아니라 '첫 수업부터 지금까지의 변화'와 '회원 만족도'다.
 ★회원이 납득하는 순서: 그동안 이만큼 변했다(숫자) → 회원이 만족한 점 → 그래서 앞으로 무엇을 더 하고 →
@@ -643,7 +660,7 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
  인바디 변화=${ib.length ? ib.map((x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`).join(", ") : "없음"}
  운동 무게 변화=${wc.length ? wc.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}
 [처음 수업 일지(시작점)]
-${firstLogs.length ? firstLogs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
+${firstLogs.length ? firstLogs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}${roundBlock}
 [회원 만족도 — 트레이너 입력] 수준=${sat?.level ? SAT_KO[sat.level] || sat.level : "입력 없음"}, 회원이 한 말=${g3(sat?.quote)}
  ※ '아쉬워함'이면 감추지 말고 왜 아직인지 + 앞으로 어떻게 달라지게 할지를 정직하게(objection low_effect와 같은 결).
 
@@ -704,12 +721,18 @@ ${closingSeqInstruction({
    - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
 
 [member_read] 이 회원 그동안 어땠고 지금 재등록 국면을 한 줄로(앵커).
+[cheat — 30초 요약 3줄 · 화면 맨 위 · 화면이 줄마다 '이 회원 / 오늘 꼭 / 요청' 이름을 붙인다] 바빠서 이것만 보고 들어가도 되게.
+ ① 이 회원: 그동안 어땠고 지금 어떤 마음인지 한 문장(단어 나열 금지 · "처음엔 계단도 숨찼는데 이제 운동이 생활이 된 분" 결).
+ ② 오늘 꼭: 오늘 수업에서 반드시 할 한 가지를 동사로 끝나는 짧은 문장으로(달라진 걸 회원이 직접 느끼게 하는 순간 · "처음 했던 운동을 다시 시켜 달라진 무게를 직접 보게 하기" 결).
+ ③ 요청: 클로징에서 그대로 말할 요청 질문 한 문장(따옴표 · ask의 둘째 문장 · 비유는 빼고).
+ 각 40자 안팎. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [data_gaps] 관리 기록이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 ${MEMBER_LANG}
 ${SAY_STYLE}
 [출력 언어] 자연스러운 한국어. 영문 코드값·필드명 값 텍스트 노출 금지. 단 objection_defense.reason은 위 영문
 키 그대로 둔다(화면 매칭용). 아래 JSON만 출력(설명·마크다운·코드펜스 금지). ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
 {
+  "cheat": ["이 회원 한 문장", "오늘 꼭 할 것 한 문장", "요청 질문(대사)"],
   "member_read": "그동안 + 지금 재등록 국면 한 줄",
   "why_now": { "proven": "첫 수업부터 지금까지(숫자 인용)", "satisfaction": "회원이 만족한 점 또는 빈 문자열", "risk_if_stop": "...", "next_roadmap": "앞으로 더 할 것", "future_change": "앞으로 달라질 것" },
   "session_flow": { "gap_awareness": "...", "goal_raise": "...", "timing": "..." },

@@ -18,7 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
 import { useAccount } from "@/lib/useAccount";
 import { useMembers } from "@/components/app/MembersProvider";
-import { hrefFor, hrefForMember, routeInfo, tabForPath, PT_STEPS } from "@/lib/nav";
+import { hrefFor, hrefForMember, routeInfo, tabForPath } from "@/lib/nav";
 import { viewFor } from "@/lib/memberStatus";
 import AnnouncementGate from "@/components/AnnouncementGate";
 import BottomNav from "@/components/ui/BottomNav";
@@ -100,7 +100,6 @@ export default function AppChrome({ children }) {
   const [editId, setEditId] = useState(null);
 
   const info = routeInfo(pathname);
-  const member = info.memberId ? members.find((m) => m.id === info.memberId) || null : null;
   const editing = editId ? members.find((m) => m.id === editId) || null : null;
 
   const ui = useMemo(() => ({
@@ -112,12 +111,10 @@ export default function AppChrome({ children }) {
   const listPref = useSyncExternalStore(subscribeList, readListOpen, () => true);
   // 목록은 회원을 연 화면에서만 접힌다(목록 화면에선 목록이 본문).
   const showList = wideMembers && (!info.memberId || listPref);
-  // 회원 워크플로우 서브탭 — 그 회원의 뷰(OT/PT)에 맞는 것만.
-  const view = member ? viewFor(member) : null;
   const steps =
     // OT 회원은 화면 안 두 줄 탭(components/ot/OtWorkspace · OtTabs)이 맡는다 — 헤더 서브탭 없음.
-    info.section === "pt" && view === "pt" ? PT_STEPS.map((s) => ({ ...s, href: `/pt/${info.memberId}/${s.step}` }))
-    : null;
+    // PT도 화면 안 탭(components/pt/PtTabs)으로 바뀌어 헤더 서브탭은 없다(2026-10-02).
+    null;
 
   return (
     <UiCtx.Provider value={ui}>

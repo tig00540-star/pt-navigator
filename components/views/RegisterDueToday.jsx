@@ -38,7 +38,7 @@ export default function RegisterDueToday({ members, onSelect }) {
         const mLogs = logs.filter((l) => l.user_id === id);
         const active = activeContract(mContracts, mLogs);
         if (!active) continue; // 계약없음/전소진 = 재등록 카드 아님(전소진은 다른 신호)
-        if (!reregisterDue(active, mLogs)) continue;
+        if (!reregisterDue(active, mLogs, { contracts: mContracts })) continue;
         const rem = remainingSessions(active, mLogs);
         out.push({ user_id: id, paid: rem.paid, service: rem.service });
       }

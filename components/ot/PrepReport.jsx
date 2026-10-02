@@ -1,7 +1,7 @@
 "use client";
 
 /* =========================================================================
-   PrepReport — '오늘의 OT 사전 준비 리포트' 본문(1차·2차+ 공용).
+   PrepReport — '오늘의 OT 사전 준비 리포트' 본문(1차·2차+ 공용 · 2026-10-02부터 재등록도 같은 문서 모양 · kind="reregister").
 
    2026-10-02 두 번째 개편(대표: "폰에서 글이 너무 많고 복잡하다"):
      ① 기본 화면 = '말할 것'만. 왜·하는 법·바로 느낌·바꿔 쓸 운동·비유·숙제는 '자세히'를 눌러야 펼쳐진다.
@@ -13,11 +13,12 @@
    ========================================================================= */
 
 import { useState } from "react";
-import { ChevronDown, Dumbbell, ExternalLink, Flag, History, MessageCircle, ShieldCheck, Sparkles, BookText } from "lucide-react";
+import { ChevronDown, Dumbbell, ExternalLink, Flag, History, MessageCircle, ShieldCheck, Sparkles, BookText, TrendingUp, Route } from "lucide-react";
 import ClosingSequence from "@/components/ui/ClosingSequence";
 import { won, wonApprox } from "@/lib/format";
 import Emph, { plainText } from "@/components/ui/Emph";
 import { resolvePkg } from "@/lib/pkgRef";
+import { labelOf, REG_REASON_OPTS } from "@/lib/labels";
 
 const OBJ_LABEL = { price: "가격", hesitation: "생각해볼게요", doubt: "효과 의심", time: "시간 부족", compare: "다른 곳 비교" };
 
@@ -93,6 +94,10 @@ const splitEx = (x) => splitText(x?.exercise, x?.how);
 function cheatLines(kind, d) {
   if (Array.isArray(d.cheat) && d.cheat.filter(Boolean).length) return { lines: d.cheat.filter(Boolean).slice(0, 3), derived: false };
   const seq = d.closing_sequence || {};
+  if (kind === "reregister") {
+    const ask = seq.ask || d.closing_line;
+    return { lines: [d.member_read, d.why_now?.proven, ask && `"${ask}"`].filter(Boolean), derived: true };
+  }
   const proof = kind === "first"
     ? (d.exercises || []).find((e) => e?.proof) || (d.exercises || [])[0]
     : (d.proof?.moves || [])[0];
@@ -103,10 +108,16 @@ function cheatLines(kind, d) {
   return { lines: [d.member_read, proofLine, ask && `"${ask}"`].filter(Boolean), derived: true };
 }
 
-export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier }) {
+export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier, highlightReason = "" }) {
   const d = data || {};
+  const rereg = kind === "reregister";
   const [open, setOpen] = useState({});
-  const [objSel, setObjSel] = useState(0);
+  // 재등록은 기록된 거절 이유(reg_reason)가 있으면 그 칸부터 보여 준다.
+  const [objSel, setObjSel] = useState(() => {
+    const i = rereg && highlightReason ? (d.objection_defense || []).filter(Boolean).findIndex((o) => o.reason === highlightReason) : -1;
+    return i > 0 ? i : 0;
+  });
+  const objLabel = (r) => (rereg ? labelOf(REG_REASON_OPTS, r) : OBJ_LABEL[r] || r);
   const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
 
   const { lines, derived } = cheatLines(kind, d);
@@ -128,6 +139,39 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   const fillIn = Boolean(d.fill_in) || JSON.stringify(seq).includes("○○");
 
   const sections = [];
+  // 재등록 — 그동안의 변화 → 앞으로 · 오늘 수업 흐름(OT의 입장·운동 자리).
+  const wn = d.why_now || {};
+  const sf = d.session_flow || {};
+  if (rereg && (wn.proven || wn.satisfaction || wn.future_change)) {
+    sections.push({
+      k: "change", icon: TrendingUp, title: "그동안의 변화 → 앞으로", preview: wn.proven,
+      body: (
+        <>
+          <Say>{wn.proven}</Say>
+          <Say>{wn.satisfaction}</Say>
+          <More label="멈추면 · 앞으로 더 할 것 · 달라질 것">
+            <Note label="멈추면">{wn.risk_if_stop}</Note>
+            <Note label="앞으로 더 할 것">{wn.next_roadmap}</Note>
+            <Note label="앞으로 달라질 것">{wn.future_change}</Note>
+          </More>
+        </>
+      ),
+    });
+  }
+  if (rereg && (sf.gap_awareness || sf.goal_raise || sf.timing)) {
+    sections.push({
+      k: "flow", icon: Route, title: "오늘 수업 흐름", preview: sf.timing || sf.gap_awareness,
+      body: (
+        <>
+          <Note label="꺼낼 타이밍">{sf.timing}</Note>
+          {sf.gap_awareness && <p className="m-0 text-[12px] font-semibold text-muted">아직 남은 부분 알려 주기</p>}
+          <Say>{sf.gap_awareness}</Say>
+          {sf.goal_raise && <p className="m-0 text-[12px] font-semibold text-muted">목표 한 단계 올리기</p>}
+          <Say>{sf.goal_raise}</Say>
+        </>
+      ),
+    });
+  }
   if (entry.line || d.workout_intro) {
     sections.push({
       k: "entry", icon: MessageCircle, title: kind === "first" ? "입장 · 첫 마디" : "입장 · 지난번 소환", preview: entry.line,
@@ -211,20 +255,25 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   if (seq.ask || seq.trial_close || d.closing_line || d.sales_metaphor?.metaphor) {
     sections.push({
       k: "close", icon: Flag, title: "클로징", preview: seq.ask || d.closing_line,
-      body: <ClosingSequence compact sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} />,
+      body: (
+        <>
+          <ClosingSequence compact sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} />
+          {rereg && d.sweetener && <Note label="혜택(마지막에 덤으로)">{d.sweetener}</Note>}
+        </>
+      ),
     });
   }
   if (obj.length) {
     const cur = obj[Math.min(objSel, obj.length - 1)] || {};
     sections.push({
-      k: "obj", icon: ShieldCheck, title: `거절 대응 ${obj.length}가지`, preview: obj.map((o) => OBJ_LABEL[o.reason] || o.reason).join(" · "),
+      k: "obj", icon: ShieldCheck, title: `거절 대응 ${obj.length}가지`, preview: obj.map((o) => objLabel(o.reason)).join(" · "),
       body: (
         <>
           <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="거절 종류">
             {obj.map((o, i) => (
               <button key={i} type="button" role="tab" aria-selected={i === objSel} onClick={() => setObjSel(i)}
                 className={`min-h-[36px] rounded-full px-3 text-[13px] transition ${i === objSel ? "bg-ink font-semibold text-white" : "bg-elevate font-normal text-sub hover:text-ink"}`}>
-                {OBJ_LABEL[o.reason] || o.reason}
+                {objLabel(o.reason)}
               </button>
             ))}
           </div>

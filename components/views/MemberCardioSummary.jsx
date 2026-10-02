@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Card from "@/components/ui/Card";
 
 function fmtDay(iso) {
@@ -59,7 +59,7 @@ export default function MemberCardioSummary({ member }) {
 
   return (
     <Card as="section">
-      <Eyebrow icon={Activity}>유산소 기록</Eyebrow>
+      <SectionTitle icon={Activity}>유산소 기록</SectionTitle>
       {wk > 0 && <div className="mt-1 text-xs font-semibold text-primary-strong">이번 주 합계 {wk}분</div>}
       {loading ? (
         <p className="mt-2 text-sm text-muted">불러오는 중…</p>

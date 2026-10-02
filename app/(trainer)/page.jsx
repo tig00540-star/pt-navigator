@@ -35,6 +35,7 @@ export default function HubPage() {
       <InstallHint />
       <TrainerHub
         members={members}
+        uid={myUid}
         trainerName={trainerName}
         onGo={(tab, opts) => router.push(hrefFor(tab) + (opts?.segment ? `/${opts.segment}` : ""))}
         onAdd={openMemberForm}
