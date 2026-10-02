@@ -5,6 +5,7 @@
    설명 없이 한눈에: 누구인지 → 최근 OT·다음 예약 → 인바디 → 차수 진행(지금 할 일).
    읽기 전용 화면(쓰기 0) — ot_log는 부모(OtWorkspace)가 읽어 넘기고,
    예약·인바디만 여기서 읽는다(각각 회원 1명 소량 조회).
+   넓은 화면(@container — 회원 칸 폭 기준): 768px~ 왼쪽 회원·할 일 | 오른쪽 OT 진행.
    ========================================================================= */
 
 import { useEffect, useState } from "react";
@@ -110,7 +111,9 @@ export default function OtDashboard({ member, info }) {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-4">
+    <div className="@container">
+    <div className="space-y-4 @3xl:grid @3xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] @3xl:items-start @3xl:gap-4 @3xl:space-y-0">
+      <div className="space-y-4">
       {/* 회원 */}
       <Card>
         <div className="flex items-start gap-3">
@@ -144,14 +147,14 @@ export default function OtDashboard({ member, info }) {
             value={nextAppt ? dayLabel(nextAppt.start_at) : "예약 없음"}
             sub={nextAppt ? `${info.current}차` : "스케줄에서 잡아 주세요"}
             accent={Boolean(nextAppt && dayLabel(nextAppt.start_at)?.startsWith("오늘"))} />
-        </div>
-        <div className="mt-2">
+          <div className="col-span-2">
           <Stat icon={Scale} label={inbody.latest ? `인바디 · ${shortDate(inbody.latest.measured_at)}${inbody.count > 1 ? ` · ${inbody.count}회 측정` : ""}` : "인바디"}
             value={inbody.latest
               ? [inbody.latest.weight != null && `체중 ${inbody.latest.weight}`, inbody.latest.skeletal_muscle != null && `골격근 ${inbody.latest.skeletal_muscle}`, inbody.latest.body_fat_pct != null && `체지방 ${inbody.latest.body_fat_pct}%`].filter(Boolean).join(" · ")
               : "아직 측정 없음"}
             sub={inbody.latest ? "누르면 분석" : "인바디 분석에서 입력해요"}
             href={otStepPath(member.id, "inbody", info.current)} />
+          </div>
         </div>
       </Card>
 
@@ -166,6 +169,7 @@ export default function OtDashboard({ member, info }) {
           <ArrowRight className="h-5 w-5" aria-hidden="true" />
         </Link>
       )}
+      </div>
 
       {/* OT 진행 */}
       <Card padding="none">
@@ -203,6 +207,7 @@ export default function OtDashboard({ member, info }) {
           })}
         </ul>
       </Card>
+    </div>
     </div>
   );
 }

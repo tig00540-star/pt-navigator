@@ -418,226 +418,240 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     <div className="space-y-6">
       {/* ═══ 회원자료(열람) ═══ */}
 
-      {/* 회원 기본정보 (간단) */}
+      {/* 넓은 화면(@container = 회원 칸 폭 768px~): 왼쪽 회원·잔여·추이 | 오른쪽 지난 수업(스크롤).
+          폰: 순서 그대로(회원 → 잔여 → 지난 수업 → 추이) — 왼쪽 묶음은 contents로 풀고 order로 끼운다. */}
       {mode !== "record" && (
-      <Card as="section">
-        <span className="inline-block rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[11px] font-semibold tracking-label-ko text-primary-strong">
-          PT 회원
-        </span>
-        <h1 className="mt-2 text-2xl font-bold text-ink">
-          {member.name}
-          {hasVal(member.age) && <span className="ml-2 font-mono text-base font-normal text-muted">{member.age}세</span>}
-        </h1>
-        <p className="mt-1 text-sm text-sub">
-          {hasVal(member.job) && <>{member.job} · </>}목표{" "}
-          {goalSet
-            ? <span className="font-semibold text-primary-strong">{member.goal}</span>
-            : <span className="text-muted">미설정</span>}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-sub">
-          {hasVal(member.residence) && <span className="rounded-md bg-elevate px-2 py-1">거주 {member.residence}</span>}
-          {hasVal(member.mbti) && <span className="rounded-md bg-elevate px-2 py-1">MBTI {member.mbti}</span>}
-          {hasVal(member.pain) && <span className="rounded-md bg-elevate px-2 py-1">불편 {member.pain}</span>}
-        </div>
-      </Card>
-      )}
+      <div className="@container">
+      <div className="flex flex-col gap-6 @3xl:grid @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] @3xl:items-start">
+        <div className="contents @3xl:flex @3xl:flex-col @3xl:gap-6">
+          <div className="space-y-6">
+            {/* 회원 기본정보 (간단) */}
+            {mode !== "record" && (
+            <Card as="section">
+              <span className="inline-block rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[11px] font-semibold tracking-label-ko text-primary-strong">
+                PT 회원
+              </span>
+              <h1 className="mt-2 text-2xl font-bold text-ink">
+                {member.name}
+                {hasVal(member.age) && <span className="ml-2 font-mono text-base font-normal text-muted">{member.age}세</span>}
+              </h1>
+              <p className="mt-1 text-sm text-sub">
+                {hasVal(member.job) && <>{member.job} · </>}목표{" "}
+                {goalSet
+                  ? <span className="font-semibold text-primary-strong">{member.goal}</span>
+                  : <span className="text-muted">미설정</span>}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-sub">
+                {hasVal(member.residence) && <span className="rounded-md bg-elevate px-2 py-1">거주 {member.residence}</span>}
+                {hasVal(member.mbti) && <span className="rounded-md bg-elevate px-2 py-1">MBTI {member.mbti}</span>}
+                {hasVal(member.pain) && <span className="rounded-md bg-elevate px-2 py-1">불편 {member.pain}</span>}
+              </div>
+            </Card>
+            )}
 
-      {/* 잔여 현황(읽기 전용) — 신규 */}
-      {mode !== "record" && (
-        <Card as="section">
-          <Eyebrow icon={Dumbbell}>잔여 현황</Eyebrow>
-          {active ? (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <span className="text-sm text-sub">잔여 유료 <b className="text-primary-strong">{rem.paid}</b> · 서비스 <b className="text-ink">{rem.service}</b></span>
-              {due && <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">재등록 타이밍</span>}
-              {pendingTotal > 0 && <span className="rounded-md border border-line bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">다음 계약 {pendingTotal}회 대기</span>}
-            </div>
-          ) : (
-            <p className="mt-2 text-sm text-muted">활성 계약 없음 — &lsquo;자료남기기&rsquo;에서 등록하세요.</p>
-          )}
-        </Card>
-      )}
-
-      {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
-      {mode !== "record" && (
-      <Card as="section">
-        <Eyebrow icon={History}>지난 수업</Eyebrow>
-        {loading ? (
-          <p className="text-sm text-muted">불러오는 중…</p>
-        ) : timeline.length === 0 ? (
-          <p className="text-sm text-muted">아직 기록된 수업이 없습니다.</p>
-        ) : (
-          <ul className="space-y-2">
-            {timeline.map((log) => (
-              <li
-                key={log.id}
-                className={`rounded-xl border border-line bg-elevate p-3 ${log.voided ? "opacity-50" : ""}`}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs text-sub">{fmtDT(log.session_at ?? log.created_at)}</span>
-                  {log.source && (
-                    <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
-                      {labelOf(SOURCE_OPTS, log.source)}
-                    </span>
-                  )}
-                  {log.sent_at && (
-                    <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-strong">
-                      카톡 전송
-                    </span>
-                  )}
-                  {log.voided && (
-                    <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-                      취소됨
-                    </span>
-                  )}
-                  {/* 회원 확인 상태 — 노쇼/취소는 확인 대상 아님(라우트가 400)이라 뱃지 안 붙임. */}
-                  {!log.voided && log.source !== "noshow" && (() => {
-                    const c = confirmByLog.get(log.id);
-                    if (c?.result === "confirm") {
-                      return (
-                        <>
-                          <Badge tone="primary"><CheckCircle2 className="h-3 w-3" />확인됨 {c.confirmed_at ? new Date(c.confirmed_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : ""}</Badge>
-                          {changedIds.has(log.id) && (
-                            <Badge tone="danger"><AlertTriangle className="h-3 w-3" />확인 후 변경됨</Badge>
-                          )}
-                        </>
-                      );
-                    }
-                    return <Badge tone="neutral">미확인</Badge>;
-                  })()}
-                </div>
-                {editLogId === log.id ? (
-                  /* §1 인라인 편집 — ai_summary만. */
-                  <div className="mt-2">
-                    {confirmByLog.get(log.id)?.result === "confirm" && (
-                      <p className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] leading-relaxed text-amber-700">
-                        ⚠️ 이미 회원이 확인한 수업이에요. 수정하면 회원 화면에 &lsquo;변경됨&rsquo;으로 표시됩니다.
-                      </p>
-                    )}
-                    <textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      disabled={logBusy}
-                      rows={4}
-                      className="w-full rounded-lg border border-line bg-card px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
-                    />
-                    <div className="mt-2 flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={logBusy}>취소</Button>
-                      <Button variant="primary" size="sm" fullWidth onClick={() => saveEdit(log)} disabled={logBusy}>저장</Button>
-                    </div>
+            {/* 잔여 현황(읽기 전용) — 신규 */}
+            {mode !== "record" && (
+              <Card as="section">
+                <Eyebrow icon={Dumbbell}>잔여 현황</Eyebrow>
+                {active ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-sub">잔여 유료 <b className="text-primary-strong">{rem.paid}</b> · 서비스 <b className="text-ink">{rem.service}</b></span>
+                    {due && <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">재등록 타이밍</span>}
+                    {pendingTotal > 0 && <span className="rounded-md border border-line bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">다음 계약 {pendingTotal}회 대기</span>}
                   </div>
-                ) : log.source === "noshow" ? (
-                  <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼 🚫</p>
-                ) : log.ai_summary ? (
-                  <details className="group mt-1.5">
-                    {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
-                    <summary className={`cursor-pointer list-none group-open:hidden ${log.voided ? "line-through" : ""}`}>
-                      <span className="text-sm text-sub line-clamp-3">
-                        {log.ai_summary}
-                      </span>
-                      <span className="mt-1 block text-[10px] font-medium text-muted">더 보기</span>
-                    </summary>
-                    <p className={`hidden whitespace-pre-wrap text-sm text-sub group-open:block ${log.voided ? "line-through" : ""}`}>
-                      {log.ai_summary}
-                    </p>
-                  </details>
                 ) : (
-                  <p className="mt-1.5 text-sm text-muted">본문 없음</p>
+                  <p className="mt-2 text-sm text-muted">활성 계약 없음 — &lsquo;자료남기기&rsquo;에서 등록하세요.</p>
                 )}
-                {Array.isArray(log.sets_structured) && log.sets_structured.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {log.sets_structured.map((ex, i) => (
-                      <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] text-sub">
-                        {ex.exercise} {ex.sets.map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {/* §1·§2 수정/삭제 — 편집 중엔 자체 버튼이 있어 숨김. voided면 무르기(하드 DELETE 금지 — 서명 cascade). */}
-                {editLogId !== log.id && (
-                  <div className="mt-2.5 flex justify-end gap-1.5 border-t border-line pt-2">
-                    {log.voided ? (
-                      <Button variant="ghost" size="sm" onClick={() => setVoided(log, false)} disabled={logBusy}>
-                        <RotateCcw className="h-3.5 w-3.5" />무르기
-                      </Button>
-                    ) : (
-                      <>
-                        {log.source !== "noshow" && (
-                          <Button variant="ghost" size="sm" onClick={() => startEdit(log)} disabled={logBusy}>
-                            <Pencil className="h-3.5 w-3.5" />수정
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => setVoidTarget(log)} disabled={logBusy} className="text-danger-text">
-                          <Trash2 className="h-3.5 w-3.5" />삭제
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-      )}
-
-      {/* 종목별 무게 추이 (③ 작업3-2) — logs 클라 집계(추가 쿼리 0). 인바디 추이 패턴 재사용.
-          무게 데이터 있는 종목만. 진행 지표 = 세션별 최고중량(topSetWeight). */}
-      {mode !== "record" && (
-      <Card as="section">
-        <Eyebrow icon={LineChart}>종목별 무게 추이</Eyebrow>
-        {exerciseSeries.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 표시됩니다.</p>
-        ) : (
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {exerciseSeries.map((s) => {
-              const wpts = s.points.map((p) => p.topWeight).filter((v) => v != null);
-              const latest = wpts.length ? wpts[wpts.length - 1] : null;
-              const prev = wpts.length > 1 ? wpts[wpts.length - 2] : null;
-              const d = latest != null && prev != null ? latest - prev : 0;
-              const tone = prev != null ? weightTone(d) : null;
-              const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
-              return (
-                <div key={s.exercise} className="rounded-xl border border-line bg-elevate p-3">
-                  <div className="truncate text-[11px] font-medium text-muted" title={s.exercise}>
-                    {s.exercise}
-                  </div>
-                  <div className="mt-1 font-mono text-xl font-bold text-ink">
-                    {latest == null ? "–" : latest}
-                    <span className="ml-1 text-xs font-normal text-muted">kg</span>
-                  </div>
-                  {tone && (
-                    <div className={`mt-0.5 flex items-center gap-1 text-[12px] font-semibold ${DELTA_TONE[tone]}`}>
-                      <Icon className="h-3.5 w-3.5" />
-                      {(d > 0 ? "+" : "") + Math.round(d * 10) / 10}kg
-                    </div>
-                  )}
-                  <Sparkline values={wpts} />
-                </div>
-              );
-            })}
+              </Card>
+            )}
           </div>
-        )}
-      </Card>
-      )}
+          <div className="order-2 space-y-6 @3xl:order-none">
+            {/* 종목별 무게 추이 (③ 작업3-2) — logs 클라 집계(추가 쿼리 0). 인바디 추이 패턴 재사용.
+                무게 데이터 있는 종목만. 진행 지표 = 세션별 최고중량(topSetWeight). */}
+            {mode !== "record" && (
+            <Card as="section">
+              <Eyebrow icon={LineChart}>종목별 무게 추이</Eyebrow>
+              {exerciseSeries.length === 0 ? (
+                <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 표시됩니다.</p>
+              ) : (
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {exerciseSeries.map((s) => {
+                    const wpts = s.points.map((p) => p.topWeight).filter((v) => v != null);
+                    const latest = wpts.length ? wpts[wpts.length - 1] : null;
+                    const prev = wpts.length > 1 ? wpts[wpts.length - 2] : null;
+                    const d = latest != null && prev != null ? latest - prev : 0;
+                    const tone = prev != null ? weightTone(d) : null;
+                    const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
+                    return (
+                      <div key={s.exercise} className="rounded-xl border border-line bg-elevate p-3">
+                        <div className="truncate text-[11px] font-medium text-muted" title={s.exercise}>
+                          {s.exercise}
+                        </div>
+                        <div className="mt-1 font-mono text-xl font-bold text-ink">
+                          {latest == null ? "–" : latest}
+                          <span className="ml-1 text-xs font-normal text-muted">kg</span>
+                        </div>
+                        {tone && (
+                          <div className={`mt-0.5 flex items-center gap-1 text-[12px] font-semibold ${DELTA_TONE[tone]}`}>
+                            <Icon className="h-3.5 w-3.5" />
+                            {(d > 0 ? "+" : "") + Math.round(d * 10) / 10}kg
+                          </div>
+                        )}
+                        <Sparkline values={wpts} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+            )}
 
-      {/* 인바디 추이(children · 열람) */}
-      {mode === "view" && children}
+            {/* 인바디 추이(children · 열람) */}
+            {mode === "view" && children}
 
-      {/* 회원 자가입력 기록(M1·M2·M3) — 트레이너 읽기 전용. 기본 접힘(운동일지 밀도↓).
-          각 요약은 0건·데모면 자체 숨김. summary는 헤더 바(카드), 내부는 기존 섹션 카드 3개. */}
-      {mode !== "record" && (
-      <details className="group">
-        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-card px-5 py-4 shadow-sm [&::-webkit-details-marker]:hidden">
-          <Eyebrow icon={ClipboardList}>회원님 기록일지 · 개인운동 · 유산소 · 비포애프터</Eyebrow>
-          <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="mt-4 space-y-6">
-          <MemberScheduleSummary member={member} />
-          <MemberCardioSummary member={member} />
-          <MemberPhotoSummary member={member} mode="list" />
+            {/* 회원 자가입력 기록(M1·M2·M3) — 트레이너 읽기 전용. 기본 접힘(운동일지 밀도↓).
+                각 요약은 0건·데모면 자체 숨김. summary는 헤더 바(카드), 내부는 기존 섹션 카드 3개. */}
+            {mode !== "record" && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-card px-5 py-4 shadow-sm [&::-webkit-details-marker]:hidden">
+                <Eyebrow icon={ClipboardList}>회원님 기록일지 · 개인운동 · 유산소 · 비포애프터</Eyebrow>
+                <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-4 space-y-6">
+                <MemberScheduleSummary member={member} />
+                <MemberCardioSummary member={member} />
+                <MemberPhotoSummary member={member} mode="list" />
+              </div>
+            </details>
+            )}
+          </div>
         </div>
-      </details>
+        <div className="order-1 @3xl:sticky @3xl:top-6 @3xl:order-none @3xl:max-h-[calc(100dvh-7rem)] @3xl:overflow-y-auto">
+            {/* 지난 수업 타임라인 (③ 작업3-1) — 렌더만. voided 무르기·session_at 수정은 후속(3-1b). */}
+            {mode !== "record" && (
+            <Card as="section">
+              <Eyebrow icon={History}>지난 수업</Eyebrow>
+              {loading ? (
+                <p className="text-sm text-muted">불러오는 중…</p>
+              ) : timeline.length === 0 ? (
+                <p className="text-sm text-muted">아직 기록된 수업이 없습니다.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {timeline.map((log) => (
+                    <li
+                      key={log.id}
+                      className={`rounded-xl border border-line bg-elevate p-3 ${log.voided ? "opacity-50" : ""}`}
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs text-sub">{fmtDT(log.session_at ?? log.created_at)}</span>
+                        {log.source && (
+                          <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
+                            {labelOf(SOURCE_OPTS, log.source)}
+                          </span>
+                        )}
+                        {log.sent_at && (
+                          <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-strong">
+                            카톡 전송
+                          </span>
+                        )}
+                        {log.voided && (
+                          <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                            취소됨
+                          </span>
+                        )}
+                        {/* 회원 확인 상태 — 노쇼/취소는 확인 대상 아님(라우트가 400)이라 뱃지 안 붙임. */}
+                        {!log.voided && log.source !== "noshow" && (() => {
+                          const c = confirmByLog.get(log.id);
+                          if (c?.result === "confirm") {
+                            return (
+                              <>
+                                <Badge tone="primary"><CheckCircle2 className="h-3 w-3" />확인됨 {c.confirmed_at ? new Date(c.confirmed_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : ""}</Badge>
+                                {changedIds.has(log.id) && (
+                                  <Badge tone="danger"><AlertTriangle className="h-3 w-3" />확인 후 변경됨</Badge>
+                                )}
+                              </>
+                            );
+                          }
+                          return <Badge tone="neutral">미확인</Badge>;
+                        })()}
+                      </div>
+                      {editLogId === log.id ? (
+                        /* §1 인라인 편집 — ai_summary만. */
+                        <div className="mt-2">
+                          {confirmByLog.get(log.id)?.result === "confirm" && (
+                            <p className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] leading-relaxed text-amber-700">
+                              ⚠️ 이미 회원이 확인한 수업이에요. 수정하면 회원 화면에 &lsquo;변경됨&rsquo;으로 표시됩니다.
+                            </p>
+                          )}
+                          <textarea
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            disabled={logBusy}
+                            rows={4}
+                            className="w-full rounded-lg border border-line bg-card px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
+                          />
+                          <div className="mt-2 flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={logBusy}>취소</Button>
+                            <Button variant="primary" size="sm" fullWidth onClick={() => saveEdit(log)} disabled={logBusy}>저장</Button>
+                          </div>
+                        </div>
+                      ) : log.source === "noshow" ? (
+                        <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼 🚫</p>
+                      ) : log.ai_summary ? (
+                        <details className="group mt-1.5">
+                          {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
+                          <summary className={`cursor-pointer list-none group-open:hidden ${log.voided ? "line-through" : ""}`}>
+                            <span className="text-sm text-sub line-clamp-3">
+                              {log.ai_summary}
+                            </span>
+                            <span className="mt-1 block text-[10px] font-medium text-muted">더 보기</span>
+                          </summary>
+                          <p className={`hidden whitespace-pre-wrap text-sm text-sub group-open:block ${log.voided ? "line-through" : ""}`}>
+                            {log.ai_summary}
+                          </p>
+                        </details>
+                      ) : (
+                        <p className="mt-1.5 text-sm text-muted">본문 없음</p>
+                      )}
+                      {Array.isArray(log.sets_structured) && log.sets_structured.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {log.sets_structured.map((ex, i) => (
+                            <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] text-sub">
+                              {ex.exercise} {ex.sets.map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {/* §1·§2 수정/삭제 — 편집 중엔 자체 버튼이 있어 숨김. voided면 무르기(하드 DELETE 금지 — 서명 cascade). */}
+                      {editLogId !== log.id && (
+                        <div className="mt-2.5 flex justify-end gap-1.5 border-t border-line pt-2">
+                          {log.voided ? (
+                            <Button variant="ghost" size="sm" onClick={() => setVoided(log, false)} disabled={logBusy}>
+                              <RotateCcw className="h-3.5 w-3.5" />무르기
+                            </Button>
+                          ) : (
+                            <>
+                              {log.source !== "noshow" && (
+                                <Button variant="ghost" size="sm" onClick={() => startEdit(log)} disabled={logBusy}>
+                                  <Pencil className="h-3.5 w-3.5" />수정
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm" onClick={() => setVoidTarget(log)} disabled={logBusy} className="text-danger-text">
+                                <Trash2 className="h-3.5 w-3.5" />삭제
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+            )}
+        </div>
+      </div>
+      </div>
       )}
 
       {/* ═══ 자료남기기(기록) ═══ */}

@@ -84,9 +84,10 @@ const isoAfter = (days) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 };
 
-function Block({ n, title, uses, children }) {
+// 넓은 화면(@container = 회원 칸 폭): 768px~ ①② 나란히 + ③ 아래 넓게 · 1152px~ 세 블록 나란히.
+function Block({ n, title, uses, children, className = "", bodyClassName = "mt-4 space-y-4" }) {
   return (
-    <section className="rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5">
+    <section className={`min-w-0 rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5 ${className}`}>
       <div className="flex items-start gap-2.5">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-bold text-white">{n}</span>
         <div className="min-w-0">
@@ -94,14 +95,14 @@ function Block({ n, title, uses, children }) {
           {uses && <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{uses}</p>}
         </div>
       </div>
-      <div className="mt-4 space-y-4">{children}</div>
+      <div className={bodyClassName}>{children}</div>
     </section>
   );
 }
 
-function Q({ label, hint, children }) {
+function Q({ label, hint, children, className = "" }) {
   return (
-    <div>
+    <div className={className}>
       <p className="mb-2 text-[13px] font-semibold text-sub">{label}{hint && <span className="ml-1.5 font-normal text-muted">{hint}</span>}</p>
       {children}
     </div>
@@ -257,7 +258,9 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div>
+    {/* @container는 fixed 자식(Toast)의 기준이 되므로 Toast는 바깥에 둔다. */}
+    <div className="@container space-y-4">
       {!canEdit && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
           {!supabase ? "데모 모드 — 저장은 안 돼요(입력만 가능)." : "회원을 먼저 선택해 주세요."}
@@ -265,6 +268,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
       )}
       {loading && <p className="text-[12px] text-muted">지난 피드백을 불러오는 중…</p>}
 
+      <div className="grid gap-4 @3xl:grid-cols-2 @3xl:items-start @6xl:grid-cols-3">
       {/* 1. 결과 */}
       <Block n={1} title="오늘 어떻게 끝났나요?" uses="다음 차수 열기 · 등록률 · 다음 OT 준비 리포트의 클로징 방향에 쓰여요">
         <div className="grid gap-2">
@@ -373,7 +377,8 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
       </Block>
 
       {/* 3. 다음 OT 방향 */}
-      <Block n={3} title="다음 OT 방향" uses="다음 OT 준비 리포트의 클로징 근거·플랜 제시·말투가 여기서 정해져요">
+      <Block n={3} title="다음 OT 방향" uses="다음 OT 준비 리포트의 클로징 근거·플랜 제시·말투가 여기서 정해져요"
+        className="@3xl:col-span-2 @6xl:col-span-1" bodyClassName="mt-4 grid gap-4 @3xl:grid-cols-2 @3xl:items-start @6xl:grid-cols-1">
         <Q label="회원이 진짜 원하는 것" hint="처음 말한 목표 말고, 대화하다 알게 된 등록할 이유">
           {member?.goal && member.goal !== "미설정" && (
             <p className="mb-2 text-[12px] text-muted">처음 말한 목표: {member.goal}</p>
@@ -405,11 +410,12 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
           </div>
         </Q>
 
-        <Q label="AI에게 한마디" hint="선택 · 칸에 안 담긴 것">
+        <Q label="AI에게 한마디" hint="선택 · 칸에 안 담긴 것" className="@3xl:col-span-2 @6xl:col-span-1">
           <textarea value={form.note} onChange={(e) => set("note", e.target.value)} rows={2} className={`${inputCls} resize-none`}
             placeholder="예) 남편이 반대하는 눈치 · 오전 시간대만 가능" />
         </Q>
       </Block>
+      </div>
 
       <div className="space-y-2">
         <Button variant="primary" size="lg" fullWidth onClick={save} disabled={!canEdit || saving}>
@@ -424,7 +430,8 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
         )}
       </div>
 
-      <Toast message={toast} />
+    </div>
+    <Toast message={toast} />
     </div>
   );
 }

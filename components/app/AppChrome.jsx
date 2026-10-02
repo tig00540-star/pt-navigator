@@ -12,10 +12,10 @@
    lib/nav.js에서 번호를 주소로 바꿔 router.push한다 — 덕분에 뒤로가기가 그냥 동작한다.
    ========================================================================= */
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ShieldCheck } from "lucide-react";
+import { Bell, PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
 import { useAccount } from "@/lib/useAccount";
 import { useMembers } from "@/components/app/MembersProvider";
 import { hrefFor, hrefForMember, routeInfo, tabForPath, PT_STEPS } from "@/lib/nav";
@@ -38,6 +38,21 @@ const GROUP_TAB = {
 };
 
 /* 화면에서 공용 모달을 여는 통로 — 신규 등록 버튼이 여러 화면에 있어서 한 곳에 둔다. */
+// 넓은 화면 회원 목록 접기 — 회원 화면을 넓게 쓰고 싶을 때(세일즈북·피드백). 이 기기에서만 기억(편의 · 실패해도 펼친 상태).
+const LIST_KEY = "ot.wideMemberList";
+let listMem = null;
+const listSubs = new Set();
+const subscribeList = (cb) => { listSubs.add(cb); return () => listSubs.delete(cb); };
+const readListOpen = () => {
+  if (listMem != null) return listMem;
+  try { return localStorage.getItem(LIST_KEY) !== "closed"; } catch { return true; }
+};
+const writeListOpen = (open) => {
+  listMem = open;
+  try { localStorage.setItem(LIST_KEY, open ? "open" : "closed"); } catch { /* 저장 못 해도 이번 화면에선 동작 */ }
+  listSubs.forEach((f) => f());
+};
+
 const UiCtx = createContext({ openMemberForm: () => {}, openMemberEdit: () => {} });
 export const useAppUi = () => useContext(UiCtx);
 
@@ -89,6 +104,9 @@ export default function AppChrome({ children }) {
   }), []);
 
   const wideMembers = info.section === "members" || info.section === "ot" || info.section === "pt";
+  const listPref = useSyncExternalStore(subscribeList, readListOpen, () => true);
+  // 목록은 회원을 연 화면에서만 접힌다(목록 화면에선 목록이 본문).
+  const showList = wideMembers && (!info.memberId || listPref);
   // 회원 워크플로우 서브탭 — 그 회원의 뷰(OT/PT)에 맞는 것만.
   const view = member ? viewFor(member) : null;
   const steps =
@@ -167,10 +185,18 @@ export default function AppChrome({ children }) {
         </div>
       )}
 
-      <main className={`mx-auto px-4 py-6 sm:px-6 ${wideMembers ? "max-w-5xl lg:grid lg:max-w-[1440px] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:px-8" : `max-w-5xl lg:px-8 ${info.section === "hub" ? "lg:max-w-[1440px]" : "lg:max-w-6xl"}`}`}>
-        {wideMembers && (
+      <main className={`mx-auto px-4 py-6 sm:px-6 ${!showList && wideMembers ? "max-w-5xl lg:max-w-[1440px] lg:px-8" : wideMembers ? "max-w-5xl lg:grid lg:max-w-[1440px] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:px-8" : `max-w-5xl lg:px-8 ${info.section === "hub" ? "lg:max-w-[1440px]" : "lg:max-w-6xl"}`}`}>
+        {showList && (
           /* 넓은 화면 전용 회원 목록 — 목록을 떠나지 않고 회원을 바꾼다. 폰·태블릿 세로에선 숨김. */
           <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:pr-1" aria-label="회원 목록">
+            {info.memberId && (
+              <div className="mb-2 flex justify-end">
+                <button type="button" onClick={() => writeListOpen(false)}
+                  className="inline-flex min-h-[32px] items-center gap-1 rounded-lg px-2 text-[12px] text-muted transition hover:bg-card hover:text-ink">
+                  <PanelLeftClose className="h-4 w-4" aria-hidden="true" /> 목록 접기
+                </button>
+              </div>
+            )}
             <MemberList
               compact
               members={members}
@@ -185,6 +211,12 @@ export default function AppChrome({ children }) {
           </aside>
         )}
         {/* key=주소 — 화면이 바뀔 때마다 진입 모션을 다시 재생한다(기존 .tab-anim 그대로). */}
+        {wideMembers && !showList && (
+          <button type="button" onClick={() => writeListOpen(true)}
+            className="mb-3 hidden min-h-[36px] items-center gap-1.5 rounded-lg border border-line bg-card px-3 text-[13px] text-sub transition hover:text-ink lg:inline-flex">
+            <PanelLeftOpen className="h-4 w-4" aria-hidden="true" /> 회원 목록
+          </button>
+        )}
         <div key={pathname} className="tab-anim min-w-0">{children}</div>
       </main>
 
