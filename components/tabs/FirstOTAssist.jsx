@@ -179,7 +179,7 @@ export default function FirstOTAssist({ member, onSaved }) {
       status={briefStatus}
       title="오늘의 OT 사전 준비 리포트"
       generateLabel="OT 준비 리포트 만들기"
-      idleDescription="회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 리포트를 만들어요. 맨 위 30초 요약 → 입장 · 운동 · 클로징 · 거절 대응 순서예요."
+      idleDescription="1차 OT도 목표는 오늘 PT 등록이에요. 회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 리포트를 만들어요 — 맨 위 30초 요약, 그다음 입장 · 운동 · 클로징 · 거절 대응 순서예요."
       waitingHint="최대 1분 걸릴 수 있어요. 기다리는 동안 회원 문진표를 다시 훑어보세요. (관찰이 아니라 ‘가설’을 만드는 중)"
       onGenerate={generate}
       onRegenerate={generate}
@@ -207,7 +207,7 @@ export default function FirstOTAssist({ member, onSaved }) {
           )}
           <PrepReport kind="first" data={data} packages={packages} favorites={favorites} />
           <p className="text-[11px] leading-relaxed text-muted">
-            ※ 관찰 전 &lsquo;가설&rsquo;이에요 — 현장에서 회원 반응을 보며 조정하세요.
+            ※ 1차도 목표는 오늘 PT 등록이에요 — 클로징의 요청까지 꼭 가세요. 운동 부분은 관찰 전 &lsquo;가설&rsquo;이라 회원 반응을 보며 조정하세요.
           </p>
         </div>
       )}

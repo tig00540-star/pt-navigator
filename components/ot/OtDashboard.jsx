@@ -19,6 +19,8 @@ import Badge from "@/components/ui/Badge";
 const RESULT_TONE = { success: "primary", hold: "ot", fail: "neutral", none: "neutral" };
 // 배지·작은 칸용 짧은 결과 이름(드롭다운의 긴 설명 대신).
 const RESULT_SHORT = { success: "등록", hold: "보류", fail: "실패", none: "결과 미기록" };
+// 결과 이름 — 'none'이어도 '다음 OT 이어가요'(제안 못 함)로 저장했으면 '이어가기'.
+const resultName = (p) => (p.result === "none" && p.next ? "이어가기" : RESULT_SHORT[p.result]);
 
 const dayLabel = (iso) => {
   if (!iso) return null;
@@ -131,7 +133,7 @@ export default function OtDashboard({ member, info }) {
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Stat icon={CalendarCheck2} label="최근 OT"
             value={lastOtDate ? shortDate(lastOtDate) : "아직 없음"}
-            sub={lastFeedback ? `${lastFeedback.n}차 · ${RESULT_SHORT[lastFeedback.progress.result]}` : null} />
+            sub={lastFeedback ? `${lastFeedback.n}차 · ${resultName(lastFeedback.progress)}` : null} />
           <Stat icon={CalendarClock} label="다음 OT 예약"
             value={nextAppt ? dayLabel(nextAppt.start_at) : "예약 없음"}
             sub={nextAppt ? `${info.current}차` : "스케줄에서 잡아 주세요"}
@@ -185,8 +187,8 @@ export default function OtDashboard({ member, info }) {
                       <Step done={r.progress.feedback}>피드백</Step>
                     </span>
                   </span>
-                  {r.progress.result !== "none"
-                    ? <Badge tone={RESULT_TONE[r.progress.result] || "neutral"}>{RESULT_SHORT[r.progress.result]}</Badge>
+                  {r.progress.result !== "none" || r.progress.next
+                    ? <Badge tone={RESULT_TONE[r.progress.result] || "neutral"}>{resultName(r.progress)}</Badge>
                     : now && <span className="text-[12px] font-bold text-ot-text">지금</span>}
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
                 </Link>

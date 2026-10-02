@@ -22,7 +22,7 @@ import { personName } from "@/lib/format";
 
 /* 원장 조정 가능 임계 — 스펙 2-b. closeWarn/reRegWarn은 ④ 색·코칭용 확장(스펙 TH 외 추가). */
 const TH = { obsAvgWarn: 0.5, gapWarn: 0.34, logRateWarn: 0.8, minObs: 3, minBrief: 1, minLog: 3, minClose: 3, closeWarn: 0.5, reRegWarn: 0.5 };
-const OBS_MISSING_LABEL = { movements: "관찰 동작", plan2nd: "2차 계획", reactionMemo: "반응 메모", attitude: "태도 태그", goal: "목표 구체화", memberQuote: "회원 한마디", trainerNote: "종합 소견" };
+const OBS_MISSING_LABEL = { movements: "운동 반응", plan2nd: "다음에 다시 보여줄 장면", reactionMemo: "반응 메모", attitude: "회원 성향", goal: "진짜 원하는 이유", memberQuote: "회원의 말", trainerNote: "종합 소견", proposed: "1차 등록 제안" };
 const SIGNAL_LABEL = { obs_thin: "관찰 얇음", gaps: "브리핑 근거부족", closing: "클로징", log_missing: "일지 미작성" };
 
 const pct = (x) => (x == null ? "—" : Math.round(x * 100) + "%");

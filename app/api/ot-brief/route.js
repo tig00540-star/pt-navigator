@@ -152,6 +152,10 @@ function firstPrompt(member, packages, favorites) {
 바로 말할 완성 대사'로 써라. 추상 지침·개발자용 매핑 설명 금지.
 OT는 [① 인사·라포 → ② 운동(바로 효과 체감) → ③ 클로징] 3스텝으로 흐른다 — 그 순서대로, 각 스텝 핵심만 짧게.
 
+[★1차 OT의 목표 = 오늘 PT 등록 (대표 지침 · 못박음)] 1차라고 '맛보기·관계 쌓기'로 끝내지 마라. 오늘 수업의
+끝은 등록 요청이다 — 세 스텝 전부가 그 요청을 받기 위한 빌드업이다. '다음에 천천히 생각해 보세요'로 미루는
+대사 금지. 오늘 등록이 안 되면 그 자리에서 다음 OT 날짜를 잡는 것이 차선이다(재요청 대사에 포함).
+
 [이 국면 특칙 — 대본 수위] 세일즈(오프닝·비유·클로징·거절)뿐 아니라 운동 파트도 '회원에게 그대로 말할
 실제 대사'까지 구체적으로 준다. 단 아래는 여전히 절대 금지:
  - 숫자 처방(세트·횟수·각도·중량·템포·시간). 운동은 '방향 + 짚어줄 말'까지, 숫자는 빼라.
@@ -233,6 +237,7 @@ ${closingSeqInstruction({
     trialHint: "방금 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
     askTarget: "추천 패키지 방향(회차·빈도)",
     askExample: `"다음 주 화·목으로 잡을게요 — 화요일 저녁 괜찮으세요?"`,
+    tone: " ★1차도 오늘 등록 요청까지 간다 — ask는 '생각해 보세요'가 아니라 오늘 시작을 정하는 질문. 물러서면 flush에서 진짜 이유를 꺼내고, 그래도 안 되면 다음 OT 날짜를 확정한다.",
   })}
 
  objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
@@ -295,11 +300,25 @@ function secondPrompt(member, report, cases = [], caseTier = "tentative", packag
   const r = report || {};
   const n = Number.isInteger(round) && round >= 2 ? round : 2;
   const hist = Array.isArray(history) ? history.filter(Boolean) : [];
+  // 클로징 우선 모드 — 바로 앞 차수에서 등록 제안을 했는데 안 됐거나(보류), 제안조차 못 했으면 이번 OT의 1순위는 등록.
+  const lastH = hist.length ? hist[hist.length - 1] : null;
+  const lastReason = lastH?.closing_reason ? (REASON_KO[lastH.closing_reason] || lastH.closing_reason) : "";
+  const closingFirst = !lastH || lastH.closing_result === "success" || lastH.closing_result === "fail" ? ""
+    : lastH.proposed
+      ? `
+[★클로징 우선 모드 — ${lastH.round}차에서 등록을 제안했지만 보류됨] 이번 OT의 1순위는 등록 마무리다.
+ (a) cheat 첫 줄 = "지난번 망설인 이유(${lastReason || "회원이 말한 걸림돌"}) → 오늘 이렇게 푼다" 한 줄.
+ (b) session_plan은 3개 이내로 줄이고, 지난 피드백에서 '다음 OT에서 다시 보여주기'로 표시된 장면을 다시 보여주는 데 집중.
+ (c) 클로징을 수업 후반이 아니라 중반에 연다(증명 직후 바로 trial_close).
+ (d) objection_defense는 그 망설인 이유를 맨 앞에, 가장 구체적으로.`
+      : `
+[★이번엔 반드시 등록 제안까지 — ${lastH.round}차에서 제안을 못 했음] 이번 OT의 끝은 등록 요청이다. ask를 분명히 하고,
+ 물러서면 flush로 진짜 이유를 꺼내라. cheat 셋째 줄은 그대로 말할 요청 대사.`;
   const historyBlock = hist.length
     ? `
 [이전 OT 기록 — 차수별 결과·사유${n > 2 ? "·2차 이후 관찰" : ""}] (트레이너가 실제 남긴 기록 · 창작 금지)
-${hist.map((h) => `${h.round}차: 결과=${RESULT_KO[h.closing_result] || "결과 미기록"}${h.closing_reason ? ` · 사유=${REASON_KO[h.closing_reason] || h.closing_reason}` : ""}${h.closing_detail ? ` · 클로징 메모=${JSON.stringify(h.closing_detail)}` : ""}${h.observation ? ` · 관찰=${JSON.stringify(h.observation)}` : ""}${h.prev_read ? ` · 지난 리포트 요지=${h.prev_read}` : ""}`).join("\n")}
-${n > 2 ? `★이번은 ${n}차 — 앞 차수에서 등록이 미뤄진 이유(사유·회원 반응)를 정면으로 풀어라. 앞에서 쓴 증명·대사를 그대로 반복하지 말고, 이번에 새로 확인시킬 것을 골라라.` : "★1차 결과·사유가 있으면 그 걸림돌을 오늘 증명과 클로징에서 먼저 풀어라."}
+${hist.map((h) => `${h.round}차: 결과=${RESULT_KO[h.closing_result] || "결과 미기록"} · 등록 제안=${h.proposed ? "함" : "못 함"}${h.closing_reason ? ` · 사유=${REASON_KO[h.closing_reason] || h.closing_reason}` : ""}${h.closing_detail ? ` · 클로징 메모=${JSON.stringify(h.closing_detail)}` : ""}${h.observation ? ` · 관찰=${JSON.stringify(h.observation)}` : ""}${h.prev_read ? ` · 지난 리포트 요지=${h.prev_read}` : ""}`).join("\n")}
+${n > 2 ? `★이번은 ${n}차 — 앞 차수에서 등록이 미뤄진 이유(사유·회원 반응)를 정면으로 풀어라. 앞에서 쓴 증명·대사를 그대로 반복하지 말고, 이번에 새로 확인시킬 것을 골라라.` : "★1차 결과·사유가 있으면 그 걸림돌을 오늘 증명과 클로징에서 먼저 풀어라."}${closingFirst}
 `
     : "";
   const g2 = (v) => (v == null || v === "" ? "없음" : v);
@@ -348,8 +367,10 @@ ${historyBlock}${caseInputBlock}
 [내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
 ${pkgBlock}
 
-[세일즈 강도] sales_intensity는 근거의 '선명도'다(압박·설득의 세기 아님). strong=사실 기반 손실·긴급성을
-더 또렷이 / soft=오늘 밀지 말고 다음 접점의 씨앗 톤(closing_sequence를 부드러운 가정으로) / standard=담백하게.
+[등록 제안 수위 — sales_intensity · 트레이너가 지난 피드백에서 '이번 OT용'으로 정한 값] 압박의 세기가 아니라
+요청을 얼마나 분명히·일찍 하느냐다. soft=가볍게 떠보기(체감 위주, 요청은 부드러운 가정형) / standard=분명하게
+제안(정석 흐름으로 ask까지) / strong=오늘 꼭 마무리(클로징을 수업 중반에 열고, 망설인 이유를 먼저 풀고, ask를
+분명히 + flush로 재요청까지). 어느 쪽이든 허위 긴급성·공포·죄책감 금지.
 
 [컨닝페이퍼 — 2차는 '증명 → 클로징']
 ① recall(지난 시간 소환): 1차의 체감·회원 한마디(memberQuote)를 되살려 문을 여는 완성 대사. "지난번

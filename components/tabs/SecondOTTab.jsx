@@ -155,6 +155,8 @@ function buildHistory(rows, round) {
     out.push({
       round: k,
       closing_result: row.closing_result || "none",
+      // 등록 제안을 했나(새 피드백 양식) — 옛 행은 결과로 추정(보류·실패=제안함).
+      proposed: typeof r.proposed === "boolean" ? r.proposed : ["hold", "fail", "success"].includes(row.closing_result),
       closing_reason: row.closing_reason || null,
       closing_detail: row.closing_detail || null,
       ...(k >= 2 ? { observation: { movements: r.movements ?? [], reaction: r.reaction ?? {}, goal: r.goal ?? {}, memberQuote: r.memberQuote ?? "", trainer_note: r.trainer_note ?? "" } } : {}),
@@ -164,9 +166,11 @@ function buildHistory(rows, round) {
   return out;
 }
 
-// 스테일 판정 해시 — 2차는 종전처럼 1차 관찰만(기존 캐시가 '최신 아님'으로 바뀌지 않게), 3차부터는 이전 차수까지.
-const briefHash = (obs, history, round) =>
-  round <= 2 ? otObsHash(obs) : `${otObsHash(obs)}.${otObsHash({ movements: history.flatMap((h) => h.observation?.movements || []), memberQuote: history.map((h) => `${h.round}:${h.closing_result}:${h.closing_reason || ""}:${h.observation?.trainer_note || ""}`).join("|") })}`;
+// 스테일 판정 해시 — 1차 관찰 + 이전 차수 결과·제안 여부·사유·관찰. 피드백(결과 포함)이 바뀌면 '최신 아님'.
+//   (2026-10-02 피드백 개편 때 2차도 이전 차수 결과를 포함하도록 바꿈 — 옛 2차 캐시는 한 번 '최신 아님'으로 뜬다.
+//    클로징 우선 모드·30초 요약이 들어간 새 리포트로 다시 만들라는 신호라 의도된 동작.)
+const briefHash = (obs, history) =>
+  `${otObsHash(obs)}.${otObsHash({ movements: history.flatMap((h) => h.observation?.movements || []), memberQuote: history.map((h) => `${h.round}:${h.closing_result}:${h.proposed ? 1 : 0}:${h.closing_reason || ""}:${h.observation?.trainer_note || ""}:${h.observation?.memberQuote || ""}`).join("|") })}`;
 
 export default function SecondOTTab({ member, round = 2, onSaved }) {
   const [loading, setLoading] = useState(false);
@@ -264,7 +268,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       const meta = {
         generatedAt: new Date().toISOString(),
         model: "claude-sonnet-5",
-        obsHash: briefHash(obsReport, history, round), // 생성 시점 관찰(+이전 차수) 스냅샷 → 스테일 감지
+        obsHash: briefHash(obsReport, history), // 생성 시점 관찰(+이전 차수) 스냅샷 → 스테일 감지
         ...(useCases ? { caseTier: caseGate.tier } : {}), // 렌더 배지·캐시용
       };
       // 최초(세일즈북 미존재)면 동반 자동생성. 이미 있으면 재생성 안 함(스프레드로 보존 · 스테일 배지 유도).
@@ -561,7 +565,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     const moves = Array.isArray(b.proof?.moves) ? b.proof.moves.filter(Boolean) : [];
     const obj = Array.isArray(b.objection_defense) ? b.objection_defense.filter(Boolean) : [];
     // 저장된 관찰 해시 vs 현재 관찰 해시 → 다르면 스테일(관찰 수정됨).
-    const stale = Boolean(meta?.obsHash && obs && meta.obsHash !== briefHash(obs, history, round));
+    const stale = Boolean(meta?.obsHash && obs && meta.obsHash !== briefHash(obs, history));
     const legacyCache = Boolean(b) && !rc.line && moves.length === 0 && obj.length === 0;
     return (
       <div className="space-y-8">
