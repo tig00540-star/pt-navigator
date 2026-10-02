@@ -148,7 +148,7 @@ export default function AdminDashboard() {
     (async () => {
       try {
         if (!supabase) {
-          setDbNote("데모 모드 — Supabase 키를 설정하면 실제 회원 데이터로 지표가 갱신됩니다.");
+          setDbNote("데모 모드예요. Supabase 키를 설정하면 실제 회원 데이터로 지표가 바뀌어요.");
           setRole("owner"); // 데모 모드 = 게이트 스킵(AuthGate 정책과 동일)
           return;
         }
@@ -440,7 +440,7 @@ export default function AdminDashboard() {
           <p className="mb-3 text-[12px] leading-relaxed text-muted">상담으로 받은 회원 정보를 입력하고 담당 트레이너를 지정해 등록해요.</p>
           {trainers.length === 0 ? (
             <p className="rounded-xl border border-line bg-elevate px-4 py-3 text-[12px] text-muted">
-              먼저 트레이너를 초대하세요 — 배정할 트레이너가 있어야 회원을 등록할 수 있어요.
+              먼저 트레이너를 초대해 주세요. 배정할 트레이너가 있어야 회원을 등록할 수 있어요.
             </p>
           ) : (
             <Button variant="primary" size="sm" onClick={() => setShowMemberCreate(true)}>
@@ -583,7 +583,7 @@ export default function AdminDashboard() {
             {/* 클로징 실패·보류 사유 분포 */}
             <div className="rounded-2xl border border-line bg-card p-5">
               <div className="text-[11px] font-semibold tracking-label-ko text-muted">클로징 실패·보류 사유</div>
-              <div className="mt-1 text-xs text-muted">OT 클로징 약점 진단 — 센터가 주로 놓치는 이유</div>
+              <div className="mt-1 text-xs text-muted">OT 클로징 약점 진단: 센터가 주로 놓치는 이유</div>
               <div className="mt-4 space-y-3">
                 {closingReasonDist.length === 0 ? (
                   <div className="text-xs text-muted">아직 클로징 실패·보류 사유 데이터가 없습니다.</div>
@@ -607,7 +607,7 @@ export default function AdminDashboard() {
             {/* 재등록 사유 분포 */}
             <div className="rounded-2xl border border-line bg-card p-5">
               <div className="text-[11px] font-semibold tracking-label-ko text-muted">재등록 실패·보류 사유</div>
-              <div className="mt-1 text-xs text-muted">거절을 데이터로 — 약점 진단</div>
+              <div className="mt-1 text-xs text-muted">거절을 데이터로 보는 약점 진단</div>
               <div className="mt-4 space-y-3">
                 {reasonDist.length === 0 ? (
                   <div className="text-xs text-muted">아직 재등록 사유 데이터가 없습니다.</div>

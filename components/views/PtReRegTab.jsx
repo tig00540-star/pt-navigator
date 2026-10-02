@@ -228,7 +228,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       setRegBriefMeta(meta);
       // 저장은 서버가 했다 — 최신 계약 행을 다시 읽어 화면 상태(contracts)를 맞춘다.
       if (supabase && latest?.id) {
-        if (!res.headers.get("x-saved-row")) setRegAiError("브리핑을 저장하지 못했어요 — 지금은 이 화면에서만 보여요.");
+        if (!res.headers.get("x-saved-row")) setRegAiError("브리핑을 저장하지 못했어요. 지금은 이 화면에서만 보여요.");
         const { data: row } = await supabase.from("session_log").select("*").eq("id", latest.id).maybeSingle();
         if (row) setContracts((p) => p.map((c) => (c.id === row.id ? row : c)));
       }
@@ -272,7 +272,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       if (supabase && latest?.id) {
         const nextReport = { ...(latest.report || {}), reg_salesbook: data };
         const { data: up } = await supabase.from("session_log").update({ report: nextReport }).eq("id", latest.id).select();
-        if (!up || up.length === 0) setSbErr("세일즈북 저장 실패(0행) — 이번 세션엔 표시됩니다.");
+        if (!up || up.length === 0) setSbErr("세일즈북을 저장하지 못했어요. 지금은 이 화면에서만 보여요.");
         else setContracts((p) => p.map((c) => (c.id === up[0].id ? up[0] : c)));
       }
     } catch (e) {
@@ -327,7 +327,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             title="재등록 AI 지원"
             generateLabel="AI 지원 준비 생성하기"
             idleDescription={`${member.name} 회원의 첫 수업부터 지금까지의 변화(인바디·운동 무게·출석)와 위 만족도를 근거로, 왜 더 해야 하는지·앞으로 무엇이 달라지는지·재등록 제안까지 준비해요. 한 번 만들면 저장돼서 다시 열 때 바로 떠요.`}
-            waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요 — 만들던 브리핑은 저장돼 있다가 돌아오면 바로 떠요."
+            waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 브리핑은 저장돼 있다가 돌아오면 바로 떠요."
             onGenerate={generateReReg}
             onRegenerate={generateReReg}
             notice={regAiError || undefined}
@@ -351,7 +351,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             </div>
             <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
               {sbGenerating ? "그동안의 변화를 정리하고 있어요…"
-                : regSb ? "오늘 수업 중/후 회원에게 그대로 보여주세요 — 변화량·단계·앞으로의 방향."
+                : regSb ? "오늘 수업 중이나 끝나고 회원에게 그대로 보여 주세요. 변화량·단계·앞으로의 방향이 담겨 있어요."
                 : hasChange ? "인바디·수업 기록을 근거로 회원 대면 세일즈북을 만듭니다."
                 : "아직 변화 데이터(인바디/구조화 수업기록)가 얇아요. 그래도 만들 수 있지만, 인바디를 한 번 기록하면 표가 확 살아납니다."}
             </p>
@@ -410,7 +410,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               )}
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[10px] leading-relaxed text-muted">
-                  성공을 기록해도 자동 갱신되지 않습니다 — 새 계약은 잔여 카드의 &lsquo;재등록&rsquo;으로.
+                  성공을 기록해도 자동으로 갱신되지 않아요. 새 계약은 잔여 카드의 &lsquo;재등록&rsquo;으로.
                 </p>
                 <Button variant="primary" size="sm" onClick={saveReg} disabled={regSaving} className="shrink-0">
                   {regSaving ? "저장 중…" : "저장"}

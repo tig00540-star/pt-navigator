@@ -156,7 +156,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
 
   const add = async () => {
     if (busy) return;
-    if (!memberSupabase) { setErr("데모 모드 — 실제 기록은 불가해요."); return; }
+    if (!memberSupabase) { setErr("데모 모드라 실제로 기록되지 않아요."); return; }
     if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
     if (!on) { setErr("날짜를 선택해 주세요."); return; }
     setBusy(true); setErr("");
@@ -298,7 +298,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
     const file = e.target.files?.[0];
     e.target.value = ""; // 같은 파일 재선택 허용
     if (!file || busy) return;
-    if (!memberSupabase) { setErr("데모 모드 — 실제 업로드는 불가해요."); return; }
+    if (!memberSupabase) { setErr("데모 모드라 실제로 올라가지 않아요."); return; }
     if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
     setBusy(true); setErr("");
     // 1) 업로드 전 압축(필수) — 원본 그대로 올리지 않음.
@@ -451,7 +451,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
 
   const add = async () => {
     if (busy) return;
-    if (!memberSupabase) { setErr("데모 모드 — 실제 기록은 불가해요."); return; }
+    if (!memberSupabase) { setErr("데모 모드라 실제로 기록되지 않아요."); return; }
     if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
     if (!on) { setErr("날짜를 선택해 주세요."); return; }
     setBusy(true); setErr("");
@@ -1213,7 +1213,7 @@ export default function MemberHome() {
 
   const submit = async () => {
     if (busy) return;
-    if (!memberSupabase) { setErr("데모 모드 — 키가 없어 로그인할 수 없어요."); return; }
+    if (!memberSupabase) { setErr("데모 모드라 로그인할 수 없어요."); return; }
     if (!/^\d{4}$/.test(last4)) { setErr("휴대폰 뒤 4자리를 입력해 주세요."); return; }
     setBusy(true); setErr("");
     try {

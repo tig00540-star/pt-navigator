@@ -62,7 +62,7 @@ export default function NoNextBookingToday({ members, uid, onSelect, limit }) {
         icon={CalendarPlus}
         title="다음 예약 미정"
         count={rows.length}
-        hint="잔여 있는데 다음 수업이 안 잡힘 — 먼저 예약을 잡으세요"
+        hint="잔여가 있는데 다음 수업이 안 잡혔어요. 먼저 예약을 잡아 주세요"
       />
       <div className="grid gap-2">
         {(limit ? rows.slice(0, limit) : rows).map((r) => (
@@ -78,7 +78,7 @@ export default function NoNextBookingToday({ members, uid, onSelect, limit }) {
           </ListRow>
         ))}
         {limit && rows.length > limit && (
-          <p className="px-1 text-[12px] text-muted">외 {rows.length - limit}명 — &lsquo;오늘&rsquo; 화면에서 전체 보기</p>
+          <p className="px-1 text-[12px] text-muted">외 {rows.length - limit}명은 &lsquo;오늘&rsquo; 화면에서 전체 보기</p>
         )}
       </div>
     </ToneCard>

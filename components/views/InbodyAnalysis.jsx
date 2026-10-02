@@ -55,7 +55,7 @@ export default function InbodyAnalysis({ data, title = "인바디 분석" }) {
 
       {data.why_now && (
         <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
-          <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">그래서 — 지금부터</div>
+          <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">그래서 지금부터</div>
           <p className="mt-1 text-[14px] font-medium leading-relaxed text-ink">{data.why_now}</p>
         </div>
       )}

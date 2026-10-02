@@ -33,7 +33,7 @@ export default function RefundMember({ member, contracts, onDone }) {
 
   const doRefund = async () => {
     if (saving) return;
-    if (!supabase) return showToast("데모 모드 — 키 설정 시 사용 가능");
+    if (!supabase) return showToast("데모 모드라 쓸 수 없어요");
     if (!target) return showToast("환불 가능한 유료 계약이 없어요");
     const amt = Number(amount);
     if (!(amt > 0)) return showToast("환불 금액을 입력해 주세요");

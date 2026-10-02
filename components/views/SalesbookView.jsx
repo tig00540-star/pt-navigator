@@ -371,7 +371,7 @@ export default function SalesbookView({
                         <EditField editable value={cf.member_quote} onChange={(v) => setConfirmed("member_quote", v)} placeholder="회원이 한 말 그대로">{null}</EditField>
                       </div>
                     ) : cf.member_quote ? (
-                      <p className="sb-stg mt-2 text-[12px] italic leading-snug text-muted" style={{ "--sb-i": 3 }}>회원 한마디 — &ldquo;{cf.member_quote}&rdquo;</p>
+                      <p className="sb-stg mt-2 text-[12px] italic leading-snug text-muted" style={{ "--sb-i": 3 }}>회원 한마디: &ldquo;{cf.member_quote}&rdquo;</p>
                     ) : null}
                   </div>
                 );

@@ -2,6 +2,7 @@
 //   입력 { name, brand, kind, spec } → Claude(Sonnet) → { cues: string[] }
 //   저장은 클라가 center_machine.cues로(대표 RLS). 이 라우트는 생성만.
 import Anthropic from "@anthropic-ai/sdk";
+import { tidyDeep, NO_DASH_RULE } from "@/lib/tidyText";
 import { requireTrainer } from "@/lib/requireTrainer";
 
 export const runtime = "nodejs";
@@ -44,7 +45,8 @@ export async function POST(request) {
       model: CUE_MODEL,
       max_tokens: 1024,
       thinking: { type: "between_tools" }, // Sonnet 5.5 끄기 값
-      system: SYSTEM,
+      system: `${SYSTEM}
+${NO_DASH_RULE}`,
       messages: [{ role: "user", content: `다음 기구의 실행 큐 초안을 만들어 주세요.\n\n${info}` }],
     });
     const out = msg.content.filter((x) => x.type === "text").map((x) => x.text).join("");
@@ -52,7 +54,7 @@ export async function POST(request) {
     if (s === -1 || e === -1) throw new Error("파싱 실패");
     const obj = JSON.parse(out.slice(s, e + 1));
     const cues = Array.isArray(obj.cues) ? obj.cues.filter((c) => typeof c === "string" && c.trim()).map((c) => c.trim()) : [];
-    return Response.json({ cues });
+    return Response.json({ cues: tidyDeep(cues) });
   } catch (err) {
     console.error("[machine-cues] 생성 실패:", err?.message || err);
     return Response.json({ error: "AI 초안 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });

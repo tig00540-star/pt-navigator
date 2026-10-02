@@ -44,9 +44,9 @@ const WHY = [
 ];
 
 const OT_STEPS = [
-  { step: "OT 보고서", img: "/lp/shots/ot-brief.webp", alt: "1차 OT 준비 화면 — 3분 각인과 오늘 시킬 운동" },
-  { step: "클로징 멘트", img: "/lp/shots/ot-closing.webp", alt: "OT 화면 — 떠보기·근거·플랜 제시·요청 클로징 흐름" },
-  { step: "거절 대응", img: "/lp/shots/ot-objection.webp", alt: "OT 화면 — 가격 부담·생각해볼게요 거절 대응 멘트" },
+  { step: "OT 보고서", img: "/lp/shots/ot-brief.webp", alt: "1차 OT 준비 화면: 3분 각인과 오늘 시킬 운동" },
+  { step: "클로징 멘트", img: "/lp/shots/ot-closing.webp", alt: "OT 화면: 떠보기·근거·플랜 제시·요청 클로징 흐름" },
+  { step: "거절 대응", img: "/lp/shots/ot-objection.webp", alt: "OT 화면: 가격 부담·생각해볼게요 거절 대응 멘트" },
 ];
 
 const RENEW = {
@@ -55,7 +55,7 @@ const RENEW = {
   flow: ["만료 임박 알림", "변화 근거", "제안까지"],
   checks: ["잔여가 줄어든 회원을 '오늘 할일'에 먼저", "인바디·운동일지로 그동안의 변화 정리", "재등록 제안 멘트까지 준비"],
   note: "잔여 10회 미만부터 알려줘요",
-  visual: { img: "/lp/shots/renew-card.webp", alt: "오늘 할일 화면 — 재등록 타이밍 카드(잔여 10회 미만 회원)" },
+  visual: { img: "/lp/shots/renew-card.webp", alt: "오늘 할일 화면: 재등록 타이밍 카드(잔여 10회 미만 회원)" },
 };
 
 const LOG = {
@@ -72,8 +72,8 @@ const LOG_STEPS = [
     step: "말로 30초",
     quote: "오늘 최준호 회원님 하체 했어요. 스쿼트 60킬로 10개씩 2세트, 70킬로 10개씩 2세트, 80킬로 10개씩 2세트 총 6세트 진행했고 다음으로 루마니안 데드리프트 40키로로 시작해서 10kg씩 올려서 12개 1세트로 총 3세트, 마지막으로 레그프레스 120킬로 고정으로 15개 3세트 했어요. …",
   },
-  { step: "일지로 정리", img: "/lp/shots/log-result.webp", alt: "운동일지 화면 — 녹음을 운동·무게·세트와 자세 포인트로 정리한 결과" },
-  { step: "무게 추이까지", img: "/lp/shots/log-graph.webp", alt: "회원자료 화면 — 종목별 무게 추이 그래프" },
+  { step: "일지로 정리", img: "/lp/shots/log-result.webp", alt: "운동일지 화면: 녹음을 운동·무게·세트와 자세 포인트로 정리한 결과" },
+  { step: "무게 추이까지", img: "/lp/shots/log-graph.webp", alt: "회원자료 화면: 종목별 무게 추이 그래프" },
 ];
 
 const MEMBER = {
@@ -82,11 +82,11 @@ const MEMBER = {
   flow: ["링크 하나", "기록 열람", "출석 챌린지"],
   checks: ["설치 없이 링크로 여는 회원 전용 페이지", "운동일지·인바디·변화 그래프를 회원이 직접", "출석이 쌓이는 오운완 챌린지와 포상"],
   note: "링크와 휴대폰 뒤 4자리로 열려요",
-  visual: { img: "/lp/shots/member-graph.webp", alt: "회원 전용 페이지 — 인바디 변화(체중·골격근량·체지방 추이)" },
+  visual: { img: "/lp/shots/member-graph.webp", alt: "회원 전용 페이지: 인바디 변화(체중·골격근량·체지방 추이)" },
 };
 
 // 회원 전용 페이지에 실제로 뜨는 문구 — 후기가 아니라 제품 화면이다.
-const MEMBER_NOTICES = ["오늘 운동일지가 도착했어요", "이번 달 출석 8회 — 오운완 챌린지 진행 중"];
+const MEMBER_NOTICES = ["오늘 운동일지가 도착했어요", "이번 달 출석 8회, 오운완 챌린지 진행 중"];
 
 const MORE = ["급여 자동계산", "스케줄·노쇼", "운동 라이브러리", "내 실적 리포트", "센터 공지"];
 

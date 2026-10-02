@@ -125,7 +125,7 @@ export default function OwnerWideHome({
               </div>
             </>
           ) : (
-            <p className="mt-3 text-[12px] text-muted">이달 목표가 아직 없어요 — 트레이너가 &lsquo;내 실적&rsquo;에서 정하면 합산돼요.</p>
+            <p className="mt-3 text-[12px] text-muted">이달 목표가 아직 없어요. 트레이너가 &lsquo;내 실적&rsquo;에서 정하면 합산돼요.</p>
           )}
         </Box>
 

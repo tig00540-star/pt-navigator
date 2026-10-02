@@ -24,7 +24,7 @@ export default function PasswordChange({ forced = false, onDone }) {
 
   const submit = async () => {
     if (saving) return;
-    if (!supabase) return showToast("데모 모드 — 키 설정 시 사용 가능");
+    if (!supabase) return showToast("데모 모드라 쓸 수 없어요");
     if (pw.length < 6) return showToast("비밀번호는 6자 이상이어야 해요");
     if (pw !== pw2) return showToast("확인이 일치하지 않아요");
     setSaving(true);
@@ -78,7 +78,7 @@ export default function PasswordChange({ forced = false, onDone }) {
         <p className="text-[10px] leading-relaxed text-muted">
           {supabase
             ? "임시 비밀번호로 로그인한 경우 여기서 새 비밀번호로 바꾸세요. (6자 이상)"
-            : "데모 모드 — Supabase 키를 설정하면 비밀번호 변경이 가능합니다."}
+            : "데모 모드예요. Supabase 키를 설정하면 비밀번호를 바꿀 수 있어요."}
         </p>
       </div>
       <Toast message={toast} />

@@ -8,6 +8,7 @@
 // 키 미설정/에러 시 명확한 상태코드로 응답 → 클라이언트가 데모 폴백.
 // -----------------------------------------------------------------------------
 import OpenAI from "openai";
+import { tidyDeep } from "@/lib/tidyText";
 import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
 
@@ -40,7 +41,7 @@ const SUMMARY_SYSTEM = `당신은 PT 트레이너의 수업 종료 구두 요약
 - [등록 머신 큐 우선] 사용자 메시지에 [등록 머신 큐] 목록이 오면, 트레이너가 말한 종목이 그 목록의 머신과 명백히 같을 때 그 종목의 method를 등록 큐로 채우세요(트레이너가 그날 말한 포인트가 있으면 자연스럽게 반영·보완, 없으면 등록 큐 그대로). 등록 큐가 있는 종목은 그 큐를 우선하고 임의로 다시 쓰지 마세요. 목록에 없거나 매칭 안 되는 종목만 기존 규칙대로 생성하세요.
 - feedback: 오늘 수업 핵심을 따뜻하게 2~3문장.
 - homework: 집에서 참고할 종합 팁·주의사항(스트레칭·자세 습관 등 특정 머신에 안 묶인 것)이 있으면 넣고, 없으면 빈 배열.
-- 톤: 회원에게 보내는 따뜻하고 명료한 존댓말.
+- 톤: 회원에게 보내는 따뜻하고 명료한 존댓말. 긴 줄표(—, –)는 쓰지 말고, 끊을 땐 마침표, 이을 땐 쉼표.
 - [구조화 수치 sets — 그래프용 · 트레이너 말만] 각 운동마다 트레이너가 **명시적으로 말한** 세트를 sets 배열에 숫자로 넣으세요. weight=중량(kg 숫자, 맨몸·중량 미언급이면 null), reps=반복 횟수(숫자, 미언급이면 null). 예: "20kg 12개 3세트" → [{"weight":20,"reps":12},{"weight":20,"reps":12},{"weight":20,"reps":12}]. "20·30·40 순으로 12개씩" → [{"weight":20,"reps":12},{"weight":30,"reps":12},{"weight":40,"reps":12}]. **말하지 않은 수치를 지어내지 마세요** — 애매하면 그 필드/세트는 null 또는 sets=[]. 범위("12~15개")는 대표값 1개 또는 null. detail(사람용 텍스트)은 종전대로 유지하세요 — sets와 별개(카톡·표시용).
 - [canonical 정규화 — 집계 키] canonical은 같은 운동이 날마다 같은 문자열로 모이게 하는 키입니다. 표기 흔들림(띄어쓰기·영한 혼용·약칭)을 제거하고 대표 한글 정식명으로. 예: "벤치/벤치 프레스/bench"→"벤치프레스", "랫풀/lat pull"→"랫풀다운". 아래 표준 종목을 우선 사용하되, 목록 밖이면 같은 원칙으로 명명하세요. name(트레이너 표현)은 그대로 두고 canonical만 통일합니다.
   표준 종목: 벤치프레스, 인클라인벤치프레스, 레그프레스, 스쿼트, 데드리프트, 랫풀다운, 시티드로우, 숄더프레스, 힙어브덕션, 힙쓰러스트, 레그익스텐션, 레그컬, 케이블크로스오버, 체스트프레스, 풀업, 푸시업, 플랭크.
@@ -185,7 +186,7 @@ export async function POST(request) {
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
-    report = parseReport(textOut);
+    report = tidyDeep(parseReport(textOut));
   } catch (e) {
     console.error("[voice-log] 요약 실패:", e?.message || e);
     return Response.json({ error: "AI 요약에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });

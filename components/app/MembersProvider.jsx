@@ -31,7 +31,7 @@ export const DEMO_MEMBER = {
   origin: "ot_funnel",
   pt_direction: "고관절 가동성 회복 + 무릎 부하 분산 (데모)",
   summary: [
-    "논리와 근거로 움직이는 실용주의자 — '왜'가 해결되면 즉시 실행에 옮기는 결과지향형.",
+    "논리와 근거로 움직이는 실용주의자. '왜'가 해결되면 즉시 실행에 옮기는 결과지향형.",
     "장시간 좌식 근무로 고관절 굴곡근 단축 추정 → 우측 무릎에 누적 부하가 걸릴 구조.",
     "목표(바디프로필)가 명확 → 감성 어필보다 수치·마일스톤·역산 계획에 강하게 반응.",
   ],
@@ -92,7 +92,7 @@ export default function MembersProvider({ children }) {
 
   const loadMembers = useCallback(async () => {
     if (!supabase) {
-      setDbNote("데모 모드 — Supabase 키를 설정하면 실데이터가 연결됩니다.");
+      setDbNote("데모 모드예요. Supabase 키를 설정하면 실제 데이터가 연결돼요.");
       setReady(true);
       return;
     }

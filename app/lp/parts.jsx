@@ -189,7 +189,7 @@ export function Shot({ src, alt, zoom = true }) {
   // 탭하면 크게 — 폰에서 글자를 읽을 수 있게.
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} — 크게 보기`}
+      <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} 크게 보기`}
         className={`group relative block w-full cursor-zoom-in rounded-2xl p-0 ${FOCUS}`}>
         {img}
         <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2.5 py-1 text-[12px] font-bold text-white">

@@ -311,7 +311,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     ? members.filter((m) => `${m.name} ${m.job}`.toLowerCase().includes(q.trim().toLowerCase()))
     : members;
 
-  const rangeLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()} – ${addDays(weekStart, 6).getMonth() + 1}/${addDays(weekStart, 6).getDate()}`;
+  const rangeLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()} ~ ${addDays(weekStart, 6).getMonth() + 1}/${addDays(weekStart, 6).getDate()}`;
 
   const now = new Date();
   const todayList = viewAppts
@@ -369,7 +369,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
               <select value={startHour} onChange={(e) => setStartHour(Number(e.target.value))} className="rounded-lg border border-line bg-elevate px-2 py-1 text-sub">
                 {Array.from({ length: 13 }, (_, i) => i).map((h) => <option key={h} value={h}>{h}시</option>)}
               </select>
-              <span>–</span>
+              <span>~</span>
               <select value={endHour} onChange={(e) => setEndHour(Number(e.target.value))} className="rounded-lg border border-line bg-elevate px-2 py-1 text-sub">
                 {Array.from({ length: 12 }, (_, i) => i + 13).map((h) => <option key={h} value={h}>{h}시</option>)}
               </select>
@@ -480,7 +480,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-bold text-ink">
-                {addDays(weekStart, pick.dayIdx).getMonth() + 1}/{addDays(weekStart, pick.dayIdx).getDate()} {DAY_LABELS[pick.dayIdx]} {pick.hour}시 — 회원 배치
+                {addDays(weekStart, pick.dayIdx).getMonth() + 1}/{addDays(weekStart, pick.dayIdx).getDate()} {DAY_LABELS[pick.dayIdx]} {pick.hour}시 회원 배치
               </h3>
               <button onClick={() => setPick(null)} className="text-muted hover:text-ink"><X className="h-4 w-4" /></button>
             </div>

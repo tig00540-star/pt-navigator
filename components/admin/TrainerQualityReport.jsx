@@ -154,7 +154,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
 
           {tc.cases.length === 0 ? (
             <div className="rounded-2xl border border-line bg-card p-5 text-center text-xs text-muted">
-              {activityZero ? "오늘 진행한 OT·수업이 아직 없어요." : `오늘 챙길 부분 없어요 — 오늘 진행 ${tc.obsCount + tc.sessionCount}건 모두 양호.`}
+              {activityZero ? "오늘 진행한 OT·수업이 아직 없어요." : `오늘 챙길 부분 없어요. 오늘 진행 ${tc.obsCount + tc.sessionCount}건 모두 양호.`}
             </div>
           ) : (
             <div className="space-y-4">
@@ -213,11 +213,11 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
 
               // 코칭 포인트 — 표본 충분 & 임계 미달만, 낙차 최대 1개(결정적).
               const cands = [];
-              if (obsWarn) cands.push({ gap: TH.obsAvgWarn - o.avgScore, msg: `관찰 기록이 얇어요 — 평균 ${pct(o.avgScore)}` });
-              if (briefWarn) cands.push({ gap: gapRatio - TH.gapWarn, msg: `브리핑 근거부족이 잦아요 — ${pct(gapRatio)}` });
-              if (logWarn) cands.push({ gap: TH.logRateWarn - lr.rate, msg: `이달 일지 작성이 부족해요 — ${pct(lr.rate)}` });
-              if (closeWarn) cands.push({ gap: TH.closeWarn - r2.rate, msg: `2차 클로징이 낮아요 — ${pct(r2.rate)}` });
-              if (regWarn) cands.push({ gap: TH.reRegWarn - rr.rate, msg: `재등록이 낮아요 — ${pct(rr.rate)}` });
+              if (obsWarn) cands.push({ gap: TH.obsAvgWarn - o.avgScore, msg: `관찰 기록이 얇아요(평균 ${pct(o.avgScore)})` });
+              if (briefWarn) cands.push({ gap: gapRatio - TH.gapWarn, msg: `브리핑 근거부족이 잦아요(${pct(gapRatio)})` });
+              if (logWarn) cands.push({ gap: TH.logRateWarn - lr.rate, msg: `이달 일지 작성이 부족해요(${pct(lr.rate)})` });
+              if (closeWarn) cands.push({ gap: TH.closeWarn - r2.rate, msg: `2차 클로징이 낮아요(${pct(r2.rate)})` });
+              if (regWarn) cands.push({ gap: TH.reRegWarn - rr.rate, msg: `재등록이 낮아요(${pct(rr.rate)})` });
               cands.sort((a, b) => b.gap - a.gap);
               const coach = cands[0]?.msg || null;
 

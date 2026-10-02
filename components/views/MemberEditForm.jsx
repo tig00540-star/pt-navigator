@@ -73,7 +73,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
   const save = async () => {
     if (saving || !form) return;
     if (!form.name.trim()) { setErr("이름은 필수입니다."); return; }
-    if (!supabase) { setErr("데모 모드 — 저장할 수 없어요."); return; }
+    if (!supabase) { setErr("데모 모드라 저장할 수 없어요."); return; }
     setSaving(true); setErr("");
     const payload = {};
     for (const f of FIELDS) {
@@ -103,12 +103,12 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
         <div>
           <div className="mb-3 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-rose-600" />
-            <h2 className="text-base font-semibold text-ink">잠깐 — 정말 사실이 바뀌었나요?</h2>
+            <h2 className="text-base font-semibold text-ink">잠깐, 정말 사실이 바뀌었나요?</h2>
           </div>
           <div className="space-y-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 text-[13px] leading-relaxed text-ink">
             <p>AI 답을 바꾸려고 회원 정보를 고치는 거라면 멈추세요.</p>
             <p className="text-[15px] font-bold text-rose-700">실패도 경험해야 성장할 수 있습니다. 회피하지 마세요.</p>
-            <p className="text-sub">클로징이 안 됐다면 정보를 바꾸지 말고 &lsquo;1차 피드백&rsquo;에 <b>왜 안 됐는지(사유·케이스)</b>를 남기세요 — 그 정직한 기록이 쌓여야 앱이 당신에게 맞는 세일즈 코치로 진화합니다.</p>
+            <p className="text-sub">클로징이 안 됐다면 정보를 바꾸지 말고 &lsquo;1차 피드백&rsquo;에 <b>왜 안 됐는지(사유·케이스)</b>를 남겨 주세요. 그 정직한 기록이 쌓여야 앱이 나에게 맞는 세일즈 코치로 자라요.</p>
             <p className="text-muted">전화번호·직업 변경처럼 <b>실제 사실이 바뀐 경우에만</b> 수정하세요.</p>
           </div>
           <div className="mt-4 flex justify-end gap-2">

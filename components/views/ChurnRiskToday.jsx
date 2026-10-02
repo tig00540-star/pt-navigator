@@ -79,7 +79,7 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
         <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-700">{risky.length}</span>
       </div>
       <p className="mt-1 text-[11px] leading-relaxed text-muted">
-        잔여가 남았는데 발길이 뜸해진 회원 — 먼저 연락해 재방문을 잡으세요.
+        잔여가 남았는데 발길이 뜸해진 회원이에요. 먼저 연락해 재방문을 잡아 주세요.
       </p>
       <ul className="mt-3 space-y-1.5">
         {risky.map(({ m, gap, rem, everCame }) => (

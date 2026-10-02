@@ -112,7 +112,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
       <div className="flex items-center gap-2 text-sm text-ink">
         <BadgeCheck className="h-4 w-4 shrink-0 text-primary-strong" />
         <span>
-          <b className="text-primary-strong">클로징 성공</b> 기록됨 — 결제 확정되면 PT 등록을 확정하세요.
+          <b className="text-primary-strong">클로징 성공</b>을 기록했어요. 결제가 확정되면 PT 등록을 확정해 주세요.
           <span className="text-muted"> (성공을 기록해도 자동으로 등록되진 않아요)</span>
         </span>
       </div>

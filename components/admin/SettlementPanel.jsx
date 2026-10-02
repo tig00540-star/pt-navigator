@@ -216,7 +216,7 @@ function ViewPane({
               {startDay === 1 ? "매달 1일부터 말일까지" : `매달 ${startDay}일부터 다음달 ${startDay - 1}일까지`}
             </span>
             </div>
-            {custom && <p className="mt-1 text-[11px] text-muted">지금은 직접 고른 기간을 보고 있어요 — 이 설정은 매달의 기본 기간입니다.</p>}
+            {custom && <p className="mt-1 text-[11px] text-muted">지금은 직접 고른 기간을 보고 있어요. 이 설정은 매달의 기본 기간이에요.</p>}
           </div>
         )}
       </Card>
@@ -239,7 +239,7 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
   const save = async () => {
     const amt = Math.round(Number(String(amount).replace(/[^0-9]/g, "")));
     if (!date || !Number.isFinite(amt) || amt <= 0) { setNote("날짜와 금액을 입력해 주세요."); return; }
-    if (!supabase) { setNote("데모 모드 — 저장하려면 Supabase 키가 필요합니다."); return; }
+    if (!supabase) { setNote("데모 모드라 저장할 수 없어요."); return; }
     setSaving(true); setNote("");
     try {
       const payload = isExpense

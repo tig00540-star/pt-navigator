@@ -28,7 +28,7 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
     <div className="mt-3 space-y-3 text-sm">
       {legacy && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
-          이전 형식 브리핑이에요 — 위 &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀝니다.
+          이전 형식 브리핑이에요. 위 &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀌어요.
         </div>
       )}
       {b.member_read && (

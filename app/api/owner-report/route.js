@@ -5,6 +5,7 @@
 // 출력: { headline, sections:{yesterday,month,watch,today}, closing }. 실패/키부재 → 상태코드+fallback:"rule".
 // -----------------------------------------------------------------------------
 import Anthropic from "@anthropic-ai/sdk";
+import { tidyDeep, NO_DASH_RULE } from "@/lib/tidyText";
 import { requireTrainer } from "@/lib/requireTrainer";
 import { createClient } from "@supabase/supabase-js";
 
@@ -113,14 +114,15 @@ export async function POST(request) {
     const msg = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 1024,
-      system: PREAMBLE,
+      system: `${PREAMBLE}
+${NO_DASH_RULE}`,
       messages: [{ role: "user", content: buildPrompt(d) }],
       thinking: { type: "between_tools" }, // Sonnet 5.5 끄기 값
     });
     const textOut = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
     const parsed = parseOwnerReport(textOut);
     if (!parsed) return Response.json({ error: "AI 응답 파싱 실패.", fallback: "rule" }, { status: 502 });
-    return Response.json(parsed);
+    return Response.json(tidyDeep(parsed));
   } catch (e) {
     console.error("[owner-report] 생성 실패:", e?.message || e);
     return Response.json({ error: "AI 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.", fallback: "rule" }, { status: 502 });

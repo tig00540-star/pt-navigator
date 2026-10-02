@@ -70,7 +70,7 @@ function buildVoiceReport(member) {
     ],
     feedback: `${member.name}님, 오늘 ${member.pain} 우회를 위해 골반 고정과 상체 각도 조절에 집중했습니다. 통증 없이 둔근 자극이 아주 잘 들어갔어요.`,
     homework: [
-      "홈트 시 상체 각도 15° 유지 — 허리·무릎 부담 최소화",
+      "홈트 시 상체 각도 15° 유지, 허리·무릎 부담 최소화",
       "글루트 브리지 15회 × 2세트 (주 3회)",
       "장시간 앉은 뒤 힙 플렉서 스트레칭 30초씩",
     ],
@@ -296,7 +296,7 @@ export default function VoiceLogTab({ member, onResult }) {
       const res = await fetch("/api/voice-log", { method: "POST", headers: { ...(await authHeader()) }, body: fd });
       if (!res.ok) {
         // 503 = AI 키 미설정(데모 환경) → 미리보기용 데모 유지. 그 외 실패는 가짜 리포트 안 채움.
-        if (res.status === 503) { setNotice("AI 미설정 — 데모 리포트로 표시합니다."); runDemo(); return; }
+        if (res.status === 503) { setNotice("AI가 설정되지 않아 데모 리포트로 보여 드려요."); runDemo(); return; }
         const data = await res.json().catch(() => ({}));
         // 413 = 용량 초과: 같은 녹음 재전송은 무의미 → 재시도 문구 없이 크기 안내만.
         if (res.status === 413) { failReal(data.error || "녹음 파일이 너무 큽니다. 더 짧게 나눠 다시 녹음해 주세요."); return; }

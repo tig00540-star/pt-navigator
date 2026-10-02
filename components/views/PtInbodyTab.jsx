@@ -211,7 +211,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
         meta: { generatedAt: new Date().toISOString(), sourceId: latest.id },
       });
       if (merged) setOtRow((r) => ({ ...r, report: merged }));
-      else if (otRow) setAnaNotice("분석은 나왔지만 저장에 실패했어요 — 이 화면에서만 보입니다. (권한/정책 확인)");
+      else if (otRow) setAnaNotice("분석은 나왔지만 저장하지 못했어요. 이 화면에서만 보여요. 권한이 없거나 구독이 만료됐을 수 있어요.");
     } catch (e) {
       setAnaNotice("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
     } finally {

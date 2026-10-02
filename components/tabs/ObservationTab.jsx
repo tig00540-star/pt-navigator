@@ -192,7 +192,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
       const moves = form.moves.filter((m) => m.tags.length || m.star).map((m) => ({
         name: m.name, tags: m.tags, star: m.star,
         // AI·옛 화면이 읽는 문장형 요약(값만 · 키 영어 노출 없음)
-        observation: `${m.name} — ${m.tags.map(tagLabel).join(", ") || "반응 기록 없음"}`,
+        observation: `${m.name}: ${m.tags.map(tagLabel).join(", ") || "반응 기록 없음"}`,
         memberAware: m.tags.includes("aware"),
         plan2nd: m.star ? "다음 OT에서 다시 보여주기(증명 재연)" : "",
       }));
@@ -263,7 +263,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
     <div className="@container space-y-4">
       {!canEdit && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
-          {!supabase ? "데모 모드 — 저장은 안 돼요(입력만 가능)." : "회원을 먼저 선택해 주세요."}
+          {!supabase ? "데모 모드라 저장은 안 돼요(입력만 가능)." : "회원을 먼저 선택해 주세요."}
         </div>
       )}
       {loading && <p className="text-[12px] text-muted">지난 피드백을 불러오는 중…</p>}
@@ -298,7 +298,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
               <p className="mt-2 text-[12px] leading-relaxed text-ot-text">다음 OT 준비 리포트가 &lsquo;이번엔 꼭 제안까지&rsquo;로 맞춰져요.</p>
             )}
             {form.result === "continue" && form.proposed === true && (
-              <p className="mt-2 text-[12px] leading-relaxed text-ot-text">다음 OT는 &lsquo;클로징 우선&rsquo;으로 준비돼요 — 망설인 이유부터 풀고 등록을 마무리해요.</p>
+              <p className="mt-2 text-[12px] leading-relaxed text-ot-text">다음 OT는 &lsquo;클로징 우선&rsquo;으로 준비돼요. 망설인 이유부터 풀고 등록을 마무리해요.</p>
             )}
           </Q>
         )}

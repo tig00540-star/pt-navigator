@@ -193,8 +193,8 @@ export default function OwnerOverview({ members = [], otRows = [], contracts = [
         <Card padding="md">
           <h3 className="mb-3 text-[14px] font-bold tracking-[-0.02em] text-ink">준비 중</h3>
           <ul className="flex flex-col gap-2.5 text-[12px] leading-relaxed text-muted">
-            <li className="flex items-start gap-2"><Wallet className="mt-0.5 h-3.5 w-3.5 flex-none" /><span><b className="text-sub">회원권(FC) 매출</b> — PT/회원권 분리, 준비 중</span></li>
-            <li className="flex items-start gap-2"><Users className="mt-0.5 h-3.5 w-3.5 flex-none" /><span><b className="text-sub">공지사항</b> — 대표 공지 위젯 예정</span></li>
+            <li className="flex items-start gap-2"><Wallet className="mt-0.5 h-3.5 w-3.5 flex-none" /><span><b className="text-sub">회원권(FC) 매출</b>: PT/회원권 분리, 준비 중</span></li>
+            <li className="flex items-start gap-2"><Users className="mt-0.5 h-3.5 w-3.5 flex-none" /><span><b className="text-sub">공지사항</b>: 대표 공지 위젯 예정</span></li>
           </ul>
         </Card>
       </div>

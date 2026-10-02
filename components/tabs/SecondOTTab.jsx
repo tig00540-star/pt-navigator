@@ -279,7 +279,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       const savedRow = res.headers.get("x-saved-row");
       setBrief(data);
       setBriefMeta(meta);
-      if (!savedRow) { setAiError("리포트를 저장하지 못했어요 — 지금은 이 화면에서만 보여요."); return; }
+      if (!savedRow) { setAiError("리포트를 저장하지 못했어요. 지금은 이 화면에서만 보여요."); return; }
       setExistingRow2Id(savedRow);
       // 서버가 저장한 최신 report를 다시 읽어 그 위에 세일즈북을 얹는다(다른 키 덮어쓰기 방지).
       const { data: fresh } = await supabase.from("ot_log").select("report").eq("id", savedRow).maybeSingle();
@@ -330,7 +330,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       const reportToSave = { ...(row2Report || {}), salesbook: sbResult.data, salesbookMeta: sbResult.meta };
       if (existingRow2Id) {
         const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", existingRow2Id).select();
-        if (!up || up.length === 0) { setSbError("세일즈북 저장 실패 — 권한/정책 확인 (0행)."); return; }
+        if (!up || up.length === 0) { setSbError("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
       } else {
         const { data: ins } = await supabase.from("ot_log").insert({ user_id: member.id, ot_round: round, report: reportToSave }).select("id").single();
         if (!ins?.id) { setSbError("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
@@ -599,7 +599,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
 
         {legacyCache && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
-            이전 형식 리포트예요 — &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀝니다.
+            이전 형식 리포트예요. &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀌어요.
           </div>
         )}
         <PrepReport kind="second" data={b} packages={packages} caseTier={meta?.caseTier} />
@@ -694,7 +694,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     <AIBriefBlock
       status="loading"
       title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
-      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요 — 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
+      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
     />
   );
 
@@ -713,7 +713,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   if (!canAI) {
     return renderDemo(
       !supabase
-        ? "데모 모드 — Supabase 키가 없어 AI가 동작하지 않습니다. 아래는 예시(하드코딩)입니다."
+        ? "데모 모드라 AI가 동작하지 않아요. 아래는 예시예요."
         : "회원을 먼저 선택해 주세요. 아래는 예시(하드코딩)입니다."
     );
   }
@@ -750,6 +750,6 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   if (generating || waiting) return renderGenerating();
   if (brief) return renderBrief(brief, briefMeta);
   if (aiError)
-    return renderDemo(`데모 폴백 (AI 실패: ${aiError}) — 아래는 예시(하드코딩)입니다.`);
+    return renderDemo(`데모 폴백 (AI 실패: ${aiError}). 아래는 예시예요.`);
   return renderPreGenerate();
 }

@@ -10,6 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
 import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
+import { tidyDeep } from "@/lib/tidyText";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // Hobby+fluid compute 기본 300s. 실측 ~45s의 4배 마진 + 업스트림 무응답 폭주 상한(선언제거=300s는 비권장).
@@ -1168,31 +1169,7 @@ function sanitizeFieldNames(node) {
   return node;
 }
 
-/* 줄표·강조 표시 정리(2026-10-02 대표 요청) — 지시를 어겨도 화면엔 안 나가게 마지막에 한 번 더.
-   ① 숫자 사이 줄표는 물결(24–30회 → 24~30회) ② 문장 끝(요·다·죠…) 뒤 줄표는 마침표 ③ 나머지는 쉼표.
-   ④ **강조**는 리포트 3종만 남긴다(화면이 포인트 색으로 칠함). 그 외(세일즈북·인바디 등 회원 대면)는 지운다. */
-function tidyDashes(s) {
-  return s
-    .replace(/(\d)\s*[—–―]\s*(\d)/g, "$1~$2")
-    .replace(/([요다죠까네])\s*[—–―]\s*/g, "$1. ")
-    .replace(/([?!.])\s*[—–―]\s*/g, "$1 ")
-    .replace(/\s*[—–―]+\s*$/g, "")
-    .replace(/^\s*[—–―]+\s*/g, "")
-    .replace(/\s*[—–―]+\s*/g, ", ");
-}
-function tidyOutput(node, keepEmph) {
-  if (typeof node === "string") {
-    const t = tidyDashes(node);
-    return keepEmph ? t : t.replace(/\*\*/g, "");
-  }
-  if (Array.isArray(node)) return node.map((x) => tidyOutput(x, keepEmph));
-  if (node && typeof node === "object") {
-    const o = {};
-    for (const key of Object.keys(node)) o[key] = tidyOutput(node[key], keepEmph);
-    return o;
-  }
-  return node;
-}
+// 줄표·강조 정리는 lib/tidyText(tidyDeep) — 다른 AI 라우트와 공용.
 
 // ── JSON 추출 하드닝 (haiku가 ```json 여러 블록 + ---·**[...]** 구분자로 쪼개 뱉는 경우 대비) ──
 
@@ -1437,7 +1414,7 @@ export async function POST(request) {
     const REQUIRED_INBODY = ["headline", "metrics", "diet", "lifestyle", "exercise", "why_now"];
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : [];
-    const brief = tidyOutput(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase));
+    const brief = tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase));
     console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);
     let savedId = null;
     try { savedId = await saveResult(token, phase, save, brief, model); }

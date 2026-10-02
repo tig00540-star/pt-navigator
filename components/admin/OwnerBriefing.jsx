@@ -173,7 +173,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
     try {
       const aiInput = {
         ym: d.ym, yesterday: d.yesterday, today: d.today, month: d.month, members: d.members, watch: d.watch,
-        top3: d.top3.map((c) => ({ title: c.kind === "trainer" ? `${nameOf(c.trainer_id)} — 관리 필요` : c.title, detail: c.detail, amount: c.amount ?? null })),
+        top3: d.top3.map((c) => ({ title: c.kind === "trainer" ? `${nameOf(c.trainer_id)} 관리 필요` : c.title, detail: c.detail, amount: c.amount ?? null })),
         trainerCoaching: d.trainerCoaching.map((c) => ({ trainer: nameOf(c.trainerId), msg: c.msg })),
         pipeline: { newCount: d.pipeline.newCandidates.length, reCount: d.pipeline.reCandidates.length, grandTotal: d.pipeline.grandTotal },
       };
@@ -221,7 +221,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
           {top.map((c, i) => {
             const m = META[c.kind] || META.pastdue;
             const Icon = m.icon;
-            const title = c.kind === "trainer" ? `${nameOf(c.trainer_id)} — 관리 필요` : c.title;
+            const title = c.kind === "trainer" ? `${nameOf(c.trainer_id)} 관리 필요` : c.title;
             return (
               <Card key={c.kind} interactive
                 onClick={() => (m.expand ? setOpenKind((k) => (k === c.kind ? null : c.kind)) : onGoTab?.(c.tab))}>
@@ -409,7 +409,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                       <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-sub"><span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-cyan-700" />{c}</li>
                     ))}
                   </ul>
-                  {aiState === "premium" && <p className="mt-1 text-[11px] text-muted">AI 코칭은 프리미엄 전용이에요 — 기본 코칭을 표시했어요.</p>}
+                  {aiState === "premium" && <p className="mt-1 text-[11px] text-muted">AI 코칭은 프리미엄 전용이에요. 기본 코칭을 보여 드렸어요.</p>}
                   {aiState === "failed" && <p className="mt-1 text-[11px] text-sub">{aiErr} · <button type="button" onClick={genReport} className="font-semibold text-cyan-700 underline underline-offset-2">다시 시도</button></p>}
                 </>
               )}

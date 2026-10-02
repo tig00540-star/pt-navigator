@@ -29,7 +29,7 @@ export default function SignupPage() {
 
   const submit = async () => {
     if (busy) return;
-    if (!supabase) { setErr("Supabase 미설정 — 가입은 키 설정 후 가능합니다."); return; }
+    if (!supabase) { setErr("데모 모드라 가입할 수 없어요. 키를 설정한 뒤 다시 시도해 주세요."); return; }
     if (!email.trim() || !pw || !displayName.trim()) { setErr("이메일·비밀번호·이름은 필수입니다."); return; }
     if (type === "center" && !accountName.trim()) { setErr("센터명을 입력해 주세요."); return; }
     setBusy(true); setErr("");

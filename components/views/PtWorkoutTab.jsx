@@ -187,11 +187,11 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     try {
       const { data, error } = await supabase
         .from("daily_workout_log").update({ voided }).eq("id", log.id).select();
-      if (error || !data || data.length === 0) { showToast(voided ? "삭제 실패 — 다시 시도" : "복구 실패 — 다시 시도"); return; }
+      if (error || !data || data.length === 0) { showToast(voided ? "삭제하지 못했어요. 다시 시도해 주세요." : "되돌리지 못했어요. 다시 시도해 주세요."); return; }
       setLogs((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
       setVoidTarget(null); showToast(voided ? "삭제됨 · 출석·차감에서 제외" : "복구됨");
     } catch {
-      showToast(voided ? "삭제 실패 — 네트워크 확인" : "복구 실패 — 네트워크 확인");
+      showToast(voided ? "삭제하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요." : "되돌리지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setLogBusy(false);
     }
@@ -270,7 +270,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           ? "노쇼 저장됨(데모) · 차감 반영"
           : copied
           ? "저장됨(데모) · 차감 · 카톡 복사됨"
-          : "저장됨(데모) · 차감됨 (복사 실패 — 길게 눌러 복사)"
+          : "저장됨(데모) · 차감됨 (복사가 안 됐어요. 길게 눌러 복사해 주세요)"
       );
       setSaving(false);
       return;
@@ -293,7 +293,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
         ? "노쇼 저장됨 · 차감 반영"
         : copied
         ? "저장됨 · 차감 · 카톡 복사됨"
-        : "저장됨 · 차감됨 (복사 실패 — 길게 눌러 복사)"
+        : "저장됨 · 차감됨 (복사가 안 됐어요. 길게 눌러 복사해 주세요)"
     );
       setSaving(false);
     } catch {
@@ -460,7 +460,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                     {pendingTotal > 0 && <span className="rounded-md border border-line bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">다음 계약 {pendingTotal}회 대기</span>}
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-muted">활성 계약 없음 — &lsquo;자료남기기&rsquo;에서 등록하세요.</p>
+                  <p className="mt-2 text-sm text-muted">진행 중인 계약이 없어요. &lsquo;자료남기기&rsquo;에서 등록해 주세요.</p>
                 )}
               </Card>
             )}
@@ -732,7 +732,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <div>
               <p className="flex items-center gap-2 text-sm text-sub">
                 <Dumbbell className="h-4 w-4 shrink-0 text-muted" />
-                활성 계약 없음 — 등록/재등록이 필요합니다.
+                진행 중인 계약이 없어요. 등록이나 재등록이 필요해요.
               </p>
               <Button variant="primary" size="sm" onClick={() => setShowContract(true)} className="mt-3">
                 <Dumbbell className="h-3.5 w-3.5" /> 계약 등록
@@ -786,7 +786,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       {mode !== "view" && (
       <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
         <summary className="flex cursor-pointer list-none items-center gap-2">
-          <Eyebrow icon={Flame}>급한불 — 회원 급변 대처</Eyebrow>
+          <Eyebrow icon={Flame}>급한불: 회원 급변 대처</Eyebrow>
         </summary>
         <div className="mt-4 space-y-3">
           {/* 상시 의료 배너 — AI 출력과 무관하게 항상 노출(이중 방어). */}

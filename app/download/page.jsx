@@ -103,7 +103,7 @@ export default function DownloadPage() {
         <div className="mt-14 rounded-2xl border border-line bg-card p-6 shadow-sm sm:p-8">
           <h2 className="text-[18px] font-extrabold tracking-[-0.03em]">오직 트레이너는 이런 서비스예요</h2>
           <p className="mt-2 text-[14.5px] leading-[1.7] text-sub">
-            트레이너·센터를 위한 AI 운영 파트너입니다. 수업을 뺀 대부분의 업무 — 신규등록·재등록 세일즈, 음성 운동일지 자동작성, 회원 셀프관리, 급여·정산, 대표 대시보드 — 를 한 앱에서 처리합니다.
+            트레이너·센터를 위한 AI 운영 파트너입니다. 신규등록·재등록 세일즈, 음성 운동일지 자동작성, 회원 셀프관리, 급여·정산, 대표 대시보드까지 수업을 뺀 대부분의 업무를 한 앱에서 처리합니다.
           </p>
           <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
             {["말로 30초, 운동일지 자동 작성", "OT·재등록 세일즈 서포트", "회원 전용 페이지(성과 그래프·비포애프터)", "매출·전환·리텐션 대시보드"].map((x) => (

@@ -215,7 +215,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
   return (
     <div>
       <p className="mb-3 text-[12px] leading-relaxed text-sub">
-        트레이너 성적표 — 누가 <b className="text-ink">등록·관리·매출</b>을 잘 내는지 한눈에.
+        트레이너 성적표예요. 누가 <b className="text-ink">등록·관리·매출</b>을 잘 내는지 한눈에.
       </p>
       {/* 줄 세우기 기준(표·카드 공용) — 칩이 '…순'이라 별도 라벨을 두지 않는다. */}
       <div className="mb-3 flex flex-wrap items-center gap-1.5">

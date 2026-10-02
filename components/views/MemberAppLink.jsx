@@ -25,7 +25,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
   const issue = async () => {
     if (busy) return;
     if (!supabase) {
-      showToast("데모 모드 — 실제 발급 불가");
+      showToast("데모 모드라 실제로 발급되지 않아요");
       return;
     }
     setBusy(true);
@@ -58,7 +58,7 @@ export default function MemberAppLink({ member, onMemberPatch }) {
   const endPt = async () => {
     if (busy) return;
     if (!supabase) {
-      showToast("데모 모드 — 실제 종료 불가");
+      showToast("데모 모드라 실제로 종료되지 않아요");
       return;
     }
     setBusy(true);

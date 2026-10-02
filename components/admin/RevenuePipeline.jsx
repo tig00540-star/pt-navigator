@@ -113,7 +113,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
             </div>
           ) : (
             <div className="mt-4 rounded-xl border border-line bg-elevate px-3 py-2.5 text-[11px] leading-relaxed text-muted">
-              이달 목표 미설정 — 트레이너가 &lsquo;내 실적&rsquo;에서 이달 목표를 설정하면 센터 합산 목표로 표시돼요.
+              이달 목표가 아직 없어요. 트레이너가 &lsquo;내 실적&rsquo;에서 이달 목표를 설정하면 센터 합산 목표로 표시돼요.
             </div>
           )}
         </Card>
@@ -133,7 +133,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
                   <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedNew)}</div>
                   <div className="mt-1 text-[10px] leading-relaxed text-muted">OT 진행 {forecast.otPipeline}명 × 등록률 {pctText(forecast.convRate)} × 평균 {wonApprox(forecast.avgNew)}</div>
                 </>
-              ) : <div className="mt-1 text-[11px] text-muted">아직 부족 — OT/전환 이력 쌓이면 표시</div>}
+              ) : <div className="mt-1 text-[11px] text-muted">OT 이력이 더 쌓이면 보여 드려요</div>}
             </div>
             <div className="rounded-xl border border-line bg-elevate p-3">
               <div className="text-[11px] font-semibold text-sub">재등록에서</div>
@@ -142,7 +142,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
                   <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedRe)}</div>
                   <div className="mt-1 text-[10px] leading-relaxed text-muted">만료 임박 {forecast.expiringCount}명 × 재등록률 {pctText(forecast.reregRate)} × 평균 {wonApprox(forecast.avgRe)}</div>
                 </>
-              ) : <div className="mt-1 text-[11px] text-muted">아직 부족 — 재등록 이력 쌓이면 표시</div>}
+              ) : <div className="mt-1 text-[11px] text-muted">재등록 이력이 더 쌓이면 보여 드려요</div>}
             </div>
           </div>
           <p className="mt-3 text-[10px] leading-relaxed text-muted">과거 등록률·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있습니다.</p>

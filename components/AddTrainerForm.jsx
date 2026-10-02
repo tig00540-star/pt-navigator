@@ -60,7 +60,7 @@ export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreat
       {err && <div className="mt-2 text-xs text-red-600">{err}</div>}
       {result && (
         <div className="mt-3 rounded-lg border border-primary/30 bg-primary-soft p-3 text-sm">
-          <div className="font-semibold text-primary-strong">계정 생성 완료 — 이 트레이너에게 전달</div>
+          <div className="font-semibold text-primary-strong">계정을 만들었어요. 이 트레이너에게 전달해 주세요</div>
           <div className="mt-1 text-ink">이메일: <span className="font-mono">{result.email}</span></div>
           <div className="text-ink">임시 비번: <span className="font-mono text-primary-strong">{result.pw}</span></div>
           <div className="mt-1 text-[11px] text-muted">⚠️ 이 화면에서만 보여요. 트레이너는 로그인 후 이 비번으로 접속합니다.</div>

@@ -130,7 +130,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
   return (
     <div className="space-y-4">
       <p className="text-[12px] leading-relaxed text-sub">
-        회원이 들어와서 <b className="text-ink">어디서 새는지</b> — 그리고 지금 챙길 사람이 누구인지.
+        회원이 들어와서 <b className="text-ink">어디서 새는지</b>, 그리고 지금 챙길 사람이 누구인지.
       </p>
 
       {/* ── 신규 → 등록 ── */}
@@ -212,7 +212,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
             </div>
             <p className="mt-3 text-[11px] leading-relaxed text-muted">
               그 달에 <b className="text-ink">들어온</b> 회원 중 몇 %가 등록했는지예요(회색 막대=유입 인원, 파란 부분=등록).
-              이번 달은 아직 진행 중이라 낮게 보입니다 — 등록은 다음 달에도 일어나요.
+              이번 달은 아직 진행 중이라 낮게 보여요. 등록은 다음 달에도 일어나요.
             </p>
           </>
         )}

@@ -173,7 +173,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
       if (error || !data || data.length === 0) { showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setSaving(false); return; }
       setSchemes((p) => p.filter((s) => s.id !== row.id));
       selectScope(null);
-      showToast("이 트레이너 정책 삭제 — 계정 기본을 따릅니다");
+      showToast("이 트레이너 정책을 지웠어요. 이제 계정 기본을 따라요");
       setSaving(false);
     } catch {
       showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
@@ -204,7 +204,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
           </div>
           {!loading && scope != null && !currentRow && (
             <p className="mt-2 text-[11px] leading-relaxed text-muted">
-              이 트레이너는 계정 기본을 따르는 중 — 저장하면 전용 정책이 생겨요.
+              이 트레이너는 계정 기본을 따르는 중이에요. 저장하면 전용 정책이 생겨요.
             </p>
           )}
         </div>

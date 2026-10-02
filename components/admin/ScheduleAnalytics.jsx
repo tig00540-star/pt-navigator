@@ -76,7 +76,7 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
 
   return (
     <div className="space-y-6">
-      <p className="text-[12px] leading-relaxed text-sub">예약이 <b className="text-ink">언제 몰리고</b>, 누가 <b className="text-ink">잘 채우는지</b> — 최근 90일.</p>
+      <p className="text-[12px] leading-relaxed text-sub">예약이 <b className="text-ink">언제 몰리고</b>, 누가 <b className="text-ink">잘 채우는지</b> 최근 90일로 봐요.</p>
 
       {/* 1) 요약 타일 4개 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

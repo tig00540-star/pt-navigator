@@ -139,7 +139,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
         .select();
       if (cErr || !c || c.length === 0) {
         setSaving(false);
-        setErr("회원은 등록됐지만 이월계약 저장 실패 — PT 뷰의 '계약 등록'으로 마저 등록하세요");
+        setErr("회원은 등록했지만 이월계약은 저장하지 못했어요. PT 화면의 '계약 등록'에서 마저 등록해 주세요.");
         return;
       }
     }
