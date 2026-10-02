@@ -122,6 +122,8 @@ export default function SalesbookView({
   onClose,
   benefits = [],
   startPresent = false, // 세일즈북 탭에서 회원을 누르면 바로 발표 화면으로(2단계)
+  slideKeys = null,     // 기본 장 목록 바꾸기(1차 제안 = 표지·목표·플랜·마무리) · 혜택 장은 알아서 끼운다
+  caseAnchor = "roadmap", // 사례 장을 기본으로 끼울 자리(그 장 앞)
 }) {
   // 신규 등록 혜택 장(선택) — 있으면 플랜 다음에 한 장 추가.
   const hasBenefits = Array.isArray(benefits) && benefits.filter(Boolean).length > 0;
@@ -151,8 +153,9 @@ export default function SalesbookView({
   if (salesbook !== prevSb) { setPrevSb(salesbook); setDraft(salesbook || {}); }
   const sb = editable ? draft : (salesbook || {});
   // 장 구성(2단계) — 순서·숨김·사례 장. deck이 없으면 예전 순서 그대로.
-  const baseKeys = ["cover", "goal", "confirmed", "photo", "roadmap", "plans", ...(hasBenefits ? ["benefits"] : []), "closing"];
-  const deck = deckOrder(baseKeys, sb.deck);
+  const coreKeys = slideKeys || ["cover", "goal", "confirmed", "photo", "roadmap", "plans", "closing"];
+  const baseKeys = hasBenefits ? [...coreKeys.filter((k) => k !== "closing"), "benefits", ...(coreKeys.includes("closing") ? ["closing"] : [])] : coreKeys;
+  const deck = deckOrder(baseKeys, sb.deck, caseAnchor);
   const total = Math.max(1, deck.visible.length);
   const pos = (k) => deck.visible.indexOf(k) + 1;
   const show = (k) => deck.visible.includes(k);

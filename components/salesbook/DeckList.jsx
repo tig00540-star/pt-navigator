@@ -17,6 +17,8 @@ import Toast from "@/components/ui/Toast";
 import Badge from "@/components/ui/Badge";
 import FilterChip from "@/components/ui/FilterChip";
 import DeckLauncher from "@/components/salesbook/DeckLauncher";
+import FirstProposalLauncher from "@/components/salesbook/FirstProposalLauncher";
+import { viewFor } from "@/lib/memberStatus";
 
 const when = (iso) => {
   if (!iso) return "";
@@ -60,7 +62,11 @@ export default function DeckList() {
   const byId = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const list = useMemo(() => {
     const mineOnly = members.some((m) => m.trainer_id === myUid);
-    return (rows || [])
+    // 2차 세일즈북이 아직 없는 OT 회원은 '1차 제안'(AI 없이 바로 만드는 짧은 버전)으로 함께 띄운다.
+    const hasOt = new Set((rows || []).filter((r) => r.kind === "ot").map((r) => r.user_id));
+    const firsts = members.filter((m) => viewFor(m) === "ot" && !hasOt.has(m.id))
+      .map((m) => ({ kind: "first", user_id: m.id, at: m.created_at || null }));
+    return [...(rows || []), ...firsts]
       .map((r) => ({ ...r, member: byId.get(r.user_id) }))
       .filter((r) => r.member && (!mineOnly || r.member.trainer_id === myUid))
       .filter((r) => kind === "all" || r.kind === kind)
@@ -70,7 +76,7 @@ export default function DeckList() {
 
   const openDeck = (r, editable) => {
     if (r.kind === "reg") { router.push(`/pt/${r.user_id}/renewal?sb=1`); return; }
-    setOpen({ row: r.row, member: r.member, editable });
+    setOpen({ kind: r.kind, row: r.row, member: r.member, editable });
   };
 
   return (
@@ -84,7 +90,8 @@ export default function DeckList() {
 
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip selected={kind === "all"} onClick={() => setKind("all")}>전체</FilterChip>
-        <FilterChip selected={kind === "ot"} onClick={() => setKind("ot")}>OT</FilterChip>
+        <FilterChip selected={kind === "first"} onClick={() => setKind("first")}>1차 제안</FilterChip>
+        <FilterChip selected={kind === "ot"} onClick={() => setKind("ot")}>2차 OT</FilterChip>
         <FilterChip selected={kind === "reg"} onClick={() => setKind("reg")}>재등록</FilterChip>
         <label className="ml-auto flex h-9 min-w-0 items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 text-[13px] text-sub">
           <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -97,7 +104,7 @@ export default function DeckList() {
       ) : list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-8 text-center">
           <p className="m-0 text-[15px] font-semibold text-ink">{q || kind !== "all" ? "맞는 세일즈북이 없어요" : "아직 만든 세일즈북이 없어요"}</p>
-          <p className="m-0 mt-1 text-[13px] text-sub">세일즈북은 OT 회원의 2차 OT 준비하기, PT 회원의 재등록 준비에서 만들어요. 만들면 여기 모여요.</p>
+          <p className="m-0 mt-1 text-[13px] text-sub">OT 회원은 1차 제안이 바로 떠요. 2차 OT 준비하기·재등록 준비에서 세일즈북을 만들면 여기 모여요.</p>
         </div>
       ) : (
         <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-3">
@@ -109,12 +116,12 @@ export default function DeckList() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[15px] font-bold text-ink">{r.member.name}</span>
-                    <Badge tone={r.kind === "ot" ? "ot" : "pt"}>{r.kind === "ot" ? `OT ${r.round || ""}차` : "재등록"}</Badge>
+                    <Badge tone={r.kind === "reg" ? "pt" : "ot"}>{r.kind === "ot" ? `OT ${r.round || ""}차` : r.kind === "first" ? "1차 제안" : "재등록"}</Badge>
                   </span>
-                  <span className="block text-[12px] text-muted">{when(r.at)} · {r.kind === "ot" && (r.row.report?.salesbook?.deck?.cases || []).length ? `사례 ${r.row.report.salesbook.deck.cases.length}개 · ` : ""}눌러서 발표</span>
+                  <span className="block text-[12px] text-muted">{r.kind === "first" ? "AI 없이 바로 · " : `${when(r.at)} · `}{r.kind === "ot" && (r.row.report?.salesbook?.deck?.cases || []).length ? `사례 ${r.row.report.salesbook.deck.cases.length}개 · ` : ""}눌러서 발표</span>
                 </span>
               </button>
-              {r.kind === "ot" && (
+              {r.kind !== "reg" && (
                 <button type="button" onClick={() => openDeck(r, true)} aria-label={`${r.member.name} 세일즈북 편집`}
                   className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-lg px-2.5 text-[12px] font-semibold text-sub transition hover:bg-elevate hover:text-ink">
                   <Pencil className="h-3.5 w-3.5" aria-hidden="true" /> 편집
@@ -125,7 +132,10 @@ export default function DeckList() {
         </ul>
       )}
 
-      {open && (
+      {open && open.kind === "first" && (
+        <FirstProposalLauncher member={open.member} editable={open.editable} showToast={showToast} onClose={() => setOpen(null)} />
+      )}
+      {open && open.kind !== "first" && (
         <DeckLauncher
           member={open.member}
           row={open.row}

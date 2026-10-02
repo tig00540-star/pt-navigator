@@ -11,6 +11,10 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
+import { Presentation } from "lucide-react";
+import FirstProposalLauncher from "@/components/salesbook/FirstProposalLauncher";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import PrepReport from "@/components/ot/PrepReport";
 import { supabase } from "@/lib/supabaseClient";
@@ -20,6 +24,8 @@ import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/
 
 
 export default function FirstOTAssist({ member, onSaved }) {
+  const [proposal, setProposal] = useState(null); // null | "present" | "edit" — 1차 제안(짧은 세일즈북)
+  const { toast, showToast } = useToast();
   const [data, setData] = useState(null); // ① brief JSON (캐시 또는 세션)
   const [meta, setMeta] = useState(null); // { generatedAt, model, inputHash }
   const [loading, setLoading] = useState(false);
@@ -159,6 +165,7 @@ export default function FirstOTAssist({ member, onSaved }) {
   const briefStatus = loading || waiting ? "loading" : !data ? "idle" : stale ? "stale" : "ready";
 
   return (
+    <>
     <AIBriefBlock
       status={briefStatus}
       title="오늘의 OT 사전 준비 리포트"
@@ -193,8 +200,25 @@ export default function FirstOTAssist({ member, onSaved }) {
           <p className="text-[11px] leading-relaxed text-muted">
             ※ 1차도 목표는 <strong className="font-semibold text-primary-strong">오늘 PT 등록</strong>이에요. 클로징의 요청까지 꼭 가세요. 운동 부분은 관찰 전 &lsquo;가설&rsquo;이라 회원 반응을 보며 조정하세요.
           </p>
+          {/* 1차 제안 — 클로징 '요청' 직전에 태블릿으로 2~3분. AI 없이 바로 열린다. */}
+          <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary-soft p-2">
+            <button type="button" onClick={() => setProposal("present")}
+              className="flex min-h-[48px] flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left">
+              <Presentation className="h-5 w-5 shrink-0 text-primary-strong" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block text-[14px] font-bold text-ink">1차 제안 보여주기</span>
+                <span className="block text-[12px] text-sub">클로징 요청 직전에 · 같은 목표 회원 사례와 플랜</span>
+              </span>
+            </button>
+            <button type="button" onClick={() => setProposal("edit")} className="min-h-[44px] shrink-0 rounded-lg px-3 text-[12px] font-semibold text-sub hover:bg-card hover:text-ink">편집</button>
+          </div>
         </div>
       )}
     </AIBriefBlock>
+    {proposal && (
+      <FirstProposalLauncher member={member} editable={proposal === "edit"} showToast={showToast} onClose={() => setProposal(null)} />
+    )}
+    <Toast message={toast} />
+    </>
   );
 }
