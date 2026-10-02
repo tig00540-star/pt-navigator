@@ -4,8 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowLeftRight,
+  Home,
+  Receipt,
+  Repeat2,
+  Settings2,
+  Users,
+  Wallet,
   Award,
   CheckCircle2,
   ChevronDown,
@@ -36,6 +43,9 @@ import CenterMonthSummary from "@/components/admin/CenterMonthSummary";
 import TrainerQualityReport from "@/components/admin/TrainerQualityReport";
 import AdminAnnouncements from "@/components/AdminAnnouncements";
 import BrandMark from "@/components/ui/BrandMark";
+import AdminSideNav from "@/components/admin/AdminSideNav";
+import OwnerWideHome from "@/components/admin/OwnerWideHome";
+import { useIsWide } from "@/lib/useIsWide";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 
 /* =========================================================================
@@ -60,15 +70,15 @@ const ATABS = [
    각 섹션의 {atab === "..."} 조건은 그대로 두고, 묶음 안에서 세그먼트로 고른다.
    대표는 하루에 여러 번 열지 않는다. 탭 9개를 가로로 훑게 하는 대신 5개로 줄인다. */
 const AGROUPS = [
-  { id: "hub",      label: "홈",         tabs: ["hub"] },
-  { id: "briefing", label: "오늘 챙길 것", tabs: ["briefing"] },
-  { id: "revenue",  label: "매출",        tabs: ["revenue"] },
+  { id: "hub",      label: "홈",         tabs: ["hub"], icon: Home },
+  { id: "briefing", label: "오늘 챙길 것", tabs: ["briefing"], icon: AlertTriangle },
+  { id: "revenue",  label: "매출",        tabs: ["revenue"], icon: Wallet },
   // 정산은 '보는' 화면이 아니라 '하는' 화면(입력·월말 마감)이라 매출 분석 옆 세그먼트에
   // 숨으면 매달 찾아 들어가야 한다. 원장이 반복하는 실무라 상단에 제 집을 준다.
-  { id: "settle",   label: "정산",        tabs: ["settle", "settle_entry"] },
-  { id: "team",     label: "트레이너",     tabs: ["perf", "payroll"] },
-  { id: "members",  label: "등록·이탈",    tabs: ["flow"] },
-  { id: "ops",      label: "운영",        tabs: ["schedule", "ops"] },
+  { id: "settle",   label: "정산",        tabs: ["settle", "settle_entry"], icon: Receipt },
+  { id: "team",     label: "트레이너",     tabs: ["perf", "payroll"], icon: Users },
+  { id: "members",  label: "등록·이탈",    tabs: ["flow"], icon: Repeat2 },
+  { id: "ops",      label: "운영",        tabs: ["schedule", "ops"], icon: Settings2 },
 ];
 const ATAB_LABEL = { settle: "정산 보기", settle_entry: "장부 적기", perf: "성과·리더보드", payroll: "급여 설정", schedule: "스케줄", ops: "센터 운영" };
 // 옛 탭 id 흡수 — ownerBriefing 카드가 tab:"funnel"·"retention"을 들고 온다(lib은 안 건드린다).
@@ -127,6 +137,7 @@ export default function AdminDashboard() {
   const [incomes, setIncomes] = useState([]);   // income(FC·기타 매출 수기 · 정산 전용 · 트레이너 지표 미반영)
   const [startDay, setStartDay] = useState(1);  // account.settlement_start_day — 센터별 정산 주기(1일/15일 등)
   const [atab, setAtab] = useState("hub"); // admin 섹션(기본=허브 홈 · 9탭을 5묶음으로 고른다)
+  const wide = useIsWide(); // 태블릿 가로·PC = 홈을 한 화면 대시보드로(OwnerWideHome)
   // 탭 이동 공통 — 옛 id(funnel·retention)를 새 화면(flow)으로 흘린다.
   const goTab = (id) => setAtab(normalizeTab(id));
   const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
@@ -292,10 +303,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-ink antialiased selection:bg-primary/20">
-      {/* ===== HEADER ===== */}
-      <header className="sticky top-0 z-30 border-b border-line/80 bg-card/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+    <div className="min-h-screen bg-bg text-ink antialiased selection:bg-primary/20 md:pl-[84px] xl:pl-56">
+      {/* 태블릿·PC(md~): 왼쪽 세로 메뉴. 폰은 아래 상단 가로 탭 그대로. */}
+      <AdminSideNav groups={AGROUPS} activeGroup={groupOf(atab)} onPick={setAtab} centerName={centerName} />
+      {/* ===== HEADER ===== (넓은 화면에선 로고·묶음 탭이 왼쪽 메뉴로 가고, 세부 탭 칩만 남는다 — 없으면 헤더도 없음) */}
+      <header className={`sticky top-0 z-30 border-b border-line/80 bg-card/80 backdrop-blur-xl ${(AGROUPS.find((x) => x.id === groupOf(atab))?.tabs.length ?? 1) < 2 ? "md:hidden" : ""}`}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 md:hidden">
           {/* 헤더 로크업은 트레이너 화면(app/page.jsx)이 정본 — 치수를 그대로 따른다.
               아이콘 36px · gap-2.5 · 1행 17px extrabold · 2행 12px medium(mt-1).
               두 화면을 오가는 사람이 같은 앱이라고 느끼려면 여기가 흔들리면 안 된다.
@@ -338,8 +351,8 @@ export default function AdminDashboard() {
           </div>
         </div>
         {/* 섹션 탭 네비 (admin fuchsia) */}
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:max-w-[1440px] lg:px-8">
+          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap md:hidden">
             {AGROUPS.map((g) => {
               const active = groupOf(atab) === g.id;
               return (
@@ -355,7 +368,7 @@ export default function AdminDashboard() {
             const g = AGROUPS.find((x) => x.id === groupOf(atab));
             if (!g || g.tabs.length < 2) return null;
             return (
-              <div className="flex gap-1.5 pb-2.5">
+              <div className="flex gap-1.5 pb-2.5 md:pt-2.5">
                 {g.tabs.map((t) => (
                   <button key={t} onClick={() => setAtab(t)}
                     className={`min-h-[38px] rounded-lg px-3.5 text-[13px] font-bold transition ${
@@ -371,19 +384,27 @@ export default function AdminDashboard() {
       </header>
 
       {dbNote && (
-        <div className="mx-auto max-w-6xl px-4 pt-3 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 pt-3 sm:px-6 lg:max-w-[1440px] lg:px-8">
           <div className="rounded-lg border border-line bg-card px-3 py-2 text-[11px] text-sub">
             {dbNote}
           </div>
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:max-w-[1440px] lg:px-8">
         {/* 빈상태 온보딩 — 회원 0명일 때만 · 모든 탭 위 · 탭별 안내 + 현재 트레이너/회원 수 */}
         <AdminEmptyOnboarding members={rows} trainers={trainers} atab={atab} />
 
         {/* ===== 홈(허브) — 9개 탭을 5묶음으로 고르는 첫 화면 ===== */}
-        {atab === "hub" && (
+        {atab === "hub" && wide && (
+        <section className="mb-8">
+          <OwnerWideHome
+            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            appts={appts} goals={goals} expenses={expenses} trainers={trainers} ym={ym}
+            centerName={centerName} onGoTab={goTab} />
+        </section>
+        )}
+        {atab === "hub" && !wide && (
         <section className="mb-8">
           <OwnerHub
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
