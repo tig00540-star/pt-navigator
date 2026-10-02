@@ -1,0 +1,27 @@
+/* 오직 트레이너 — Spacing tokens (4px base grid) */
+:root{
+  --space-0:0;
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-7:32px;
+  --space-8:40px;
+  --space-9:48px;
+  --space-10:64px;
+
+  /* Component rhythm — buttons use generous horizontal padding per brand */
+  --pad-btn-y:14px;
+  --pad-btn-x:24px;
+  --pad-card:20px;
+  --pad-row:16px;
+  --gap-inline:8px;
+  --gap-stack:12px;
+
+  /* Layout */
+  --container-mobile:440px;
+  --tabbar-height:64px;
+  --header-height:56px;
+}

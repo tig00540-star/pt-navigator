@@ -1,0 +1,73 @@
+/* 오직 트레이너 — Color tokens
+ * Brand: a refined, warm red pulled from the logo (deep maroon → bright red),
+ * deliberately deepened so it reads confident rather than primary/candy-red. */
+:root{
+  /* Brand red scale */
+  --red-50:#FEF3F1;
+  --red-100:#FCE1DD;
+  --red-200:#F7C0B9;
+  --red-300:#F0968C;
+  --red-400:#E9645A;
+  --red-500:#E23A2E;   /* primary */
+  --red-600:#C82A20;   /* hover / pressed */
+  --red-700:#A31F17;
+  --red-800:#7C1712;
+  --red-900:#571009;
+
+  /* Neutrals — cool gray with a faint blue cast, matching the app chrome */
+  --gray-0:#FFFFFF;
+  --gray-50:#F6F7F9;
+  --gray-100:#EEF1F6;   /* app background */
+  --gray-200:#E3E7EE;
+  --gray-300:#CDD3DD;
+  --gray-400:#9BA3B0;
+  --gray-500:#6E7684;
+  --gray-600:#4C5460;
+  --gray-700:#343B47;
+  --gray-800:#242A34;
+  --gray-900:#181D26;
+
+  /* Accents */
+  --orange-400:#F7B23E;
+  --orange-500:#F5A623;   /* active-tab underline, highlights */
+  --violet-400:#9B8BF2;   /* shield / secure indicator */
+  --violet-500:#7C6CE8;
+
+  /* Semantic */
+  --success-500:#22A06B;
+  --success-50:#E7F6EF;
+  --warning-500:#F5A623;
+  --warning-50:#FEF4E1;
+  --danger-500:#E23A2E;
+  --danger-50:#FEF3F1;
+  --info-500:#3B82C4;
+  --info-50:#EAF2FA;
+
+  /* ---- Semantic aliases ---- */
+  --brand:var(--red-500);
+  --brand-hover:var(--red-600);
+  --brand-soft:var(--red-50);
+  --brand-gradient:linear-gradient(135deg,#C21F2C 0%,#ED2213 100%); /* @kind color */
+  --brand-gradient-deep:linear-gradient(150deg,#810207 0%,#FD2202 100%); /* @kind color */
+
+  --accent:var(--orange-500);
+  --secure:var(--violet-400);
+
+  --bg-app:var(--gray-100);
+  --bg-page:var(--gray-50);
+  --surface-card:var(--gray-0);
+  --surface-sunken:var(--gray-100);
+  --surface-hover:var(--gray-50);
+
+  --text-strong:#1F2430;
+  --text-body:#343B47;
+  --text-muted:var(--gray-500);
+  --text-faint:var(--gray-400);
+  --text-on-brand:#FFFFFF;
+
+  --border-subtle:var(--gray-200);
+  --border-default:var(--gray-300);
+  --border-strong:var(--gray-400);
+
+  --focus-ring:color-mix(in srgb,var(--red-500) 45%,transparent);
+}

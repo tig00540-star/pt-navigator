@@ -1,0 +1,11 @@
+/* 오직 트레이너 — Radius tokens
+ * Rounded and friendly. Buttons and cards are noticeably rounded per brand. */
+:root{
+  --radius-xs:6px;
+  --radius-sm:10px;
+  --radius-md:14px;    /* buttons, inputs */
+  --radius-lg:18px;    /* cards */
+  --radius-xl:22px;    /* large feature cards */
+  --radius-2xl:28px;
+  --radius-pill:999px; /* tags, chips, icon buttons */
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/design-system-2aa11180-8aae-462d-a736-0420e4203bc8/styles.css">
+  <script src="_ds/design-system-2aa11180-8aae-462d-a736-0420e4203bc8/_ds_bundle.js"></script>
+  <style>body{margin:0;background:#E3E7EE}a{color:var(--red-700)}a:hover{color:var(--red-800)}</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:28px;font-family:var(--font-sans);color:var(--text-strong)">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <h1 style="margin:0;font-size:36px;font-weight:900;letter-spacing:-0.04em">오직 트레이너 랜딩 2종 — 시안 (기획안 v5)</h1>
+    <p style="margin:0;font-size:17px;color:var(--gray-600)">① 트레이너용 첫 화면 제목 A·C · ② 트레이너용 폰·PC · ③ 센터 대표용 폰·PC. 스크롤 효과·페이지 전환은 <a href="Landing Prototype.dc.html" style="font-weight:800">프로토타입</a>에서.</p>
+  </div>
+
+  <h2 style="margin:24px 0 0;font-size:24px;font-weight:900">① 트레이너용 첫 화면 — 제목 A안 vs C안(추천)</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--gray-900);color:#fff;font-weight:800;font-size:14px">1a</span><span style="font-size:15px;font-weight:700">A안 (현재) · 폰 375</span></div>
+      <div style="width:375px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="trainer" device="phone" headline="A" hero-only="{{ true }}" hint-size="375px,620px"></dc-import></div>
+    </div>
+    <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--red-600);color:#fff;font-weight:800;font-size:14px">1b</span><span style="font-size:15px;font-weight:700">C안 (추천) · 폰 375</span></div>
+      <div style="width:375px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="trainer" device="phone" headline="C" hero-only="{{ true }}" hint-size="375px,620px"></dc-import></div>
+    </div>
+    <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--gray-900);color:#fff;font-weight:800;font-size:14px">1c</span><span style="font-size:15px;font-weight:700">A안 (현재) · PC 1280</span></div>
+      <div style="width:1280px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="trainer" device="pc" headline="A" hero-only="{{ true }}" hint-size="1280px,600px"></dc-import></div>
+    </div>
+    <div id="1d" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--red-600);color:#fff;font-weight:800;font-size:14px">1d</span><span style="font-size:15px;font-weight:700">C안 (추천) · PC 1280</span></div>
+      <div style="width:1280px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="trainer" device="pc" headline="C" hero-only="{{ true }}" hint-size="1280px,600px"></dc-import></div>
+    </div>
+  </div>
+
+  <h2 style="margin:40px 0 0;font-size:24px;font-weight:900">② 트레이너용 전체 (제목 C안 적용)</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1e" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--gray-900);color:#fff;font-weight:800;font-size:14px">1e</span><span style="font-size:15px;font-weight:700">트레이너용 · 폰 375</span></div>
+      <div style="width:375px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="trainer" device="phone" headline="C" hint-size="375px,9000px"></dc-import></div>
+    </div>
+    <div id="1f" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--gray-900);color:#fff;font-weight:800;font-size:14px">1f</span><span style="font-size:15px;font-weight:700">트레이너용 · PC 1280</span></div>
+      <div style="width:1280px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="trainer" device="pc" headline="C" hint-size="1280px,9000px"></dc-import></div>
+    </div>
+  </div>
+
+  <h2 style="margin:40px 0 0;font-size:24px;font-weight:900">③ 센터 대표용 전체</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1g" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--gray-900);color:#fff;font-weight:800;font-size:14px">1g</span><span style="font-size:15px;font-weight:700">센터 대표용 · 폰 375</span></div>
+      <div style="width:375px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="center" device="phone" hint-size="375px,7000px"></dc-import></div>
+    </div>
+    <div id="1h" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:4px 10px;border-radius:8px;background:var(--gray-900);color:#fff;font-weight:800;font-size:14px">1h</span><span style="font-size:15px;font-weight:700">센터 대표용 · PC 1280</span></div>
+      <div style="width:1280px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(24,29,38,.12)"><dc-import name="Landing Page" audience="center" device="pc" hint-size="1280px,7000px"></dc-import></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
@@ -17,6 +17,15 @@ export default function SignupPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [sent, setSent] = useState(false);              // 이메일 인증 대기 화면
+
+  // 센터 대표용 랜딩(/center)에서 오면 '센터 대표'를 미리 선택(?type=center).
+  // useSearchParams 대신 location — 정적 프리렌더에 Suspense 경계를 요구하지 않게.
+  // (InstallAppButton과 같은 패턴 — 효과 본문에서 동기 setState를 피한다.)
+  useEffect(() => {
+    (async () => {
+      if (new URLSearchParams(window.location.search).get("type") === "center") setType("center");
+    })();
+  }, []);
 
   const submit = async () => {
     if (busy) return;

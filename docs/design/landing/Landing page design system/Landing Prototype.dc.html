@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/design-system-2aa11180-8aae-462d-a736-0420e4203bc8/styles.css">
+  <script src="_ds/design-system-2aa11180-8aae-462d-a736-0420e4203bc8/_ds_bundle.js"></script>
+  <style>body{margin:0;overflow:hidden}a{color:var(--red-700)}a:hover{color:var(--red-800)}</style>
+</helmet>
+<div style="height:100vh;display:flex;flex-direction:column;background:#DDE1E8;font-family:var(--font-sans)">
+  <div style="flex:0 0 auto;min-height:56px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:8px 18px;background:var(--gray-900);color:#fff">
+    <strong style="font-size:15px;font-weight:800;letter-spacing:-0.02em">랜딩 프로토타입</strong>
+    <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--gray-400)">화면</span>
+      <div style="display:flex;padding:3px;gap:2px;border-radius:10px;background:var(--gray-800)">
+        <sc-for list="{{ deviceOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="min-height:32px;padding:0 12px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--gray-400)">트레이너용 제목</span>
+      <div style="display:flex;padding:3px;gap:2px;border-radius:10px;background:var(--gray-800)">
+        <sc-for list="{{ headOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="min-height:32px;padding:0 12px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for>
+      </div>
+    </div>
+    <button onClick="{{ replay }}" style="min-height:32px;padding:0 12px;border:1px solid var(--gray-600);border-radius:8px;background:transparent;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">↺ 효과 다시 보기</button>
+    <span style="font-size:12px;color:var(--gray-400);margin-left:auto">헤더의 전환 스위치 · 가격/센터 상자 버튼으로 페이지 이동</span>
+  </div>
+  <div style="flex:1;min-height:0;display:flex;justify-content:center;padding:{{ pad }}">
+    <div ref="{{ scrollRef }}" style="height:100%;overflow-y:auto;overflow-x:hidden;background:#fff;width:{{ frameW }};border-radius:{{ frameR }};box-shadow:0 10px 40px rgba(24,29,38,.18)">
+      <dc-import name="Landing Page" audience="{{ aud }}" device="{{ device }}" headline="{{ headline }}" animate="{{ true }}" replay="{{ replayN }}" on-navigate="{{ navigate }}" hint-size="100%,3000px"></dc-import>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { aud: 'trainer', device: 'phone', headline: 'C', replayN: 0 };
+  scrollRef = React.createRef();
+  toTop() { requestAnimationFrame(() => { const s = this.scrollRef.current; if (s) s.scrollTop = 0; }); }
+  renderVals() {
+    const st = this.state;
+    const opt = (key, val, label) => ({ label, bg: st[key] === val ? '#fff' : 'transparent', fg: st[key] === val ? 'var(--gray-900)' : 'var(--gray-300)',
+      pick: () => { this.setState(s => ({ [key]: val, replayN: s.replayN + 1 })); this.toTop(); } });
+    const phone = st.device === 'phone';
+    return {
+      ...st,
+      scrollRef: this.scrollRef,
+      deviceOpts: [opt('device', 'phone', '폰 375'), opt('device', 'pc', 'PC')],
+      headOpts: [opt('headline', 'A', 'A안'), opt('headline', 'C', 'C안')],
+      pad: phone ? '20px' : '0',
+      frameW: phone ? '375px' : '100%',
+      frameR: phone ? '28px' : '0',
+      navigate: t => { this.setState({ aud: t }); this.toTop(); },
+      replay: () => { this.setState(s => ({ replayN: s.replayN + 1 })); this.toTop(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

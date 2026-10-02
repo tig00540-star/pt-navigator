@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/design-system-2aa11180-8aae-462d-a736-0420e4203bc8/styles.css">
+  <script src="_ds/design-system-2aa11180-8aae-462d-a736-0420e4203bc8/_ds_bundle.js"></script>
+  <style>body{margin:0}a{color:var(--red-700)}a:hover{color:var(--red-800)}</style>
+</helmet>
+<div ref="{{ rootRef }}" style="container-type:inline-size;width:100%;background:#fff;font-family:var(--font-sans);color:var(--text-strong);word-break:keep-all;-webkit-font-smoothing:antialiased">
+
+<header style="position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--gray-200)">
+  <sc-if value="{{ isPhone }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:6px;padding:6px 16px 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px">
+        <a href="/" onClick="{{ goTrainer }}" style="display:flex;align-items:center;gap:8px;text-decoration:none;min-height:44px">
+          <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--gray-900)"></circle><path d="M14 6.5 L21.5 19.5 H6.5 Z" fill="var(--red-500)"></path><circle cx="14" cy="15" r="2.2" fill="#fff"></circle></svg>
+          <span style="font-size:17px;font-weight:900;letter-spacing:-0.04em;color:var(--gray-900)">오직<span style="color:var(--red-600)">트레이너</span></span>
+        </a>
+        <div style="display:flex;align-items:center;gap:2px">
+          <a href="#" style="min-height:44px;display:flex;align-items:center;padding:0 10px;font-size:15px;font-weight:600;color:var(--gray-600);text-decoration:none">로그인</a>
+          <sc-if value="{{ isTrainer }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="DesignSystem_2aa111.Button" size="sm" dc-props="{{ bInk }}" hint-size="96px,44px">무료로 시작</x-import></sc-if>
+          <sc-if value="{{ isCenter }}"><x-import component-from-global-scope="DesignSystem_2aa111.Button" size="sm" dc-props="{{ bInk }}" hint-size="86px,44px">도입 문의</x-import></sc-if>
+        </div>
+      </div>
+      <div role="navigation" aria-label="페이지 전환" style="display:flex;padding:3px;background:var(--gray-100);border-radius:999px;gap:2px">
+        <a href="/" onClick="{{ goTrainer }}" style="flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:999px;font-size:15px;text-decoration:none;font-weight:{{ swT.fw }};background:{{ swT.bg }};color:{{ swT.fg }};box-shadow:{{ swT.sh }}">트레이너용</a>
+        <a href="/center" onClick="{{ goCenter }}" style="flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:999px;font-size:15px;text-decoration:none;font-weight:{{ swC.fw }};background:{{ swC.bg }};color:{{ swC.fg }};box-shadow:{{ swC.sh }}">센터 대표용</a>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isPc }}">
+    <div style="max-width:1200px;margin:0 auto;height:72px;padding:0 32px;display:flex;align-items:center;gap:20px">
+      <a href="/" onClick="{{ goTrainer }}" style="display:flex;align-items:center;gap:9px;text-decoration:none;min-height:44px">
+        <svg width="30" height="30" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--gray-900)"></circle><path d="M14 6.5 L21.5 19.5 H6.5 Z" fill="var(--red-500)"></path><circle cx="14" cy="15" r="2.2" fill="#fff"></circle></svg>
+        <span style="font-size:19px;font-weight:900;letter-spacing:-0.04em;color:var(--gray-900)">오직<span style="color:var(--red-600)">트레이너</span></span>
+      </a>
+      <div role="navigation" aria-label="페이지 전환" style="display:flex;padding:3px;background:var(--gray-100);border-radius:999px;gap:2px">
+        <a href="/" onClick="{{ goTrainer }}" style="min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 18px;border-radius:999px;font-size:15px;text-decoration:none;font-weight:{{ swT.fw }};background:{{ swT.bg }};color:{{ swT.fg }};box-shadow:{{ swT.sh }}">트레이너용</a>
+        <a href="/center" onClick="{{ goCenter }}" style="min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 18px;border-radius:999px;font-size:15px;text-decoration:none;font-weight:{{ swC.fw }};background:{{ swC.bg }};color:{{ swC.fg }};box-shadow:{{ swC.sh }}">센터 대표용</a>
+      </div>
+      <nav style="flex:1;display:flex;justify-content:center;gap:4px">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="3">
+          <button onClick="{{ n.go }}" style="min-height:44px;padding:0 14px;border:none;background:transparent;font-family:inherit;font-size:15px;font-weight:600;color:var(--gray-600);cursor:pointer;border-radius:10px" style-hover="color:var(--gray-900);background:var(--gray-50)">{{ n.label }}</button>
+        </sc-for>
+      </nav>
+      <div style="display:flex;align-items:center;gap:6px">
+        <a href="#" style="min-height:44px;display:flex;align-items:center;padding:0 12px;font-size:15px;font-weight:600;color:var(--gray-600);text-decoration:none">로그인</a>
+        <sc-if value="{{ isTrainer }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="DesignSystem_2aa111.Button" size="sm" dc-props="{{ bInk }}" hint-size="100px,44px">무료로 시작</x-import></sc-if>
+        <sc-if value="{{ isCenter }}"><x-import component-from-global-scope="DesignSystem_2aa111.Button" size="sm" dc-props="{{ bInk }}" hint-size="90px,44px">도입 문의</x-import></sc-if>
+      </div>
+    </div>
+  </sc-if>
+</header>
+
+<sc-if value="{{ isTrainer }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="트레이너 ② 첫 화면" style="padding:clamp(48px,calc(24px + 5cqi),112px) 20px clamp(56px,calc(32px + 5cqi),112px);background:#fff">
+    <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px">
+      <span style="display:inline-flex;align-items:center;min-height:34px;padding:0 16px;border-radius:999px;background:var(--red-50);border:1px solid var(--red-100);color:var(--red-700);font-size:14px;font-weight:700;letter-spacing:-0.01em">트레이너가 직접 만든 PT 세일즈·회원관리 앱</span>
+      <sc-if value="{{ isA }}">
+        <h1 style="margin:0;font-size:clamp(36px,calc(16px + 3.4cqi),60px);font-weight:900;letter-spacing:-0.045em;line-height:1.16"><span style="display:block">수업만 하세요.</span><span style="display:block;color:var(--red-600)">나머지는 앱이 합니다.</span></h1>
+        <p style="margin:0;max-width:520px;font-size:clamp(17px,calc(13px + .6cqi),20px);line-height:1.6;color:var(--gray-600);text-wrap:pretty">OT 준비부터 운동일지·재등록·정산까지, 트레이너의 수업 밖 업무를 앱이 맡습니다.</p>
+      </sc-if>
+      <sc-if value="{{ isC }}" hint-placeholder-val="{{ true }}">
+        <h1 style="margin:0;font-size:clamp(36px,calc(16px + 3.4cqi),60px);font-weight:900;letter-spacing:-0.045em;line-height:1.16"><span style="display:block">OT는 등록으로,</span><span style="display:block;color:var(--red-600)">수업 밖 일은 앱으로.</span></h1>
+        <p style="margin:0;max-width:540px;font-size:clamp(17px,calc(13px + .6cqi),20px);line-height:1.6;color:var(--gray-600);text-wrap:pretty">1차 OT 준비부터 클로징 멘트·운동일지·재등록까지, 트레이너의 수업 밖 업무를 앱이 맡습니다.</p>
+      </sc-if>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:6px">
+        <x-import component-from-global-scope="DesignSystem_2aa111.Button" size="lg" dc-props="{{ bPrimary }}" hint-size="190px,52px">7일 무료로 시작 →</x-import>
+        <x-import component-from-global-scope="DesignSystem_2aa111.Button" variant="secondary" size="lg" dc-props="{{ bOutline }}" hint-size="140px,52px">앱처럼 설치</x-import>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--gray-600)">설치 없이 폰에서 바로 · 7일 무료 체험</p>
+    </div>
+  </section>
+
+  <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+    <section data-screen-label="트레이너 ③ 숫자 띠" style="padding:clamp(40px,calc(24px + 3cqi),72px) 20px;background:var(--gray-100)">
+      <div data-reveal-group="" style="max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;text-align:center">
+        <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;gap:8px;align-items:center">
+          <div style="font-size:clamp(34px,calc(18px + 3cqi),56px);font-weight:900;letter-spacing:-0.04em;line-height:1"><span data-count="30">30</span>초</div>
+          <div style="font-size:clamp(14px,calc(11px + .5cqi),17px);color:var(--gray-600);line-height:1.45">말로 남기는<br>운동일지</div>
+        </div>
+        <div data-reveal="" data-step="1" style="display:flex;flex-direction:column;gap:8px;align-items:center">
+          <div style="font-size:clamp(34px,calc(18px + 3cqi),56px);font-weight:900;letter-spacing:-0.04em;line-height:1"><span data-count="5">5</span>분</div>
+          <div style="font-size:clamp(14px,calc(11px + .5cqi),17px);color:var(--gray-600);line-height:1.45">AI와 끝내는<br>OT 준비</div>
+        </div>
+        <div data-reveal="" data-step="2" style="display:flex;flex-direction:column;gap:8px;align-items:center">
+          <div style="font-size:clamp(34px,calc(18px + 3cqi),56px);font-weight:900;letter-spacing:-0.04em;line-height:1;color:var(--red-600)">0건</div>
+          <div style="font-size:clamp(14px,calc(11px + .5cqi),17px);color:var(--gray-600);line-height:1.45">놓치는<br>재등록</div>
+        </div>
+      </div>
+    </section>
+
+    <sc-if value="{{ showReviews }}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="트레이너 ③-1 후기 자리" style="padding:clamp(56px,calc(36px + 4cqi),96px) 20px;background:#fff">
+        <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center">
+          <h2 data-reveal="" style="margin:0;font-size:clamp(26px,calc(14px + 2cqi),38px);font-weight:900;letter-spacing:-0.04em">먼저 써본 트레이너들</h2>
+          <div data-reveal="" data-delay="110" style="width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <div style="min-height:132px;border:1.5px dashed var(--gray-300);border-radius:18px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;color:var(--gray-600);font-size:14px;font-weight:600">[실제 후기 — 허락받은 것만]<span style="font-weight:400;font-size:13px">이름 · 지역/센터 · 한 줄 후기</span></div>
+            <div style="min-height:132px;border:1.5px dashed var(--gray-300);border-radius:18px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;color:var(--gray-600);font-size:14px;font-weight:600">[실제 후기 — 허락받은 것만]<span style="font-weight:400;font-size:13px">이름 · 지역/센터 · 한 줄 후기</span></div>
+            <div style="min-height:132px;border:1.5px dashed var(--gray-300);border-radius:18px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;color:var(--gray-600);font-size:14px;font-weight:600">[실제 후기 — 허락받은 것만]<span style="font-weight:400;font-size:13px">이름 · 지역/센터 · 한 줄 후기</span></div>
+          </div>
+          <p style="margin:0;font-size:13px;color:var(--gray-600)">실제 후기 3개가 모이기 전까지 배포본에서는 이 구간을 숨깁니다.</p>
+        </div>
+      </section>
+    </sc-if>
+
+    <section data-screen-label="트레이너 ④ 왜" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:#fff;border-top:1px solid var(--gray-200)">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(30px,calc(14px + 2.6cqi),46px);font-weight:900;letter-spacing:-0.04em;line-height:1.22"><span style="display:block">수업은 2시간,</span><span style="display:block;color:var(--red-600)">수업 밖 업무는 4시간.</span></h2>
+        <p data-reveal="" data-delay="100" style="margin:0;max-width:480px;font-size:clamp(16px,calc(13px + .5cqi),19px);line-height:1.6;color:var(--gray-600);text-wrap:pretty">일지·상담 준비·재등록 챙기기. 실력이 아니라 시간을 먹는 일들을 앱에 넘기세요.</p>
+        <div data-reveal-group="" style="width:100%;max-width:600px;margin-top:8px">
+          <x-import component-from-global-scope="DesignSystem_2aa111.Card" padding="8px 22px" hint-size="100%,260px">
+            <div data-reveal="" data-step="0" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">일지·기록에 매일 40분</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:17px;font-weight:800">말로 30초</strong></div>
+            <div data-reveal="" data-step="1" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">OT 준비는 매번 백지에서</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:17px;font-weight:800">AI가 대사·근거까지</strong></div>
+            <div data-reveal="" data-step="2" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">재등록은 기억력에 의존</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:17px;font-weight:800">앱이 먼저 알림</strong></div>
+            <div data-reveal="" data-step="3" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">회원이 늘수록 관리도 두 배</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:17px;font-weight:800">회원이 셀프로 관리</strong></div>
+          </x-import>
+        </div>
+      </div>
+    </section>
+
+    <section data-anchor="features" data-screen-label="트레이너 ⑤ 기능" style="padding:clamp(48px,calc(32px + 3cqi),88px) 20px clamp(56px,calc(36px + 4cqi),104px);background:#fff;border-top:1px solid var(--gray-200)">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center">
+
+        <div data-reveal="" style="display:flex;align-items:center;gap:12px;width:100%;max-width:480px;color:var(--gray-600);font-size:14px;font-weight:700"><span style="flex:1;height:1px;background:var(--gray-200)"></span>트레이너 화면<span style="flex:1;height:1px;background:var(--gray-200)"></span></div>
+
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:40px 0 64px;width:100%">
+          <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--red-50);color:var(--red-700);font-size:13px;font-weight:800">신규 OT · 세일즈</span>
+            <h3 style="margin:0;font-size:clamp(28px,calc(14px + 2.2cqi),42px);font-weight:900;letter-spacing:-0.04em;line-height:1.24"><span style="display:block">세일즈 잘 모르겠으면,</span><span style="display:block">따라만 하세요.</span></h3>
+          </div>
+          <div data-reveal="" data-step="1" style="display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:700">
+            <span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">OT 보고서</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">클로징 멘트</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:var(--gray-900);border:1px solid var(--gray-900);color:#fff">거절 대응</span>
+          </div>
+          <div data-reveal="" data-step="2" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5">
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>회원 정보로 만드는 맞춤 OT 진행 순서</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>수업 직전 3분, 바로 말할 클로징 멘트</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>가격·'생각해볼게요' 등 거절 5가지 대응</span></li>
+            </ul>
+            <p style="margin:0;font-size:14px;color:var(--gray-600)">· 1차 OT 기록이 2차 OT 준비로 그대로 이어져요</p>
+          </div>
+          <div data-reveal="" data-step="3" style="width:calc(100% + 40px);margin:6px -20px 0;overflow-x:auto;scroll-snap-type:x mandatory">
+            <div style="display:flex;gap:10px;padding:0 20px;justify-content:safe center;width:max-content;min-width:100%;box-sizing:border-box">
+              <div style="flex:0 0 auto;width:clamp(220px,30cqi,232px);aspect-ratio:4/5;scroll-snap-align:center;border:1.5px dashed var(--gray-300);border-radius:18px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-600)">① 스크린샷 · 4:5</span><span style="font-size:17px;font-weight:800">OT 보고서</span></div>
+              <div style="flex:0 0 auto;width:clamp(220px,30cqi,232px);aspect-ratio:4/5;scroll-snap-align:center;border:1.5px dashed var(--gray-300);border-radius:18px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-600)">② 스크린샷 · 4:5</span><span style="font-size:17px;font-weight:800">클로징 멘트 카드</span></div>
+              <div style="flex:0 0 auto;width:clamp(220px,30cqi,232px);aspect-ratio:4/5;scroll-snap-align:center;border:1.5px dashed var(--gray-300);border-radius:18px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-600)">③ 스크린샷 · 4:5</span><span style="font-size:17px;font-weight:800">거절 대응 카드</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:0 0 64px;width:100%">
+          <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--red-50);color:var(--red-700);font-size:13px;font-weight:800">재등록</span>
+            <h3 style="margin:0;font-size:clamp(28px,calc(14px + 2.2cqi),42px);font-weight:900;letter-spacing:-0.04em;line-height:1.24"><span style="display:block">재등록 시기,</span><span style="display:block">앱이 먼저 알려줘요.</span></h3>
+          </div>
+          <div data-reveal="" data-step="1" style="display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:700">
+            <span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">만료 임박 알림</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">변화 근거</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:var(--gray-900);border:1px solid var(--gray-900);color:#fff">제안까지</span>
+          </div>
+          <div data-reveal="" data-step="2" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5">
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>잔여가 줄어든 회원을 '오늘 챙길 것'에 먼저</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>인바디·운동일지로 그동안의 변화 정리</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>재등록 제안 멘트까지 준비</span></li>
+            </ul>
+            <p style="margin:0;font-size:14px;color:var(--gray-600)">· 잔여 10회 미만부터 알려줘요</p>
+          </div>
+          <div data-reveal="" data-step="3" style="width:100%;max-width:480px;aspect-ratio:4/5;margin-top:6px;border:1.5px dashed var(--gray-300);border-radius:22px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-600)">앱 화면 · 4:5 · 스크린샷</span><span style="font-size:20px;font-weight:800">재등록</span><span style="font-size:15px;color:var(--gray-600)">'오늘 챙길 것'의 재등록 알림 카드</span></div>
+        </div>
+
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:0 0 72px;width:100%">
+          <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--red-50);color:var(--red-700);font-size:13px;font-weight:800">운동일지</span>
+            <h3 style="margin:0;font-size:clamp(28px,calc(14px + 2.2cqi),42px);font-weight:900;letter-spacing:-0.04em;line-height:1.24"><span style="display:block">쓰지 말고,</span><span style="display:block">말하세요.</span></h3>
+          </div>
+          <div data-reveal="" data-step="1" style="display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:700">
+            <span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">수업</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">말로 복기</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:var(--gray-900);border:1px solid var(--gray-900);color:#fff">회원에게 전송</span>
+          </div>
+          <div data-reveal="" data-step="2" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5">
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>운동별 무게·횟수·세트를 알아서 정리</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>회원에게 보낼 일지까지 한 번에</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>세션 차감·출석 기록도 자동</span></li>
+            </ul>
+            <p style="margin:0;font-size:14px;color:var(--gray-600)">· 회원이 확인하면 종이 수업 확인 서명을 대신해요</p>
+          </div>
+          <div data-reveal="" data-step="3" style="width:100%;max-width:480px;aspect-ratio:4/5;margin-top:6px;border:1.5px dashed var(--gray-300);border-radius:22px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--red-700)">앱 화면 · 4:5 · 모션 (6~12초 반복)</span><span style="font-size:20px;font-weight:800">운동일지</span><span style="font-size:15px;color:var(--gray-600);max-width:300px">말하는 파형 → 운동·무게·세트가 정리되며 쌓임 → 회원에게 전송</span></div>
+        </div>
+
+        <div data-reveal="" style="display:flex;align-items:center;gap:12px;width:100%;max-width:480px;color:var(--gray-600);font-size:14px;font-weight:700"><span style="flex:1;height:1px;background:var(--gray-200)"></span>회원 전용 페이지<span style="flex:1;height:1px;background:var(--gray-200)"></span></div>
+
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:40px 0 40px;width:100%">
+          <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--red-50);color:var(--red-700);font-size:13px;font-weight:800">회원 전용 페이지</span>
+            <h3 style="margin:0;font-size:clamp(28px,calc(14px + 2.2cqi),42px);font-weight:900;letter-spacing:-0.04em;line-height:1.24"><span style="display:block">붙잡지 마세요.</span><span style="display:block">회원이 스스로 챙깁니다.</span></h3>
+          </div>
+          <div data-reveal="" data-step="1" style="display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:700">
+            <span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">링크 하나</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--gray-300)">기록 열람</span><span style="color:var(--gray-400)">›</span><span style="padding:7px 11px;border-radius:999px;background:var(--gray-900);border:1px solid var(--gray-900);color:#fff">출석 챌린지</span>
+          </div>
+          <div data-reveal="" data-step="2" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5">
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>설치 없이 링크로 여는 회원 전용 페이지</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>운동일지·인바디·변화 그래프를 회원이 직접</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>출석이 쌓이는 오운완 챌린지와 포상</span></li>
+            </ul>
+            <p style="margin:0;font-size:14px;color:var(--gray-600)">· 링크와 휴대폰 뒤 4자리로 열려요</p>
+          </div>
+          <div data-reveal="" data-step="3" style="width:100%;max-width:480px;aspect-ratio:4/5;margin-top:6px;border:1.5px dashed var(--gray-300);border-radius:22px;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-600)">앱 화면 · 4:5 · 스크린샷</span><span style="font-size:20px;font-weight:800">회원 전용 페이지</span><span style="font-size:15px;color:var(--gray-600)">회원이 보는 변화 그래프(인바디·운동 기록)</span></div>
+        </div>
+
+        <div data-reveal-group="" style="width:100%;max-width:400px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding-bottom:72px;text-align:left">
+          <span data-reveal="" data-step="0" style="font-size:13px;font-weight:700;color:var(--gray-600)">회원 전용 페이지 알림</span>
+          <div data-reveal="" data-step="1" style="padding:14px 18px;border-radius:20px 20px 20px 6px;background:var(--gray-100);font-size:16px;font-weight:600;line-height:1.45">오늘 운동일지가 도착했어요</div>
+          <div data-reveal="" data-step="2" style="padding:14px 18px;border-radius:20px 20px 20px 6px;background:var(--gray-100);font-size:16px;font-weight:600;line-height:1.45">이번 달 출석 8회 — 오운완 챌린지 진행 중</div>
+        </div>
+
+        <div data-reveal="" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+          <p style="margin:0;font-size:17px;font-weight:800">그리고 수업 밖 나머지도</p>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:520px">
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-100);font-size:14px;font-weight:600">급여 자동계산</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-100);font-size:14px;font-weight:600">스케줄·노쇼</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-100);font-size:14px;font-weight:600">운동 라이브러리</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-100);font-size:14px;font-weight:600">내 실적 리포트</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-100);font-size:14px;font-weight:600">센터 공지</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section data-anchor="pricing" data-screen-label="트레이너 ⑥ 가격" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:var(--gray-100)">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:28px;text-align:center">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(26px,calc(14px + 2cqi),40px);font-weight:900;letter-spacing:-0.04em;line-height:1.3"><span style="display:block">7일 무료로 먼저 써보세요.</span><span style="display:block;font-size:.62em;font-weight:700;letter-spacing:-0.02em;color:var(--gray-600);margin-top:8px">신규·재등록 <strong style="color:var(--red-600);font-weight:900">1건만 더</strong> 나와도 회수됩니다.</span></h2>
+        <div data-reveal-group="" style="width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;text-align:left">
+          <x-import data-reveal="" data-step="0" component-from-global-scope="DesignSystem_2aa111.Card" padding="28px 24px" dc-props="{{ cardFull }}" hint-size="100%,520px">
+            <div style="display:flex;flex-direction:column;gap:16px;height:100%">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:20px;font-weight:900">솔로</span><span style="padding:5px 11px;border-radius:999px;background:var(--red-600);color:#fff;font-size:12px;font-weight:800">추천</span></div>
+              <span style="font-size:15px;color:var(--gray-600);margin-top:-8px">개인 트레이너 1인</span>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:15px;color:var(--gray-600)">월</span><span style="font-size:38px;font-weight:900;letter-spacing:-0.04em">59,000원</span></div>
+                <div style="font-size:14px;color:var(--gray-600)"><s>79,000원</s> · 얼리버드</div>
+                <div style="font-size:16px;font-weight:800;color:var(--red-700)">하루 약 2,000원</div>
+              </div>
+              <ul style="margin:0;padding:16px 0 0;border-top:1px solid var(--gray-200);list-style:none;display:flex;flex-direction:column;gap:9px;font-size:15px;line-height:1.45;flex:1">
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>1·2차 OT · 재등록 서포트</li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>음성 운동일지 · AI 리포트</li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span><strong>회원 전용 페이지 (성과 그래프·비포애프터)</strong></li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>실적 · 급여 자동계산</li>
+              </ul>
+              <x-import component-from-global-scope="DesignSystem_2aa111.Button" size="lg" full-width="{{ true }}" dc-props="{{ bPrimary }}" hint-size="100%,52px">7일 무료 체험</x-import>
+            </div>
+          </x-import>
+          <x-import data-reveal="" data-step="1" component-from-global-scope="DesignSystem_2aa111.Card" padding="28px 24px" dc-props="{{ cardFull }}" hint-size="100%,520px">
+            <div style="display:flex;flex-direction:column;gap:16px;height:100%">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:20px;font-weight:900">센터</span></div>
+              <span style="font-size:15px;color:var(--gray-600);margin-top:-8px">트레이너 3인 + 대표 1인</span>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:15px;color:var(--gray-600)">월</span><span style="font-size:38px;font-weight:900;letter-spacing:-0.04em">149,000원</span></div>
+                <div style="font-size:14px;color:var(--gray-600)"><s>199,000원</s> · 얼리버드</div>
+                <div style="font-size:16px;font-weight:800;color:var(--red-700)">하루 약 5,000원</div>
+              </div>
+              <ul style="margin:0;padding:16px 0 0;border-top:1px solid var(--gray-200);list-style:none;display:flex;flex-direction:column;gap:9px;font-size:15px;line-height:1.45;flex:1">
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>솔로 전체 포함</li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span><strong>대표 대시보드 (매출·정산·등록·이탈)</strong></li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>트레이너 3인 좌석 + 대표 1인</li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>트레이너 코칭 · 팀 관리</li>
+              </ul>
+              <x-import component-from-global-scope="DesignSystem_2aa111.Button" variant="secondary" size="lg" full-width="{{ true }}" dc-props="{{ bOutlineToCenter }}" hint-size="100%,52px">센터 자세히 보기</x-import>
+            </div>
+          </x-import>
+        </div>
+        <p style="margin:0;font-size:13px;color:var(--gray-600)">부가세 별도 · 7일 무료 후 자동결제 · 언제든 해지</p>
+
+        <div data-reveal="" style="width:100%;box-sizing:border-box;margin-top:12px;padding:clamp(28px,calc(18px + 2cqi),44px) 24px;border-radius:24px;background:var(--gray-900);color:#fff;display:flex;flex-direction:column;align-items:center;gap:14px">
+          <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--gray-800);color:var(--red-300);font-size:13px;font-weight:800">센터 대표님께</span>
+          <h3 style="margin:0;font-size:clamp(26px,calc(14px + 2cqi),36px);font-weight:900;letter-spacing:-0.04em">센터 숫자를 한 화면에서.</h3>
+          <p style="margin:0 0 6px;font-size:16px;line-height:1.55;color:var(--gray-300);max-width:420px">매출·정산·등록과 이탈·트레이너별 성과를 대표 화면에서.</p>
+          <x-import component-from-global-scope="DesignSystem_2aa111.Button" size="lg" dc-props="{{ bWhiteToCenter }}" hint-size="220px,52px">센터 대표용 페이지 보기 →</x-import>
+        </div>
+      </div>
+    </section>
+
+    <section data-anchor="faq" data-screen-label="트레이너 ⑧ 자주 묻는 질문" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:#fff">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:24px">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(26px,calc(14px + 2cqi),38px);font-weight:900;letter-spacing:-0.04em">자주 묻는 질문</h2>
+        <div data-reveal="" data-delay="100" style="width:100%;max-width:640px">
+          <x-import component-from-global-scope="DesignSystem_2aa111.Card" padding="0 20px" hint-size="100%,340px">
+            <sc-for list="{{ faqT }}" as="f" hint-placeholder-count="6">
+              <div style="border-top:{{ f.divider }}">
+                <button onClick="{{ f.toggle }}" aria-expanded="{{ f.open }}" style="width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;border:none;background:transparent;font-family:inherit;font-size:16px;font-weight:700;color:var(--text-strong);text-align:left;cursor:pointer">{{ f.q }}<span style="font-size:22px;font-weight:400;color:var(--gray-500)">{{ f.icon }}</span></button>
+                <sc-if value="{{ f.open }}"><p style="margin:0;padding:0 0 18px;font-size:15px;line-height:1.6;color:var(--gray-600)">{{ f.a }}</p></sc-if>
+              </div>
+            </sc-for>
+          </x-import>
+        </div>
+      </div>
+    </section>
+
+    <section data-screen-label="트레이너 ⑨ 만든 사람 + 마무리" style="padding:clamp(64px,calc(40px + 4cqi),112px) 20px;background:var(--gray-100)">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(24px,calc(14px + 1.8cqi),36px);font-weight:900;letter-spacing:-0.04em;line-height:1.35;text-wrap:balance"><span style="display:block">트레이너 경력 10년. 팀장·관리자까지 다 해본 사람이</span><span style="display:block;color:var(--red-600)">답답해서 직접 만들었습니다.</span></h2>
+        <p data-reveal="" data-delay="100" style="margin:0;max-width:500px;font-size:16px;line-height:1.6;color:var(--gray-600);text-wrap:pretty">어플·노션·스프레드시트를 다 써봤지만 타이핑은 그대로였습니다. 수업 밖 업무를 전부 여기에 녹였습니다.</p>
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:40px">
+          <h2 data-reveal="" data-step="0" style="margin:0;font-size:clamp(30px,calc(14px + 2.6cqi),46px);font-weight:900;letter-spacing:-0.04em;line-height:1.22"><span style="display:block">오늘 수업 끝나고</span><span style="display:block">바로 써보세요.</span></h2>
+          <div data-reveal="" data-step="1" style="display:flex;flex-direction:column;align-items:center;gap:10px">
+            <x-import component-from-global-scope="DesignSystem_2aa111.Button" size="lg" dc-props="{{ bPrimary }}" hint-size="190px,52px">7일 무료로 시작 →</x-import>
+            <span style="font-size:14px;color:var(--gray-600)">월 59,000원부터</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+</sc-if>
+
+<sc-if value="{{ isCenter }}">
+  <section data-screen-label="센터 ② 첫 화면" style="padding:clamp(56px,calc(28px + 5cqi),120px) 20px;background:var(--gray-900);color:#fff">
+    <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px">
+      <span style="display:inline-flex;align-items:center;min-height:34px;padding:0 16px;border-radius:999px;background:var(--gray-800);border:1px solid var(--gray-700);color:var(--red-300);font-size:14px;font-weight:700">트레이너 3인 + 대표 1인 · 센터용</span>
+      <h1 style="margin:0;font-size:clamp(36px,calc(16px + 3.4cqi),60px);font-weight:900;letter-spacing:-0.045em;line-height:1.16"><span style="display:block">감으로 보던 센터를,</span><span style="display:block;color:var(--red-300)">숫자로 봅니다.</span></h1>
+      <p style="margin:0;max-width:520px;font-size:clamp(17px,calc(13px + .6cqi),20px);line-height:1.6;color:var(--gray-300);text-wrap:pretty">트레이너는 수업에만, 대표는 숫자로. 매출·정산·등록과 이탈을 한 화면에서.</p>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:6px">
+        <x-import component-from-global-scope="DesignSystem_2aa111.Button" size="lg" dc-props="{{ bPrimary }}" hint-size="190px,52px">센터 도입 문의 →</x-import>
+        <x-import component-from-global-scope="DesignSystem_2aa111.Button" variant="secondary" size="lg" dc-props="{{ bGhostDark }}" hint-size="200px,52px">센터로 7일 무료 시작</x-import>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--gray-400)">트레이너 3인 + 대표 1인 · 7일 무료 체험</p>
+    </div>
+  </section>
+
+  <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+    <section data-screen-label="센터 ③ 왜" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:#fff">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(30px,calc(14px + 2.6cqi),46px);font-weight:900;letter-spacing:-0.04em;line-height:1.22"><span style="display:block">문제는 늘,</span><span style="display:block;color:var(--red-600)">뒤늦게 보입니다.</span></h2>
+        <div data-reveal-group="" style="width:100%;max-width:640px">
+          <x-import component-from-global-scope="DesignSystem_2aa111.Card" padding="8px 22px" hint-size="100%,300px">
+            <div data-reveal="" data-step="0" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">매출은 월말 정산 때야 안다</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:16px;font-weight:800">이달 매출·다음달 예상을 실시간으로</strong></div>
+            <div data-reveal="" data-step="1" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">OT는 많은데 등록이 안 되는 이유를 모른다</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:16px;font-weight:800">어디서 새는지 단계별로</strong></div>
+            <div data-reveal="" data-step="2" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">회원이 떠난 뒤에야 안다</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:16px;font-weight:800">이탈 위험·만료 임박을 먼저</strong></div>
+            <div data-reveal="" data-step="3" style="display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center;padding:16px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="font-size:15px;color:var(--gray-600);text-decoration:line-through;text-decoration-color:var(--gray-400)">트레이너 평가가 감에 의존한다</span><span style="color:var(--red-600);font-weight:800;text-align:center">→</span><strong style="font-size:16px;font-weight:800">트레이너별 등록률·재등록률·수업 수</strong></div>
+          </x-import>
+        </div>
+      </div>
+    </section>
+
+    <section data-anchor="features" data-screen-label="센터 ④ 대표 화면" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:var(--gray-900);color:#fff">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center">
+        <div data-reveal="" style="display:flex;align-items:center;gap:12px;width:100%;max-width:480px;color:var(--gray-400);font-size:14px;font-weight:700"><span style="flex:1;height:1px;background:var(--gray-700)"></span>대표 화면<span style="flex:1;height:1px;background:var(--gray-700)"></span></div>
+
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:40px 0 64px;width:100%">
+          <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--gray-800);color:var(--red-300);font-size:13px;font-weight:800">오늘 챙길 것</span>
+            <h3 style="margin:0;font-size:clamp(28px,calc(14px + 2.2cqi),42px);font-weight:900;letter-spacing:-0.04em;line-height:1.24"><span style="display:block">아침에 열면,</span><span style="display:block">오늘 할 일부터.</span></h3>
+          </div>
+          <div data-reveal="" data-step="1" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5;color:var(--gray-200)">
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>이탈 위험·재등록 대상 회원을 급한 순서로</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>오늘 신규 OT 예정과 명단</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>트레이너 코칭까지 담은 AI 운영 보고서</span></li>
+            </ul>
+            <p style="margin:0;font-size:14px;color:var(--gray-400)">· 대표 화면을 열면 그날 보고서가 자동으로 만들어져요</p>
+          </div>
+          <div data-reveal="" data-step="2" style="width:100%;max-width:480px;aspect-ratio:4/5;margin-top:6px;border:1.5px dashed var(--gray-600);border-radius:22px;background:var(--gray-800);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-400)">앱 화면 · 4:5 · 스크린샷</span><span style="font-size:20px;font-weight:800">대표 '오늘 챙길 것'</span><span style="font-size:15px;color:var(--gray-300)">급한 순서 카드 3장 + 펼친 명단</span></div>
+        </div>
+
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:0 0 64px;width:100%">
+          <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--gray-800);color:var(--red-300);font-size:13px;font-weight:800">매출 · 정산</span>
+            <h3 style="margin:0;font-size:clamp(28px,calc(14px + 2.2cqi),42px);font-weight:900;letter-spacing:-0.04em;line-height:1.24"><span style="display:block">월말까지 기다리지</span><span style="display:block">마세요.</span></h3>
+          </div>
+          <div data-reveal="" data-step="1" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5;color:var(--gray-200);max-width:560px">
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>이달 매출 현황 — 목표·현재·달성률, 트레이너별 목표</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>다음달 예상 매출</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>정산 — PT·FC·기타 매출과 지출, 순이익을 센터 정산일 기준으로</span></li>
+            </ul>
+            <p style="margin:0;font-size:14px;color:var(--gray-400)">· 정산 기준일을 센터에 맞게 정할 수 있어요</p>
+          </div>
+          <div data-reveal="" data-step="2" style="width:100%;max-width:480px;aspect-ratio:4/5;margin-top:6px;border:1.5px dashed var(--gray-600);border-radius:22px;background:var(--gray-800);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-400)">앱 화면 · 4:5 · 스크린샷</span><span style="font-size:20px;font-weight:800">대표 매출</span><span style="font-size:15px;color:var(--gray-300)">이달 매출 현황 카드(목표·현재·달성률 + 트레이너별 목표)</span></div>
+        </div>
+
+        <div data-reveal-group="" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:0 0 72px;width:100%">
+          <div data-reveal="" data-step="0" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;min-height:30px;padding:0 13px;border-radius:999px;background:var(--gray-800);color:var(--red-300);font-size:13px;font-weight:800">등록 · 이탈</span>
+            <h3 style="margin:0;font-size:clamp(28px,calc(14px + 2.2cqi),42px);font-weight:900;letter-spacing:-0.04em;line-height:1.24"><span style="display:block">어디서 새는지,</span><span style="display:block">숫자로 보입니다.</span></h3>
+          </div>
+          <div data-reveal="" data-step="1" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5;color:var(--gray-200);max-width:560px">
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>신규 OT → 1차 → 2차 → 등록, 단계별로 몇 명이 빠지는지</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>달마다 등록률 — 나아지고 있는지</span></li>
+              <li style="display:flex;gap:10px"><span style="color:var(--red-300);font-weight:900">✓</span><span>이탈 위험·만료 임박 명단을 바로 펼쳐보기</span></li>
+            </ul>
+            <p style="margin:0;font-size:14px;color:var(--gray-400)">· 트레이너별 등록률·재등록률은 트레이너 화면에서</p>
+          </div>
+          <div data-reveal="" data-step="2" style="width:100%;max-width:480px;aspect-ratio:4/5;margin-top:6px;border:1.5px dashed var(--gray-600);border-radius:22px;background:var(--gray-800);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px;box-sizing:border-box;text-align:center"><span style="font-size:12px;font-weight:700;color:var(--gray-400)">앱 화면 · 4:5 · 스크린샷</span><span style="font-size:20px;font-weight:800">대표 등록·이탈</span><span style="font-size:15px;color:var(--gray-300)">단계별 깔때기 + 달마다 등록률</span></div>
+        </div>
+
+        <div data-reveal="" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+          <p style="margin:0;font-size:17px;font-weight:800">운영도 손이 덜 가게</p>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:560px">
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-800);color:var(--gray-200);font-size:14px;font-weight:600">트레이너 초대</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-800);color:var(--gray-200);font-size:14px;font-weight:600">회원 등록·배정</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-800);color:var(--gray-200);font-size:14px;font-weight:600">회원 인계(잔여 세션 이월)</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-800);color:var(--gray-200);font-size:14px;font-weight:600">급여 자동계산·확정</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-800);color:var(--gray-200);font-size:14px;font-weight:600">필수 공지</span>
+            <span style="padding:8px 14px;border-radius:999px;background:var(--gray-800);color:var(--gray-200);font-size:14px;font-weight:600">스케줄·노쇼</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section data-screen-label="센터 ⑤ 트레이너가 먼저 좋아하는 앱" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:var(--gray-100)">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(30px,calc(14px + 2.6cqi),46px);font-weight:900;letter-spacing:-0.04em;line-height:1.22"><span style="display:block">트레이너가 편해야,</span><span style="display:block;color:var(--red-600)">센터 숫자가 오릅니다.</span></h2>
+        <p data-reveal="" data-delay="100" style="margin:0;max-width:500px;font-size:16px;line-height:1.6;color:var(--gray-600);text-wrap:pretty">감시 도구가 아닙니다. 트레이너의 수업 밖 업무를 덜어주는 앱이고, 대표 화면의 숫자는 그 결과로 쌓입니다.</p>
+        <ul data-reveal="" data-delay="200" style="margin:8px 0 6px;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;text-align:left;font-size:clamp(16px,calc(13px + .4cqi),18px);line-height:1.5">
+          <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>말로 30초면 운동일지 끝</span></li>
+          <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>OT 들어가기 전 3분, 바로 말할 클로징 멘트</span></li>
+          <li style="display:flex;gap:10px"><span style="color:var(--red-600);font-weight:900">✓</span><span>재등록 시기를 앱이 먼저 알림</span></li>
+        </ul>
+        <div data-reveal="" data-delay="300"><x-import component-from-global-scope="DesignSystem_2aa111.Button" variant="secondary" size="lg" dc-props="{{ bOutlineToTrainer }}" hint-size="210px,52px">트레이너용 페이지 보기 →</x-import></div>
+      </div>
+    </section>
+
+    <section data-anchor="process" data-screen-label="센터 ⑥ 도입은 이렇게" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:#fff">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(26px,calc(14px + 2cqi),38px);font-weight:900;letter-spacing:-0.04em">도입은 이렇게</h2>
+        <div data-reveal-group="" style="width:100%;max-width:560px">
+          <x-import component-from-global-scope="DesignSystem_2aa111.Card" padding="6px 22px" hint-size="100%,240px">
+            <div data-reveal="" data-step="0" style="display:flex;align-items:center;gap:16px;padding:18px 0;text-align:left"><span style="flex:0 0 36px;height:36px;border-radius:999px;background:var(--red-600);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px">1</span><div style="display:flex;flex-direction:column;gap:3px"><strong style="font-size:17px;font-weight:800">센터 계정 만들기</strong><span style="font-size:15px;color:var(--gray-600)">7일 무료로 시작</span></div></div>
+            <div data-reveal="" data-step="1" style="display:flex;align-items:center;gap:16px;padding:18px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="flex:0 0 36px;height:36px;border-radius:999px;background:var(--red-600);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px">2</span><div style="display:flex;flex-direction:column;gap:3px"><strong style="font-size:17px;font-weight:800">트레이너 초대</strong><span style="font-size:15px;color:var(--gray-600)">최대 3명, 이메일로 계정 발급</span></div></div>
+            <div data-reveal="" data-step="2" style="display:flex;align-items:center;gap:16px;padding:18px 0;border-top:1px solid var(--gray-200);text-align:left"><span style="flex:0 0 36px;height:36px;border-radius:999px;background:var(--red-600);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px">3</span><div style="display:flex;flex-direction:column;gap:3px"><strong style="font-size:17px;font-weight:800">회원 등록·배정</strong><span style="font-size:15px;color:var(--gray-600)">그날부터 숫자가 쌓입니다</span></div></div>
+          </x-import>
+        </div>
+      </div>
+    </section>
+
+    <section data-anchor="pricing" data-screen-label="센터 ⑦ 가격" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:var(--gray-100)">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:18px">
+        <div data-reveal="" style="width:100%;max-width:520px">
+          <x-import component-from-global-scope="DesignSystem_2aa111.Card" padding="clamp(28px,calc(18px + 2cqi),40px) clamp(22px,calc(14px + 2cqi),36px)" hint-size="100%,600px">
+            <div style="display:flex;flex-direction:column;gap:18px">
+              <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:22px;font-weight:900">센터 플랜</span><span style="font-size:15px;color:var(--gray-600)">트레이너 3인 + 대표 1인</span></div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span style="font-size:clamp(40px,calc(24px + 2.4cqi),52px);font-weight:900;letter-spacing:-0.04em">149,000원</span><span style="font-size:16px;color:var(--gray-600)">/월</span></div>
+                <div style="font-size:14px;color:var(--gray-600)"><s>199,000원</s> · 얼리버드</div>
+                <div style="font-size:17px;font-weight:800;color:var(--red-700)">하루 약 5,000원</div>
+              </div>
+              <ul style="margin:0;padding:18px 0 0;border-top:1px solid var(--gray-200);list-style:none;display:flex;flex-direction:column;gap:10px;font-size:16px;line-height:1.45">
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>트레이너 앱 전체(OT·운동일지·재등록·회원 전용 페이지)</li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span><strong>대표 대시보드 (매출·정산·등록·이탈)</strong></li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>트레이너 3인 좌석 + 대표 1인</li>
+                <li style="display:flex;gap:9px"><span style="color:var(--red-600);font-weight:900">✓</span>트레이너 코칭 · 팀 관리</li>
+              </ul>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <x-import component-from-global-scope="DesignSystem_2aa111.Button" size="lg" full-width="{{ true }}" dc-props="{{ bPrimary }}" hint-size="100%,52px">센터 도입 문의</x-import>
+                <x-import component-from-global-scope="DesignSystem_2aa111.Button" variant="secondary" size="lg" full-width="{{ true }}" dc-props="{{ bOutline }}" hint-size="100%,52px">센터로 7일 무료 시작</x-import>
+              </div>
+            </div>
+          </x-import>
+        </div>
+        <p style="margin:0;font-size:13px;color:var(--gray-600);text-align:center;line-height:1.6">부가세 별도 · 7일 무료 후 자동결제 · 언제든 해지<br>트레이너가 더 필요하면 문의해 주세요.</p>
+      </div>
+    </section>
+
+    <section data-anchor="faq" data-screen-label="센터 ⑧ 자주 묻는 질문" style="padding:clamp(56px,calc(36px + 4cqi),104px) 20px;background:#fff">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:24px">
+        <h2 data-reveal="" style="margin:0;font-size:clamp(26px,calc(14px + 2cqi),38px);font-weight:900;letter-spacing:-0.04em">자주 묻는 질문</h2>
+        <div data-reveal="" data-delay="100" style="width:100%;max-width:640px">
+          <x-import component-from-global-scope="DesignSystem_2aa111.Card" padding="0 20px" hint-size="100%,300px">
+            <sc-for list="{{ faqC }}" as="f" hint-placeholder-count="5">
+              <div style="border-top:{{ f.divider }}">
+                <button onClick="{{ f.toggle }}" aria-expanded="{{ f.open }}" style="width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;border:none;background:transparent;font-family:inherit;font-size:16px;font-weight:700;color:var(--text-strong);text-align:left;cursor:pointer">{{ f.q }}<span style="font-size:22px;font-weight:400;color:var(--gray-500)">{{ f.icon }}</span></button>
+                <sc-if value="{{ f.open }}"><p style="margin:0;padding:0 0 18px;font-size:15px;line-height:1.6;color:var(--gray-600)">{{ f.a }}</p></sc-if>
+              </div>
+            </sc-for>
+          </x-import>
+        </div>
+      </div>
+    </section>
+
+    <section data-screen-label="센터 ⑨ 마무리" style="padding:clamp(64px,calc(40px + 4cqi),120px) 20px;background:var(--gray-900);color:#fff">
+      <div data-reveal-group="" style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center">
+        <h2 data-reveal="" data-step="0" style="margin:0;font-size:clamp(30px,calc(14px + 2.6cqi),46px);font-weight:900;letter-spacing:-0.04em;line-height:1.22"><span style="display:block">이번 달 숫자부터,</span><span style="display:block;color:var(--red-300)">같이 보시죠.</span></h2>
+        <div data-reveal="" data-step="1" style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">
+          <x-import component-from-global-scope="DesignSystem_2aa111.Button" size="lg" dc-props="{{ bPrimary }}" hint-size="190px,52px">센터 도입 문의 →</x-import>
+          <x-import component-from-global-scope="DesignSystem_2aa111.Button" variant="secondary" size="lg" dc-props="{{ bGhostDark }}" hint-size="200px,52px">센터로 7일 무료 시작</x-import>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+</sc-if>
+
+<sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+  <footer data-screen-label="⑩ 푸터" style="padding:48px 20px 56px;background:#fff;border-top:1px solid var(--gray-200)">
+    <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--gray-900)"></circle><path d="M14 6.5 L21.5 19.5 H6.5 Z" fill="var(--red-500)"></path><circle cx="14" cy="15" r="2.2" fill="#fff"></circle></svg>
+        <span style="font-size:17px;font-weight:900;letter-spacing:-0.04em;color:var(--gray-900)">오직<span style="color:var(--red-600)">트레이너</span></span>
+      </div>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:var(--gray-600);text-wrap:pretty">오직 트레이너는 운동 지도·세일즈·회원관리 도구입니다. 의료기관이 아니며 치료·진단을 제공하지 않습니다.</p>
+      <nav style="display:flex;flex-wrap:wrap;gap:4px 6px;margin-left:-10px">
+        <a href="/" onClick="{{ goTrainer }}" style="min-height:44px;display:flex;align-items:center;padding:0 10px;font-size:14px;font-weight:600;color:var(--gray-700);text-decoration:none">트레이너용</a>
+        <a href="/center" onClick="{{ goCenter }}" style="min-height:44px;display:flex;align-items:center;padding:0 10px;font-size:14px;font-weight:600;color:var(--gray-700);text-decoration:none">센터 대표용</a>
+        <a href="#pricing" onClick="{{ goPricing }}" style="min-height:44px;display:flex;align-items:center;padding:0 10px;font-size:14px;font-weight:600;color:var(--gray-700);text-decoration:none">가격</a>
+        <a href="#faq" onClick="{{ goFaq }}" style="min-height:44px;display:flex;align-items:center;padding:0 10px;font-size:14px;font-weight:600;color:var(--gray-700);text-decoration:none">자주 묻는 질문</a>
+        <a href="#" style="min-height:44px;display:flex;align-items:center;padding:0 10px;font-size:14px;font-weight:600;color:var(--gray-700);text-decoration:none">설치 안내</a>
+      </nav>
+      <div style="padding-top:18px;border-top:1px solid var(--gray-200);display:flex;flex-direction:column;gap:4px;font-size:13px;line-height:1.7;color:var(--gray-600)">
+        <span>상호 [ ] · 대표 [ ] · 사업자등록번호 [ ]</span>
+        <span>통신판매업 신고번호 [ ]</span>
+        <span>주소 [ ] · 연락처 [ ]</span>
+        <span style="display:flex;gap:14px;margin-top:6px"><a href="#" style="color:var(--gray-700)">이용약관</a><a href="#" style="color:var(--gray-700);font-weight:700">개인정보처리방침</a></span>
+      </div>
+    </div>
+  </footer>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:375,&quot;height&quot;:900},&quot;audience&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;trainer&quot;,&quot;center&quot;],&quot;default&quot;:&quot;trainer&quot;,&quot;tsType&quot;:&quot;'trainer'|'center'&quot;},&quot;device&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;phone&quot;,&quot;pc&quot;],&quot;default&quot;:&quot;phone&quot;,&quot;tsType&quot;:&quot;'phone'|'pc'&quot;},&quot;headline&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A&quot;,&quot;C&quot;],&quot;default&quot;:&quot;C&quot;,&quot;tsType&quot;:&quot;'A'|'C'&quot;},&quot;heroOnly&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showReviews&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;animate&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;replay&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(t:'trainer'|'center')=&gt;void&quot;}}">
+class Component extends DCLogic {
+  state = { open: null };
+  rootRef = React.createRef();
+
+  componentDidMount() { this.setupReveal(); }
+  componentDidUpdate(prev) {
+    if (prev.replay !== this.props.replay) this.resetReveal();
+    this.setupReveal();
+  }
+  componentWillUnmount() { this.io && this.io.disconnect(); }
+
+  resetReveal() {
+    const root = this.rootRef.current; if (!root) return;
+    root.querySelectorAll('[data-rv]').forEach(el => el.removeAttribute('data-rv'));
+    this.io && this.io.disconnect(); this.io = null;
+  }
+
+  show(el, delay) {
+    el.style.transitionDelay = delay + 'ms';
+    el.style.opacity = '1';
+    el.style.transform = 'none';
+    el.querySelectorAll('[data-count]').forEach(c => this.countUp(c, delay));
+    if (el.dataset.count) this.countUp(el, delay);
+  }
+
+  countUp(el, delay) {
+    const target = +el.dataset.count; el.textContent = '0';
+    setTimeout(() => {
+      const t0 = performance.now(), dur = 900;
+      const tick = t => {
+        const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = String(Math.round(target * e));
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, delay);
+  }
+
+  setupReveal() {
+    if (!this.props.animate) return;
+    const root = this.rootRef.current; if (!root) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!this.io) {
+      this.io = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+          if (!en.isIntersecting) return;
+          const el = en.target; this.io.unobserve(el);
+          if (el.hasAttribute('data-reveal-group')) {
+            el.querySelectorAll('[data-reveal]').forEach(c => this.show(c, (+c.dataset.step || 0) * 110));
+          } else this.show(el, +el.dataset.delay || 0);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0 });
+    }
+    root.querySelectorAll('[data-reveal]:not([data-rv])').forEach(el => {
+      el.setAttribute('data-rv', '1');
+      el.style.transition = 'none';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(24px)';
+      void el.offsetHeight;
+      el.style.transition = 'opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1)';
+      if (!el.parentElement.closest('[data-reveal-group]')) this.io.observe(el);
+    });
+    root.querySelectorAll('[data-reveal-group]:not([data-rv])').forEach(g => { g.setAttribute('data-rv', '1'); this.io.observe(g); });
+  }
+
+  goAnchor(name) {
+    const root = this.rootRef.current; if (!root) return;
+    const el = root.querySelector(`[data-anchor="${name}"]`); if (!el) return;
+    let p = el.parentElement;
+    while (p && !(p.scrollHeight > p.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(p).overflowY))) p = p.parentElement;
+    const header = root.querySelector('header'); const off = header ? header.offsetHeight : 0;
+    if (p) p.scrollTo({ top: p.scrollTop + el.getBoundingClientRect().top - p.getBoundingClientRect().top - off, behavior: 'smooth' });
+    else window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - off, behavior: 'smooth' });
+  }
+
+  renderVals() {
+    const aud = this.props.audience ?? 'trainer';
+    const isTrainer = aud !== 'center';
+    const isPc = (this.props.device ?? 'phone') === 'pc';
+    const isA = (this.props.headline ?? 'C') === 'A';
+    const nav = t => e => { e && e.preventDefault && e.preventDefault(); this.props.onNavigate && this.props.onNavigate(t); };
+    const anchor = n => e => { e && e.preventDefault && e.preventDefault(); this.goAnchor(n); };
+    const goCenter = nav('center'), goTrainer = nav('trainer');
+    const on = { fw: 800, bg: '#fff', fg: 'var(--gray-900)', sh: '0 1px 3px rgba(24,29,38,.12)' };
+    const off = { fw: 600, bg: 'transparent', fg: 'var(--gray-600)', sh: 'none' };
+    const S = {
+      primary: { background: 'var(--red-600)', boxShadow: 'none', minHeight: 52, padding: '0 26px', fontSize: 17 },
+      outline: { minHeight: 52, padding: '0 24px', fontSize: 17, boxShadow: 'none' },
+      ink: { background: 'var(--gray-900)', color: '#fff', border: 'none', boxShadow: 'none', minHeight: 44, padding: '0 16px', fontSize: 15 },
+      white: { background: '#fff', color: 'var(--gray-900)', border: 'none', boxShadow: 'none', minHeight: 52, padding: '0 24px', fontSize: 17 },
+      ghostDark: { background: 'transparent', color: '#fff', border: '1px solid var(--gray-500)', boxShadow: 'none', minHeight: 52, padding: '0 24px', fontSize: 17 },
+    };
+    const mkFaq = (prefix, list) => list.map(([q, a], i) => {
+      const k = prefix + i, open = this.state.open === k;
+      return { q, a, open, icon: open ? '−' : '+', divider: i === 0 ? 'none' : '1px solid var(--gray-200)',
+        toggle: () => this.setState(s => ({ open: s.open === k ? null : k })) };
+    });
+    return {
+      rootRef: this.rootRef,
+      isTrainer, isCenter: !isTrainer, isPc, isPhone: !isPc, isA, isC: !isA,
+      full: !this.props.heroOnly,
+      showReviews: this.props.showReviews ?? true,
+      goCenter, goTrainer, goPricing: anchor('pricing'), goFaq: anchor('faq'),
+      swT: isTrainer ? on : off, swC: isTrainer ? off : on,
+      navItems: isTrainer
+        ? [['기능', 'features'], ['가격', 'pricing'], ['자주 묻는 질문', 'faq']].map(([label, a]) => ({ label, go: anchor(a) }))
+        : [['대표 화면', 'features'], ['도입 방법', 'process'], ['가격', 'pricing'], ['자주 묻는 질문', 'faq']].map(([label, a]) => ({ label, go: anchor(a) })),
+      bPrimary: { style: S.primary }, bOutline: { style: S.outline }, bInk: { style: S.ink },
+      bWhiteToCenter: { style: S.white, onClick: goCenter },
+      bOutlineToCenter: { style: S.outline, onClick: goCenter },
+      bOutlineToTrainer: { style: S.outline, onClick: goTrainer },
+      bGhostDark: { style: S.ghostDark },
+      cardFull: { style: { height: '100%', boxSizing: 'border-box' } },
+      faqT: mkFaq('t', [
+        ['설치해야 하나요?', '설치 없이 폰에서 바로 열립니다. 원하면 앱처럼 홈 화면에 둘 수 있어요.'],
+        ['어떤 기기에서 되나요?', '[배포본 답변 그대로]'],
+        ['AI가 대신 팔아주나요?', '아니요. OT 순서·클로징 멘트를 준비해 드리고, 말하는 건 트레이너입니다.'],
+        ['회원 정보는 안전한가요?', '[배포본 답변 그대로]'],
+        ['혼자 하는데도 되나요?', '네. 솔로 플랜은 개인 트레이너 1인용입니다.'],
+        ['의료·재활 목적인가요?', '아니요. 운동 지도·세일즈·회원관리 도구이며 치료·진단을 제공하지 않습니다.'],
+      ]),
+      faqC: mkFaq('c', [
+        ['트레이너가 4명 이상이면요?', '문의해 주세요. 센터 규모에 맞춰 안내드립니다.'],
+        ['트레이너들이 싫어하지 않을까요?', '트레이너의 일지·OT 준비·재등록 챙기기를 덜어주는 앱이라, 트레이너가 먼저 편해집니다.'],
+        ['다른 센터와 데이터가 섞이지 않나요?', '센터별로 완전히 분리되고, 매출·정산 화면은 대표만 봅니다.'],
+        ['기존 PT 회원은 어떻게 옮기나요?', "회원을 등록할 때 '인계받은 PT'로 남은 세션을 이어서 등록할 수 있습니다."],
+        ['결제는 어떻게 되나요?', '7일 무료 후 월 자동결제이고, 언제든 해지할 수 있습니다.'],
+      ]),
+    };
+  }
+}
+</script>
+</body>
+</html>
