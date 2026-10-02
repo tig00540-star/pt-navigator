@@ -24,7 +24,10 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
   // 원장 = 본인 것 아닌 회원이 보임(RLS상 trainer는 본인 것만 → 토글 불필요).
   const isOwner = members.some((m) => m.trainer_id && uid && m.trainer_id !== uid);
   const [mineOnly, setMineOnly] = useState(true); // 기본 '내 회원'
-  const scoped = isOwner && mineOnly ? members.filter((m) => m.trainer_id === uid) : members;
+  // 대표가 직접 맡은 회원이 없으면 '내 회원'은 늘 비어 있다 → 그땐 전체를 보여준다(칩도 '전체'로 표시).
+  const hasMine = members.some((m) => m.trainer_id === uid);
+  const mineEff = mineOnly && hasMine;
+  const scoped = isOwner && mineEff ? members.filter((m) => m.trainer_id === uid) : members;
 
   // 세그먼트 인원수 + 세그먼트 base(all=보관 제외). 검색은 그 위 AND.
   const counts = { ot: 0, pt: 0, inactive: 0 };
@@ -65,7 +68,7 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
           {[{ k: true, l: "내 회원" }, { k: false, l: "전체" }].map((t) => (
             <FilterChip
               key={String(t.k)}
-              selected={mineOnly === t.k}
+              selected={mineEff === t.k}
               onClick={() => setMineOnly(t.k)}
             >
               {t.l}
