@@ -10,7 +10,7 @@
 
 import { ImageOff, MessageSquareQuote, Trash2 } from "lucide-react";
 import Sparkline from "@/components/ui/Sparkline";
-import { caseKindLabel, deltaText, improved, shortDay } from "@/lib/salesCase";
+import { CASE_CATEGORIES, caseKindLabel, deltaText, improved, shortDay } from "@/lib/salesCase";
 
 function Photo({ url, cap, onOpen }) {
   return (
@@ -24,15 +24,24 @@ function Photo({ url, cap, onOpen }) {
   );
 }
 
-export default function CaseCard({ item, urls = {}, onOpenImage, onDelete, busy }) {
+export default function CaseCard({ item, urls = {}, onOpenImage, onDelete, onCategory, busy }) {
   const d = item.data || {};
   return (
     <article className="flex min-w-0 flex-col rounded-2xl border border-line bg-card p-3.5 shadow-sm">
       <header className="mb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <span className="text-[11px] font-semibold text-sub">{caseKindLabel(item.kind)}</span>
+          <span className="text-[11px] font-semibold text-sub">
+            {caseKindLabel(item.kind)}{!onCategory && d.category ? ` · ${d.category}` : ""}
+          </span>
           <p className="m-0 truncate text-[15px] font-bold tracking-[-0.02em] text-ink">{item.label || "회원"}</p>
         </div>
+        {onCategory && (
+          <select value={d.category || ""} onChange={(e) => onCategory(item, e.target.value)} disabled={busy} aria-label="목적"
+            className="ml-auto h-8 shrink-0 rounded-lg border border-line bg-elevate px-2 text-[12px] text-sub">
+            <option value="">목적 없음</option>
+            {CASE_CATEGORIES.map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+        )}
         {onDelete && (
           <button type="button" onClick={() => onDelete(item)} disabled={busy} aria-label="사례 빼기"
             className="rounded-md p-1.5 text-muted transition hover:bg-elevate hover:text-danger-text disabled:opacity-40">

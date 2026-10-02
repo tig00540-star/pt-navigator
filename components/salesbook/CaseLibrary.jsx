@@ -28,8 +28,9 @@ import FilterChip from "@/components/ui/FilterChip";
 import ImageLightbox from "@/components/ui/ImageLightbox";
 import { Input } from "@/components/ui/Field";
 import CaseCard from "@/components/salesbook/CaseCard";
+import { signCaseUrls, loadMyCases } from "@/components/salesbook/caseData";
 import {
-  CASE_KINDS, anonLabel, deltaText, improved, inbodyCandidates, liftCandidates, photoCaseData, shortDay, weeksBetween,
+  CASE_KINDS, CASE_CATEGORIES, guessCategory, anonLabel, deltaText, improved, inbodyCandidates, liftCandidates, photoCaseData, shortDay, weeksBetween,
 } from "@/lib/salesCase";
 
 const ADD_BUTTONS = [
@@ -39,23 +40,6 @@ const ADD_BUTTONS = [
   { kind: "review", label: "회원 후기", icon: MessageSquareQuote },
 ];
 
-// 서명 URL 묶음 — 버킷별로 한 번씩.
-async function signAll(cases) {
-  const photo = [], review = [];
-  for (const c of cases) {
-    if (c.kind === "photo") { if (c.data?.before?.path) photo.push(c.data.before.path); if (c.data?.after?.path) photo.push(c.data.after.path); }
-    if (c.kind === "review" && c.data?.path) review.push(c.data.path);
-  }
-  const map = {};
-  const sign = async (bucket, paths) => {
-    if (!paths.length) return;
-    const { data } = await supabase.storage.from(bucket).createSignedUrls([...new Set(paths)], 3600);
-    (data || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
-  };
-  await Promise.all([sign("member-photos", photo), sign("sales-cases", review)]);
-  return map;
-}
-
 export default function CaseLibrary() {
   const { members, myUid } = useMembers();
   const { toast, showToast } = useToast();
@@ -64,6 +48,7 @@ export default function CaseLibrary() {
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState("");
   const [filter, setFilter] = useState("all");
+  const [cat, setCat] = useState("all"); // 목적 필터
   const [adding, setAdding] = useState(null); // kind
   const [busy, setBusy] = useState(false);
   const [lightbox, setLightbox] = useState(null);
@@ -79,11 +64,10 @@ export default function CaseLibrary() {
     setLoading(true);
     setLoadErr("");
     try {
-      const { data, error } = await supabase.from("sales_case").select("*")
-        .eq("trainer_id", myUid).order("created_at", { ascending: false });
+      const { data, error } = await loadMyCases(myUid);
       if (error) { console.error("sales_case 불러오기 실패", error); setLoadErr("사례를 불러오지 못했어요. 다시 시도해 주세요."); return; }
       setCases(data || []);
-      setUrls(await signAll(data || []));
+      setUrls(await signCaseUrls(data || []));
     } catch (e) {
       console.error("sales_case 불러오기 실패", e);
       setLoadErr("사례를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
@@ -105,10 +89,18 @@ export default function CaseLibrary() {
     }
     const added = data[0];
     setCases((cs) => [added, ...cs]);
-    const signed = await signAll([added]);
+    const signed = await signCaseUrls([added]);
     setUrls((u) => ({ ...u, ...signed }));
     showToast("보관함에 담았어요");
     return added;
+  };
+
+  // 목적 바꾸기 — data.category만 고친다(숫자 스냅샷은 그대로).
+  const setCategory = async (item, category) => {
+    const data = { ...(item.data || {}), category: category || null };
+    const { data: up, error } = await supabase.from("sales_case").update({ data }).eq("id", item.id).select("id");
+    if (error || !up?.length) { showToast("바꾸지 못했어요. 다시 시도해 주세요."); return; }
+    setCases((cs) => cs.map((c) => (c.id === item.id ? { ...c, data } : c)));
   };
 
   const removeCase = async (item) => {
@@ -128,7 +120,10 @@ export default function CaseLibrary() {
     }
   };
 
-  const shown = filter === "all" ? cases : cases.filter((c) => c.kind === filter);
+  const shown = cases
+    .filter((c) => filter === "all" || c.kind === filter)
+    .filter((c) => cat === "all" || (cat === "none" ? !c.data?.category : c.data?.category === cat));
+  const catCount = (k) => cases.filter((c) => c.data?.category === k).length;
   const countOf = (k) => cases.filter((c) => c.kind === k).length;
 
   return (
@@ -166,6 +161,14 @@ export default function CaseLibrary() {
           <FilterChip key={k.value} selected={filter === k.value} onClick={() => setFilter(k.value)}>{k.label} {countOf(k.value)}</FilterChip>
         ))}
       </div>
+      <div className="-mt-2 flex flex-wrap items-center gap-1.5">
+        <span className="mr-0.5 text-[12px] font-semibold text-muted">목적</span>
+        <FilterChip selected={cat === "all"} onClick={() => setCat("all")}>전체</FilterChip>
+        {CASE_CATEGORIES.map((k) => (
+          <FilterChip key={k} selected={cat === k} onClick={() => setCat(k)}>{k} {catCount(k)}</FilterChip>
+        ))}
+        {cases.some((c) => !c.data?.category) && <FilterChip selected={cat === "none"} onClick={() => setCat("none")}>미분류</FilterChip>}
+      </div>
 
       {loading ? (
         <p className="text-[13px] text-muted">불러오는 중…</p>
@@ -179,7 +182,7 @@ export default function CaseLibrary() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((c) => (
-            <CaseCard key={c.id} item={c} urls={urls} onOpenImage={setLightbox} onDelete={removeCase} busy={busy} />
+            <CaseCard key={c.id} item={c} urls={urls} onOpenImage={setLightbox} onDelete={removeCase} onCategory={setCategory} busy={busy} />
           ))}
         </div>
       )}
@@ -203,6 +206,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
   const [picked, setPicked] = useState([]);
   const [label, setLabel] = useState("");
   const [note, setNote] = useState("");
+  const [category, setCategory] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -226,6 +230,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
     setMemberId(g.member.id);
     setPicked([]);
     setLabel("");
+    setCategory(guessCategory(g.member.goal));
     const { data } = await supabase.storage.from("member-photos").createSignedUrls(g.photos.map((p) => p.storage_path), 3600);
     const map = {};
     (data || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
@@ -241,7 +246,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
   const save = async () => {
     if (picked.length !== 2 || !group || saving) return;
     setSaving(true);
-    const ok = await onAdd({ kind: "photo", member_id: group.member.id, label: label.trim() || anonLabel(group.member), note: note.trim() || null, data: photoCaseData(picked[0], picked[1]) });
+    const ok = await onAdd({ kind: "photo", member_id: group.member.id, label: label.trim() || anonLabel(group.member), note: note.trim() || null, data: { ...photoCaseData(picked[0], picked[1]), category } });
     setSaving(false);
     if (ok) onClose();
   };
@@ -285,6 +290,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
             </div>
             {picked.length === 2 && (
               <>
+                <CategoryChips value={category} onChange={setCategory} />
                 <Input label="화면에 보일 이름" hint="실명 대신 익명으로 보여요" value={label} onChange={(e) => setLabel(e.target.value)} />
                 <Input label="한 줄 메모" hint="선택" value={note} onChange={(e) => setNote(e.target.value)} placeholder="예) 주 2회, 식단 같이 관리" />
               </>
@@ -313,11 +319,11 @@ function InbodyPicker({ members, cases, onClose, onAdd }) {
 
   const add = async (c) => {
     setSavingId(c.member.id);
-    await onAdd({ kind: "inbody", member_id: c.member.id, label: anonLabel(c.member, c.data.weeks), data: c.data });
+    await onAdd({ kind: "inbody", member_id: c.member.id, label: anonLabel(c.member, c.data.weeks), data: { ...c.data, category: guessCategory(c.member.goal) } });
     setSavingId(null);
   };
   return (
-    <Modal variant="sheet" title="인바디 변화 담기" subtitle="측정이 2번 이상인 회원 중 좋아진 폭이 큰 순이에요" onClose={onClose}>
+    <Modal variant="sheet" title="인바디 변화 담기" subtitle="측정이 2번 이상인 회원 중 좋아진 폭이 큰 순이에요 · 목적은 회원 목표로 정해지고 카드에서 바꿀 수 있어요" onClose={onClose}>
       {rows == null ? <p className="text-[13px] text-muted">기록을 살펴보는 중…</p>
         : cands.length === 0 ? <p className="text-[13px] text-sub">아직 담을 만한 인바디 변화가 없어요. 같은 회원을 두 번 이상 측정하면 여기 떠요.</p>
         : (
@@ -363,11 +369,11 @@ function LiftPicker({ members, cases, onClose, onAdd }) {
   const add = async (c) => {
     const key = `${c.member.id}|${c.data.exercise}`;
     setSavingKey(key);
-    await onAdd({ kind: "lift", member_id: c.member.id, label: anonLabel(c.member, c.data.weeks), data: c.data });
+    await onAdd({ kind: "lift", member_id: c.member.id, label: anonLabel(c.member, c.data.weeks), data: { ...c.data, category: guessCategory(c.member.goal) } });
     setSavingKey(null);
   };
   return (
-    <Modal variant="sheet" title="운동 변화 담기" subtitle="운동일지 무게 기록에서 많이 는 순이에요" onClose={onClose}>
+    <Modal variant="sheet" title="운동 변화 담기" subtitle="운동일지 무게 기록에서 많이 는 순이에요 · 목적은 회원 목표로 정해지고 카드에서 바꿀 수 있어요" onClose={onClose}>
       {rows == null ? <p className="text-[13px] text-muted">기록을 살펴보는 중…</p>
         : cands.length === 0 ? <p className="text-[13px] text-sub">아직 담을 만한 운동 변화가 없어요. 운동일지에 무게가 두 번 이상 기록되면 여기 떠요.</p>
         : (
@@ -397,6 +403,7 @@ function ReviewForm({ uid, onClose, onAdd, showToast }) {
   const [preview, setPreview] = useState(null);
   const [label, setLabel] = useState("");
   const [note, setNote] = useState("");
+  const [category, setCategory] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -418,7 +425,7 @@ function ReviewForm({ uid, onClose, onAdd, showToast }) {
       const path = `${me.account_id}/${crypto.randomUUID()}.jpg`;
       const { error: ue } = await supabase.storage.from("sales-cases").upload(path, blob, { contentType: "image/jpeg" });
       if (ue) { console.error("후기 업로드 실패", ue); showToast("사진을 올리지 못했어요. 다시 시도해 주세요."); return; }
-      const ok = await onAdd({ kind: "review", label: label.trim() || "회원 후기", note: note.trim() || null, data: { path } });
+      const ok = await onAdd({ kind: "review", label: label.trim() || "회원 후기", note: note.trim() || null, data: { path, category } });
       if (ok) onClose();
       else await supabase.storage.from("sales-cases").remove([path]);
     } catch (e) {
@@ -438,9 +445,24 @@ function ReviewForm({ uid, onClose, onAdd, showToast }) {
           <input type="file" accept="image/*" className="sr-only" onChange={onPick} />
         </label>
         <p className="m-0 text-[12px] text-muted">이름·프로필 사진이 보이면 잘라서 올려 주세요.</p>
+        <CategoryChips value={category} onChange={setCategory} />
         <Input label="화면에 보일 이름" hint="선택" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="예) 30대 직장인 회원" />
         <Input label="한 줄 메모" hint="선택" value={note} onChange={(e) => setNote(e.target.value)} placeholder="예) 3개월 PT 끝나고 보내준 메시지" />
       </div>
     </Modal>
+  );
+}
+
+/* 목적 고르기 — 세일즈북이 회원 목표와 같은 목적의 사례를 먼저 골라 준다. */
+function CategoryChips({ value, onChange }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[13px] font-semibold text-sub">목적 <span className="font-normal text-muted">세일즈북에서 같은 목표 회원에게 먼저 보여 드려요</span></p>
+      <div className="flex flex-wrap gap-1.5">
+        {CASE_CATEGORIES.map((k) => (
+          <FilterChip key={k} selected={value === k} onClick={() => onChange(value === k ? null : k)}>{k}</FilterChip>
+        ))}
+      </div>
+    </div>
   );
 }

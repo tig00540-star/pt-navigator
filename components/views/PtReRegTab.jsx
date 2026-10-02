@@ -8,6 +8,7 @@
    ========================================================================= */
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
@@ -53,6 +54,10 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   const [sbGenerating, setSbGenerating] = useState(false);
   const [sbErr, setSbErr] = useState("");
   const [sbOpen, setSbOpen] = useState(false);
+  // 세일즈북 탭에서 '발표'로 들어오면(?sb=1) 준비되는 대로 바로 연다(렌더 중 1회 조정).
+  const wantSb = useSearchParams().get("sb") === "1";
+  const [autoOpened, setAutoOpened] = useState(false);
+  if (wantSb && regSb && !autoOpened) { setAutoOpened(true); setSbOpen(true); }
   // 회원 만족도(트레이너 입력 · 2026-10-02) — 재등록 브리핑의 근거. latest.report.reg_satisfaction에 브리핑과 함께 저장.
   const [satLevel, setSatLevel] = useState("");
   const [satQuote, setSatQuote] = useState("");
@@ -428,6 +433,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
           packages={packages}
           recommendedProgram={regBrief?.recommended_program || null}
           change={changeData}
+          startPresent={wantSb}
           onClose={() => setSbOpen(false)}
         />
       )}

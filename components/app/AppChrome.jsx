@@ -36,6 +36,11 @@ const GROUP_TAB = {
   pt: { active: "text-sky-600",   idle: "text-sky-700/60 hover:text-sky-700",     bar: "bg-sky-500" },
   settings: { active: "text-primary-strong", idle: "text-primary-strong/60 hover:text-primary-strong", bar: "bg-primary" },
 };
+// 세일즈북 위 칸 탭(2026-10-02)
+const SALESBOOK_SUBTABS = [
+  { label: "발표 자료", href: "/salesbook" },
+  { label: "사례 보관함", href: "/salesbook/cases" },
+];
 
 /* 화면에서 공용 모달을 여는 통로 — 신규 등록 버튼이 여러 화면에 있어서 한 곳에 둔다. */
 // 넓은 화면 회원 목록 접기 — 회원 화면을 넓게 쓰고 싶을 때(세일즈북·피드백). 이 기기에서만 기억(편의 · 실패해도 펼친 상태).
@@ -126,7 +131,7 @@ export default function AppChrome({ children }) {
       />
 
       {/* 헤더 — 폰: 로고·공지·대표 화면 + 서브탭. 태블릿·PC: 로고·공지·대표 화면은 왼쪽 메뉴로 가고 서브탭만 남는다(없으면 헤더도 없음). */}
-      <header className={`sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)] ${steps || info.section === "settings" ? "" : "md:hidden"}`}>
+      <header className={`sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)] ${steps || info.section === "settings" || info.section === "salesbook" ? "" : "md:hidden"}`}>
         <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${wideMembers ? "lg:max-w-none lg:px-8" : ""}`}>
           <div className="flex items-center justify-between py-3 md:hidden">
             {/* 로고 락업 = 홈(허브)으로. 어느 화면에서든 한 번에 첫 화면으로 돌아온다. */}
@@ -167,6 +172,9 @@ export default function AppChrome({ children }) {
           </div>
 
           {steps && <SubTabs items={steps} activeHref={pathname} tone={info.section} />}
+          {info.section === "salesbook" && (
+            <SubTabs items={SALESBOOK_SUBTABS} activeHref={info.sub === "cases" ? "/salesbook/cases" : "/salesbook"} tone="settings" />
+          )}
           {info.section === "settings" && (
             <SubTabs
               items={SETTINGS_SUBTABS.map((t) => ({ label: t.label, href: `/settings/${t.id}` }))}

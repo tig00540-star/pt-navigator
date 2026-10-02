@@ -88,7 +88,7 @@ export default function TrainerHub({ members = [], trainerName, onGo, onAdd }) {
         />
         {/* 설정은 하단바에 있어 타일 자리를 세일즈북(사례 보관함)에 내준다(2026-10-02 · 폰엔 하단바 칸이 없음). */}
         <Tile
-          icon={Presentation} title="세일즈북" desc="변화 사례 · 후기 모음"
+          icon={Presentation} title="세일즈북" desc="발표 자료 · 변화 사례"
           tone="bg-bg text-sub"
           onClick={() => onGo("salesbook")}
         />

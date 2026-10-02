@@ -110,7 +110,9 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 
 ### 세일즈북 1단계: 사례 보관함 (2026-10-02)
 
-`/salesbook`(`components/salesbook/CaseLibrary` · 왼쪽 메뉴 '세일즈북' · 폰은 홈 타일 · 하단바 5칸은 그대로). 다른 회원의 **비포·애프터(member_photo 경로 참조)·인바디 변화·운동 무게 변화·회원 후기 캡처**를 모아 2단계 세일즈북(회원별 발표 자료)에 넣는다. 표 `sales_case`(kind photo/inbody/lift/review · `data` jsonb 스냅샷 · 계정 스코프 RLS) + 비공개 버킷 `sales-cases/{account_id}/…`(`docs/migrations/2026-10-02-sales-case.sql`). 후보·스냅샷·익명 라벨은 `lib/salesCase.js` 한 곳 — **숫자는 기록에서만(손 수정 불가)** · 저장 라벨은 익명("30대 여성 · 12주") · **회원 동의·개인정보는 트레이너 책임(대표 결정)**, 앱은 안내 한 줄만. 표시는 `CaseCard`(2단계 장에서도 재사용).
+`/salesbook`(`components/salesbook/CaseLibrary` · 왼쪽 메뉴 '세일즈북' · 폰은 홈 타일 · 하단바 5칸은 그대로). 다른 회원의 **비포·애프터(member_photo 경로 참조)·인바디 변화·운동 무게 변화·회원 후기 캡처**를 모아 2단계 세일즈북(회원별 발표 자료)에 넣는다. 표 `sales_case`(kind photo/inbody/lift/review · `data` jsonb 스냅샷 · 계정 스코프 RLS) + 비공개 버킷 `sales-cases/{account_id}/…`(`docs/migrations/2026-10-02-sales-case.sql`). 후보·스냅샷·익명 라벨은 `lib/salesCase.js` 한 곳 — **숫자는 기록에서만(손 수정 불가)** · 저장 라벨은 익명("30대 여성 · 12주") · **회원 동의·개인정보는 트레이너 책임(대표 결정)**, 앱은 안내 한 줄만. 표시는 `CaseCard`(2단계 장에서도 재사용). 사례 **목적**(`data.category` · 다이어트/바디프로필/벌크업/체형교정/건강·체력 · `guessCategory(회원 목표)`로 기본값).
+
+**2단계 발표 자료(2026-10-02):** `/salesbook` = `DeckList`(세일즈북이 저장된 회원 최근 순 · **누르면 바로 발표** `startPresent`) · `/salesbook/cases` = 보관함(헤더 위 칸 탭). OT 세일즈북은 `DeckLauncher`(패키지·프로필 로드 + 최신 report 재읽고 salesbook만 저장)로 어디서든 연다 — 세일즈북 탭·**OT 대시보드 '세일즈북 발표'(폰)**. 재등록 세일즈북은 숫자 계산이 재등록 화면에 있어 `/pt/{id}/renewal?sb=1`로 보내 자동으로 연다. **장 구성** = 세일즈북 JSON의 `deck={order,hidden,cases}`(`components/salesbook/deck.js` `deckOrder` · 장은 CSS `order`로 정렬 · 인쇄도 세로 flex라 순서 유지) · 편집 화면 '장 구성' 패널(`DeckParts` `DeckPanel`)에서 켜기·끄기·순서·**사례 넣기**(회원 목표와 같은 목적 먼저) · 사례 장은 2개씩 '이런 변화를 만들어요'(`CaseSlideBody` · 숫자·사진은 스냅샷 그대로, **AI가 다시 쓰지 않음**). deck 없으면 예전 순서 그대로. ⚠️ 세일즈북(fixed 전체화면)은 `@container` 안에 두지 말 것(레이아웃 격리가 fixed 기준이 됨 · OtDashboard는 바깥에 렌더).
 
 ### 수업일지 회원 확인·서명 (v2 · 2026-07-21)
 

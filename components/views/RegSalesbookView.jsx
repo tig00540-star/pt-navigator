@@ -88,13 +88,13 @@ function SlideHead({ eyebrow, aux, className = "", style }) {
   );
 }
 
-export default function RegSalesbookView({ regSalesbook, member, trainer, packages = [], recommendedProgram = null, change = null, onClose }) {
+export default function RegSalesbookView({ regSalesbook, member, trainer, packages = [], recommendedProgram = null, change = null, onClose, startPresent = false }) {
   const [idx, setIdx] = useState(0);
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({});
   const sbRootRef = useRef(null);
   const [isFs, setIsFs] = useState(false);
-  const [presentMode, setPresentMode] = useState(false);
+  const [presentMode, setPresentMode] = useState(startPresent); // 세일즈북 탭에서 들어오면 바로 발표
   const fsEnabled = typeof document !== "undefined" && document.fullscreenEnabled;
   useEffect(() => {
     const on = () => setIsFs(!!document.fullscreenElement);

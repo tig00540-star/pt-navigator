@@ -12,11 +12,14 @@
    PDF: window.print() + @media print(A4 가로). present(editable=false)=회원에게 보이는 화면.
    ========================================================================= */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize, Presentation } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize, Presentation, LayoutList } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
+import { caseKeys, caseChunk, deckOrder } from "@/components/salesbook/deck";
+import { CaseSlideBody, DeckPanel, useDeckCases } from "@/components/salesbook/DeckParts";
+import { guessCategory } from "@/lib/salesCase";
 
 const SLIDE_COUNT = 7; // 기본 장 수 — 트레이너가 '신규 등록 혜택 장'을 켜면 +1(benefits prop)
 
@@ -83,7 +86,7 @@ function Slide({ n, children, className = "", idx = 0, total = SLIDE_COUNT, edit
   const active = idx === n - 1;
   const inner = editable ? children : <div className={`sb-build ${active ? "sb-play" : ""}`}>{children}</div>;
   return (
-    <section className={`sb-slide ${className}`}>
+    <section className={`sb-slide ${className}`} style={{ order: n }}>
       <div className="sb-slide-inner">
         <div className="sb-pad"><div ref={fitRef} className="sb-fit">{inner}</div></div>
         <div className="sb-corner">
@@ -118,10 +121,10 @@ export default function SalesbookView({
   onSave,
   onClose,
   benefits = [],
+  startPresent = false, // 세일즈북 탭에서 회원을 누르면 바로 발표 화면으로(2단계)
 }) {
   // 신규 등록 혜택 장(선택) — 있으면 플랜 다음에 한 장 추가.
   const hasBenefits = Array.isArray(benefits) && benefits.filter(Boolean).length > 0;
-  const total = SLIDE_COUNT + (hasBenefits ? 1 : 0);
   const [idx, setIdx] = useState(0);
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({});
@@ -129,7 +132,7 @@ export default function SalesbookView({
   const sbRootRef = useRef(null);
   const [isFs, setIsFs] = useState(false);
   // 발표 모드 — 앱 UI(.sb-chrome 상단바+하단 네비)를 숨겨 슬라이드가 뷰포트를 꽉 쓰게. 모든 기기(아이폰 포함).
-  const [presentMode, setPresentMode] = useState(false);
+  const [presentMode, setPresentMode] = useState(startPresent);
   const fsEnabled = typeof document !== "undefined" && document.fullscreenEnabled; // 아이폰 Safari=false → 버튼 숨김
   useEffect(() => {
     const on = () => setIsFs(!!document.fullscreenElement);
@@ -147,6 +150,16 @@ export default function SalesbookView({
   const [prevSb, setPrevSb] = useState(salesbook);
   if (salesbook !== prevSb) { setPrevSb(salesbook); setDraft(salesbook || {}); }
   const sb = editable ? draft : (salesbook || {});
+  // 장 구성(2단계) — 순서·숨김·사례 장. deck이 없으면 예전 순서 그대로.
+  const baseKeys = ["cover", "goal", "confirmed", "photo", "roadmap", "plans", ...(hasBenefits ? ["benefits"] : []), "closing"];
+  const deck = deckOrder(baseKeys, sb.deck);
+  const total = Math.max(1, deck.visible.length);
+  const pos = (k) => deck.visible.indexOf(k) + 1;
+  const show = (k) => deck.visible.includes(k);
+  if (idx > total - 1) setIdx(total - 1); // 장을 숨겨 줄었으면 마지막 장으로(렌더 중 조정)
+  const deckCases = useDeckCases(sb.deck?.cases || []);
+  const memberCategory = guessCategory(member?.goal);
+  const [panelOpen, setPanelOpen] = useState(false);
   // 중첩 필드 편집기(editable일 때만 소비). 예: setField("confirmed", "vow"…) 는 slice별로 아래에서.
   const setConfirmed = (k, v) => setDraft((d) => ({ ...d, confirmed: { ...(d.confirmed || {}), [k]: v } }));
   const setClosing = (k, v) => setDraft((d) => ({ ...d, closing: { ...(d.closing || {}), [k]: v } }));
@@ -218,7 +231,7 @@ export default function SalesbookView({
     setTouchX(null);
   };
 
-  const photos = useMemo(() => pickPhotos(sb.photo_slide?.mode, rows, urls), [sb.photo_slide?.mode, rows, urls]);
+  const photos = pickPhotos(sb.photo_slide?.mode, rows, urls); // 가벼운 계산이라 메모 없이(장 구성 계산과 React Compiler 충돌 회피)
 
   const tr = trainer || {};
   const plans = Array.isArray(sb.plans) ? sb.plans.slice(0, 2) : [];
@@ -245,6 +258,11 @@ export default function SalesbookView({
           {editable ? "세일즈북 편집" : (member?.name ? `${member.name} 님 자료` : "세일즈북")}
         </span>
         <div className="flex items-center gap-2">
+          {editable && (
+            <button onClick={() => setPanelOpen((v) => !v)} aria-pressed={panelOpen} className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25">
+              <LayoutList className="h-3.5 w-3.5" /> 장 구성
+            </button>
+          )}
           {editable ? (
             <button onClick={doSave} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[12px] font-bold text-primary-strong transition hover:bg-white/90 disabled:opacity-60">
               {saving ? "저장 중…" : "저장"}
@@ -276,7 +294,7 @@ export default function SalesbookView({
         <div className="sb-stage">
           <div className="sb-track" style={{ "--sb-tx": `${-idx * 100}%` }}>
             {/* ① 표지 — fit 래퍼는 자연 높이라 justify-between 대신 상단정렬 스택(간격으로 여백). */}
-            <Slide n={1} className="sb-cover" idx={idx} total={total} editable={editable}>
+            {show("cover") && <Slide n={pos("cover")} className="sb-cover" idx={idx} total={total} editable={editable}>
               <div className="flex flex-col gap-6 sm:gap-8">
                 <div className="sb-stg flex items-center gap-2">
                   <BrandMark accent="trainer" title="오직 트레이너" className="h-7 w-7 shrink-0 rounded-lg" />
@@ -297,10 +315,10 @@ export default function SalesbookView({
                   </div>
                 </div>
               </div>
-            </Slide>
+            </Slide>}
 
             {/* ② 목표 — 큰 목표 카드로 채움 + 지금 겪는 것. */}
-            <Slide n={2} idx={idx} total={total} editable={editable}>
+            {show("goal") && <Slide n={pos("goal")} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="당신의 목표" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="sb-stg flex flex-1 flex-col justify-center rounded-2xl border border-primary/25 bg-primary-soft p-5" style={{ "--sb-i": 1 }}>
@@ -315,10 +333,10 @@ export default function SalesbookView({
                   </div>
                 )}
               </div>
-            </Slide>
+            </Slide>}
 
             {/* ③ 오늘 확인한 것 — ★트레이너 전문가 시선(원인·접근)이 주인공. before/after는 작은 근거. */}
-            <Slide n={3} idx={idx} total={total} editable={editable}>
+            {show("confirmed") && <Slide n={pos("confirmed")} idx={idx} total={total} editable={editable}>
               {(() => {
                 const cf = sb.confirmed || {};
                 // 옛 캐시 폴백: diagnosis/approach 없고 bridge만 있으면 bridge를 '원인' 박스에 표시(graceful).
@@ -376,10 +394,10 @@ export default function SalesbookView({
                   </div>
                 );
               })()}
-            </Slide>
+            </Slide>}
 
             {/* ④ 사진 */}
-            <Slide n={4} idx={idx} total={total} editable={editable}>
+            {show("photo") && <Slide n={pos("photo")} idx={idx} total={total} editable={editable}>
               <SlideHead eyebrow={sb.photo_slide?.title || "사진 기록"} className="sb-stg" style={{ "--sb-i": 0 }} />
               {sb.photo_slide?.body && <p className="sb-stg mb-3 max-w-[52ch] text-[13px] leading-relaxed text-sub" style={{ "--sb-i": 1 }}>{sb.photo_slide.body}</p>}
               <div className="sb-stg grid grid-cols-2 gap-3" style={{ "--sb-i": 2 }}>
@@ -407,10 +425,10 @@ export default function SalesbookView({
                   ))}
                 </ul>
               )}
-            </Slide>
+            </Slide>}
 
             {/* ⑤ 로드맵 + 현재 — 각 단계 '제 방법(how)' + '느낄 변화(feel)'. 카드 full-height 채움. */}
-            <Slide n={5} idx={idx} total={total} editable={editable}>
+            {show("roadmap") && <Slide n={pos("roadmap")} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="여기까지 함께 갑니다" aux="지금부터 중장기까지" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="flex flex-1 flex-col gap-3">
@@ -454,10 +472,10 @@ export default function SalesbookView({
                   )}
                 </div>
               </div>
-            </Slide>
+            </Slide>}
 
             {/* ⑥ 추천 플랜 — 카드 full-height · 가격 대형. */}
-            <Slide n={6} idx={idx} total={total} editable={editable}>
+            {show("plans") && <Slide n={pos("plans")} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="추천 플랜" className="sb-stg" style={{ "--sb-i": 0 }} />
                 <div className="grid flex-1 gap-3 sm:grid-cols-2">
@@ -489,11 +507,11 @@ export default function SalesbookView({
                   })}
                 </div>
               </div>
-            </Slide>
+            </Slide>}
 
             {/* ⑦ 신규 등록 혜택(선택) — 설정 › 회원 세일즈북에서 트레이너가 켠 경우만. 재등록 세일즈북엔 없음. */}
-            {hasBenefits && (
-              <Slide n={7} idx={idx} total={total} editable={editable}>
+            {hasBenefits && show("benefits") && (
+              <Slide n={pos("benefits")} idx={idx} total={total} editable={editable}>
                 <div className="flex h-full flex-col">
                   <SlideHead eyebrow="PT 등록하시면 함께 드려요" className="sb-stg" style={{ "--sb-i": 0 }} />
                   <ul className="grid flex-1 content-center gap-3 sm:grid-cols-2">
@@ -509,7 +527,7 @@ export default function SalesbookView({
             )}
 
             {/* ⑦/⑧ 마무리 — 서비스 2×2 + 손글씨 다짐 넉넉하게 채움. */}
-            <Slide n={hasBenefits ? 8 : 7} idx={idx} total={total} editable={editable}>
+            {show("closing") && <Slide n={pos("closing")} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="약속드릴게요" className="sb-stg" style={{ "--sb-i": 0 }} />
                 {Array.isArray(sb.closing?.services) && (
@@ -547,10 +565,32 @@ export default function SalesbookView({
                   </div>
                 </div>
               </div>
-            </Slide>
+            </Slide>}
+
+            {/* 사례 장(2단계) — 보관함에서 고른 다른 회원 변화. 2개씩 한 장 · 숫자·사진은 기록 그대로. */}
+            {caseKeys(sb.deck?.cases || []).filter(show).map((k) => {
+              const rows = caseChunk(sb.deck?.cases || [], k).map((id) => deckCases.rows.find((r) => r.id === id)).filter(Boolean);
+              return (
+                <Slide key={k} n={pos(k)} idx={idx} total={total} editable={editable}>
+                  {rows.length ? <CaseSlideBody cases={rows} urls={deckCases.urls} memberCategory={memberCategory} SlideHead={SlideHead} />
+                    : <p className="text-[13px] text-muted">사례를 불러오는 중이거나 보관함에서 빠진 사례예요.</p>}
+                </Slide>
+              );
+            })}
           </div>
         </div>
       </div>
+
+      {/* 장 구성 패널 — 편집 화면 전용 */}
+      {editable && panelOpen && (
+        <DeckPanel
+          deck={draft.deck}
+          allKeys={deck.all}
+          memberCategory={memberCategory}
+          onChange={(next) => setDraft((dd) => ({ ...dd, deck: next }))}
+          onClose={() => setPanelOpen(false)}
+        />
+      )}
 
       {/* 하단 네비 — 점 + 화살표(인쇄엔 숨김) */}
       <div className="sb-chrome flex items-center justify-center gap-4 px-4 py-3">
@@ -646,7 +686,8 @@ function SalesbookStyle() {
   @page { size:A4 landscape; margin:0; }
   .sb-viewport { overflow:visible !important; padding:0 !important; display:block !important; }
   .sb-stage { max-width:none !important; width:100% !important; }
-  .sb-track { display:block !important; transform:none !important; }
+  .sb-track { display:flex !important; flex-direction:column !important; transform:none !important; } /* 장 순서(order)가 인쇄에도 먹게 */
+  .sb-slide { flex:none !important; }
   /* 화면 fit-scale의 인라인 transform 제거 + 확정 높이 부여 → 내부 flex(h-full·margin-top:auto)가 A4 한 장을 꽉 채움.
      ⚠️ min-height:100%만으론 높이 auto라 자식 height:100%가 무너져 세로가 안 채워짐 → height:100% 필수. */
   .sb-fit { transform:none !important; height:100% !important; }
