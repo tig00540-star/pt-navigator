@@ -17,6 +17,7 @@ import { ChevronDown, Dumbbell, ExternalLink, Flag, History, MessageCircle, Shie
 import ClosingSequence from "@/components/ui/ClosingSequence";
 import { won, wonApprox } from "@/lib/format";
 import Emph, { plainText } from "@/components/ui/Emph";
+import { resolvePkg } from "@/lib/pkgRef";
 
 const OBJ_LABEL = { price: "가격", hesitation: "생각해볼게요", doubt: "효과 의심", time: "시간 부족", compare: "다른 곳 비교" };
 
@@ -110,8 +111,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   const moves = (d.proof?.moves || []).filter(Boolean);
   const obj = (d.objection_defense || []).filter(Boolean);
   const rp = d.recommended_program || {};
-  const pick = Number.isInteger(rp.pick_ref) ? packages[rp.pick_ref] || null : null;
-  const alt = Number.isInteger(rp.alt_ref) ? packages[rp.alt_ref] || null : null;
+  const seqForHint = d.closing_sequence || {};
+  // 만들 때 저장한 패키지(pick_pkg)가 먼저 — 순번만 보면 다른 트레이너·가격표 순서 변경에 엉뚱한 가격이 붙는다(lib/pkgRef).
+  const pick = resolvePkg({ snap: rp.pick_pkg, ref: rp.pick_ref, packages, hint: seqForHint.plan_pitch || rp.session_logic });
+  const alt = resolvePkg({ snap: rp.alt_pkg, ref: rp.alt_ref, packages, hint: rp.alt_why });
   const per = pick?.sessions ? Math.round(pick.price / pick.sessions) : null;
   const priceLine = pick ? `${pick.name} · ${won(pick.price)}${per ? ` · 회당 약 ${wonApprox(per)}` : ""}` : "";
   const gaps = (d.data_gaps || []).filter((g) => typeof g === "string" && g.trim());
@@ -267,7 +270,11 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
           <ol className="m-0 mt-2 list-none space-y-2 p-0">
             {lines.map((t, i) => (
               <li key={i} className="flex gap-2.5 text-[15px] font-medium leading-[1.55] text-ink">
-                <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card text-[11px] font-semibold text-primary-strong">{i + 1}</span>
+                {derived ? (
+                  <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card text-[11px] font-semibold text-primary-strong">{i + 1}</span>
+                ) : (
+                  <span className="mt-[3px] w-[46px] shrink-0 text-[12px] font-semibold text-primary-strong">{["이 회원", "오늘 꼭", "요청"][i]}</span>
+                )}
                 <span className="min-w-0"><Emph>{t}</Emph></span>
               </li>
             ))}

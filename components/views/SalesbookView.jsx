@@ -11,31 +11,33 @@
    손글씨(vow): --font-handwriting(self-host woff2 배선 후) · 미배선 시 cursive 폴백.
    PDF: window.print() + @media print(A4 가로). present(editable=false)=회원에게 보이는 화면.
    ========================================================================= */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize, Presentation, LayoutList, Receipt } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won, wonApprox } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import PriceSheet from "@/components/salesbook/PriceSheet";
+import { resolvePkg } from "@/lib/pkgRef";
 import { caseKeys, caseChunk, deckOrder } from "@/components/salesbook/deck";
 import { CaseSlideBody, DeckPanel, useDeckCases } from "@/components/salesbook/DeckParts";
 import { guessCategory } from "@/lib/salesCase";
 
 const SLIDE_COUNT = 7; // 기본 장 수 — 트레이너가 '신규 등록 혜택 장'을 켜면 +1(benefits prop)
 
-// ── 가격 해석(#2) — 모델 plan.ref를 안 믿는다. A=pick_ref, B=alt_ref 우선, 유효성 검증. ──
+// 추천 패키지 찾기 — 만들 때 저장한 패키지(plan.pkg · pick_pkg/alt_pkg)가 먼저(lib/pkgRef · 2026-10-02 버그 수정).
+//   옛 세일즈북(저장값 없음)은 순번으로 찾되, 장의 회차("함께 30회")와 다르면 가격을 붙이지 않는다.
 function resolvePackage(planIndex, plan, recommendedProgram, packages) {
-  const list = Array.isArray(packages) ? packages : [];
   const rp = recommendedProgram || {};
+  const snap = plan?.pkg || (planIndex === 0 ? rp.pick_pkg : rp.alt_pkg) || null;
+  if (snap) return resolvePkg({ snap, packages });
+  const list = Array.isArray(packages) ? packages : [];
   const valid = (n) => Number.isInteger(n) && n >= 0 && n < list.length;
-  // 1순위: recommendedProgram의 확정 ref. 2순위(alt가 null 등): 모델이 고른 ref(검증 후).
   let ref = planIndex === 0 ? rp.pick_ref : rp.alt_ref;
-  // 확정 ref가 없으면 = 패키지가 없던 때 만든 세일즈북 → 모델 추측으로 가격을 붙이지 않는다
-  //   ('20회' 설명에 30회 가격이 붙던 문제 · 2026-10-02). 다시 만들면 맞는 가격이 붙는다.
+  // 확정 ref가 없으면 = 패키지가 없던 때 만든 세일즈북 → 모델 추측으로 가격을 붙이지 않는다.
   if (recommendedProgram && !valid(ref)) return null;
   if (!valid(ref)) ref = plan?.ref;
-  return valid(ref) ? list[ref] : null;
+  return resolvePkg({ ref, packages, hint: plan?.sessions_label });
 }
 
 // ── 사진 해석 — mode별로 보여줄 2컷 선정. rows=member_photo(taken_on desc), urls=path→signedUrl. ──
@@ -636,7 +638,7 @@ export default function SalesbookView({
       {priceOpen && (
         <PriceSheet
           packages={packages}
-          recommendedIndex={Number.isInteger(recommendedProgram?.pick_ref) ? recommendedProgram.pick_ref : null}
+          recommended={resolvePackage(0, (Array.isArray(sb.plans) ? sb.plans : [])[0], recommendedProgram, packages)}
           trainerName={trainer?.display_name || ""}
           onClose={() => setPriceOpen(false)}
         />

@@ -18,7 +18,9 @@ import BrandMark from "@/components/ui/BrandMark";
 const perSession = (p) => (p?.sessions ? Math.round(p.price / p.sessions) : null);
 const TABLE_FROM = 7;
 
-export default function PriceSheet({ packages = [], recommendedIndex = null, trainerName, onClose }) {
+const samePkg = (a, b) => Boolean(a && b) && (a.id && b.id ? a.id === b.id : a.name === b.name && Number(a.sessions) === Number(b.sessions));
+
+export default function PriceSheet({ packages = [], recommended = null, trainerName, onClose }) {
   // 가격표가 떠 있는 동안 ESC·화살표는 가격표 몫 — 아래 세일즈북이 닫히거나 장이 넘어가지 않게(캡처 단계에서 가로챔).
   useEffect(() => {
     const h = (e) => {
@@ -80,7 +82,7 @@ export default function PriceSheet({ packages = [], recommendedIndex = null, tra
               <tbody>
                 {rows.map(({ p: pk, i }) => {
                   const per = perSession(pk);
-                  const rec = recommendedIndex === i;
+                  const rec = samePkg(recommended, pk);
                   const low = cheapest != null && per === cheapest;
                   const disc = pk.list_price != null && pk.list_price > pk.price;
                   return (
@@ -114,7 +116,7 @@ export default function PriceSheet({ packages = [], recommendedIndex = null, tra
             <ul className={`m-0 grid list-none gap-3 p-0 ${list.length === 1 ? "mx-auto max-w-md" : list.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
               {list.map((p, i) => {
                 const per = perSession(p);
-                const rec = recommendedIndex === i;
+                const rec = samePkg(recommended, p);
                 const discounted = p.list_price != null && p.list_price > p.price;
                 return (
                   <li key={p.id || i} className={`relative flex flex-col rounded-2xl border p-4 sm:p-5 ${rec ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`}>

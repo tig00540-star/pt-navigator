@@ -29,7 +29,6 @@ import { authHeader } from "@/lib/authHeader";
 import Eyebrow from "@/components/ui/Eyebrow";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import PrepReport from "@/components/ot/PrepReport";
-import ClosingSequence from "@/components/ui/ClosingSequence";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { otObsHash } from "@/lib/otHash";
@@ -480,10 +479,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           onRegenerate={() => generateBrief(obs)}
           meta={
             meta?.generatedAt && (
-              <span>
-                생성: {new Date(meta.generatedAt).toLocaleString("ko-KR")}
-                {meta?.obsHash && !stale && " · 지금까지 OT 기록 기준"}
-              </span>
+              <span>{new Date(meta.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요</span>
             )
           }
         >

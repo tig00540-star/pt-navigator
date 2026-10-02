@@ -11,6 +11,7 @@ import { requireTrainer } from "@/lib/requireTrainer";
 import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
 import { tidyDeep } from "@/lib/tidyText";
+import { attachPkgSnapshots } from "@/lib/pkgRef";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // Hobby+fluid compute 기본 300s. 실측 ~45s의 4배 마진 + 업스트림 무응답 폭주 상한(선언제거=300s는 비권장).
@@ -140,7 +141,7 @@ const STAKES_AXIS = `     · 외형/체중감량/바디라인 → 진행손실�
 //   ① 핵심 한 구절만 **강조**(화면이 포인트 색으로 칠함 · components/ui/Emph) ② 긴 줄표 금지(서버에서도 한 번 더 걸러냄).
 const SAY_STYLE = `[대사 스타일]
  - 핵심 강조(**두 별표**)는 꼭 필요한 곳에만: cheat 3줄, ask(요청), proof가 true인 운동의 cue, point_it_out,
-   why_now·session_flow의 대사. 각 값에 한 구절만, 문장 전체 금지. 그 밖의 값에는 별표를 쓰지 마라(강조가 많으면 아무것도 안 보인다).
+   why_now·session_flow의 대사. 각 값에 한 구절만, 10자 안팎으로 짧게(문장 전체·긴 구절 금지). 그 밖의 값에는 별표를 쓰지 마라(강조가 많으면 아무것도 안 보인다).
  - [분량 · 폰 한 화면에 훑어보게] 트레이너가 수업 직전 30초~1분에 훑는다. 길면 안 읽힌다.
    회원 대사(line·cue·point_it_out·trial_close·ask·objection_defense의 line·next_line·homework의 do·workout_intro)는 한 문장, 60자 안팎.
    stakes·plan_pitch·flush는 두 문장 이내. why·reason·feel·defense·trigger·bridge·so_what은 한 문장. metaphor 한 문장.
@@ -181,7 +182,7 @@ const REHAB_TONE = `   ★재활·교정 동작은 강하게 넣되(약한 동�
    → "굳은 목·어깨를 풀어 그날 목이 가벼워지는 걸 체감"(✅). 진단·치료·완치·교정완료 단정 금지. 통증은 '불편/부담'까지만.`;
 
 // ③ closing_sequence JSON 예시(스키마 · 3 프롬프트 공유).
-const CLOSING_SEQ_JSON = `"closing_sequence": { "stakes": "왜 PT가 필요한지: 오늘 확인한 근거 1~2개 + 혼자 하면/안 하면 어떻게 되는지(그대로 말할 대사)", "trial_close": "방금 이유에 회원이 스스로 '맞아요' 하게 하는 확인 질문 + 끝에 (기다림)", "plan_pitch": "트레이너가 하나를 골라 권하는 플랜: PT 주 N회·약 M개월·총 K회 + 왜 그 횟수인지 + 가격·회당 가격(목록 금액 그대로)과 왜 그 값어치인지", "ask": "무엇을(PT 주 N회·기간) 언제부터('다음 주부터' 같은 시기까지만, 요일·시간은 정하지 않음) 시작할지 묻는 질문. 대상이 빠진 '시작하는 걸로' 금지", "hold": "요청 직후 침묵. 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
+const CLOSING_SEQ_JSON = `"closing_sequence": { "stakes": "왜 PT가 필요한지: 근거 1개 + 혼자 하면/안 하면 어떻게 되는지(그대로 말할 짧은 두 문장)", "trial_close": "방금 이유에 회원이 스스로 '맞아요' 하게 하는 확인 질문 + 끝에 (기다림)", "plan_pitch": "트레이너가 하나를 골라 권하는 플랜: PT 주 N회·약 M개월·총 K회 + 왜 그 횟수인지 + 왜 그 값어치인지(두 문장 · 가격 숫자는 쓰지 않음)", "ask": "무엇을(PT 주 N회·기간) 언제부터('다음 주부터' 같은 시기까지만, 요일·시간은 정하지 않음) 시작할지 묻는 질문. 대상이 빠진 '시작하는 걸로' 금지", "hold": "요청 직후 침묵. 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
 // OT(1차·2차+) 전용 — 오늘 결정이 안 될 때: 다음 OT를 그 자리에서 잡고, 다음 수업 전까지 회원에게 부탁할 것(숙제).
 const CLOSING_SEQ_JSON_OT = CLOSING_SEQ_JSON.replace(/ \}$/, `, "fallback": { "next_line": "가까운 날로 다음 OT를 잡자며 회원 일정을 묻는 열린 질문(트레이너가 요일·시간을 정해 묻지 않음)", "homework": [ { "do": "다음 수업 전까지 회원에게 그대로 말할 부탁 한 문장", "why": "왜 하는지 한 줄" } ] } }`);
 
@@ -190,8 +191,8 @@ function closingSeqInstruction({ num, leverage, trialHint, askTarget, askExample
   return `${num} closing_sequence(클로징 흐름 — 한 줄이 아니라 5비트 시퀀스 · 세일즈 비유에서 자연스럽게 이어짐): ${leverage}를 지렛대로, 회원을
    커밋까지 데려가는 흐름을 준다. 각 비트는 '바로 말할 완성 대사'로. ★순서가 핵심 — 왜 PT가 필요한지(이유·근거)를
    먼저 납득시키고 → 회원이 인정하게 하고 → 플랜(횟수·가격과 그 이유) → 요청. 이유 없이 플랜·요청부터 꺼내지 마라.${tone}
-   - stakes(① 왜 PT가 필요한지 · 그대로 말할 2~3문장): 근거 = 오늘(또는 지난 OT) 회원 몸에서 실제로 확인한 사실
-     1~2개("아까 ○○할 때 ~하셨죠"). 그다음 혼자 하면 왜 안 되는지·안 하면 어떻게 되는지를 이 회원 goal 축으로
+   - stakes(① 왜 PT가 필요한지 · 그대로 말할 짧은 두 문장): 근거 = 오늘(또는 지난 OT) 회원 몸에서 실제로 확인한 사실
+     1개("아까 ○○할 때 ~하셨죠") + 혼자 하면 생기는 일 1개. 그다음 혼자 하면 왜 안 되는지·안 하면 어떻게 되는지를 이 회원 goal 축으로
      (막연한 "좋아지실 거예요" 금지 · 없는 관찰 창작 금지). 손실·가치는 goal 유형마다 다르게 —
 ${STAKES_AXIS}
    - trial_close(② 확인 질문): ${trialHint} — 방금 말한 이유에 회원이 스스로 "맞아요"라고 하게 + 끝에 (기다림).
@@ -199,9 +200,9 @@ ${STAKES_AXIS}
      딱 골라 권하는 완성 대사(여러 선택지를 늘어놓고 회원에게 고르게 하지 마라). [recommended_program]의 pick_ref 패키지
      기준 'PT 주 N회 · 약 M개월 · 총 K회'를 명확히 말하고, ★왜 그 횟수인지(목표 시점·몸 상태·가능 빈도에서 역산)를
      한 문장으로 붙여라. ★K(세션수)는 pick_ref 패키지의 실제 sessions 값에 맞춰라(새 숫자 창작 금지).
-     ★가격도 여기서 말한다(이 비트만 예외 허용): [내 PT 패키지] 목록의 금액·회당 금액을 글자 그대로만 쓰고(계산·반올림·
-     할인 창작 금지 · 패키지 없으면 가격 생략), 왜 그 값어치인지 한 문장 — 혼자 하다 멈췄을 때 잃는 시간·돈, 목표까지
-     걸리는 기간 단축, 회당으로 나눈 크기 같은 이 회원 기준의 이유. "비싸지 않아요" 같은 방어 말투 금지.
+     ★가격 숫자(원·회당)는 대사에 쓰지 마라 — 화면이 이 대사 바로 아래에 '패키지 · 가격 · 회당'을 한 줄로 따로 보여주고,
+     트레이너는 그 줄을 보며 말한다(같은 숫자를 두 번 읽게 하지 않기). 대신 왜 그 값어치인지(혼자 하다 멈출 때 잃는 시간·돈,
+     목표까지 걸리는 기간 단축 등)를 숫자 없이 한 마디 붙여라. 전체 두 문장 이내. "비싸지 않아요" 같은 방어 말투 금지.
    - ask: ★트레이너가 리드해서 무엇을 할지는 분명히 못 박는다. 위 plan_pitch 플랜을 전제로 ${askTarget} + 시작 시기를 담아
      결정을 묻는 질문형으로(${askExample}).
      ★★한 문장 안에 반드시 셋 다: (a)무엇을 = 'PT'라는 말 + 주 N회 · 기간(또는 총 회차) (b)언제부터 = '다음 주부터'
@@ -375,7 +376,11 @@ ${closingSeqInstruction({
 [data_gaps — 성장 프레임] 기본정보로 위 전부를 반드시 생성한다("정보 부족" 반환 금지). data_gaps는 결핍이
    아니라 "○○를 관찰해오면 △△까지" 형태 긍정 코칭. 충실하면 빈 배열.
 
-[cheat — 30초 요약 3줄 · 화면 맨 위] 바빠서 이것만 보고 들어가도 되게: ① 이 회원 핵심(누구·뭘 원함·뭐가 걸림) ② 오늘 꼭 할 것(증명·핵심 운동) ③ 클로징에서 그대로 말할 한 마디(따옴표 대사). 각 한 줄·30자 안팎·명사형 말고 바로 외울 말로. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
+[cheat — 30초 요약 3줄 · 화면 맨 위 · 화면이 줄마다 '이 회원 / 오늘 꼭 / 요청' 이름을 붙인다] 바빠서 이것만 보고 들어가도 되게.
+ ① 이 회원: 한 문장으로 사람을 그려라("연말 검진 전에 8kg 빼고 싶은데, 허리 다칠까 봐 운동이 겁나는 분" 결). ★단어·명사 나열 금지("34세 개발자, 8kg 감량, 운동 겁과 허리 뻐근함" ❌).
+ ② 오늘 꼭: 오늘 수업에서 반드시 할 한 가지를 동사로 끝나는 짧은 문장으로("숙이기를 처음과 끝에 시켜 달라진 걸 직접 느끼게 하기" 결).
+ ③ 요청: 클로징에서 그대로 말할 요청 대사(따옴표 · ask와 같은 말).
+ 각 40자 안팎. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [분량 — 외우기 쉽게] 각 대사는 짧고 입에 붙게. 아래 [대사 스타일]의 분량을 지켜라.
 [필드명 인용 금지] 값 텍스트에 스키마 키(point_it_out·so_what·objection_defense 등)를 쓰지 마라.
 ${MEMBER_LANG}
@@ -541,7 +546,11 @@ ${closingSeqInstruction({
      제시하라. 무리한 최소량으로 미리 물러서지 말 것.
 
 [member_read] 지금까지 확인된 것 + 지금 클로징 국면을 한 줄로(앵커).
-[cheat — 30초 요약 3줄 · 화면 맨 위] 바빠서 이것만 보고 들어가도 되게: ① 이 회원 핵심(누구·뭘 원함·뭐가 걸림) ② 오늘 꼭 할 것(증명·핵심 운동) ③ 클로징에서 그대로 말할 한 마디(따옴표 대사). 각 한 줄·30자 안팎·명사형 말고 바로 외울 말로. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
+[cheat — 30초 요약 3줄 · 화면 맨 위 · 화면이 줄마다 '이 회원 / 오늘 꼭 / 요청' 이름을 붙인다] 바빠서 이것만 보고 들어가도 되게.
+ ① 이 회원: 한 문장으로 사람을 그려라("연말 검진 전에 8kg 빼고 싶은데, 허리 다칠까 봐 운동이 겁나는 분" 결). ★단어·명사 나열 금지("34세 개발자, 8kg 감량, 운동 겁과 허리 뻐근함" ❌).
+ ② 오늘 꼭: 오늘 수업에서 반드시 할 한 가지를 동사로 끝나는 짧은 문장으로("숙이기를 처음과 끝에 시켜 달라진 걸 직접 느끼게 하기" 결).
+ ③ 요청: 클로징에서 그대로 말할 요청 대사(따옴표 · ask와 같은 말).
+ 각 40자 안팎. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 ${MEMBER_LANG}
 ${SAY_STYLE}
@@ -1483,7 +1492,7 @@ export async function POST(request) {
     const REQUIRED_INBODY = ["headline", "metrics", "diet", "lifestyle", "exercise", "why_now"];
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "first_salesbook" ? REQUIRED_FIRST_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : [];
-    const brief = tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase));
+    const brief = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase)), packages);
     console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);
     let savedId = null;
     try { savedId = await saveResult(token, phase, save, brief, model); }
@@ -1507,7 +1516,7 @@ export async function POST(request) {
     });
     const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
     const keys = isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
-    const sbOut = tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false);
+    const sbOut = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), packages);
     await saveResult(token, isFirst ? "first_salesbook" : "salesbook",
       { kind: "ot", memberId: save.memberId, round: isFirst ? 1 : otRound, meta: {} }, sbOut, MODEL_FAST);
     console.log(`[ot-brief] ${isFirst ? "1차" : otRound + "차"} 세일즈북 이어서 생성 · ${Math.round((Date.now() - t1) / 1000)}s`);

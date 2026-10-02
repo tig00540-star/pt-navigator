@@ -67,8 +67,10 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           <Line label="③ 추천 플랜" text={seq.plan_pitch} />
           {priceLine && <p className="m-0 mt-1.5 inline-block rounded-lg bg-elevate px-2.5 py-1 text-[13px] font-semibold text-ink">{priceLine}</p>}
         </div>
-        <Line label="④ 요청" text={seq.ask} ask />
-        {seq.hold && <p className="m-0 text-[12.5px] text-muted">요청한 뒤엔 먼저 말하지 말고 기다려요.</p>}
+        <div>
+          <Line label="④ 요청" text={seq.ask} ask />
+          {seq.hold && <p className="m-0 mt-1 text-[12.5px] text-muted">요청한 뒤엔 먼저 말하지 말고 기다려요.</p>}
+        </div>
         <Line label="⑤ 망설이면" text={seq.flush} />
         {(hasMetaphor || fb) && (
           <CompactMore>

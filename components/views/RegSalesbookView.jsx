@@ -16,15 +16,22 @@ import { won, wonApprox } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import PriceSheet from "@/components/salesbook/PriceSheet";
+import { resolvePkg } from "@/lib/pkgRef";
 
 // ── 가격 해석(SalesbookView #2 미러) — 모델 plan.ref를 안 믿는다. A=pick_ref, B=alt_ref 우선, 유효성 검증. ──
+// 추천 패키지 찾기 — 만들 때 저장한 패키지(plan.pkg · pick_pkg/alt_pkg)가 먼저(lib/pkgRef · 2026-10-02 버그 수정).
+//   옛 세일즈북(저장값 없음)은 순번으로 찾되, 장의 회차("함께 30회")와 다르면 가격을 붙이지 않는다.
 function resolvePackage(planIndex, plan, recommendedProgram, packages) {
-  const list = Array.isArray(packages) ? packages : [];
   const rp = recommendedProgram || {};
+  const snap = plan?.pkg || (planIndex === 0 ? rp.pick_pkg : rp.alt_pkg) || null;
+  if (snap) return resolvePkg({ snap, packages });
+  const list = Array.isArray(packages) ? packages : [];
   const valid = (n) => Number.isInteger(n) && n >= 0 && n < list.length;
   let ref = planIndex === 0 ? rp.pick_ref : rp.alt_ref;
+  // 확정 ref가 없으면 = 패키지가 없던 때 만든 세일즈북 → 모델 추측으로 가격을 붙이지 않는다.
+  if (recommendedProgram && !valid(ref)) return null;
   if (!valid(ref)) ref = plan?.ref;
-  return valid(ref) ? list[ref] : null;
+  return resolvePkg({ ref, packages, hint: plan?.sessions_label });
 }
 
 /* 콘텐츠를 프레임에 맞게 자동 축소(fit-to-scale) — SalesbookView와 동일. transform은 scrollHeight에 영향 없어 재측정 루프 없음. */
@@ -487,7 +494,7 @@ export default function RegSalesbookView({ regSalesbook, member, trainer, packag
       {priceOpen && (
         <PriceSheet
           packages={packages}
-          recommendedIndex={Number.isInteger(recommendedProgram?.pick_ref) ? recommendedProgram.pick_ref : null}
+          recommended={resolvePackage(0, (Array.isArray(sb.plans) ? sb.plans : [])[0], recommendedProgram, packages)}
           trainerName={trainer?.display_name || ""}
           onClose={() => setPriceOpen(false)}
         />

@@ -147,8 +147,6 @@ export default function FirstOTAssist({ member, onSaved }) {
   // 캐시 스테일: 저장된 inputHash ≠ 현재 회원 입력 해시 → 재생성 권장.
   const persisted = Boolean(row1Report?.first_assist);
   const stale = Boolean(meta?.inputHash && meta.inputHash !== firstInputHash(member));
-  // E: 입력(회원정보 해시)이 직전 생성과 동일 → 반복 호출 억제(버튼 흐리게 + 힌트). 하드락 아님(클릭은 됨) — 입력 바뀌면 stale로 자동 해제.
-  const sameInput = Boolean(data && meta?.inputHash) && !stale;
 
   const exercises = Array.isArray(data?.exercises) ? data.exercises.filter(Boolean) : [];
   // 구캐시(구 스키마: session_plan·target_exercise) 감지 — exercises 없으면 '이전 형식' 안내 후 재생성.
@@ -171,14 +169,9 @@ export default function FirstOTAssist({ member, onSaved }) {
       notice={notice || undefined}
       meta={
         data && (
-          <span className="flex flex-wrap items-center gap-x-2">
-            {meta?.generatedAt && (
-              <span>
-                생성 {new Date(meta.generatedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}
-                {persisted ? " · 저장돼 있어요(다시 와도 그대로)" : " · 이 화면에서만"}
-              </span>
-            )}
-            {sameInput && <span>· 입력이 그대로예요. 회원 정보가 바뀌면 다시 생성돼요</span>}
+          <span>
+            {meta?.generatedAt && `${new Date(meta.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요`}
+            {!persisted && " · 이 화면에서만 보여요"}
           </span>
         )
       }
