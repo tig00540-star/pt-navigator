@@ -33,13 +33,13 @@ function Line({ label, text, ask = false }) {
     </div>
   );
 }
-function CompactMore({ children }) {
+function CompactMore({ label, children }) {
   const [open, setOpen] = useState(false);
   return (
     <div>
       <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
         className="inline-flex min-h-[32px] items-center gap-1 text-[12px] font-semibold text-muted transition hover:text-ink">
-        비유 · 오늘 안 되면 · 숙제
+        {label}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
       {open && <div className="mt-1 space-y-2 border-l-2 border-line pl-3">{children}</div>}
@@ -72,9 +72,10 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           {seq.hold && <p className="m-0 mt-1 text-[12.5px] text-muted">요청한 뒤엔 먼저 말하지 말고 기다려요.</p>}
         </div>
         <Line label="⑤ 망설이면" text={seq.flush} />
-        {(hasMetaphor || fb) && (
-          <CompactMore>
-            {hasMetaphor && note("비유", mp.metaphor)}
+        {/* 새 리포트는 비유가 요청 첫 문장에 녹아 있다(metaphor_in_ask) — 따로 다시 보여주지 않는다. */}
+        {((hasMetaphor && !seq.metaphor_in_ask) || fb) && (
+          <CompactMore label={hasMetaphor && !seq.metaphor_in_ask ? "비유 · 오늘 안 되면 · 숙제" : "오늘 안 되면 · 숙제"}>
+            {hasMetaphor && !seq.metaphor_in_ask && note("비유", mp.metaphor)}
             {fb?.next_line && note("오늘 결정이 어려우면", fb.next_line)}
             {hw.length > 0 && (
               <div className="space-y-1">

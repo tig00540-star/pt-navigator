@@ -84,7 +84,7 @@ export default function RegBriefView({ brief, highlightReason, packages = [] }) 
           </div>
         </div>
       )}
-      {sm.metaphor && (
+      {sm.metaphor && !b.closing_sequence?.metaphor_in_ask && (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
           <div className="flex items-center gap-2"><span className="text-base">💬</span><span className="text-[11px] font-semibold tracking-label-ko text-amber-700">세일즈 비유</span></div>
           <p className="mt-1.5 leading-relaxed text-ink">&ldquo;<Emph>{sm.metaphor}</Emph>&rdquo;</p>
