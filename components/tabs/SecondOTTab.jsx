@@ -23,10 +23,6 @@ import {
   Repeat,
   ShieldCheck,
   Target,
-  BookOpen,
-  RefreshCw,
-  Eye,
-  Pencil,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
@@ -34,8 +30,6 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import PrepReport from "@/components/ot/PrepReport";
 import ClosingSequence from "@/components/ui/ClosingSequence";
-import SalesbookView from "@/components/views/SalesbookView";
-import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { otObsHash } from "@/lib/otHash";
@@ -123,13 +117,6 @@ const ROUTINE_2 = [
 ];
 
 
-// S2 세일즈북 스테일 판정 — 소스 브리핑 recommended_program의 안정 스냅샷(회차·빈도·기간·논리·번호).
-//   세일즈북 생성 시점의 이 값을 salesbookMeta.rpSnapshot에 보관 → 브리핑 재생성으로 값이 바뀌면 '최신 아님'.
-function sbRpSnapshot(rp) {
-  const r = rp || {};
-  return JSON.stringify({ pick_ref: r.pick_ref ?? null, alt_ref: r.alt_ref ?? null, frequency: r.frequency ?? "", duration: r.duration ?? "", session_logic: r.session_logic ?? "" });
-}
-
 // D-3 개발용: URL에 ?d3=1 이면 게이트 무시 + 실 케이스 5건 미만이면 데모 케이스로 렌더/프롬프트 경로 점검.
 // 실사용자는 이 플래그를 안 쓰므로 영향 0. ⑦ 상용화 때 제거 권장.
 const D3_FORCE = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("d3") === "1";
@@ -182,21 +169,15 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   const [history, setHistory] = useState([]); // 이전 차수 기록(buildHistory) — AI 입력·스테일 판정
   const [brief, setBrief] = useState(null); // ③ 브리핑 JSON (캐시 또는 생성)
   const [briefMeta, setBriefMeta] = useState(null); // { generatedAt, model }
-  // S2 세일즈북 — report.salesbook 캐시(브리핑과 별 키 · 스프레드로 공존). salesbookMeta.rpSnapshot으로 스테일 판정.
-  const [salesbook, setSalesbook] = useState(null);
-  const [salesbookMeta, setSalesbookMeta] = useState(null);
-  const [sbGenerating, setSbGenerating] = useState(false);
-  const [sbError, setSbError] = useState("");
-  const [photoLabels, setPhotoLabels] = useState([]); // member_photo distinct label — 사진 슬라이드 재료
+  // 회원 세일즈북은 이 화면에서 빠졌다(2026-10-02 대표: 운동 다 시키고 홈 › 세일즈북에서 보여준다).
+  //   만들기는 서버가 2차 리포트 저장 뒤 이어서 한다(ot-brief follow) — 사진 장 재료(photoLabels)만 같이 보낸다.
+  const [photoLabels, setPhotoLabels] = useState([]); // member_photo distinct label — 세일즈북 사진 장 재료
   const [generating, setGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
   // D-3 — 내 과거 클로징 케이스(게이트·재료). 게이트 OFF/미전송이면 프롬프트·출력·캐시가 지금과 동일(additive).
   const [caseData, setCaseData] = useState([]);
   const [caseGate, setCaseGate] = useState({ on: false, tier: "off" });
   const [packages, setPackages] = useState([]); // 내 active PT 패키지(recommended_program 실가격 재료)
-  const [trainer, setTrainer] = useState(null);  // trainer_profile 표지·서명(S4 컬럼) — SalesbookView 재료
-  const [sbOpen, setSbOpen] = useState(false);   // 세일즈북 풀스크린 오픈
-  const [sbEditable, setSbEditable] = useState(false); // 오픈 모드(present=false / 편집=true)
   const { toast, showToast } = useToast();
 
   const canAI = Boolean(supabase && member?.id);
@@ -208,35 +189,13 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       if (!supabase) return;
       const { data: au } = await supabase.auth.getUser();
       const uid = au?.user?.id ?? null;
-      const [{ data: pkgs }, { data: prof }] = await Promise.all([
-        supabase.from("pt_package").select("*")
-          .eq("trainer_id", uid).eq("active", true)
-          .order("sort", { ascending: true }).order("created_at", { ascending: true }),
-        // select("*") — 혜택 칸(salesbook_benefits)이 아직 없는 DB에서도 깨지지 않게.
-        supabase.from("trainer_profile").select("*").eq("trainer_id", uid).maybeSingle(),
-      ]);
-      if (!cancelled) { setPackages(pkgs || []); setTrainer(prof || null); }
+      const { data: pkgs } = await supabase.from("pt_package").select("*")
+        .eq("trainer_id", uid).eq("active", true)
+        .order("sort", { ascending: true }).order("created_at", { ascending: true });
+      if (!cancelled) setPackages(pkgs || []);
     })();
     return () => { cancelled = true; };
   }, []);
-
-  // 세일즈북 API 호출(phase=salesbook) — 1차 관찰(obs)·recommended_program·packages·photoLabels 주입.
-  //   성공 {data, meta}, 실패/키미설정/데모 null(브리핑 흐름 안 막음 · 세일즈북은 부가).
-  //   report는 ot_round=1 관찰 객체(obs) — {brief} 래퍼 아님(second phase와 동일 소스).
-  const callSalesbook = async (recommendedProgram) => {
-    try {
-      const res = await fetch("/api/ot-brief", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "salesbook", member, report: obs, recommendedProgram, packages, photoLabels }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return { data, meta: { generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "", rpSnapshot: sbRpSnapshot(recommendedProgram) } };
-    } catch {
-      return null;
-    }
-  };
 
   // ③ 브리핑 생성 + round-2 report 캐시. ⚠️ report는 스프레드로 저장(salesbook·기존 키 보존) — jsonb 통째 교체 금지.
   //   최초(캐시 세일즈북 없음)면 세일즈북을 동반 자동생성해 '한 번의 update'로 저장(하이브리드 ①).
@@ -263,6 +222,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           round,
           history,
           packages,
+          photoLabels, // 서버가 이어서 만드는 세일즈북의 사진 장 재료
           ...(useCases ? { closingCases: caseData, caseTier: caseGate.tier } : {}),
           save: { kind: "ot", memberId: member.id, round, meta: metaIn },
         }),
@@ -286,15 +246,6 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       const base = fresh?.report || { ...(row2Report || {}), brief: data, briefMeta: meta };
       setRow2Report(base);
       onSaved?.(); // 대시보드 진행(준비 ✓) 갱신
-      // 최초(세일즈북 미존재)면 동반 자동생성. 이미 있으면 재생성 안 함(스테일 배지 유도).
-      if (!base.salesbook) {
-        const sbResult = await callSalesbook(data.recommended_program);
-        if (sbResult) {
-          const withSb = { ...base, salesbook: sbResult.data, salesbookMeta: sbResult.meta };
-          const { data: up } = await supabase.from("ot_log").update({ report: withSb }).eq("id", savedRow).select("id");
-          if (up?.length) { setRow2Report(withSb); setSalesbook(sbResult.data); setSalesbookMeta(sbResult.meta); }
-        }
-      }
     } catch {
       setAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
     } finally {
@@ -313,63 +264,8 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     setRow2Report(row.report);
     setBrief(row.report.brief);
     setBriefMeta(row.report.briefMeta);
-    setSalesbook(row.report.salesbook || null);
-    setSalesbookMeta(row.report.salesbookMeta || null);
     onSaved?.();
   });
-
-  // 세일즈북만 재생성(수동 '세일즈북 다시 만들기' · 하이브리드 ①). 현재 브리핑의 recommended_program 사용.
-  //   brief 보존(스프레드) · 교훈1 하드닝. 브리핑을 안 건드린다.
-  const generateSalesbook = async () => {
-    if (sbGenerating || !brief?.recommended_program) return;
-    setSbGenerating(true);
-    setSbError("");
-    try {
-      const sbResult = await callSalesbook(brief.recommended_program);
-      if (!sbResult) { setSbError("세일즈북 생성에 실패했어요. 잠시 후 다시 시도해 주세요."); return; }
-      const reportToSave = { ...(row2Report || {}), salesbook: sbResult.data, salesbookMeta: sbResult.meta };
-      if (existingRow2Id) {
-        const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", existingRow2Id).select();
-        if (!up || up.length === 0) { setSbError("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
-      } else {
-        const { data: ins } = await supabase.from("ot_log").insert({ user_id: member.id, ot_round: round, report: reportToSave }).select("id").single();
-        if (!ins?.id) { setSbError("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
-        setExistingRow2Id(ins.id);
-      }
-      setSalesbook(sbResult.data);
-      setSalesbookMeta(sbResult.meta);
-      setRow2Report(reportToSave);
-      showToast("세일즈북을 새로 만들었어요");
-    } catch {
-      setSbError("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setSbGenerating(false);
-    }
-  };
-
-  // 세일즈북 편집 저장(SalesbookView editable → onSave) — 스프레드로 brief 보존.
-  //   ⚠️ salesbookMeta.rpSnapshot은 그대로 유지(편집은 recommended_program을 안 바꾸니 스테일 판정 계속 유효).
-  //      editedAt만 덧붙임. 교훈1 하드닝. 성공 시 state 갱신하고 편집 닫아 present로 전환.
-  const saveSalesbookEdits = async (edited) => {
-    if (!edited) return false;
-    const nextMeta = { ...(salesbookMeta || {}), editedAt: new Date().toISOString() };
-    if (!supabase || !existingRow2Id) {
-      // 데모/행 없음 — 로컬만 갱신(서버 저장 없음).
-      setSalesbook(edited); setSalesbookMeta(nextMeta);
-      showToast("수정됨(데모)"); return true;
-    }
-    const reportToSave = { ...(row2Report || {}), salesbook: edited, salesbookMeta: nextMeta };
-    try {
-      const { data: up } = await supabase.from("ot_log").update({ report: reportToSave }).eq("id", existingRow2Id).select();
-      if (!up || up.length === 0) { showToast("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return false; }
-      setSalesbook(edited); setSalesbookMeta(nextMeta); setRow2Report(reportToSave);
-      showToast("세일즈북 수정을 저장했어요");
-      return true;
-    } catch {
-      showToast("세일즈북을 저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
-      return false;
-    }
-  };
 
   // 회원·차수 변경 시 이 회원 ot_log 전부 조회 → round-1(관찰)·이번 차수(캐시)·이전 차수(history).
   useEffect(() => {
@@ -383,9 +279,6 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           setRow2Report(null);
           setBrief(null);
           setBriefMeta(null);
-          setSalesbook(null);
-          setSalesbookMeta(null);
-          setSbError("");
           setPhotoLabels([]);
           setAiError("");
           setHistory([]);
@@ -418,9 +311,6 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       setObs(r1?.report || null);
       setExistingRow2Id(r2?.id || null);
       setRow2Report(r2?.report || null);
-      setSalesbook(r2?.report?.salesbook || null);
-      setSalesbookMeta(r2?.report?.salesbookMeta || null);
-      setSbError("");
       setPhotoLabels([...new Set((res3.data || []).map((p) => p.label).filter(Boolean))]);
 
       // ③ 캐시 우선: round-2 report.brief 있으면 재방문 즉시 렌더(재호출 X). 없으면 자동 호출 대신
@@ -606,57 +496,6 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
 
         </AIBriefBlock>
 
-        {/* ── 회원 세일즈북(회원 대면 자료) · S2 자동생성/캐시 ──
-           브리핑(수업 전 트레이너용)과 별개 산출물 — 2차 수업 마친 뒤 회원에게 직접 보여줄 자료.
-           브리핑 최초 생성 시 자동 동반 생성됨. 브리핑만 재생성하면 여기 '최신 아님' 배지가 뜬다. */}
-        {(() => {
-          const sbStale = Boolean(
-            salesbook && salesbookMeta?.rpSnapshot && b?.recommended_program &&
-            salesbookMeta.rpSnapshot !== sbRpSnapshot(b.recommended_program)
-          );
-          return (
-            <section className="rounded-xl border border-line bg-card shadow-sm p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Eyebrow icon={BookOpen}>회원 세일즈북</Eyebrow>
-                {salesbook && (
-                  sbStale
-                    ? <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">최신 아님 · 추천 플랜 변경됨</span>
-                    : <span className="rounded-md border border-primary/30 bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">준비됨</span>
-                )}
-              </div>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
-                {sbGenerating
-                  ? "회원에게 보여줄 세일즈북을 만들고 있어요…"
-                  : salesbook
-                    ? (sbStale
-                        ? "브리핑을 다시 만들어 추천 플랜이 바뀌었어요. 세일즈북도 새로 만들면 최신 내용으로 맞춰집니다."
-                        : "수업을 마친 뒤 회원에게 그대로 보여줄 수 있어요.")
-                    : "아직 세일즈북이 없어요. 브리핑을 만들면 자동으로 함께 준비되고, 여기서 다시 만들 수도 있어요."}
-              </p>
-              {salesbookMeta?.generatedAt && !sbGenerating && (
-                <p className="mt-1 text-[11px] text-muted">생성: {new Date(salesbookMeta.generatedAt).toLocaleString("ko-KR")}</p>
-              )}
-              {sbError && <p className="mt-2 text-[12px] text-danger-text">{sbError}</p>}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {salesbook && (
-                  <>
-                    <Button variant="primary" size="sm" onClick={() => { setSbEditable(false); setSbOpen(true); }}>
-                      <Eye className="h-3.5 w-3.5" /> 회원에게 보기
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => { setSbEditable(true); setSbOpen(true); }}>
-                      <Pencil className="h-3.5 w-3.5" /> 편집
-                    </Button>
-                  </>
-                )}
-                <Button variant={salesbook ? "ghost" : "primary"} size="sm" onClick={generateSalesbook} disabled={sbGenerating || !b?.recommended_program}>
-                  <RefreshCw className={`h-3.5 w-3.5 ${sbGenerating ? "animate-spin" : ""}`} />
-                  {sbGenerating ? "만드는 중…" : salesbook ? "다시 만들기" : "세일즈북 만들기"}
-                </Button>
-              </div>
-            </section>
-          );
-        })()}
-
         {/* 결과 기록은 'n차 OT 피드백' 칸에서(모든 차수 같은 양식 · 2026-10-02). 브리핑(수업 전)과 기록(수업 후)을 나눈다. */}
         <Link href={otStepPath(member.id, "feedback", round)}
           className="flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3.5 no-underline shadow-sm transition hover:border-line-strong">
@@ -669,20 +508,6 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
 
         <Toast message={toast} />
 
-        {/* 회원 세일즈북 풀스크린 — present(보기) / 편집. salesbook 있을 때만 오픈됨. */}
-        {sbOpen && salesbook && (
-          <SalesbookView
-            salesbook={salesbook}
-            member={member}
-            trainer={trainer}
-            packages={packages}
-            recommendedProgram={b?.recommended_program}
-            benefits={trainer?.salesbook_benefits?.enabled ? (trainer.salesbook_benefits.items || []) : []}
-            editable={sbEditable}
-            onSave={saveSalesbookEdits}
-            onClose={() => setSbOpen(false)}
-          />
-        )}
       </div>
     );
   };

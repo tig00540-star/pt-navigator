@@ -34,22 +34,24 @@ async function saveResult(token, phase, save, brief, model) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const meta = { ...(save.meta && typeof save.meta === "object" ? save.meta : {}), generatedAt: new Date().toISOString(), model };
-  if (save.kind === "ot" && (phase === "first" || phase === "second" || phase === "first_salesbook") && typeof save.memberId === "string") {
-    const round = phase === "second" ? Math.min(Math.max(Number(save.round) || 2, 2), 20) : 1;
-    const patch = phase === "first" ? { first_assist: { data: brief, meta } }
+  if (save.kind === "ot" && (phase === "first" || phase === "second" || phase === "first_salesbook" || phase === "salesbook") && typeof save.memberId === "string") {
+    const round = phase === "second" || phase === "salesbook" ? Math.min(Math.max(Number(save.round) || 2, 2), 20) : 1;
+    // 2차 세일즈북을 다시 만들 때 트레이너가 짠 장 구성(deck: 순서·숨김·사례)은 그대로 이어 붙인다.
+    const mkPatch = (prev) => phase === "first" ? { first_assist: { data: brief, meta } }
       : phase === "first_salesbook" ? { first_salesbook: { data: brief, meta } }
+      : phase === "salesbook" ? { salesbook: { ...brief, ...(prev?.salesbook?.deck ? { deck: prev.salesbook.deck } : {}) }, salesbookMeta: meta }
       : { brief, briefMeta: meta };
     const { data: rows, error: re } = await sb.from("ot_log").select("id, report")
       .eq("user_id", save.memberId).eq("ot_round", round).order("created_at", { ascending: false }).limit(1);
     if (re) console.error("[ot-brief] 저장 전 조회 실패:", re.message);
     const row = rows?.[0];
     if (row) {
-      const { data, error } = await sb.from("ot_log").update({ report: { ...(row.report || {}), ...patch } }).eq("id", row.id).select("id");
+      const { data, error } = await sb.from("ot_log").update({ report: { ...(row.report || {}), ...mkPatch(row.report) } }).eq("id", row.id).select("id");
       if (error || !data?.length) console.error("[ot-brief] 저장 실패(update):", error?.message || "0행(권한)");
       return data?.[0]?.id ?? null;
     }
     const { data, error: ie } = await sb.from("ot_log").insert({
-      user_id: save.memberId, ot_round: round, report: patch,
+      user_id: save.memberId, ot_round: round, report: mkPatch(null),
       ...(round === 1 ? { goal_type: "appearance", goal_identified: false, closing_result: "none", closing_approach: "other" } : {}),
     }).select("id");
     if (ie || !data?.length) console.error("[ot-brief] 저장 실패(insert):", ie?.message || "0행(권한)");
@@ -1487,19 +1489,26 @@ export async function POST(request) {
   })();
   // 1차 리포트를 저장했으면 이어서 1차 세일즈북도 만들어 둔다 — 수업 끝 클로징 때 기다림 없이 바로 열리게(2026-10-02).
   //   응답은 1차 리포트만 기다린다. 세일즈북은 뒤에서(after) 끝까지 돌고 같은 1차 행에 저장된다(순서대로라 저장 충돌 없음).
-  const follow = phase === "first" && save ? job.then(async ({ brief, savedId }) => {
+  //   2차도 같다(2026-10-02 대표: 세일즈북은 OT 화면이 아니라 홈 › 세일즈북에서 보여준다) — 2차 리포트 저장 뒤 2차 세일즈북을
+  //   이어서 만들어 같은 차수 행에 저장(트레이너가 짠 장 구성은 유지). 사진 장 재료(photoLabels)는 화면이 같이 보낸다.
+  const follow = (phase === "first" || phase === "second") && save ? job.then(async ({ brief, savedId }) => {
     if (!savedId) return;
     const t1 = Date.now();
     const anthropic = new Anthropic({ apiKey });
+    const isFirst = phase === "first";
     const msg = await anthropic.messages.create({
       model: MODEL_FAST, max_tokens: 4096, system: SALESBOOK_PREAMBLE, thinking: thinkingFor(MODEL_FAST),
-      messages: [{ role: "user", content: firstSalesbookPrompt(member, brief, brief?.recommended_program, packages) }],
+      messages: [{ role: "user", content: isFirst
+        ? firstSalesbookPrompt(member, brief, brief?.recommended_program, packages)
+        : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels) }],
     });
     const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-    const sb = tidyDeep(sanitizeFieldNames(parseBrief(text, ["cover", "goal", "today", "roadmap", "closing"])), false);
-    await saveResult(token, "first_salesbook", { kind: "ot", memberId: save.memberId, round: 1, meta: {} }, sb, MODEL_FAST);
-    console.log(`[ot-brief] 1차 세일즈북 이어서 생성 · ${Math.round((Date.now() - t1) / 1000)}s`);
-  }).catch((e) => console.error("[ot-brief] 1차 세일즈북 이어서 생성 실패:", e?.message || e)) : null;
+    const keys = isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
+    const sbOut = tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false);
+    await saveResult(token, isFirst ? "first_salesbook" : "salesbook",
+      { kind: "ot", memberId: save.memberId, round: isFirst ? 1 : otRound, meta: {} }, sbOut, MODEL_FAST);
+    console.log(`[ot-brief] ${isFirst ? "1차" : otRound + "차"} 세일즈북 이어서 생성 · ${Math.round((Date.now() - t1) / 1000)}s`);
+  }).catch((e) => console.error("[ot-brief] 세일즈북 이어서 생성 실패:", e?.message || e)) : null;
   after(() => Promise.all([job.catch(() => {}), follow]));
 
   try {

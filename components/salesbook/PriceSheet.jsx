@@ -12,7 +12,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { won } from "@/lib/format";
+import { won, wonApprox } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 
 const perSession = (p) => (p?.sessions ? Math.round(p.price / p.sessions) : null);
@@ -102,7 +102,7 @@ export default function PriceSheet({ packages = [], recommendedIndex = null, tra
                         </td>
                       )}
                       <td className="py-2 pr-3 text-right align-middle font-mono text-[clamp(15px,1.9vw,18px)] font-extrabold text-ink">{won(pk.price)}</td>
-                      <td className={`py-2 text-right align-middle text-[13px] font-semibold ${low ? "text-primary-strong" : "text-sub"}`}>{per != null ? won(per) : "기간제"}</td>
+                      <td className={`py-2 text-right align-middle text-[13px] font-semibold ${low ? "text-primary-strong" : "text-sub"}`}>{per != null ? `약 ${wonApprox(per)}` : "기간제"}</td>
                     </tr>
                   );
                 })}
@@ -134,7 +134,7 @@ export default function PriceSheet({ packages = [], recommendedIndex = null, tra
                         </p>
                       )}
                       <p className="m-0 font-mono text-[clamp(26px,3.4vw,34px)] font-extrabold tracking-[-0.02em] text-ink">{won(p.price)}</p>
-                      {per != null && <p className="m-0 text-[13px] font-semibold text-sub">회당 {won(per)}</p>}
+                      {per != null && <p className="m-0 text-[13px] font-semibold text-sub">회당 약 {wonApprox(per)}</p>}
                     </div>
                     {p.note && <p className="m-0 mt-3 border-t border-line pt-3 text-[13px] leading-relaxed text-sub">{p.note}</p>}
                   </li>

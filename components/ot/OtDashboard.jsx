@@ -10,17 +10,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, CalendarCheck2, Check, ChevronRight, Pencil, Plus, Presentation, Scale } from "lucide-react";
+import { ArrowRight, CalendarClock, CalendarCheck2, Check, ChevronRight, Pencil, Plus, Scale } from "lucide-react";
 import { useAppUi } from "@/components/app/AppChrome";
 import { supabase } from "@/lib/supabaseClient";
 import { otStepPath, otStepLabel } from "@/lib/otRounds";
 import { hasVal } from "@/lib/format";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import Toast from "@/components/ui/Toast";
-import { useToast } from "@/hooks/useToast";
-import DeckLauncher from "@/components/salesbook/DeckLauncher";
-import FirstProposalLauncher from "@/components/salesbook/FirstProposalLauncher";
 
 const RESULT_TONE = { success: "primary", hold: "ot", fail: "neutral", none: "neutral" };
 // 배지·작은 칸용 짧은 결과 이름(드롭다운의 긴 설명 대신).
@@ -106,12 +102,6 @@ export default function OtDashboard({ member, info }) {
   const lastFeedback = [...info.rounds].reverse().find((r) => r.progress.feedback);
   const lastOtDate = lastAppt?.start_at || (lastFeedback?.row?.created_at ?? null);
 
-  // 세일즈북 — 가장 최근 차수에 저장된 것. 폰에서도 여기서 바로 회원에게 보여준다(2026-10-02).
-  const sbRow = [...info.rounds].reverse().map((r) => r.row).find((r) => r?.report?.salesbook) || null;
-  const [deckOpen, setDeckOpen] = useState(false);
-  const [firstOpen, setFirstOpen] = useState(false);
-  const { toast, showToast } = useToast();
-
   const goalSet = hasVal(member.goal) && member.goal !== "미설정";
   const facts = [
     hasVal(member.age) && `${member.age}세`,
@@ -121,7 +111,6 @@ export default function OtDashboard({ member, info }) {
   ].filter(Boolean);
 
   return (
-    <>
     <div className="@container">
     <div className="space-y-4 @3xl:grid @3xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] @3xl:items-start @3xl:gap-4 @3xl:space-y-0">
       <div className="space-y-4">
@@ -181,19 +170,6 @@ export default function OtDashboard({ member, info }) {
         </Link>
       )}
 
-      {!info.done && (
-        <button type="button" onClick={() => (sbRow ? setDeckOpen(true) : setFirstOpen(true))}
-          className="flex min-h-[56px] w-full items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary-soft px-5 text-left transition hover:border-primary/60">
-          <span>
-            <span className="block text-[12px] text-primary-strong">회원에게 보여주기</span>
-            <span className="block text-[16px] font-bold tracking-[-0.02em] text-ink">{sbRow ? "세일즈북 발표" : "1차 제안 보여주기"}</span>
-          </span>
-          <Presentation className="h-5 w-5 text-primary-strong" aria-hidden="true" />
-        </button>
-      )}
-      {!info.done && sbRow && (
-        <button type="button" onClick={() => setFirstOpen(true)} className="-mt-2 text-[12px] font-semibold text-sub underline-offset-2 hover:underline">1차 제안 다시 보기</button>
-      )}
       </div>
 
       {/* OT 진행 */}
@@ -234,14 +210,5 @@ export default function OtDashboard({ member, info }) {
       </Card>
     </div>
     </div>
-    {/* 세일즈북은 fixed 전체화면 — @container(레이아웃 격리) 밖에 둬야 화면 전체를 덮는다. */}
-    {deckOpen && sbRow && (
-      <DeckLauncher member={member} row={sbRow} startPresent showToast={showToast} onClose={() => setDeckOpen(false)} />
-    )}
-    {firstOpen && (
-      <FirstProposalLauncher member={member} showToast={showToast} onClose={() => setFirstOpen(false)} />
-    )}
-    <Toast message={toast} />
-    </>
   );
 }

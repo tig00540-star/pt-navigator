@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize, Presentation, LayoutList, Receipt } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { won } from "@/lib/format";
+import { won, wonApprox } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import PriceSheet from "@/components/salesbook/PriceSheet";
@@ -532,7 +532,7 @@ export default function SalesbookView({
                         {pkg && (
                           <div className="mt-2 flex items-baseline gap-2">
                             <span className="font-mono text-[clamp(24px,3.2vw,32px)] font-extrabold text-primary-strong">{won(pkg.price)}</span>
-                            {per != null && <span className="text-[11px] text-muted">회당 {won(per)}</span>}
+                            {per != null && <span className="text-[11px] text-muted">회당 약 {wonApprox(per)}</span>}
                           </div>
                         )}
                         {plan.why && <p className="mt-2 text-[12px] leading-relaxed text-sub">{plan.why}</p>}
