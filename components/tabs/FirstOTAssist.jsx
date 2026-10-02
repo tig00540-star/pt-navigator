@@ -160,6 +160,7 @@ export default function FirstOTAssist({ member, onSaved }) {
 
   return (
     <AIBriefBlock
+      bare
       status={briefStatus}
       title="오늘의 OT 사전 준비 리포트"
       generateLabel="OT 준비 리포트 만들기"

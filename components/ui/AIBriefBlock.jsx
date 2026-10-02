@@ -40,6 +40,7 @@ export default function AIBriefBlock({
   onGenerate,
   onRegenerate,
   generateLabel = "브리핑 생성",
+  bare = false,  // 리포트가 떠 있을 때 바깥 카드를 걷어낸다(안의 섹션 카드와 상자가 겹치지 않게 · OT 리포트 2026-10-02)
   className = "",
   children,
   ...rest
@@ -47,16 +48,17 @@ export default function AIBriefBlock({
   const loading = status === "loading";
   const showRegen = SHOW_REGEN.includes(status) && typeof onRegenerate === "function";
   const showBody = SHOW_REGEN.includes(status);
+  const flat = bare && showBody;
 
   return (
     <section
       {...rest}
-      className={`relative overflow-hidden rounded-2xl border bg-card shadow-sm p-5 ${RING[status] || RING.ready} ${className}`}
+      className={flat ? `relative ${className}` : `relative overflow-hidden rounded-2xl border bg-card shadow-sm p-5 ${RING[status] || RING.ready} ${className}`}
     >
       {/* 좌측 브랜드 강조선 — before로 그린다.
          border-l-[3px]와 border를 같이 쓰면 둘 다 특이도 (0,1,0)이라
          Tailwind 출력 순서에 승패가 달리는 취약한 구조가 된다. */}
-      <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-primary" />
+      {!flat && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-primary" />}
 
       {/* 헤더 — 뱃지는 같은 줄에 두지 않는다.
          폰 폭(430px)에서 아이콘+긴 한글 제목+긴 뱃지+버튼을 한 줄에 넣으면

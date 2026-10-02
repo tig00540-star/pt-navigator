@@ -474,6 +474,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     return (
       <div className="space-y-8">
         <AIBriefBlock
+          bare
           status={stale ? "stale" : "ready"}
           title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
           onRegenerate={() => generateBrief(obs)}
@@ -517,6 +518,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
      대기 중 할 일을 주는 쪽이 낫다. */
   const renderGenerating = () => (
     <AIBriefBlock
+      bare
       status="loading"
       title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
       waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
@@ -526,6 +528,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   // 캐시 없음(첫 생성 전) — 자동 호출 대신 버튼 트리거(결정#2).
   const renderPreGenerate = () => (
     <AIBriefBlock
+      bare
       status="idle"
       title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
       generateLabel={`${round}차 OT 준비 리포트 만들기`}

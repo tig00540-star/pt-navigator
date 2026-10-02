@@ -8,6 +8,8 @@
    ★hold(침묵)는 '회원 대사'가 아니라 '트레이너 행동 지시' — 대사처럼 안 보이게 회색 이탤릭 지시로 구분.
    ========================================================================= */
 
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import Emph, { plainText } from "@/components/ui/Emph";
 
 // 회원에게 그대로 말하는 대사(떠보기·요청·플러시) — 칩 라벨 + 인용. strong=요청(가장 크게).
@@ -20,7 +22,32 @@ function SpeechBit({ label, text, strong = false }) {
   );
 }
 
-export default function ClosingSequence({ sequence, fallbackLine = "", sweetener = "", metaphor = null, icon = null }) {
+// compact(OT 사전 준비 리포트 · 2026-10-02): 상자 없이 줄 목록. 기본 = 이유·확인·플랜(가격 한 줄)·요청·망설이면,
+//   비유·침묵·오늘 안 되면·숙제는 자세히. 빨강 강조는 요청에만(나머지 대사는 굵게만).
+function Line({ label, text, ask = false }) {
+  if (!text) return null;
+  return (
+    <div>
+      <p className="m-0 text-[12px] font-semibold text-primary-strong">{label}</p>
+      <p className={`m-0 mt-0.5 leading-[1.6] text-ink ${ask ? "text-[17px] font-bold" : "text-[15px]"}`}>&ldquo;<Emph tone={ask ? "primary" : "quiet"}>{text}</Emph>&rdquo;</p>
+    </div>
+  );
+}
+function CompactMore({ children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
+        className="inline-flex min-h-[32px] items-center gap-1 text-[12px] font-semibold text-muted transition hover:text-ink">
+        비유 · 오늘 안 되면 · 숙제
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+      {open && <div className="mt-1 space-y-2 border-l-2 border-line pl-3">{children}</div>}
+    </div>
+  );
+}
+
+export default function ClosingSequence({ sequence, fallbackLine = "", sweetener = "", metaphor = null, icon = null, compact = false, priceLine = "" }) {
   const seq = sequence && typeof sequence === "object" && !Array.isArray(sequence) ? sequence : null;
   const has = Boolean(seq && (seq.trial_close || seq.stakes || seq.plan_pitch || seq.ask || seq.hold || seq.flush));
   const line = typeof fallbackLine === "string" ? fallbackLine : "";
@@ -29,6 +56,35 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
   const fb = seq?.fallback && typeof seq.fallback === "object" ? seq.fallback : null;
   const hw = Array.isArray(fb?.homework) ? fb.homework.filter((h) => h && h.do) : [];
   if (!has && !line && !hasMetaphor) return null; // 아무것도 없으면 렌더 안 함
+
+  if (compact && has) {
+    const note = (label, t) => t ? <p className="m-0 text-[13px] leading-[1.6] text-sub"><span className="font-semibold text-ink">{label}</span> {plainText(t)}</p> : null;
+    return (
+      <div className="space-y-4 break-keep text-pretty">
+        <Line label="① 왜 PT가 필요한지" text={seq.stakes} />
+        <Line label="② 확인 질문" text={seq.trial_close} />
+        <div>
+          <Line label="③ 추천 플랜" text={seq.plan_pitch} />
+          {priceLine && <p className="m-0 mt-1.5 inline-block rounded-lg bg-elevate px-2.5 py-1 text-[13px] font-semibold text-ink">{priceLine}</p>}
+        </div>
+        <Line label="④ 요청" text={seq.ask} ask />
+        {seq.hold && <p className="m-0 text-[12.5px] text-muted">요청한 뒤엔 먼저 말하지 말고 기다려요.</p>}
+        <Line label="⑤ 망설이면" text={seq.flush} />
+        {(hasMetaphor || fb) && (
+          <CompactMore>
+            {hasMetaphor && note("비유", mp.metaphor)}
+            {fb?.next_line && note("오늘 결정이 어려우면", fb.next_line)}
+            {hw.length > 0 && (
+              <div className="space-y-1">
+                <p className="m-0 text-[12px] font-semibold text-muted">다음 수업 전까지 부탁할 것</p>
+                {hw.map((h, i) => <p key={i} className="m-0 text-[13px] leading-[1.6] text-sub">{i + 1}. {plainText(h.do)}</p>)}
+              </div>
+            )}
+          </CompactMore>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">

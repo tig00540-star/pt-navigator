@@ -139,10 +139,12 @@ const STAKES_AXIS = `     · 외형/체중감량/바디라인 → 진행손실�
 // 대사 스타일(2026-10-02 대표 요청) — 리포트 3종(first·second·reregister)에 삽입.
 //   ① 핵심 한 구절만 **강조**(화면이 포인트 색으로 칠함 · components/ui/Emph) ② 긴 줄표 금지(서버에서도 한 번 더 걸러냄).
 const SAY_STYLE = `[대사 스타일]
- - 핵심 강조: 회원에게 그대로 말할 대사 값(opening·recall의 line, cue, workout_intro, stakes, trial_close, plan_pitch, ask,
-   flush, next_line, homework의 do, point_it_out, metaphor, objection_defense의 line, why_now·session_flow의 대사, cheat)마다
-   꼭 말해야 할 핵심 한 구절을 **두 별표**로 감싸라. 대사 하나에 한 곳만, 문장 전체를 감싸지 마라. 대사가 아닌 값
-   (why·reason·feel·defense·trigger·member_read·추천 프로그램 설명·data_gaps)에는 쓰지 마라.
+ - 핵심 강조(**두 별표**)는 꼭 필요한 곳에만: cheat 3줄, ask(요청), proof가 true인 운동의 cue, point_it_out,
+   why_now·session_flow의 대사. 각 값에 한 구절만, 문장 전체 금지. 그 밖의 값에는 별표를 쓰지 마라(강조가 많으면 아무것도 안 보인다).
+ - [분량 · 폰 한 화면에 훑어보게] 트레이너가 수업 직전 30초~1분에 훑는다. 길면 안 읽힌다.
+   회원 대사(line·cue·point_it_out·trial_close·ask·objection_defense의 line·next_line·homework의 do·workout_intro)는 한 문장, 60자 안팎.
+   stakes·plan_pitch·flush는 두 문장 이내. why·reason·feel·defense·trigger·bridge·so_what은 한 문장. metaphor 한 문장.
+   같은 말을 여러 칸에 되풀이하지 마라.
  - 긴 줄표(—, –) 금지. 문장을 끊어야 하면 마침표로 나누고, 이어야 하면 쉼표를 써라.`;
 
 // ② 회원 대사 전문용어 금지(전 phase 공통 · 출력 규칙에 삽입).
@@ -217,7 +219,7 @@ ${STAKES_AXIS}
    - fallback(⑥ 오늘 결정이 안 될 때 · 붙잡지 않는다): next_line = 다음 OT를 가까운 날(이번 주, 며칠 안)로 잡자고
      권하되 날짜·시간은 회원에게 묻는 열린 질문. 왜 가까운 날이 좋은지 한마디를 붙인다. 트레이너가 요일·시간을
      정해 양자택일로 묻지 마라. 예) "오늘 느낌 남아 있을 때 이어가는 게 좋아서요, 이번 주 안에 언제쯤 시간 괜찮으세요?"
-     homework = 다음 수업 전까지 회원에게 부탁할 것 2~3개. 오늘 한 운동·확인한 문제와 이어지는 집에서 하는
+     homework = 다음 수업 전까지 회원에게 부탁할 것 2개. 오늘 한 운동·확인한 문제와 이어지는 집에서 하는
      스트레칭·자세 연습, 생활 습관, 기록해 올 것(예: 식사 사진·불편했던 순간) 중에서. 각 {do: 회원에게 그대로 말할
      부탁 한 문장(방법과 느낌 위주), why: 왜 하는지 한 줄 — 다음 OT에서 무엇을 확인할지}. ★숫자 처방(세트·횟수·
      시간·중량) 금지 · 통증 관련은 "불편하면 바로 멈추세요"를 덧붙여라. 다음 OT에서 이걸 확인하며 다시 클로징으로
@@ -314,12 +316,13 @@ ${REHAB_TONE}
    '왜 이걸 하는지'를 한 번에 납득시키는 완성 대사 1~2문장.
    exercises[] = 위 4칸 순서대로 정확히 4개. 각 항목:
    - slot: "몸 상태 체크" | "메인 동작" | "목표 부위 자극" | "처음과 비교" 중 하나.
-   - name: 콕 집은 구체 동작 이름 + 어떻게 하는지 한 줄(숫자 없이).
+   - name: 콕 집은 구체 동작 이름만(15자 안팎 · 하는 방법을 붙이지 마라).
+   - how: 어떻게 하는지 한 문장(숫자 없이 · 트레이너가 읽는 설명).
    - reason: ★"회원님은 이 운동을 ~ 때문에 하셔야 해요"를 회원이 이해하도록 풀어주는 이유(이 회원 goal·pain
      기반, 전문용어 없이). ★이게 이 블록의 핵심 — '혼자선 못 잡는다'는 의존 심기보다, 회원이 '왜 이 운동이
      나한테 필요한지' 스스로 납득하게 하는 '교육형' 설명. 확신 있되 부담 없이.
    - feel: 그 자리서 바로 느낄 효과·자극을 회원 말로("어? 여기 딱 들어오네 / 목이 트이네").
-   - cue: 그 순간 그대로 말할 대사(before→after 차이를 회원이 인정하게 + 이 운동의 가치를 각인). 압박 아님.
+   - cue: 그 순간 그대로 말할 대사 한 문장(before→after 차이를 회원이 인정하게 + 이 운동의 가치를 각인). 압박 아님.
    - proof: '처음과 비교'는 true, 메인 동작도 차이가 극적이면 true, 나머지 false.
    - lib_ref: 위 [내 즐겨찾기 운동자료]에서 쓴 자료 번호(정수). 안 썼으면 null.
    - alts: 같은 칸에 바꿔 끼울 참고 운동 2개(기구가 차 있거나 회원 상태가 다를 때). 각 {name: 동작 이름, why: 왜 이
@@ -373,7 +376,7 @@ ${closingSeqInstruction({
    아니라 "○○를 관찰해오면 △△까지" 형태 긍정 코칭. 충실하면 빈 배열.
 
 [cheat — 30초 요약 3줄 · 화면 맨 위] 바빠서 이것만 보고 들어가도 되게: ① 이 회원 핵심(누구·뭘 원함·뭐가 걸림) ② 오늘 꼭 할 것(증명·핵심 운동) ③ 클로징에서 그대로 말할 한 마디(따옴표 대사). 각 한 줄·30자 안팎·명사형 말고 바로 외울 말로. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
-[분량 — 외우기 쉽게] 각 대사는 짧고 입에 붙게. line류 1~2문장, why/bridge/so_what 1문장.
+[분량 — 외우기 쉽게] 각 대사는 짧고 입에 붙게. 아래 [대사 스타일]의 분량을 지켜라.
 [필드명 인용 금지] 값 텍스트에 스키마 키(point_it_out·so_what·objection_defense 등)를 쓰지 마라.
 ${MEMBER_LANG}
 ${SAY_STYLE}
@@ -384,7 +387,7 @@ ${SAY_STYLE}
   "opening": { "line": "...", "why": "..." },
   "workout_structure": "오늘 4칸 구성 한 줄",
   "workout_intro": "오늘 할 운동들을 회원에게 소개 + 왜 하는지 납득시키는 대사",
-  "exercises": [ { "slot": "몸 상태 체크", "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null, "alts": [] }, { "slot": "메인 동작", "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": true, "lib_ref": null, "alts": [ { "name": "...", "why": "...", "feel": "..." }, { "name": "...", "why": "...", "feel": "..." } ] }, { "slot": "목표 부위 자극", "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null, "alts": [ { "name": "...", "why": "...", "feel": "..." }, { "name": "...", "why": "...", "feel": "..." } ] }, { "slot": "처음과 비교", "name": "...", "reason": "...", "feel": "...", "cue": "...", "proof": true, "lib_ref": null, "alts": [] } ],
+  "exercises": [ { "slot": "몸 상태 체크", "name": "...", "how": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null, "alts": [] }, { "slot": "메인 동작", "name": "...", "how": "...", "reason": "...", "feel": "...", "cue": "...", "proof": true, "lib_ref": null, "alts": [ { "name": "...", "why": "...", "feel": "..." }, { "name": "...", "why": "...", "feel": "..." } ] }, { "slot": "목표 부위 자극", "name": "...", "how": "...", "reason": "...", "feel": "...", "cue": "...", "proof": false, "lib_ref": null, "alts": [ { "name": "...", "why": "...", "feel": "..." }, { "name": "...", "why": "...", "feel": "..." } ] }, { "slot": "처음과 비교", "name": "...", "how": "...", "reason": "...", "feel": "...", "cue": "...", "proof": true, "lib_ref": null, "alts": [] } ],
   "so_what": "...",
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON_OT},

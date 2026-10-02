@@ -9,14 +9,15 @@ export function plainText(s) {
   return typeof s === "string" ? s.replace(/\*\*/g, "") : s;
 }
 
-export default function Emph({ children }) {
+// tone="quiet" — 빨강 대신 굵게만(강조가 많은 화면에서 빨강은 꼭 필요한 곳에만 · 2026-10-02).
+export default function Emph({ children, tone = "primary" }) {
   if (typeof children !== "string") return children ?? null;
   const parts = children.split(/\*\*(.+?)\*\*/g);
   return (
     <>
       {parts.map((p, i) =>
         i % 2 ? (
-          <strong key={i} className="font-semibold text-primary-strong">{p}</strong>
+          <strong key={i} className={tone === "quiet" ? "font-semibold text-ink" : "font-semibold text-primary-strong"}>{p}</strong>
         ) : (
           p.replace(/\*\*/g, "")
         ),
