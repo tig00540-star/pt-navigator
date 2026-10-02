@@ -47,17 +47,18 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
   const goalsThisYm = useMemo(() => goals.filter((g) => g && g.ym === ym && g.target_revenue != null), [goals, ym]);
   const target = useMemo(() => goalsThisYm.reduce((s, g) => s + (g.target_revenue || 0), 0) || null, [goalsThisYm]);
   const goalPct = target ? net / target : null;
-  const trainerCount = trainers.length;
 
   // 트레이너별 목표·현재 매출 — 합산 목표만 보면 누가 끌고 누가 밀리는지 모른다.
   // 목표를 세운 트레이너를 먼저(목표 큰 순), 목표 없는 트레이너는 뒤로.
   const revByT = useMemo(() => new Map(revenueByTrainer(contracts, ym).map((r) => [r.trainer_id, r.total])), [contracts, ym]);
   const goalByT = useMemo(() => new Map(goalsThisYm.map((g) => [g.trainer_id, g.target_revenue || 0])), [goalsThisYm]);
+  // 대표는 수업을 안 하는 경우가 많다 — 목표도 매출도 없는 대표는 줄에서 뺀다("목표 미설정"으로 남지 않게).
   const trainerRows = useMemo(() => trainers.map((t) => {
     const goal = goalByT.get(t.id) ?? null;
     const rev = revByT.get(t.id) ?? 0;
-    return { id: t.id, name: personName(t.name) || "트레이너", goal, rev, pct: goal ? rev / goal : null };
-  }).sort((a, b) => (b.goal ?? -1) - (a.goal ?? -1)), [trainers, goalByT, revByT]);
+    return { id: t.id, role: t.role, name: personName(t.name) || "트레이너", goal, rev, pct: goal ? rev / goal : null };
+  }).filter((t) => !(t.role === "owner" && t.goal == null && !t.rev))
+    .sort((a, b) => (b.goal ?? -1) - (a.goal ?? -1)), [trainers, goalByT, revByT]);
 
   return (
     <div className="space-y-6">
@@ -68,7 +69,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
         <Card>
           <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><Wallet className="h-3.5 w-3.5" /> 이달 매출 현황</div>
           <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(net)}</div>
-          <div className="mt-1 text-xs text-muted">{ym} 현재 총 매출</div>
+          <div className="mt-1 text-xs text-muted">{Number(ym.slice(5))}월 현재 총 매출</div>
           {target != null ? (
             <div className="mt-4">
               {/* 목표 · 현재 · 달성률 세 줄 */}
@@ -104,7 +105,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
                       </li>
                     ))}
                   </ul>
-                  {goalsThisYm.length < trainerCount && (
+                  {trainerRows.some((t) => t.goal == null) && (
                     <p className="mt-1.5 text-[10px] leading-relaxed text-muted">목표를 안 세운 트레이너가 있어 센터 목표가 실제보다 작게 잡혀 있어요.</p>
                   )}
                 </div>

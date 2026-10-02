@@ -191,7 +191,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
           <p className="mt-3 text-[12px] text-muted">아직 달별로 비교할 유입이 없습니다.</p>
         ) : (
           <>
-            <div className="mt-4 flex items-end justify-between gap-2" style={{ height: 110 }}>
+            <div className="mt-4 flex items-stretch justify-between gap-2" style={{ height: 110 }}>
               {trend.map((t, i) => {
                 const last = i === trend.length - 1;
                 const h = Math.max(3, Math.round((t.intake / maxIntake) * 100));

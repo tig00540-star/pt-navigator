@@ -1000,7 +1000,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                     <details className="group rounded-2xl border border-line bg-card p-4 shadow-sm">
                       <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.created_at)}</span>
+                          <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.session_at ?? l.created_at)}</span>
                           <span className="rounded-full bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub">{round}회차</span>
                           {/* 확인 상태 뱃지 — 뷰의 confirmed_at 파생. 확정=숨김(깔끔), 미확인=neutral(이의 제거). */}
                           {!l.confirmed_at ? (
@@ -1170,7 +1170,10 @@ export default function MemberHome() {
     try {
       const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes, ounwanRes, rewardRes] = await Promise.all([
         memberSupabase.from("member_me").select("*").maybeSingle(),
-        memberSupabase.from("member_workout_log").select("*").order("created_at", { ascending: false }),
+        // 수업 날짜(session_at) 기준 최신순 — 늦게 적은 일지가 맨 위로 오지 않게. 옛 행(session_at 없음)은 뒤로.
+        memberSupabase.from("member_workout_log").select("*")
+          .order("session_at", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false }),
         memberSupabase.from("member_inbody").select("*").order("measured_at", { ascending: true }),
         memberSupabase.from("cardio_log").select("*").order("performed_on", { ascending: false }).limit(30),
         memberSupabase.from("member_photo").select("*").order("taken_on", { ascending: false }).limit(60),
