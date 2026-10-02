@@ -5,15 +5,18 @@
    AI가 만들지 않는다 — 설정 › 정산 › PT 가격의 패키지(pt_package · 노출 켠 것)를 그대로 읽어 보여준다.
    그래서 패키지를 추가·수정하면 다음에 열 때 자동으로 최신이다(다시 만들 필요 없음).
    세일즈북 발표 중 어느 장에서든 열고 닫으면 보던 장으로 돌아간다(포털 · 세일즈북 위 z).
+   패키지 6개까지는 카드, 7개부터는 표(한 줄에 한 패키지 · 태블릿 한 화면에 12~15개 · 나란히 비교) — 대표 결정.
+   표에선 '회차 순'으로 바꿔 볼 수 있다(많이 할수록 회당이 싸지는 게 숫자로 보이게). 기본은 설정의 표시 순서.
    ========================================================================= */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { won } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 
 const perSession = (p) => (p?.sessions ? Math.round(p.price / p.sessions) : null);
+const TABLE_FROM = 7;
 
 export default function PriceSheet({ packages = [], recommendedIndex = null, trainerName, onClose }) {
   // 가격표가 떠 있는 동안 ESC·화살표는 가격표 몫 — 아래 세일즈북이 닫히거나 장이 넘어가지 않게(캡처 단계에서 가로챔).
@@ -26,8 +29,14 @@ export default function PriceSheet({ packages = [], recommendedIndex = null, tra
     window.addEventListener("keydown", h, true);
     return () => window.removeEventListener("keydown", h, true);
   }, [onClose]);
+  const [bySessions, setBySessions] = useState(false);
   if (typeof document === "undefined") return null;
   const list = (packages || []).filter(Boolean);
+  const table = list.length >= TABLE_FROM;
+  // 추천 표시는 원래 순서(index) 기준이라 정렬해도 원래 번호를 들고 다닌다.
+  const rows = list.map((pk, i) => ({ p: pk, i }));
+  if (table && bySessions) rows.sort((a, b) => (a.p.sessions ?? Infinity) - (b.p.sessions ?? Infinity) || a.p.price - b.p.price);
+  const anyList = list.some((pk) => pk.list_price != null && pk.list_price > pk.price);
   const pers = list.map(perSession).filter((v) => v != null);
   const cheapest = pers.length > 1 ? Math.min(...pers) : null;
   const today = new Date();
@@ -43,13 +52,63 @@ export default function PriceSheet({ packages = [], recommendedIndex = null, tra
               {trainerName && <p className="m-0 truncate text-[12px] text-muted">{trainerName} 트레이너</p>}
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="가격표 닫기" className="rounded-lg p-2 text-muted transition hover:bg-elevate hover:text-ink">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {table && (
+              <button type="button" onClick={() => setBySessions((v) => !v)} aria-pressed={bySessions}
+                className={`min-h-[36px] rounded-full border px-3 text-[12px] font-semibold transition ${bySessions ? "border-ink bg-ink text-white" : "border-line text-sub hover:text-ink"}`}>
+                회차 순
+              </button>
+            )}
+            <button type="button" onClick={onClose} aria-label="가격표 닫기" className="rounded-lg p-2 text-muted transition hover:bg-elevate hover:text-ink">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="overflow-y-auto px-5 py-5 sm:px-7">
-          {list.length === 0 ? (
+          {table ? (
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="border-b border-line-strong text-[12px] text-muted">
+                  <th className="py-2 pr-3 font-semibold">패키지</th>
+                  <th className="hidden py-2 pr-3 font-semibold sm:table-cell">회차 · 기간</th>
+                  {anyList && <th className="hidden py-2 pr-3 text-right font-semibold md:table-cell">정가</th>}
+                  <th className="py-2 pr-3 text-right font-semibold">가격</th>
+                  <th className="py-2 text-right font-semibold">회당</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ p: pk, i }) => {
+                  const per = perSession(pk);
+                  const rec = recommendedIndex === i;
+                  const low = cheapest != null && per === cheapest;
+                  const disc = pk.list_price != null && pk.list_price > pk.price;
+                  return (
+                    <tr key={pk.id || i} className={`border-b border-line ${rec ? "bg-primary-soft" : ""}`}>
+                      <td className="py-2 pr-3 align-middle">
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[clamp(14px,1.7vw,16px)] font-bold text-ink">{pk.name}</span>
+                          {rec && <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">추천</span>}
+                          {low && <span className="rounded-full border border-primary/40 bg-card px-1.5 py-0.5 text-[10px] font-bold text-primary-strong">회당 최저</span>}
+                        </span>
+                        {/* 폰: 회차·기간 칸이 없어서 이름 아래로 */}
+                        <span className="block text-[12px] text-muted sm:hidden">{[pk.sessions ? `${pk.sessions}회` : "기간제", pk.duration_label].filter(Boolean).join(" · ")}</span>
+                        {pk.note && <span className="hidden text-[12px] text-muted sm:block">{pk.note}</span>}
+                      </td>
+                      <td className="hidden py-2 pr-3 align-middle text-[13px] text-sub sm:table-cell">{[pk.sessions ? `${pk.sessions}회` : "기간제", pk.duration_label].filter(Boolean).join(" · ")}</td>
+                      {anyList && (
+                        <td className="hidden py-2 pr-3 text-right align-middle text-[13px] text-muted md:table-cell">
+                          {disc ? <><span className="line-through">{won(pk.list_price)}</span> <b className="font-bold text-primary-strong">{Math.round((1 - pk.price / pk.list_price) * 100)}%</b></> : ""}
+                        </td>
+                      )}
+                      <td className="py-2 pr-3 text-right align-middle font-mono text-[clamp(15px,1.9vw,18px)] font-extrabold text-ink">{won(pk.price)}</td>
+                      <td className={`py-2 text-right align-middle text-[13px] font-semibold ${low ? "text-primary-strong" : "text-sub"}`}>{per != null ? won(per) : "기간제"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : list.length === 0 ? (
             <p className="py-10 text-center text-[14px] text-sub">등록된 패키지가 없어요. 설정 › 정산 › PT 가격에서 패키지를 등록하면 가격표가 만들어져요.</p>
           ) : (
             <ul className={`m-0 grid list-none gap-3 p-0 ${list.length === 1 ? "mx-auto max-w-md" : list.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
