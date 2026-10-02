@@ -54,7 +54,7 @@ function RoundBar({ memberId, info, stepKey, round }) {
           const on = n === round;
           return (
             <Link key={n} href={otStepPath(memberId, stepKey, n)} role="tab" aria-selected={on}
-              className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-bold transition ${
+              className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-semibold transition ${
                 on ? "bg-card text-ot-text shadow-sm" : "text-sub hover:text-ink"}`}>
               {n}차
             </Link>
@@ -94,7 +94,7 @@ export default function OtWorkspace({ member, step, onClosingSaved }) {
   return (
     <>
       <RoundBar memberId={member.id} info={info} stepKey={key} round={round} />
-      <h1 className="mb-4 text-[22px] font-extrabold tracking-[-0.03em] text-ink">{otStepLabel(key, round)}</h1>
+      <h1 className="mb-4 text-[20px] font-bold tracking-[-0.03em] text-ink">{otStepLabel(key, round)}</h1>
       {key === "prep" && (round === 1
         ? <FirstOTAssist member={member} onSaved={reload} />
         : <SecondOTTab key={round} member={member} round={round} onSaved={reload} />)}

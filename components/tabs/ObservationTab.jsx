@@ -88,9 +88,9 @@ function Block({ n, title, uses, children }) {
   return (
     <section className="rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5">
       <div className="flex items-start gap-2.5">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-extrabold text-white">{n}</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-bold text-white">{n}</span>
         <div className="min-w-0">
-          <h2 className="text-[16px] font-extrabold tracking-[-0.02em] text-ink">{title}</h2>
+          <h2 className="text-[16px] font-bold tracking-[-0.02em] text-ink">{title}</h2>
           {uses && <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{uses}</p>}
         </div>
       </div>
@@ -102,7 +102,7 @@ function Block({ n, title, uses, children }) {
 function Q({ label, hint, children }) {
   return (
     <div>
-      <p className="mb-2 text-[13px] font-bold text-ink">{label}{hint && <span className="ml-1.5 font-normal text-muted">{hint}</span>}</p>
+      <p className="mb-2 text-[13px] font-semibold text-sub">{label}{hint && <span className="ml-1.5 font-normal text-muted">{hint}</span>}</p>
       {children}
     </div>
   );
@@ -112,7 +112,7 @@ function Chip({ on, onClick, children, tone = "ink" }) {
   const onCls = tone === "primary" ? "border-primary bg-primary-soft text-primary-strong" : "border-ink bg-ink text-white";
   return (
     <button type="button" onClick={onClick} aria-pressed={on}
-      className={`min-h-[36px] rounded-full border px-3 text-[13px] font-semibold transition ${on ? onCls : "border-line bg-card text-sub hover:border-line-strong hover:text-ink"}`}>
+      className={`min-h-[36px] rounded-full border px-3 text-[13px] transition ${on ? `${onCls} font-semibold` : "border-line bg-card font-normal text-sub hover:border-line-strong hover:text-ink"}`}>
       {children}
     </button>
   );
@@ -275,7 +275,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
                 className={`flex min-h-[56px] items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-left transition ${
                   on ? "border-primary bg-primary-soft" : "border-line bg-card hover:border-line-strong"}`}>
                 <span>
-                  <span className={`block text-[15px] font-extrabold ${on ? "text-primary-strong" : "text-ink"}`}>{r.label}</span>
+                  <span className={`block text-[15px] ${on ? "font-bold text-primary-strong" : "font-semibold text-ink"}`}>{r.label}</span>
                   <span className="block text-[12px] text-muted">{r.hint}</span>
                 </span>
                 {on && <Check className="h-5 w-5 shrink-0 text-primary-strong" strokeWidth={3} aria-hidden="true" />}
@@ -338,9 +338,9 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
             {form.moves.map((m, i) => (
               <div key={`${m.name}-${i}`} className={`rounded-xl border p-3 ${m.star ? "border-primary/40 bg-primary-soft/40" : "border-line"}`}>
                 <div className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate text-[14px] font-bold text-ink">{m.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-ink">{m.name}</span>
                   <button type="button" onClick={() => setMove(i, { star: !m.star })} aria-pressed={m.star}
-                    className={`inline-flex min-h-[32px] items-center gap-1 rounded-full px-2.5 text-[12px] font-bold ${m.star ? "bg-primary text-white" : "bg-elevate text-sub hover:text-ink"}`}>
+                    className={`inline-flex min-h-[32px] items-center gap-1 rounded-full px-2.5 text-[12px] font-medium ${m.star ? "bg-primary text-white" : "bg-elevate text-sub hover:text-ink"}`}>
                     <Star className="h-3.5 w-3.5" aria-hidden="true" fill={m.star ? "currentColor" : "none"} /> 다음에 다시
                   </button>
                   <button type="button" onClick={() => removeMove(i)} aria-label={`${m.name} 빼기`} className="rounded-md p-1 text-muted hover:text-ink">
@@ -396,7 +396,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
                   className={`flex min-h-[48px] items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-left transition ${
                     on ? "border-ink bg-ink text-white" : "border-line bg-card hover:border-line-strong"}`}>
                   <span>
-                    <span className="block text-[14px] font-bold">{o.label}{o.value === suggestedPush && <span className={`ml-1.5 text-[11px] font-semibold ${on ? "text-white/70" : "text-primary-strong"}`}>추천</span>}</span>
+                    <span className="block text-[14px] font-semibold">{o.label}{o.value === suggestedPush && <span className={`ml-1.5 text-[11px] font-semibold ${on ? "text-white/70" : "text-primary-strong"}`}>추천</span>}</span>
                     <span className={`block text-[12px] ${on ? "text-white/70" : "text-muted"}`}>{o.hint}</span>
                   </span>
                 </button>
@@ -418,7 +418,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
         {missing && !saving && <p className="text-center text-[12px] text-muted">{missing}</p>}
         {savedOnce && form.result === "continue" && (
           <Link href={otStepPath(member.id, "prep", round + 1)}
-            className="flex min-h-[52px] items-center justify-between rounded-xl border border-primary/40 bg-primary-soft px-4 font-bold text-primary-strong no-underline">
+            className="flex min-h-[52px] items-center justify-between rounded-xl border border-primary/40 bg-primary-soft px-4 font-semibold text-primary-strong no-underline">
             {round + 1}차 OT 준비하기 <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         )}

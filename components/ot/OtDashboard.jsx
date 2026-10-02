@@ -42,10 +42,10 @@ const shortDate = (iso) => {
 function Stat({ icon: Icon, label, value, sub, accent, href }) {
   const body = (
     <>
-      <div className="flex items-center gap-1.5 text-[12px] font-semibold text-muted">
+      <div className="flex items-center gap-1.5 text-[12px] text-muted">
         <Icon className="h-3.5 w-3.5" aria-hidden="true" /> {label}
       </div>
-      <div className={`mt-1 text-[17px] font-extrabold tracking-[-0.02em] ${accent ? "text-danger-text" : "text-ink"}`}>{value}</div>
+      <div className={`mt-1 text-[16px] font-semibold tracking-[-0.02em] ${accent ? "text-danger-text" : "text-ink"}`}>{value}</div>
       {sub && <div className="mt-0.5 text-[12px] text-sub">{sub}</div>}
     </>
   );
@@ -58,7 +58,7 @@ function Stat({ icon: Icon, label, value, sub, accent, href }) {
 
 function Step({ done, children }) {
   return (
-    <span className={`inline-flex items-center gap-1 text-[12px] ${done ? "font-semibold text-ink" : "text-muted"}`}>
+    <span className={`inline-flex items-center gap-1 text-[12px] ${done ? "text-ink" : "text-muted"}`}>
       {done ? <Check className="h-3.5 w-3.5 text-ot-text" strokeWidth={3} aria-hidden="true" /> : <span className="h-1.5 w-1.5 rounded-full bg-line-strong" aria-hidden="true" />}
       {children}
     </span>
@@ -112,20 +112,20 @@ export default function OtDashboard({ member, info }) {
       {/* 회원 */}
       <Card>
         <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ot-soft text-[15px] font-extrabold text-ot-text" aria-hidden="true">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ot-soft text-[15px] font-bold text-ot-text" aria-hidden="true">
             {(member.name || "?").slice(-2)}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-[22px] font-extrabold tracking-[-0.03em] text-ink">{member.name}</h1>
+              <h1 className="text-[22px] font-bold tracking-[-0.03em] text-ink">{member.name}</h1>
               <Badge tone="ot">
                 {info.done ? (info.lastResult === "success" ? "등록 완료" : "OT 종료") : `OT · ${info.current}차 진행 중`}
               </Badge>
             </div>
             {facts.length > 0 && <p className="mt-0.5 text-[13px] text-sub">{facts.join(" · ")}</p>}
             <p className="mt-1 text-[13px] text-sub">
-              목표 {goalSet ? <b className="font-bold text-ink">{member.goal}</b> : <span className="text-muted">미설정</span>}
-              {hasVal(member.pain) && <> · 불편 부위 <b className="font-bold text-ink">{member.pain}</b></>}
+              목표 {goalSet ? <span className="font-medium text-ink">{member.goal}</span> : <span className="text-muted">미설정</span>}
+              {hasVal(member.pain) && <> · 불편 부위 <span className="font-medium text-ink">{member.pain}</span></>}
             </p>
           </div>
         </div>
@@ -154,8 +154,8 @@ export default function OtDashboard({ member, info }) {
         <Link href={otStepPath(member.id, nextKey, info.current)}
           className="flex min-h-[56px] items-center justify-between gap-3 rounded-2xl bg-primary px-5 text-white no-underline shadow-sm transition hover:bg-primary-strong">
           <span>
-            <span className="block text-[12px] font-semibold text-white/80">지금 할 일</span>
-            <span className="block text-[17px] font-extrabold tracking-[-0.02em]">{otStepLabel(nextKey, info.current)}</span>
+            <span className="block text-[12px] text-white/80">지금 할 일</span>
+            <span className="block text-[17px] font-bold tracking-[-0.02em]">{otStepLabel(nextKey, info.current)}</span>
           </span>
           <ArrowRight className="h-5 w-5" aria-hidden="true" />
         </Link>
@@ -164,7 +164,7 @@ export default function OtDashboard({ member, info }) {
       {/* OT 진행 */}
       <Card padding="none">
         <div className="flex items-center justify-between px-5 pb-2 pt-4">
-          <h2 className="text-[15px] font-extrabold text-ink">OT 진행</h2>
+          <h2 className="text-[15px] font-bold text-ink">OT 진행</h2>
           {info.canStartNext && (
             <Link href={otStepPath(member.id, "prep", info.current + 1)}
               className="inline-flex min-h-[36px] items-center gap-1 rounded-full border border-dashed border-line-strong px-3 text-[12px] font-semibold text-sub transition hover:text-ink">
@@ -180,7 +180,7 @@ export default function OtDashboard({ member, info }) {
               <li key={r.n}>
                 <Link href={otStepPath(member.id, go, r.n)}
                   className={`flex items-center gap-3 px-5 py-3.5 no-underline transition hover:bg-elevate ${now ? "bg-ot-soft/60" : ""}`}>
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold ${now ? "bg-ot text-white" : "bg-elevate text-sub"}`}>{r.n}차</span>
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${now ? "bg-ot text-white" : "bg-elevate text-sub"}`}>{r.n}차</span>
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap gap-x-3 gap-y-1">
                       <Step done={r.progress.prep}>준비</Step>
@@ -189,7 +189,7 @@ export default function OtDashboard({ member, info }) {
                   </span>
                   {r.progress.result !== "none" || r.progress.next
                     ? <Badge tone={RESULT_TONE[r.progress.result] || "neutral"}>{resultName(r.progress)}</Badge>
-                    : now && <span className="text-[12px] font-bold text-ot-text">지금</span>}
+                    : now && <span className="text-[12px] font-semibold text-ot-text">지금</span>}
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
                 </Link>
               </li>

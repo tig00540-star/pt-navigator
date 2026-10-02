@@ -22,7 +22,7 @@ const OBJ_LABEL = { price: "가격", hesitation: "생각해볼게요", doubt: "�
 function Say({ children, tag }) {
   if (!children) return null;
   return (
-    <p className="m-0 rounded-[16px_16px_16px_4px] bg-primary-soft px-3.5 py-2.5 text-[15px] font-semibold leading-[1.55] text-ink">
+    <p className="m-0 rounded-[16px_16px_16px_4px] bg-primary-soft px-3.5 py-2.5 text-[15px] font-medium leading-[1.6] text-ink">
       {tag && <span className="mr-1.5 align-middle text-[11px] font-bold text-primary-strong">{tag}</span>}
       &ldquo;{children}&rdquo;
     </p>
@@ -30,7 +30,7 @@ function Say({ children, tag }) {
 }
 function Why({ label = "왜", children }) {
   if (!children) return null;
-  return <p className="m-0 text-[12.5px] leading-[1.55] text-muted"><b className="font-semibold text-sub">{label} · </b>{children}</p>;
+  return <p className="m-0 text-[12.5px] leading-[1.55] text-muted"><span className="font-medium text-sub">{label} · </span>{children}</p>;
 }
 
 function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
@@ -38,9 +38,9 @@ function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
     <div className="rounded-xl border border-line bg-card">
       <button type="button" onClick={onToggle} aria-expanded={open}
         className="flex min-h-[52px] w-full items-center gap-3 px-3.5 py-2.5 text-left">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-elevate text-[12px] font-extrabold text-sub">{n}</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-elevate text-[12px] font-semibold text-sub">{n}</span>
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5 text-[14px] font-bold text-ink">
+          <span className="flex items-center gap-1.5 text-[14px] font-semibold text-ink">
             {Icon && <Icon className="h-4 w-4 text-primary-strong" aria-hidden="true" />}{title}
           </span>
           {!open && preview && <span className="mt-0.5 block truncate text-[12px] text-muted">{preview}</span>}
@@ -102,7 +102,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             const lib = Number.isInteger(ex.lib_ref) ? favorites[ex.lib_ref] || null : null;
             return (
               <div key={i} className={`space-y-1.5 ${i ? "border-t border-line pt-2.5" : ""}`}>
-                <p className="m-0 text-[14px] font-bold text-ink">
+                <p className="m-0 text-[14px] font-semibold text-ink">
                   {i + 1}. {ex.name}
                   {ex.proof && <span className="ml-1.5 rounded bg-primary-soft px-1.5 py-0.5 align-middle text-[10px] font-bold text-primary-strong">증명</span>}
                 </p>
@@ -125,14 +125,14 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             <ol className="m-0 list-none space-y-1 p-0">
               {plan.map((p, i) => (
                 <li key={i} className="text-[13.5px] leading-[1.5] text-ink">
-                  <b className="font-bold">{i + 1}. {p.exercise}</b>{p.point && <span className="text-muted"> — {p.point}</span>}
+                  <span className="font-semibold">{i + 1}. {p.exercise}</span>{p.point && <span className="text-muted"> — {p.point}</span>}
                 </li>
               ))}
             </ol>
           )}
           {moves.map((mv, i) => (
             <div key={i} className="space-y-1.5 border-t border-line pt-2.5">
-              <p className="m-0 text-[14px] font-bold text-ink">
+              <p className="m-0 text-[14px] font-semibold text-ink">
                 <span className="mr-1.5 rounded bg-primary-soft px-1.5 py-0.5 align-middle text-[10px] font-bold text-primary-strong">증명 {i + 1}</span>{mv.exercise}
               </p>
               <Say>{mv.point_it_out}</Say>
@@ -157,7 +157,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
       body: pick ? (
         <>
           <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-[14px] text-ink">
-            <b className="font-bold">{pick.name}</b><span className="font-mono font-semibold">{won(pick.price)}</span>
+            <span className="font-semibold">{pick.name}</span><span className="font-mono font-semibold">{won(pick.price)}</span>
             {pick.sessions != null && <span className="text-[12px] text-muted">· {pick.sessions}회</span>}
           </p>
           <Why label="맞는 이유">{rp.why_fit}</Why>
@@ -178,7 +178,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
           <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="거절 종류">
             {obj.map((o, i) => (
               <button key={i} type="button" role="tab" aria-selected={i === objSel} onClick={() => setObjSel(i)}
-                className={`min-h-[36px] rounded-full px-3 text-[13px] font-bold transition ${i === objSel ? "bg-ink text-white" : "bg-elevate text-sub hover:text-ink"}`}>
+                className={`min-h-[36px] rounded-full px-3 text-[13px] transition ${i === objSel ? "bg-ink font-semibold text-white" : "bg-elevate font-normal text-sub hover:text-ink"}`}>
                 {OBJ_LABEL[o.reason] || o.reason}
               </button>
             ))}
@@ -211,13 +211,13 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
     <div className="space-y-3">
       {lines.length > 0 && (
         <div className="rounded-2xl border border-primary/25 bg-primary-soft px-4 py-3.5">
-          <div className="flex items-center gap-1.5 text-[12px] font-extrabold text-primary-strong">
+          <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary-strong">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> 30초 요약 · 이것만 외우기
           </div>
           <ol className="m-0 mt-2 list-none space-y-1.5 p-0">
             {lines.map((t, i) => (
-              <li key={i} className="flex gap-2 text-[15px] font-semibold leading-[1.5] text-ink">
-                <span className="mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card text-[11px] font-extrabold text-primary-strong">{i + 1}</span>
+              <li key={i} className="flex gap-2 text-[15px] font-medium leading-[1.55] text-ink">
+                <span className="mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card text-[11px] font-semibold text-primary-strong">{i + 1}</span>
                 <span>{t}</span>
               </li>
             ))}
@@ -229,7 +229,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
       {sections.length > 0 && (
         <>
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[12px] font-semibold text-muted">수업 순서대로 · 누르면 대사</span>
+            <span className="text-[12px] text-muted">수업 순서대로 · 누르면 대사</span>
             <button type="button" onClick={() => setAll(!allOpen)} className="min-h-[32px] rounded-lg px-2 text-[12px] font-semibold text-sub hover:text-ink">
               {allOpen ? "모두 접기" : "모두 펼치기"}
             </button>
