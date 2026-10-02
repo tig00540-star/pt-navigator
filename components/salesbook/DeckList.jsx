@@ -9,14 +9,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Play, Search } from "lucide-react";
+import { Pencil, Play, Receipt, Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useMembers } from "@/components/app/MembersProvider";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
 import Badge from "@/components/ui/Badge";
 import FilterChip from "@/components/ui/FilterChip";
-import DeckLauncher from "@/components/salesbook/DeckLauncher";
+import DeckLauncher, { useSalesbookAssets } from "@/components/salesbook/DeckLauncher";
+import PriceSheet from "@/components/salesbook/PriceSheet";
 import FirstProposalLauncher from "@/components/salesbook/FirstProposalLauncher";
 import { viewFor } from "@/lib/memberStatus";
 
@@ -34,6 +35,8 @@ export default function DeckList() {
   const [kind, setKind] = useState("all");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(null); // { row, member, editable }
+  const [priceOpen, setPriceOpen] = useState(false);
+  const { packages, trainer } = useSalesbookAssets();
 
   useEffect(() => {
     let cancelled = false;
@@ -81,11 +84,18 @@ export default function DeckList() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
       <div>
         <h1 className="m-0 text-[22px] font-bold tracking-[-0.03em] text-ink">발표 자료</h1>
         <p className="m-0 mt-1 text-[13px] leading-relaxed text-sub">
           회원을 누르면 <b className="font-semibold text-primary-strong">바로 발표 화면</b>이 열려요. 편집에서 장 순서를 바꾸고 사례 보관함의 변화 사례를 넣을 수 있어요.
         </p>
+      </div>
+        {/* 회원이 "가격표 보여주세요" 할 때 — 회원을 안 골라도 바로. 설정의 패키지를 그대로 읽어 늘 최신. */}
+        <button type="button" onClick={() => setPriceOpen(true)}
+          className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-line bg-card px-3.5 text-[13px] font-semibold text-ink shadow-sm transition hover:border-line-strong">
+          <Receipt className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 가격표
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -146,6 +156,7 @@ export default function DeckList() {
           onClose={() => setOpen(null)}
         />
       )}
+      {priceOpen && <PriceSheet packages={packages} trainerName={trainer?.display_name || ""} onClose={() => setPriceOpen(false)} />}
       <Toast message={toast} />
     </div>
   );

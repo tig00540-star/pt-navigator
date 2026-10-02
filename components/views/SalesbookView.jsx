@@ -12,11 +12,12 @@
    PDF: window.print() + @media print(A4 가로). present(editable=false)=회원에게 보이는 화면.
    ========================================================================= */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize, Presentation, LayoutList } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize, Presentation, LayoutList, Receipt } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
+import PriceSheet from "@/components/salesbook/PriceSheet";
 import { caseKeys, caseChunk, deckOrder } from "@/components/salesbook/deck";
 import { CaseSlideBody, DeckPanel, useDeckCases } from "@/components/salesbook/DeckParts";
 import { guessCategory } from "@/lib/salesCase";
@@ -138,6 +139,7 @@ export default function SalesbookView({
   const [isFs, setIsFs] = useState(false);
   // 발표 모드 — 앱 UI(.sb-chrome 상단바+하단 네비)를 숨겨 슬라이드가 뷰포트를 꽉 쓰게. 모든 기기(아이폰 포함).
   const [presentMode, setPresentMode] = useState(startPresent);
+  const [priceOpen, setPriceOpen] = useState(false); // "가격표 보여주세요" — 어느 장에서든 위에 띄움
   const fsEnabled = typeof document !== "undefined" && document.fullscreenEnabled; // 아이폰 Safari=false → 버튼 숨김
   useEffect(() => {
     const on = () => setIsFs(!!document.fullscreenElement);
@@ -248,14 +250,23 @@ export default function SalesbookView({
 
       {/* 발표 모드 종료 — .sb-chrome 밖이라 발표 모드에서도 안 숨겨짐(항상 나가기 가능 · 인쇄엔 숨김). */}
       {presentMode && (
-        <button
-          onClick={() => setPresentMode(false)}
-          aria-label="발표 모드 종료"
-          aria-pressed={true}
-          className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-black/40 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-black/60 print:hidden"
-        >
-          <X className="h-3.5 w-3.5" /> 발표 모드 종료
-        </button>
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-2 print:hidden">
+          <button
+            onClick={() => setPriceOpen(true)}
+            aria-label="가격표"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-black/40 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-black/60"
+          >
+            <Receipt className="h-3.5 w-3.5" /> 가격표
+          </button>
+          <button
+            onClick={() => setPresentMode(false)}
+            aria-label="발표 모드 종료"
+            aria-pressed={true}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-black/40 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-black/60"
+          >
+            <X className="h-3.5 w-3.5" /> 발표 모드 종료
+          </button>
+        </div>
       )}
 
       {/* 상단 바 — present 컨트롤(인쇄엔 숨김). editable이면 '저장' 노출. */}
@@ -278,6 +289,9 @@ export default function SalesbookView({
               <Printer className="h-3.5 w-3.5" /> PDF·인쇄
             </button>
           )}
+          <button onClick={() => setPriceOpen(true)} aria-label="가격표" className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25">
+            <Receipt className="h-3.5 w-3.5" /> 가격표
+          </button>
           <button onClick={() => setPresentMode(true)} aria-label="발표 모드" aria-pressed={presentMode} className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25">
             <Presentation className="h-3.5 w-3.5" /> 발표 모드
           </button>
@@ -616,6 +630,15 @@ export default function SalesbookView({
           memberCategory={memberCategory}
           onChange={(next) => setDraft((dd) => ({ ...dd, deck: next }))}
           onClose={() => setPanelOpen(false)}
+        />
+      )}
+
+      {priceOpen && (
+        <PriceSheet
+          packages={packages}
+          recommendedIndex={Number.isInteger(recommendedProgram?.pick_ref) ? recommendedProgram.pick_ref : null}
+          trainerName={trainer?.display_name || ""}
+          onClose={() => setPriceOpen(false)}
         />
       )}
 
