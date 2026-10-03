@@ -81,7 +81,7 @@ export default function ReapproachToday({ members, onSelect }) {
               name={nameOf(r.user_id)}
               onClick={() => onSelect(r.user_id)}
             >
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-sub">
                 <span className="font-mono">{r.closing_reapproach_at}</span>
                 <span className={over > 0 ? "font-medium text-amber-600" : "font-medium text-primary-strong"}>
                   {over > 0 ? `${over}일 경과` : "오늘"}

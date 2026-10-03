@@ -52,7 +52,7 @@ export default function UnclosedClosingToday({ members, onSelect }) {
             name={nameOf(r.user_id)}
             onClick={() => onSelect(r.user_id)}
           >
-            <div className="mt-0.5 text-[11px] text-sub">{r.round}차 OT 결과 입력</div>
+            <div className="mt-0.5 text-[12.5px] text-sub">{r.round}차 OT 결과 입력</div>
           </ListRow>
         ))}
       </div>

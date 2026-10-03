@@ -5,7 +5,9 @@ import { widgetTone } from "@/components/ui/tone";
 export default function ToneCard({ tone = "zinc", className = "", children }) {
   const t = widgetTone(tone);
   return (
-    <section className={`mb-4 rounded-2xl border p-4 ${t.card} ${className}`}>
+    // 2026-10-03: 틴트 바탕 → 흰 카드(OT · PT 회원 화면과 같은 바탕). 역할 색(t.card)은 왼쪽 얇은 띠로만 남긴다.
+    <section className={`relative mb-4 overflow-hidden rounded-2xl border border-line bg-card p-4 shadow-sm ${className}`}>
+      <span aria-hidden className={`absolute inset-y-0 left-0 w-[3px] ${t.bar}`} />
       {children}
     </section>
   );

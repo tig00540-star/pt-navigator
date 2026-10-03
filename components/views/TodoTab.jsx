@@ -13,6 +13,8 @@ import UnclosedClosingToday from "@/components/views/UnclosedClosingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
 import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
+import SectionTitle from "@/components/ui/SectionTitle";
+import { ListChecks } from "lucide-react";
 
 export default function TodoTab({ members, uid, onSelect }) {
   // 원장은 계정 전체 회원/예약이 RLS로 넘어옴 → 할일은 '내 담당'만(개인 뷰). 트레이너는 이미 본인 것뿐이라 무변.
@@ -20,8 +22,8 @@ export default function TodoTab({ members, uid, onSelect }) {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-lg font-bold text-ink">오늘 할일</h2>
-        <p className="mt-0.5 text-xs text-muted">재접근·재등록 타이밍과 직접 적은 메모를 한 곳에서.</p>
+        <SectionTitle icon={ListChecks} className="mb-0">오늘 할 일</SectionTitle>
+        <p className="mt-0.5 text-[13px] text-sub">다시 연락할 회원 · 재등록 타이밍 · 직접 적은 메모를 한 곳에서 봐요.</p>
       </div>
 
       {/* 자동 1~3 — 기존 위젯 재사용(회원 탭에서 이관). 탭 목적지만 감싸서 지정. */}

@@ -91,10 +91,10 @@ export default function TodoManual() {
 
   return (
     <section className="mb-4 rounded-2xl border border-line bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <ListTodo className="h-4 w-4 text-primary-strong" />
-        <h3 className="text-sm font-semibold text-ink">메모 할일</h3>
-        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">{openCount}</span>
+      <div className="mb-3 flex items-center gap-1.5">
+        <ListTodo className="h-4 w-4 text-primary-strong" aria-hidden="true" />
+        <h3 className="text-[15px] font-bold tracking-[-0.02em] text-ink">메모 할 일</h3>
+        {openCount > 0 && <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-semibold text-primary-strong">{openCount}</span>}
       </div>
 
       {/* 폰에서는 두 줄 — 할 일 입력이 한 줄을 다 쓰고, 날짜+추가가 아래로 내려간다.
@@ -107,13 +107,13 @@ export default function TodoManual() {
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") add(); }}
           placeholder="할 일 적기 (예: 3시 회원 인바디 재측정)"
-          className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary sm:w-auto sm:min-w-[180px] sm:flex-1"
+          className="w-full rounded-lg border border-line bg-elevate px-3 py-2.5 text-[14px] text-ink placeholder-muted outline-none focus:border-primary sm:w-auto sm:min-w-[180px] sm:flex-1"
         />
         <input
           type="date"
           value={due}
           onChange={(e) => setDue(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary sm:min-w-[140px]"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-elevate px-3 py-2.5 text-[14px] text-ink outline-none focus:border-primary sm:min-w-[140px]"
           aria-label="마감일(선택)"
         />
         <Button variant="primary" size="md" onClick={add} disabled={saving || !body.trim()} className="shrink-0">
@@ -121,14 +121,14 @@ export default function TodoManual() {
         </Button>
       </div>
 
-      {err && <div className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-600">{err}</div>}
+      {err && <div className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12.5px] text-red-600">{err}</div>}
 
       {sorted.length === 0 ? (
-        <EmptyState className="py-2 text-xs">적어둔 할 일이 없어요.</EmptyState>
+        <EmptyState className="py-2 text-[13px]">적어 둔 할 일이 없어요.</EmptyState>
       ) : (
         <div className="grid gap-1.5">
           {sorted.map((t) => (
-            <div key={t.id} className="flex items-center gap-2 rounded-xl border border-line bg-elevate px-3 py-2">
+            <div key={t.id} className="flex min-h-[48px] items-center gap-2.5 rounded-xl bg-elevate px-3.5 py-2">
               <button
                 onClick={() => toggle(t)}
                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${t.done ? "border-primary bg-primary-soft text-primary-strong" : "border-line bg-card text-transparent hover:border-primary"}`}
@@ -137,9 +137,9 @@ export default function TodoManual() {
                 <Check className="h-3.5 w-3.5" />
               </button>
               <div className="min-w-0 flex-1">
-                <span className={`text-sm ${t.done ? "text-muted line-through" : "text-ink"}`}>{t.body}</span>
+                <span className={`text-[14px] ${t.done ? "text-muted line-through" : "text-ink"}`}>{t.body}</span>
                 {t.due_date && (
-                  <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">~{t.due_date}</span>
+                  <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[11.5px] font-medium text-sub">~{t.due_date}</span>
                 )}
               </div>
               {confirmId === t.id ? (

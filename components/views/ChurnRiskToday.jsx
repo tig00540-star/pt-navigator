@@ -2,7 +2,10 @@
 /* 오늘 할일 — 이탈 위험 조기경보. 활성 계약(잔여>0)인데 최근 N일 수업이 없는 PT 회원.
    자기완결: session_log·daily_workout_log 계정 전체 조회 → 회원별 마지막 수업일 계산. 데모/0건 숨김. */
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ChevronRight } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import ToneCard from "@/components/ui/ToneCard";
+import SectionHeader from "@/components/ui/SectionHeader";
+import ListRow from "@/components/ui/ListRow";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor, activeContract, remainingSessions } from "@/lib/memberStatus";
 
@@ -72,32 +75,19 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
   if (loading || risky.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-5 shadow-sm">
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-rose-600" />
-        <h3 className="text-sm font-bold text-ink">이탈 위험 · 최근 {STALE_DAYS}일 무수업</h3>
-        <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-700">{risky.length}</span>
-      </div>
-      <p className="mt-1 text-[11px] leading-relaxed text-muted">
-        잔여가 남았는데 발길이 뜸해진 회원이에요. 먼저 연락해 재방문을 잡아 주세요.
-      </p>
-      <ul className="mt-3 space-y-1.5">
+    <ToneCard tone="danger">
+      <SectionHeader tone="danger" icon={AlertTriangle} title="이탈 위험" count={risky.length}
+        hint={`남은 수업이 있는데 ${STALE_DAYS}일 넘게 안 온 회원이에요. 먼저 연락해 다음 수업을 잡아 주세요.`} />
+      <div className="grid gap-2">
         {risky.map(({ m, gap, rem, everCame }) => (
-          <li key={m.id}>
-            <button
-              onClick={() => onSelect?.(m.id, 10)}
-              className="flex w-full items-center gap-2 rounded-xl border border-line bg-card px-3 py-2.5 text-left transition hover:border-primary"
-            >
-              <span className="text-sm font-semibold text-ink">{m.name}</span>
-              <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
-                {everCame ? `${gap}일째 무수업` : `등록 후 ${gap}일 미방문`}
-              </span>
-              <span className="text-[11px] text-muted">잔여 {rem.total}회</span>
-              <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted" />
-            </button>
-          </li>
+          <ListRow key={m.id} tone="danger" name={m.name} onClick={() => onSelect?.(m.id, 10)}>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12.5px] text-sub">
+              <span className="font-medium text-danger-text">{everCame ? `${gap}일째 수업 없음` : `등록 후 ${gap}일째 안 옴`}</span>
+              <span className="text-muted">· 남은 수업 {rem.total}회</span>
+            </div>
+          </ListRow>
         ))}
-      </ul>
-    </section>
+      </div>
+    </ToneCard>
   );
 }

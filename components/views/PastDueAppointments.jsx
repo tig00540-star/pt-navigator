@@ -69,7 +69,7 @@ export default function PastDueAppointments({ members, uid, onSelect }) {
               name={nameOfEl(a.user_id)}
               onClick={() => onSelect(a.user_id)}
             >
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-sub">
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12.5px] text-sub">
                 <span className="font-mono">{fmtDT(a.start_at)}</span>
                 <span className="font-medium text-amber-600">{ago > 0 ? `${ago}일 지남` : "오늘 지남"}</span>
               </div>

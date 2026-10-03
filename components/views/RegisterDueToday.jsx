@@ -70,7 +70,7 @@ export default function RegisterDueToday({ members, onSelect }) {
             name={nameOf(r.user_id)}
             onClick={() => onSelect(r.user_id)}
           >
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-sub">
               <span>잔여 유료 <b className="text-primary-strong">{r.paid}</b></span>
               <span className="text-muted">· 서비스 {r.service}</span>
             </div>

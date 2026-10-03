@@ -19,6 +19,7 @@ const ROLE_TONE = {
   /* 재접근 — OT 흐름 */
   reapproach: {
     card:         "border-amber-500/25 bg-amber-500/[0.06]",
+    bar:          "bg-ot",
     icon:         "text-ot-text",
     title:        "text-ot-text",
     countBadge:   "bg-ot-soft text-ot-text",
@@ -30,6 +31,7 @@ const ROLE_TONE = {
   /* 재등록 — PT 흐름 */
   renewal: {
     card:         "border-sky-500/25 bg-sky-500/[0.06]",
+    bar:          "bg-pt",
     icon:         "text-pt-text",
     title:        "text-pt-text",
     countBadge:   "bg-pt-soft text-pt-text",
@@ -42,6 +44,7 @@ const ROLE_TONE = {
      unclosed와 같은 붉은 톤이지만 뜻이 달라 이름을 나눈다. */
   brand: {
     card:         "border-red-500/25 bg-red-500/[0.06]",
+    bar:          "bg-primary",
     icon:         "text-primary-strong",
     title:        "text-primary-strong",
     countBadge:   "bg-primary-soft text-primary-strong",
@@ -53,6 +56,7 @@ const ROLE_TONE = {
   /* 미확정 클로징 — 할일 위젯 중 유일한 red. 우선순위 신호다. */
   unclosed: {
     card:         "border-red-500/25 bg-red-500/[0.06]",
+    bar:          "bg-primary",
     icon:         "text-primary-strong",
     title:        "text-primary-strong",
     countBadge:   "bg-primary-soft text-primary-strong",
@@ -64,6 +68,7 @@ const ROLE_TONE = {
   /* 미처리 예약 · 중립 */
   neutral: {
     card:         "border-zinc-400/25 bg-zinc-500/[0.06]",
+    bar:          "bg-line-strong",
     icon:         "text-sub",
     title:        "text-ink",
     countBadge:   "bg-elevate text-sub",
@@ -75,6 +80,7 @@ const ROLE_TONE = {
   /* 위험 — 환불·손실 전용. 할일 위젯에는 쓰지 않는다. */
   danger: {
     card:         "border-rose-500/25 bg-rose-500/[0.06]",
+    bar:          "bg-rose-500",
     icon:         "text-danger-text",
     title:        "text-danger-text",
     countBadge:   "bg-rose-500/15 text-danger-text",

@@ -331,11 +331,15 @@ export default function ScheduleBoard({ members = [], onSelect }) {
   return (
     <div className="space-y-4">
       {/* 모드 토글 + (owner) 트레이너 필터 */}
-      <div className="flex items-center gap-1.5">
-        <button onClick={() => setMode("week")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "week" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted hover:text-ink"}`}>주간</button>
-        <button onClick={() => { setMode("today"); setWeekStart(mondayOf(new Date())); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "today" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted hover:text-ink"}`}>오늘</button>
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="스케줄 보기">
+          <button role="tab" aria-selected={mode === "today"} onClick={() => { setMode("today"); setWeekStart(mondayOf(new Date())); }}
+            className={`inline-flex min-h-[36px] items-center rounded-full px-4 text-[14px] transition ${mode === "today" ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}>오늘</button>
+          <button role="tab" aria-selected={mode === "week"} onClick={() => setMode("week")}
+            className={`inline-flex min-h-[36px] items-center rounded-full px-4 text-[14px] transition ${mode === "week" ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}>주간</button>
+        </div>
         {isOwnerView && (
-          <select value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)} className="ml-auto rounded-lg border border-line bg-elevate px-2 py-1.5 text-xs text-sub outline-none focus:border-primary">
+          <select value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)} className="ml-auto min-h-[36px] min-w-0 rounded-lg border border-line bg-card px-2.5 text-[13px] text-ink outline-none focus:border-primary">
             <option value="all">전체 트레이너</option>
             {trainers.map((t) => <option key={t.id} value={t.id}>{personName(t.name)}</option>)}
           </select>
@@ -346,7 +350,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
       {isOwnerView && (
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {trainers.map((t) => (
-            <span key={t.id} className="inline-flex items-center gap-1 text-[11px] text-sub">
+            <span key={t.id} className="inline-flex items-center gap-1 text-[12.5px] text-sub">
               <span className={`inline-block h-2 w-2 rounded-full ${trainerTone(t.id).dot}`} />
               {personName(t.name)}
             </span>
@@ -359,10 +363,10 @@ export default function ScheduleBoard({ members = [], onSelect }) {
           {/* 주 네비 + 시간범위 */}
           <div className="flex flex-wrap items-center gap-2">
             <CalendarDays className="h-5 w-5 text-primary-strong" />
-            <span className="text-sm font-semibold text-ink">{rangeLabel}</span>
+            <span className="text-[15px] font-semibold text-ink">{rangeLabel}</span>
             <div className="flex items-center gap-1">
               <button onClick={() => setWeekStart((w) => addDays(w, -7))} className="rounded-lg border border-line bg-elevate p-1.5 text-sub hover:border-primary"><ChevronLeft className="h-4 w-4" /></button>
-              <button onClick={() => setWeekStart(mondayOf(new Date()))} className="rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-sub hover:border-primary">오늘</button>
+              <button onClick={() => setWeekStart(mondayOf(new Date()))} className="rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-[13px] font-medium text-sub hover:border-primary">이번 주</button>
               <button onClick={() => setWeekStart((w) => addDays(w, 7))} className="rounded-lg border border-line bg-elevate p-1.5 text-sub hover:border-primary"><ChevronRight className="h-4 w-4" /></button>
             </div>
             <div className="ml-auto flex items-center gap-1 text-xs text-muted">
@@ -437,34 +441,34 @@ export default function ScheduleBoard({ members = [], onSelect }) {
         /* 오늘 뷰 */
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-ink">
-              오늘 {now.getMonth() + 1}/{now.getDate()} ({DAY_LABELS[(now.getDay() + 6) % 7]})
+            <span className="text-[15px] font-bold text-ink">
+              {now.getMonth() + 1}월 {now.getDate()}일 ({DAY_LABELS[(now.getDay() + 6) % 7]})
             </span>
-            <span className="rounded-md border border-primary/30 bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary-strong">
-              남은 수업 {remainingToday}타임
+            <span className="text-[13px] text-sub">
+              남은 수업 <b className="font-semibold text-primary-strong">{remainingToday}</b>개
             </span>
           </div>
           {todayList.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-line bg-card p-10 text-center text-sm text-muted shadow-sm">오늘 예약이 없습니다.</div>
+            <div className="rounded-2xl border border-line bg-card p-8 text-center text-[14px] text-muted shadow-sm">오늘 예약이 없어요.</div>
           ) : (
             <ul className="space-y-2">
               {todayList.map((a) => (
                 <li key={a.id}>
                   <button
                     onClick={() => handleApptTap(a)}
-                    className={`flex w-full items-center gap-3 overflow-hidden rounded-xl border p-3 text-left shadow-sm transition ${
+                    className={`flex min-h-[56px] w-full items-center gap-3 overflow-hidden rounded-xl border p-3 text-left shadow-sm transition ${
                       a.status === "done" ? "border-line bg-card opacity-60" : "border-line bg-card hover:border-primary"
                     }`}
                   >
                     {isOwnerView && <span className={`-my-3 -ml-3 mr-0 w-1 self-stretch ${trainerTone(a.trainer_id).bar}`} />}
-                    <span className="font-mono text-sm font-semibold text-sub">{hhmm(a.start_at)}</span>
+                    <span className="font-mono text-[15px] font-semibold text-ink">{hhmm(a.start_at)}</span>
                     <MemberBadge view={memberView(a.user_id)} />
-                    <span className="flex-1 text-sm font-medium text-ink">{memberNameEl(a.user_id)}</span>
-                    {isOwnerView && <span className="text-[11px] text-muted">{trainerName(a.trainer_id)}</span>}
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{memberNameEl(a.user_id)}</span>
+                    {isOwnerView && <span className="shrink-0 text-[12.5px] text-muted">{trainerName(a.trainer_id)}</span>}
                     {a.status === "done" ? (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-elevate px-2 py-0.5 text-[10px] font-semibold text-muted"><Check className="h-3 w-3" /> 완료</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-elevate px-2 py-0.5 text-[12px] font-semibold text-muted"><Check className="h-3 w-3" /> 완료</span>
                     ) : (
-                      <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">예약</span>
+                      <span className="shrink-0 rounded-md bg-primary-soft px-2 py-0.5 text-[12px] font-semibold text-primary-strong">예약</span>
                     )}
                   </button>
                 </li>

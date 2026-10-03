@@ -67,7 +67,7 @@ export default function NoNextBookingToday({ members, uid, onSelect, limit }) {
       <div className="grid gap-2">
         {(limit ? rows.slice(0, limit) : rows).map((r) => (
           <ListRow key={r.user_id} tone="neutral" name={r.name || "회원"} onClick={() => onSelect(r.user_id)}>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-sub">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12.5px] text-sub">
               <span className="font-medium">잔여 {r.rem}회</span>
               {r.gap != null ? (
                 <span className={r.gap >= 14 ? "font-medium text-amber-600" : "text-muted"}>{r.gap <= 0 ? "마지막 수업 오늘" : `마지막 수업 ${r.gap}일 전`}</span>

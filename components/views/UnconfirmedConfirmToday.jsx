@@ -124,7 +124,7 @@ export default function UnconfirmedConfirmToday({ members, uid, onSelect }) {
             name={nameOfEl(r.user_id)}
             onClick={() => onSelect(r.user_id)}
           >
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-sub">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-sub">
               <span>미확인 수업 <b className="text-ot-text">{r.count}건</b></span>
               <span className="text-muted">· 확인 요청</span>
             </div>
