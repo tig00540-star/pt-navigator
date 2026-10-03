@@ -25,7 +25,7 @@ import ChurnRiskToday from "@/components/views/ChurnRiskToday";
 import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
 import TodoManual from "@/components/views/TodoManual";
-import AttendanceRanking from "@/components/home/AttendanceRanking";
+import OunwanRanking from "@/components/home/OunwanRanking";
 import SectionTitle from "@/components/ui/SectionTitle";
 
 const ymdKST = (d) => new Date(d.getTime() + 9 * 3600000).toISOString().slice(0, 10);
@@ -230,7 +230,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
             )}
           </Card>
 
-          <AttendanceRanking members={members} uid={uid} />
+          <OunwanRanking members={members} uid={uid} />
           <NoNextBookingToday members={scoped} uid={uid} onSelect={(id) => go(id, 9)} limit={5} />
           <PastDueAppointments members={scoped} uid={uid} onSelect={(id) => go(id, 9)} />
         </Column>

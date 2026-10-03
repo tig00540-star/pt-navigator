@@ -16,7 +16,6 @@ import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
-import OunwanRanking from "@/components/views/OunwanRanking";
 import Card from "@/components/ui/Card";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 
@@ -156,7 +155,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
 
   return (
     /* 넓은 화면(lg~): 왼쪽 급여·매출·수업 | 오른쪽 오운완 랭킹. 폰은 위아래 한 줄. */
-    <div className="space-y-4 break-keep text-pretty lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+    <div className="space-y-4 break-keep text-pretty lg:max-w-3xl">
       <div className="space-y-4">
       {loading ? (
         <div className="py-10 text-center text-[13px] text-muted">불러오는 중…</div>
@@ -322,12 +321,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       )}
       </div>
 
-      {/* 오운완 랭킹 — 자기완결 위젯(rpc 1콜). '오늘' 탭이 아니라 여기인 이유:
-          '오늘'은 앱 열 때마다 로드돼 부담이 크고, 랭킹은 주 1~2회 보는 실적성 정보다. */}
-      <div className="lg:pt-[52px]">
-        {/* 내 담당만(홈 출석 랭킹과 같은 규칙 · 직접 맡은 회원이 없는 대표는 센터 전체) */}
-        <OunwanRanking members={members.some((m) => m.trainer_id === uid) ? members.filter((m) => m.trainer_id === uid) : members} onSelect={onSelect} />
-      </div>
+      {/* 오운완 랭킹은 홈으로 옮겼다(2026-10-03 · 홈 출석 랭킹과 같은 데이터라 하나로 · components/home/OunwanRanking). */}
 
       {/* 월간 리포트 오버레이 (4-a) — 읽기 전용 재집계, MyStats 데이터 그대로 전달. */}
       {reportOpen && (

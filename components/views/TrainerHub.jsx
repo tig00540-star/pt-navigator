@@ -6,7 +6,7 @@
      ② 오늘 카드(고정) — 오늘 수업 수 · 오늘 신규 OT · 다음 수업 바로가기(OT면 준비하기, PT면 회원 대시보드)
      ③ 바로가기 칸 ④ 정보 카드 ⑤ 신규 회원 등록 · 지난 회원 · 홈 편집
    2026-10-03 위젯 편집(대표: "트레이너가 넣고 뺄 수 있게"): ③·④는 트레이너가 고른다(components/home/homeLayout ·
-     이 기기에 저장). 처음 상태 = 바로가기 4칸(OT 회원 · PT 회원 · 세일즈북 · 내 실적) + 출석 랭킹.
+     이 기기에 저장). 처음 상태 = 바로가기 4칸(OT 회원 · PT 회원 · 세일즈북 · 내 실적) + 오운완 랭킹.
      정보 카드는 '오늘' 탭과 같은 컴포넌트(숫자 기준 하나) · 해당 회원이 없으면 카드가 스스로 숨는다.
    조회: 오늘 예약 1콜 + 고른 카드가 각자 조회. 회원 수는 이미 로드된 members에서 센다.
    범위: 내 담당(직접 맡은 회원이 없는 대표는 센터 전체 · WideHome과 같은 규칙).
@@ -26,7 +26,7 @@ import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { viewFor } from "@/lib/memberStatus";
 import { hrefFor, hrefForMember } from "@/lib/nav";
-import AttendanceRanking from "@/components/home/AttendanceRanking";
+import OunwanRanking from "@/components/home/OunwanRanking";
 import MonthNumbers from "@/components/home/MonthNumbers";
 import { useHomeLayout, TILE_IDS, CARD_IDS, DEFAULT_LAYOUT } from "@/components/home/homeLayout";
 import RegisterDueToday from "@/components/views/RegisterDueToday";
@@ -52,7 +52,7 @@ const TILES = {
   add: { icon: UserPlus, title: "신규 회원 등록", desc: () => "OT · PT 회원 추가", tone: "bg-primary-soft text-primary-strong" },
 };
 const CARDS = {
-  ranking: { title: "이번 달 출석 랭킹", hint: "오운완 기준 상위 5명" },
+  ranking: { title: "오운완 랭킹", hint: "이번 달 · 연속일 상위 회원" },
   numbers: { title: "이번 달 내 숫자", hint: "신규 등록 · 재등록 · 매출" },
   regdue: { title: "재등록 타이밍", hint: "남은 수업 10회 미만 회원" },
   churn: { title: "이탈 위험", hint: "2주 넘게 수업이 없는 회원" },
@@ -206,7 +206,7 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
   // 카드 — 위젯마다 ToneCard의 아래 여백(mb-4)이 있어 홈 간격과 겹치지 않게 감싼 쪽에서 지운다.
   const renderCard = (id) => {
     switch (id) {
-      case "ranking": return <AttendanceRanking members={members} uid={uid} />;
+      case "ranking": return <OunwanRanking members={members} uid={uid} />;
       case "numbers": return <MonthNumbers uid={uid} />;
       case "regdue": return <RegisterDueToday members={scoped} onSelect={(mid) => go(mid, 11)} />;
       case "churn": return <ChurnRiskToday members={scoped} onSelect={(mid, t) => go(mid, t ?? 10)} />;
