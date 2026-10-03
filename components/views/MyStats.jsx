@@ -7,11 +7,11 @@
    ========================================================================= */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Award, ChevronDown, Dumbbell, FileText, Target, Wallet } from "lucide-react";
+import { Award, ChevronDown, ChevronRight, Coins, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import SectionTitle from "@/components/ui/SectionTitle";
-import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
+import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, payLinesForTrainer, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
@@ -37,12 +37,14 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
   const [reportOpen, setReportOpen] = useState(false);
   // '이달 매출' 칸을 누르면 아래 매출 내역을 펼치고 그리로 내려간다(2026-10-03 대표: "누르면 언제 · 누구 · 몇 회 · 얼마").
   const revRef = useRef(null);
-  const openRevenue = () => {
-    const el = revRef.current;
+  const payRef = useRef(null);
+  const openDetails = (el) => {
     if (!el) return;
     el.open = true;
-    setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 30); // 펼친 뒤 높이가 잡히고 나서
+    setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
   };
+  const openRevenue = () => openDetails(revRef.current); // 펼친 뒤 높이가 잡히고 나서 내려간다(setTimeout)
+  const openPay = () => openDetails(payRef.current);
   const [goals, setGoals] = useState([]);        // trainer_goal(월별 목표) — 달성률·리포트 전달
 
   useEffect(() => {
@@ -105,6 +107,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
     ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
     nameById, displayName, sessionRows, totalSessions, revRows, refundRows,
     ptMemberIds, sessTotalAll, remAll, doneAll,
+    scheme, sessionCount, priceSum, payLines,
   } = useMemo(() => {
     const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
     // 내 회원만(원장이 남의 회원 수업/클로징까지 세던 버그 수정 — 급여 스코프와 일치).
@@ -148,6 +151,8 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
       nameById, displayName, sessionRows, totalSessions, revRows, refundRows,
       ptMemberIds, sessTotalAll, remAll, doneAll,
+      scheme, sessionCount, priceSum,
+      payLines: payLinesForTrainer(logs, contracts, ym, uid), // 급여 내역(회원 × 계약) — 위 수업 수 · 수업료 합과 같은 거름
     };
   }, [members, contracts, logs, otRows, schemes, runs, uid, goals, contractNames]);
 
@@ -173,9 +178,10 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       </div>
 
       {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
-      <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
+      <button type="button" onClick={openPay} className="block w-full rounded-2xl border border-primary/30 bg-primary-soft p-5 text-left shadow-sm transition hover:border-primary/60 active:scale-[0.99]">
         <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
           <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 {isSolo ? "급여(자동 계산)" : `${confirmed ? "확정" : "예상"} 급여`}
+          <ChevronRight className="ml-auto h-4 w-4 text-primary-strong/70" aria-hidden="true" />
         </div>
         {confirmed ? (
           <>
@@ -193,7 +199,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
             <div className="mt-0.5 text-[13px] text-sub">{isSolo ? "급여 방식을 설정하면 자동으로 계산돼요" : "대표가 직접 정하는 급여예요"}</div>
           </>
         )}
-      </div>
+      </button>
 
       {/* 매출 · 클로징 */}
       <div className="grid gap-3 sm:grid-cols-2">
@@ -315,6 +321,22 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         )}
       </details>
 
+      {/* 급여 내역 — 회원 · 수업 횟수 · 회당 단가 · 받는 수업료(2026-10-03) */}
+      <details ref={payRef} className="group scroll-mt-20 rounded-2xl border border-line bg-card px-5 shadow-sm">
+        <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
+            <Coins className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 급여 내역
+            {payLines.length > 0 && <span className="text-[13px] font-normal text-muted">수업 {sessionCount}회</span>}
+          </span>
+          <span className="flex items-center gap-1.5 tabular-nums text-[15px] font-semibold text-ink">
+            {confirmed ? won(myRun.final_total) : pay.computed != null ? won(pay.computed) : "—"}
+            <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+          </span>
+        </summary>
+        <PayBreakdown lines={payLines} pay={pay} scheme={scheme} sessionCount={sessionCount} priceSum={priceSum}
+          revenue={rev.total} confirmedTotal={confirmed ? myRun.final_total : null} nameOf={displayName} isSolo={isSolo} />
+      </details>
+
       <p className="text-[12px] leading-relaxed text-muted">{isSolo ? "자동 계산은 이번 달 완료한 수업 기준이에요." : "확정 전 예상 급여는 이번 달 완료한 수업으로 자동 계산한 금액이에요. 실제 지급액은 대표가 확정한 금액이에요."}</p>
         </>
       )}
@@ -341,6 +363,85 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+/* 급여 내역(2026-10-03) — 이달 급여에 들어간 수업을 회원 × 계약별로: 회원 · 수업 횟수 · 회당 단가 · 받는 수업료.
+   받는 수업료 = 적용 구간의 지급 방식으로 줄마다 계산(수업료의 % · 1회당 정액). 고정급 · 대표가 정하는 급여는 줄마다 나눌 수 없어 수업료만.
+   맨 아래 합계는 payForScheme 결과 그대로(기본급 + 인센티브) — 줄 합과 원 단위 반올림 차이가 날 수 있다. */
+function PayBreakdown({ lines, pay, scheme, sessionCount, priceSum, revenue, confirmedTotal, nameOf, isSolo }) {
+  const band = pay.band;
+  const pv = Number(band?.payout_value ?? 0);
+  const kind = pay.type === "manual" ? "manual" : !band ? "none" : band.payout_type; // pct_of_price | flat_per_session | fixed
+  const recv = (l) => (kind === "pct_of_price" ? Math.round((l.fee * pv) / 100) : kind === "flat_per_session" ? l.count * pv : null);
+  const basisText = (min) => (scheme?.band_basis === "session_count" ? `이달 수업 ${min ?? 0}회 이상` : `이달 매출 ${won(min ?? 0)} 이상`);
+  const payoutText = kind === "pct_of_price" ? `수업료의 ${pv}%` : kind === "flat_per_session" ? `수업 1회당 ${won(pv)}` : kind === "fixed" ? `고정 ${won(pv)}` : "";
+  const incText = band?.incentive_type === "pct" ? `이달 매출 ${won(revenue)}의 ${Number(band.incentive_value ?? 0)}%` : band?.incentive_type === "flat" ? "고정 인센티브" : "";
+  const sorted = (Array.isArray(scheme?.bands) ? scheme.bands : []).slice().sort((a, b) => (a.min ?? 0) - (b.min ?? 0));
+  const firstBand = sorted[0];
+  // 다음 구간까지 — 기준(매출 · 수업 수)이 얼마 남았고 그 구간은 얼마를 주는지.
+  const basisVal = scheme?.band_basis === "session_count" ? sessionCount : revenue;
+  const nextBand = sorted.find((b) => (b.min ?? 0) > basisVal) || null;
+  const bandPay = (b) => (b.payout_type === "pct_of_price" ? `수업료의 ${Number(b.payout_value ?? 0)}%` : b.payout_type === "flat_per_session" ? `수업 1회당 ${won(Number(b.payout_value ?? 0))}` : `고정 ${won(Number(b.payout_value ?? 0))}`);
+  const toNext = nextBand ? (nextBand.min ?? 0) - basisVal : 0;
+
+  if (!lines.length) return <EmptyState className="pb-4 text-[13px]">이번 달 급여에 들어간 수업이 아직 없어요.</EmptyState>;
+
+  return (
+    <div className="space-y-3 pb-4">
+      {kind === "manual" && (
+        <p className="rounded-xl bg-elevate px-3.5 py-2.5 text-[13px] leading-relaxed text-sub">
+          {isSolo ? "급여 방식을 설정하면 회원별로 받는 돈까지 계산돼요." : "대표가 직접 정하는 급여라, 회원별 받는 돈은 나누지 않고 수업 기록만 보여요."}
+        </p>
+      )}
+      {kind === "none" && firstBand && (
+        <p className="rounded-xl bg-elevate px-3.5 py-2.5 text-[13px] leading-relaxed text-sub">
+          아직 첫 구간({basisText(firstBand.min)})에 못 미쳐서 기본급이 0원이에요.
+        </p>
+      )}
+      <ul className="m-0 list-none space-y-1.5 p-0">
+        {lines.map((l) => {
+          const r = recv(l);
+          return (
+            <li key={l.contract_id} className="rounded-xl bg-elevate px-3.5 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-[15px] font-semibold text-ink">{nameOf(l.user_id)}</span>
+                <span className="shrink-0 tabular-nums text-[15px] font-bold text-ink">
+                  {r != null ? won(r) : <span className="font-semibold text-sub">수업료 {won(l.fee)}</span>}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[12.5px] text-sub">
+                수업 {l.count}회{l.noshow ? ` (노쇼 ${l.noshow}회 포함)` : ""} · 회당 {won(l.price)}
+                {kind === "pct_of_price" ? ` · 수업료 ${won(l.fee)} × ${pv}%` : kind === "flat_per_session" ? ` · 1회 ${won(pv)} × ${l.count}회` : ""}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+
+      {kind !== "manual" && (
+        <div className="space-y-1.5 border-t border-line pt-3 text-[13.5px]">
+          <div className="flex justify-between gap-3 text-sub"><span>수업료 합계 · 수업 {sessionCount}회</span><span className="tabular-nums">{won(priceSum)}</span></div>
+          <div className="flex justify-between gap-3 text-sub">
+            <span>기본급{payoutText ? ` · ${payoutText}` : ""}</span><span className="tabular-nums text-ink">{won(pay.base)}</span>
+          </div>
+          {pay.incentive > 0 && (
+            <div className="flex justify-between gap-3 text-sub"><span>인센티브{incText ? ` · ${incText}` : ""}</span><span className="tabular-nums text-ink">{won(pay.incentive)}</span></div>
+          )}
+          <div className="flex justify-between gap-3 pt-1 text-[15px] font-bold text-ink"><span>예상 급여</span><span className="tabular-nums">{won(pay.computed ?? 0)}</span></div>
+          {confirmedTotal != null && (
+            <div className="flex justify-between gap-3 text-[15px] font-bold text-primary-strong"><span>대표 확정</span><span className="tabular-nums">{won(confirmedTotal)}</span></div>
+          )}
+          {band && <p className="pt-1 text-[12px] text-muted">적용 구간: {(band.min ?? 0) > 0 ? basisText(band.min) : "기본 구간"}</p>}
+          {nextBand && (
+            <p className="rounded-xl bg-primary-soft px-3.5 py-2.5 text-[13px] leading-relaxed text-ink">
+              {scheme?.band_basis === "session_count" ? `수업 ${toNext}회` : `매출 ${won(toNext)}`} 더 하면 다음 구간이에요. {bandPay(nextBand)}{nextBand.incentive_type === "pct" ? ` + 매출의 ${Number(nextBand.incentive_value ?? 0)}%` : ""}로 올라가요.
+            </p>
+          )}
+        </div>
+      )}
+      <p className="text-[12px] leading-relaxed text-muted">노쇼도 차감된 수업이라 급여에 들어가요. 취소한 수업 · 보강(계약 없는 수업)은 빠져요.</p>
     </div>
   );
 }
