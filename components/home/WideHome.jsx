@@ -26,6 +26,7 @@ import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
 import TodoManual from "@/components/views/TodoManual";
 import AttendanceRanking from "@/components/home/AttendanceRanking";
+import SectionTitle from "@/components/ui/SectionTitle";
 
 const ymdKST = (d) => new Date(d.getTime() + 9 * 3600000).toISOString().slice(0, 10);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -52,9 +53,7 @@ function Stat({ icon: Icon, label, value, sub, tone = "ink" }) {
 function Column({ title, icon: Icon, children, empty }) {
   return (
     <section className="min-w-0 space-y-3">
-      <h2 className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
-        <Icon className="h-4 w-4 text-primary-strong" aria-hidden="true" /> {title}
-      </h2>
+      <SectionTitle icon={Icon} className="mb-0">{title}</SectionTitle>
       {children}
       {empty}
     </section>
@@ -126,11 +125,11 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
   const open = (id) => { const m = byId.get(id); return hrefForMember(id, m ? viewFor(m) : "ot"); };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 break-keep text-pretty">
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[13px] text-muted">{dateLabel}</p>
-          <h1 className="text-[24px] font-bold tracking-[-0.03em] text-ink">{trainerName ? `${trainerName}님, 오늘 할 일이에요` : "오늘 할 일이에요"}</h1>
+          <h1 className="mt-0.5 text-[24px] font-bold tracking-[-0.03em] text-ink">{trainerName ? `${trainerName}님, 오늘 할 일이에요` : "오늘 할 일이에요"}</h1>
           {centerWide && <p className="mt-0.5 text-[12px] text-muted">직접 맡은 회원이 없어서 센터 전체 기준으로 보여드려요.</p>}
         </div>
         <Link href={hrefFor(9)} className="text-[13px] text-sub hover:text-ink">스케줄 전체 보기 →</Link>
@@ -187,7 +186,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
         <Column title="회원 쪽 소식" icon={HeartPulse}>
           <Card padding="none">
             <div className="flex items-center justify-between px-4 pt-3">
-              <span className="text-[13px] font-semibold text-ink">운동일지 확인 대기</span>
+              <span className="text-[14px] font-bold text-ink">운동일지 확인 대기</span>
               <span className="text-[12px] text-muted">회원이 아직 확인 안 함</span>
             </div>
             {unconfirmed.length === 0 ? (
@@ -208,7 +207,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
 
           <Card padding="none">
             <div className="flex items-center justify-between px-4 pt-3">
-              <span className="text-[13px] font-semibold text-ink">회원 페이지 새 기록</span>
+              <span className="text-[14px] font-bold text-ink">회원 페이지 새 기록</span>
               <span className="text-[12px] text-muted">최근 3일</span>
             </div>
             {activity.length === 0 ? (

@@ -65,27 +65,27 @@ export default function InstallHint() {
   };
 
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-dashed border-line-strong bg-elevate px-4 py-3">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-card text-primary-strong">
+    <div className="flex items-start gap-3 rounded-2xl border border-line bg-card px-4 py-3.5 shadow-sm break-keep text-pretty">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-strong">
         {ios ? <Share className="h-4 w-4" /> : <Download className="h-4 w-4" />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-bold text-ink">홈 화면에 추가하면 앱처럼 열려요</p>
-        <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+        <p className="text-[14px] font-bold text-ink">홈 화면에 추가하면 앱처럼 열려요</p>
+        <p className="mt-0.5 text-[13px] leading-relaxed text-sub">
           {ios
             ? "주소창 옆 ⋯ → 공유 → 더보기 → 홈 화면에 추가 → 웹 앱으로 열기"
-            : "주소창 없이 아이콘으로 바로 열립니다."}
+            : "주소창 없이 아이콘으로 바로 열려요."}
         </p>
         {!ios && deferred && (
           <button
             onClick={install}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11.5px] font-bold text-white transition active:scale-95"
+            className="mt-2 inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary px-3.5 text-[13px] font-semibold text-white transition active:scale-95"
           >
             홈 화면에 추가
           </button>
         )}
       </div>
-      <button onClick={close} aria-label="안내 닫기" className="shrink-0 rounded-lg p-1 text-muted transition hover:text-ink active:scale-95">
+      <button onClick={close} aria-label="안내 닫기" className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:text-ink active:scale-95">
         <X className="h-4 w-4" />
       </button>
     </div>

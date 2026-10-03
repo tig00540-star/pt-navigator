@@ -1,38 +1,53 @@
 /* =========================================================================
-   TrainerHub — 로그인 후 첫 화면(홈). 트레이너가 "무엇을 할지" 한 화면에서 고른다.
+   TrainerHub — 폰 홈(로그인 후 첫 화면). 넓은 화면은 components/home/WideHome.
 
-   ── 왜 허브인가 ──
-   기존 진입은 상단 워크플로우 탭 + 하단 4탭이었고, 회원을 고르기 전엔 OT/PT 탭이
-   나타나지도 않아 "지금 뭘 할 수 있는지"가 화면에 없었다. 허브는 그 지도를 만든다.
-   하단바는 그대로 둔다 — 허브는 첫 화면이고, 섹션 간 이동은 계속 하단바가 맡는다.
-
-   ── 숫자는 파생만 ──
-   조회 0건. 이미 로드된 members에서 viewFor로 센 수만 보여준다(예외: 출석 랭킹 카드 rpc 1콜 · 집계행만).
-   실적·이탈 위험처럼 추가 조회가 필요한 숫자는 넣지 않는다(허브가 느려지면 의미가 없다).
-
-   purge-safe: 색은 완성 클래스 정적 리터럴. 역할 색 위 글자는 -text 토큰(CLAUDE.md 규약).
+   2026-10-02 개편(OT · PT 회원 화면과 같은 모양 · 대표: "홈 탭부터"):
+     ① 인사(날짜 + 이름)
+     ② 오늘 카드 — 오늘 수업 수 · 오늘 신규 OT · 다음 수업 바로가기(OT면 준비하기, PT면 회원 대시보드)
+     ③ 바로가기 4칸 — OT 회원 · PT 회원 · 세일즈북 · 내 실적(예전 '실적 보기' 줄 카드를 칸으로)
+     ④ 이번 달 출석 랭킹 ⑤ 신규 회원 등록 · 지난 회원
+   조회: 오늘 예약 1콜 + 출석 랭킹 rpc 1콜(둘 다 오늘·집계만이라 가볍다). 회원 수는 이미 로드된 members에서 센다.
+   범위: 내 담당(직접 맡은 회원이 없는 대표는 센터 전체 · WideHome과 같은 규칙).
+   purge-safe: 색은 완성 클래스 정적 리터럴. 역할 색 위 글자는 -text 토큰.
    ========================================================================= */
 "use client";
 
-import { CalendarDays, ChevronRight, Award, Presentation, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Award, CalendarDays, ChevronRight, Presentation, UserPlus } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 import Card from "@/components/ui/Card";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { viewFor } from "@/lib/memberStatus";
+import { hrefForMember } from "@/lib/nav";
 import AttendanceRanking from "@/components/home/AttendanceRanking";
 
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
+const ymdKST = (d) => new Date(d.getTime() + 9 * 3600000).toISOString().slice(0, 10);
+const hhmm = (iso) => new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
 
 function Tile({ icon: Icon, label, title, desc, tone, onClick }) {
   return (
     <Card as="button" interactive padding="md" onClick={onClick}
-      className="flex min-h-[124px] flex-col items-start justify-between text-left active:scale-[0.97]">
-      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}>
-        {Icon ? <Icon className="h-5 w-5" strokeWidth={2.2} /> : <span className="text-[13px] font-extrabold">{label}</span>}
+      className="flex min-h-[112px] flex-col items-start justify-between text-left active:scale-[0.98]">
+      <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tone}`}>
+        {Icon ? <Icon className="h-[18px] w-[18px]" aria-hidden="true" /> : <span className="text-[12px] font-bold">{label}</span>}
       </span>
       <span className="mt-3 block">
-        <span className="block text-[15px] font-extrabold tracking-[-0.02em] text-ink">{title}</span>
-        <span className="mt-1 block text-[12px] font-medium leading-relaxed text-muted">{desc}</span>
+        <span className="block text-[15px] font-bold tracking-[-0.02em] text-ink">{title}</span>
+        <span className="mt-0.5 block text-[13px] text-muted">{desc}</span>
       </span>
     </Card>
+  );
+}
+
+function Stat({ label, value, sub, accent = false }) {
+  return (
+    <div className="rounded-xl bg-elevate px-3.5 py-3">
+      <span className="block text-[12px] text-muted">{label}</span>
+      <span className={`mt-0.5 block text-[18px] font-bold tracking-[-0.02em] ${accent ? "text-primary-strong" : "text-ink"}`}>{value}</span>
+      {sub && <span className="block truncate text-[12px] text-sub">{sub}</span>}
+    </div>
   );
 }
 
@@ -43,40 +58,72 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
     if (v in counts) counts[v] += 1;
   }
 
+  // 오늘 예약(내 담당 · 취소 제외). 키 없는 데모 모드는 빈 채로.
+  const centerWide = Boolean(uid) && members.length > 0 && !members.some((m) => m.trainer_id === uid);
+  const byId = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
+  const [appts, setAppts] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase || !uid) return;
+      const startMs = new Date(`${ymdKST(new Date())}T00:00:00+09:00`).getTime();
+      let q = supabase.from("appointment").select("id, user_id, start_at, status").neq("status", "canceled")
+        .gte("start_at", new Date(startMs).toISOString()).lt("start_at", new Date(startMs + 86400000).toISOString())
+        .order("start_at", { ascending: true });
+      if (!centerWide) q = q.eq("trainer_id", uid);
+      const { data, error } = await q;
+      if (error) console.error("오늘 예약 조회 실패", error);
+      if (!cancelled) setAppts(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [uid, centerWide]);
+
   const now = new Date();
   const dateLabel = `${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAY[now.getDay()]}요일`;
+  const list = appts || [];
+  const done = list.filter((a) => a.status === "done").length;
+  const isOt = (a) => { const m = byId.get(a.user_id); return Boolean(m && viewFor(m) === "ot"); };
+  const newOt = list.filter(isOt).length;
+  const next = list.find((a) => a.status !== "done" && new Date(a.start_at).getTime() > now.getTime() - 30 * 60000) || null;
+  const nextMember = next ? byId.get(next.user_id) : null;
+  const nextIsOt = next ? isOt(next) : false;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 break-keep text-pretty">
       <div>
-        <p className="text-[12px] font-medium text-muted">{dateLabel}</p>
-        <h1 className="mt-1 text-[24px] font-extrabold tracking-[-0.03em] text-ink">
-          {trainerName ? `${trainerName} 트레이너님` : "오늘도 반갑습니다"}
+        <p className="text-[13px] text-muted">{dateLabel}</p>
+        <h1 className="mt-0.5 text-[22px] font-bold tracking-[-0.03em] text-ink">
+          {trainerName ? `${trainerName} 트레이너님` : "오늘도 반가워요"}
         </h1>
       </div>
 
-      <Card as="button" interactive padding="sm" onClick={() => onGo(8)}
-        className="flex w-full items-center justify-between gap-3 text-left active:scale-[0.99]">
-        <span className="flex min-w-0 items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-strong">
-            <Award className="h-4 w-4" strokeWidth={2.2} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[11px] font-bold text-muted">이번 달 내 실적</span>
-            <span className="block truncate text-[14px] font-extrabold tracking-[-0.02em] text-ink">
-              등록과 재등록 현황 보기
+      {/* 오늘 — 숫자 2칸 + 다음 수업 바로가기 */}
+      <Card as="section">
+        <SectionTitle icon={CalendarDays} aside={
+          <button type="button" onClick={() => onGo(9)} className="inline-flex min-h-[32px] items-center gap-0.5 font-semibold text-sub hover:text-ink">
+            스케줄 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        }>오늘</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          <Stat label="오늘 수업" value={appts ? `${list.length}건` : "…"} sub={list.length ? `완료 ${done} · 남음 ${list.length - done}` : appts ? "예약 없음" : null} />
+          <Stat label="오늘 신규 OT" value={appts ? `${newOt}명` : "…"} accent={newOt > 0}
+            sub={newOt ? list.filter(isOt).map((a) => byId.get(a.user_id)?.name).filter(Boolean).join(", ") : appts ? "없음" : null} />
+        </div>
+        {next && (
+          <Link href={nextIsOt ? `/ot/${next.user_id}/prep` : hrefForMember(next.user_id, nextMember ? viewFor(nextMember) : "pt")}
+            className="mt-3 flex min-h-[56px] items-center justify-between gap-3 rounded-xl bg-primary px-4 text-white no-underline transition hover:bg-primary-strong">
+            <span className="min-w-0">
+              <span className="block text-[12px] text-white/80">다음 수업 · {hhmm(next.start_at)}</span>
+              <span className="block truncate text-[16px] font-bold tracking-[-0.02em]">
+                {nextMember?.name || "회원"} · {nextIsOt ? "OT 준비하기" : "회원 자료 보기"}
+              </span>
             </span>
-          </span>
-        </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-line-strong" />
+            <ArrowRight className="h-5 w-5 shrink-0" aria-hidden="true" />
+          </Link>
+        )}
       </Card>
 
-      <div className="stagger grid grid-cols-2 gap-3">
-        <Tile
-          icon={CalendarDays} title="오늘" desc="스케줄과 오늘 할 일"
-          tone="bg-primary-soft text-primary-strong"
-          onClick={() => onGo(9)}
-        />
+      <div className="grid grid-cols-2 gap-3">
         <Tile
           label="OT" title="OT 회원" desc={counts.ot > 0 ? `${counts.ot}명 · 등록 전` : "등록 전 회원"}
           tone="bg-ot-soft text-ot-text"
@@ -87,11 +134,16 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
           tone="bg-pt-soft text-pt-text"
           onClick={() => onGo(0, { segment: "pt" })}
         />
-        {/* 설정은 하단바에 있어 타일 자리를 세일즈북(사례 보관함)에 내준다(2026-10-02 · 폰엔 하단바 칸이 없음). */}
+        {/* 설정은 하단바에 있어 타일 자리를 세일즈북(사례 보관함)에 내준다(폰엔 하단바 칸이 없음). */}
         <Tile
           icon={Presentation} title="세일즈북" desc="발표 자료 · 변화 사례"
-          tone="bg-bg text-sub"
+          tone="bg-elevate text-sub"
           onClick={() => onGo("salesbook")}
+        />
+        <Tile
+          icon={Award} title="내 실적" desc="등록 · 재등록 현황"
+          tone="bg-primary-soft text-primary-strong"
+          onClick={() => onGo(8)}
         />
       </div>
 
@@ -99,22 +151,17 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
       <AttendanceRanking members={members} uid={uid} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          onClick={onAdd}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-xs font-semibold text-sub shadow-sm transition hover:border-primary hover:text-primary-strong active:scale-95"
-        >
-          <UserPlus className="h-3.5 w-3.5" /> 신규 회원 등록
+        <button type="button" onClick={onAdd}
+          className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-line bg-card px-3.5 text-[13px] font-semibold text-ink shadow-sm transition hover:border-line-strong active:scale-[0.98]">
+          <UserPlus className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 신규 회원 등록
         </button>
         {counts.inactive > 0 && (
-          <button
-            onClick={() => onGo(0, { segment: "inactive" })}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-xs font-semibold text-muted shadow-sm transition hover:text-ink active:scale-95"
-          >
+          <button type="button" onClick={() => onGo(0, { segment: "inactive" })}
+            className="inline-flex min-h-[40px] items-center rounded-lg px-3 text-[13px] text-sub transition hover:text-ink">
             지난 회원 {counts.inactive}명
           </button>
         )}
       </div>
-
     </div>
   );
 }
