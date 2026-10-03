@@ -213,6 +213,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
         proposed,
         next: form.result === "continue" ? "continue" : null,
         feedback_v: 2,
+        feedbackAt: new Date().toISOString(), // 저장 시각 — DB 트리거가 ot_log.closing_recorded_at(서버 시각)을 채우는 신호 · 대표 아침 보고서 어제 결과
       };
       const payload = {
         user_id: member.id,

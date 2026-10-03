@@ -33,6 +33,7 @@ import RegisterDueToday from "@/components/views/RegisterDueToday";
 import ChurnRiskToday from "@/components/views/ChurnRiskToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
 import ReapproachToday from "@/components/views/ReapproachToday";
+import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import PriceSheet from "@/components/salesbook/PriceSheet";
 import { useSalesbookAssets } from "@/components/salesbook/DeckLauncher";
 
@@ -250,6 +251,9 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
           </Link>
         )}
       </Card>
+
+      {/* 대표 피드백 — 편집 목록과 무관하게, 확인 안 한 게 있을 때만 */}
+      <div className="[&>section]:mb-0 empty:hidden"><OwnerFeedbackToday members={members} uid={uid} /></div>
 
       {editing ? (
         <Card as="section" className="space-y-5">

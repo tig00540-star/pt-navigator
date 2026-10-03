@@ -1421,6 +1421,32 @@ async function fetchCenterMachines(request) {
   return Array.isArray(data) ? data : [];
 }
 
+// 대표 피드백(2026-10-03) — 대표가 아침 보고서에서 이 회원 건에 남긴 말(최근 3개). 트레이너 토큰 RLS(받는 트레이너 · 대표만 읽힘).
+// 표가 아직 없거나(SQL 전) 실패하면 조용히 빈 배열 — 리포트 생성은 막지 않는다.
+async function fetchOwnerFeedback(request, memberId) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const authz = request.headers.get("authorization") || "";
+  const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
+  if (!url || !anon || !token || typeof memberId !== "string") return [];
+  const sb = createClient(url, anon, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await sb.from("owner_feedback").select("body, ref_ymd, kind, created_at")
+    .eq("member_id", memberId).order("created_at", { ascending: false }).limit(3);
+  if (error) return [];
+  return Array.isArray(data) ? data : [];
+}
+
+function ownerFeedbackBlock(rows) {
+  if (!rows.length) return "";
+  const KO = { ot: "OT", rereg: "재등록", new: "신규 등록", other: "" };
+  return `[★대표 피드백 — 이 회원 건에 대표가 남긴 말 · 반드시 반영]
+${rows.map((f) => `- ${f.ref_ymd || String(f.created_at).slice(0, 10)} ${KO[f.kind] || ""} 건: "${String(f.body).slice(0, 400)}"`).join("\n")}
+ → 이 피드백이 가리키는 점을 이번 리포트의 클로징 · 대사 · 30초 요약('오늘 꼭')에 녹여라. 피드백 문장을 그대로 옮기거나 대표를 언급하지는 마라(트레이너가 회원 앞에서 쓰는 대사다).`;
+}
+
 // 프롬프트용 장비 블록(소프트). 종류별 그룹 · 규격 병기 · 상한 120. 비면 ""(POST에서 이미 걸러 미호출).
 function equipmentBlock(machines) {
   const list = (Array.isArray(machines) ? machines : []).slice(0, 120);
@@ -1493,10 +1519,13 @@ export async function POST(request) {
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute·salesbook 제외(회원 대면엔 불필요).
   const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture") ? [] : await fetchCenterMachines(request);
+  // 대표 피드백 — 리포트 3종(first · second · reregister)만.
+  const fbBlock = REPORT_PHASES.has(phase) ? ownerFeedbackBlock(await fetchOwnerFeedback(request, member?.id)) : "";
+  const withFb = fbBlock ? `${basePrompt}\n\n${fbBlock}` : basePrompt;
   const prompt =
     (phase === "acute" || centerMachines.length === 0)
-      ? basePrompt
-      : `${equipmentBlock(centerMachines)}\n[기구 활용] 운동 구성은 위 [보유 장비]를 우선 활용하되, 목표에 더 맞는 장비가 목록에 없으면 그것도 함께 알려줘라(목록은 아직 추가 중일 수 있음). 규격의 중량 범위는 참고만 — 숫자 처방(세트·횟수·중량)은 여전히 금지, 방향까지만.\n\n${basePrompt}`;
+      ? withFb
+      : `${equipmentBlock(centerMachines)}\n[기구 활용] 운동 구성은 위 [보유 장비]를 우선 활용하되, 목표에 더 맞는 장비가 목록에 없으면 그것도 함께 알려줘라(목록은 아직 추가 중일 수 있음). 규격의 중량 범위는 참고만 — 숫자 처방(세트·횟수·중량)은 여전히 금지, 방향까지만.\n\n${withFb}`;
   // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120,
   // 단 D-3 케이스 동봉 시 case_feedback ~300~500토큰 더 → 6144(잘림 방지).
   // salesbook은 거절5·클로징시퀀스 없어 가볍지만 한국어 총량 은근 커 4096(꼬리 잘림 마진 · max는 상한이라 과금 무관).

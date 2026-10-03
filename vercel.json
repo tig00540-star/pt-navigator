@@ -1,7 +1,20 @@
 {
   "crons": [
-    { "path": "/api/cron/sync-notion", "schedule": "0 21 * * *" },
-    { "path": "/api/cron/weekly-report", "schedule": "0 21 * * 0" },
-    { "path": "/api/cron/charge-subscriptions", "schedule": "0 19 * * *" }
+    {
+      "path": "/api/cron/sync-notion",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-report",
+      "schedule": "0 21 * * 0"
+    },
+    {
+      "path": "/api/cron/charge-subscriptions",
+      "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/cron/owner-daily-report",
+      "schedule": "0 0 * * *"
+    }
   ]
 }

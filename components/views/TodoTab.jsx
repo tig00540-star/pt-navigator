@@ -13,6 +13,7 @@ import UnclosedClosingToday from "@/components/views/UnclosedClosingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
 import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
+import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { ListChecks } from "lucide-react";
 
@@ -25,6 +26,9 @@ export default function TodoTab({ members, uid, onSelect }) {
         <SectionTitle icon={ListChecks} className="mb-0">오늘 할 일</SectionTitle>
         <p className="mt-0.5 text-[13px] text-sub">다시 연락할 회원 · 재등록 타이밍 · 직접 적은 메모를 한 곳에서 봐요.</p>
       </div>
+
+      {/* 대표 피드백(아침 보고서에서 대표가 남긴 것) — 맨 위 */}
+      <OwnerFeedbackToday members={members} uid={uid} />
 
       {/* 자동 1~3 — 기존 위젯 재사용(회원 탭에서 이관). 탭 목적지만 감싸서 지정. */}
       <ReapproachToday members={scoped} onSelect={(id) => onSelect(id, 1)} />
