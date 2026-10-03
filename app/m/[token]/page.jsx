@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Flame, Trophy, Sparkles } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
+import MyPtCard from "@/components/member/MyPtCard";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { holidayName } from "@/lib/holidays";
 import { buildExerciseSeries } from "@/lib/workout";
@@ -971,6 +972,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           <>
         {/* 수업일지 확인 유도 — 배너(항상) + pending≥3 소프트 모달. onReload=loadHome(logs 재조회). */}
         <ConfirmFlow logs={logs} onReload={onReloadLogs} />
+
+        {/* 내 PT — 남은 수업 · 다음 수업 · 목표 로드맵(2026-10-03 · 자기완결 · 표 없으면 숨김) */}
+        <MyPtCard supabase={memberSupabase} />
 
         {/* 오운완 카드 — 최상단. 누적·연속은 RPC(ounwan) 값만 사용(§2 규칙).
             '오늘 했는지'만 로컬 파생 — 오늘은 항상 최근 조회 창 안이라 정확하다. */}

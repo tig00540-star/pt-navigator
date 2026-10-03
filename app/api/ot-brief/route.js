@@ -10,7 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
 import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
-import { tidyDeep } from "@/lib/tidyText";
+import { tidyDeep, NO_DASH_RULE } from "@/lib/tidyText";
 import { attachPkgSnapshots } from "@/lib/pkgRef";
 
 export const runtime = "nodejs";
@@ -626,6 +626,13 @@ function reregisterPrompt(member, ctx, packages = []) {
   const tp = c.this_period || null;
   const pr = c.prev_rereg || null;
   const RES_KO = { success: "재등록함", hold: "보류했다가 이어감", fail: "안 하기로 했다가 다시 옴", none: "기록 없음" };
+  // 목표 로드맵(2026-10-03) — 회원 전용 페이지에 보이는 단계(visible이면 회원이 이미 본 그림).
+  const rmap = c.roadmap && Array.isArray(c.roadmap.stages) && c.roadmap.stages.length ? c.roadmap : null;
+  const rmCur = rmap ? Math.min(Math.max(Number(rmap.current) || 0, 0), rmap.stages.length - 1) : 0;
+  const roadmapBlock = rmap ? `
+[목표 로드맵${rmap.visible ? " — 회원 전용 페이지에서 회원이 보고 있음" : ""}] ${rmap.title ? `${rmap.title} · ` : ""}${rmap.stages.map((t, i) => `${i + 1}. ${t}${i < rmCur ? "(완료)" : i === rmCur ? "(지금)" : ""}`).join(" → ")}
+ ※ next_roadmap은 이 로드맵의 다음 단계(${rmap.stages[rmCur + 1] || "유지"})와 맞춰라. proven · 요청은 '지금 ${rmCur + 1}단계까지 왔고, 다음은 ○○'처럼 회원이 본 그림과 같은 말로. 로드맵에 없는 단계를 새로 지어내지 마라.
+` : "";
   const roundBlock = round >= 2 ? `
 [★이번이 ${round}번째 재등록 — 지난 재등록 이후를 중심으로]
  이번 계약 기간(${g3(tp?.started)}부터): 진행 수업=${g3(tp?.sessions_done)}회
@@ -660,7 +667,7 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
  인바디 변화=${ib.length ? ib.map((x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`).join(", ") : "없음"}
  운동 무게 변화=${wc.length ? wc.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}
 [처음 수업 일지(시작점)]
-${firstLogs.length ? firstLogs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}${roundBlock}
+${firstLogs.length ? firstLogs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}${roundBlock}${roadmapBlock}
 [회원 만족도 — 트레이너 입력] 수준=${sat?.level ? SAT_KO[sat.level] || sat.level : "입력 없음"}, 회원이 한 말=${g3(sat?.quote)}
  ※ '아쉬워함'이면 감추지 말고 왜 아직인지 + 앞으로 어떻게 달라지게 할지를 정직하게(objection low_effect와 같은 결).
 
@@ -1027,6 +1034,36 @@ const INBODY_LABELS = [
   ["bmr", "기초대사량", "kcal"],
   ["visceral_fat_level", "내장지방", "lv"],
 ];
+// phase="roadmap" — 회원 전용 페이지 '나의 목표 로드맵' 초안(2026-10-03). 회원이 직접 읽는다(SALESBOOK_PREAMBLE).
+// 트레이너가 고치고 '회원에게 보이기'를 켜야 보인다. 숫자는 앱이 계산한 것만 근거로.
+function roadmapPrompt(member, ctx) {
+  const m = member || {};
+  const c = ctx || {};
+  const ib = Array.isArray(c.inbody_change) ? c.inbody_change.filter(Boolean) : [];
+  const wc = Array.isArray(c.weight_change) ? c.weight_change.filter(Boolean) : [];
+  return `[상황] PT 회원의 '나의 목표 로드맵'을 만든다. 회원 전용 페이지에 단계 목록으로 보이고, 회원이 '지금 어디쯤이고 앞으로 무엇이 남았는지'를 한눈에 본다.
+트레이너가 먼저 고친 뒤 회원에게 공개한다.
+
+[회원] name=${g(m.name)}, age=${g(m.age)}, gender=${g(m.gender)}, goal=${g(m.goal)}, pain=${g(m.pain)}
+[현재 PT 방향] ${g(m.pt_direction)}
+[진행] 지금까지 수업 ${g(c.sessions_done)}회 · 함께한 기간 ${c.months ? `약 ${c.months}개월` : "없음"}
+[인바디 변화] ${ib.length ? ib.map((x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`).join(", ") : "없음"}
+[운동 무게 변화] ${wc.length ? wc.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}
+[재등록 때 정한 다음 단계] ${g(c.next_roadmap)}
+[재등록 때 그린 앞으로의 모습] ${g(c.future_change)}
+
+[만드는 법]
+- 단계 3~5개. 목표(goal)와 불편 부위(pain)에서 시작해 '혼자서도 유지'로 끝나는 흐름(예: 자세 잡기 → 근력 쌓기 → 체지방 정리 → 혼자서도 유지하기).
+- 각 단계 title: 회원 말로 10자 안팎(전문용어 금지 · "코어 안정화"보다 "몸통 힘 기르기").
+- 각 단계 detail: 그 단계를 지나면 회원 생활에서 무엇이 달라지는지 한 문장(40자 안팎 · "~해져요" 결 · 일상 장면으로).
+- current: 지금 단계 번호(0부터). 진행 · 변화 숫자를 근거로 판단하고, 근거가 없으면 0.
+- title(로드맵 제목): 회원 목표를 한 줄로(15자 안팎).
+- ★숫자 약속 금지(기간 · 감량 kg · 세트 · 횟수 · 중량). 의료 단정 금지. 등록 권유 · PT · 트레이너 · 함께 같은 세일즈 표현 금지(객관적 계획표다).
+${NO_DASH_RULE}
+아래 JSON만 출력(설명 · 마크다운 · 코드펜스 금지):
+{"title":"목표 한 줄","stages":[{"title":"단계 이름","detail":"달라지는 것 한 문장"}],"current":0}`;
+}
+
 function inbodyPrompt(member, inbody) {
   const m = member || {};
   const cur = (inbody && inbody.latest) || {};
@@ -1497,7 +1534,7 @@ export async function POST(request) {
   }
 
   const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
-  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture") {
+  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture" && phase !== "roadmap") {
     return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
   }
   // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
@@ -1515,10 +1552,11 @@ export async function POST(request) {
     : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)
     : phase === "first_salesbook" ? firstSalesbookPrompt(member, report, recommendedProgram, packages)
     : phase === "inbody" ? inbodyPrompt(member, inbody)
+    : phase === "roadmap" ? roadmapPrompt(member, ptContext)
     : phase === "posture" ? posturePrompt(member, posture)
     : acutePrompt(member, acuteContext);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute·salesbook 제외(회원 대면엔 불필요).
-  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture") ? [] : await fetchCenterMachines(request);
+  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture" || phase === "roadmap") ? [] : await fetchCenterMachines(request);
   // 대표 피드백 — 리포트 3종(first · second · reregister)만.
   const fbBlock = REPORT_PHASES.has(phase) ? ownerFeedbackBlock(await fetchOwnerFeedback(request, member?.id)) : "";
   const withFb = fbBlock ? `${basePrompt}\n\n${fbBlock}` : basePrompt;
@@ -1533,7 +1571,7 @@ export async function POST(request) {
   const thinkBudget = REPORT_PHASES.has(phase) ? 8000 : 0;
   const maxTokens = thinkBudget + (
     phase === "first" ? 8192
-    : phase === "inbody" || phase === "posture" ? 3072
+    : phase === "inbody" || phase === "posture" || phase === "roadmap" ? 3072
     : phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" ? 4096
     : (phase === "second" && boundedCases?.length ? 7168 : 6144)); // 2026-10-02 클로징 이유·가격 이유·오늘 안 되면(숙제) 추가로 출력이 길어짐
 
@@ -1554,7 +1592,7 @@ export async function POST(request) {
     const req = {
       model,
       max_tokens: maxTokens,
-      system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture") ? SALESBOOK_PREAMBLE : PREAMBLE,
+      system: (phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture" || phase === "roadmap") ? SALESBOOK_PREAMBLE : PREAMBLE,
       messages: [{ role: "user", content: userContent }],
     };
     req.thinking = thinkingFor(model);
@@ -1573,8 +1611,9 @@ export async function POST(request) {
     const REQUIRED_REG_SALESBOOK = ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"];
     const REQUIRED_FIRST_SALESBOOK = ["cover", "goal", "today", "roadmap", "closing"];
     const REQUIRED_INBODY = ["headline", "metrics", "diet", "lifestyle", "exercise", "why_now"];
+    const REQUIRED_ROADMAP = ["title", "stages"];
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
-    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "first_salesbook" ? REQUIRED_FIRST_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : [];
+    const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "first_salesbook" ? REQUIRED_FIRST_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : phase === "roadmap" ? REQUIRED_ROADMAP : [];
     const brief = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase)), packages);
     console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);
     let savedId = null;

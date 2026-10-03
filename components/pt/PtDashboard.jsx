@@ -17,6 +17,7 @@ import { buildExerciseSeries } from "@/lib/workout";
 import { hasVal } from "@/lib/format";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import RoadmapCard from "@/components/pt/RoadmapCard";
 
 const KST_TODAY = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const kstDay = (iso) => (iso ? new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10) : null);
@@ -222,6 +223,9 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
           <span className="block text-[16px] font-bold tracking-[-0.02em] text-ink">{todo.title}</span>
         </div>
       ))}
+
+      {/* 목표 로드맵 — 회원 전용 페이지 '내 PT'에 보이는 단계(트레이너가 만들고 켤 때만 · 2026-10-03) */}
+      <RoadmapCard member={member} contracts={contracts} logs={logs} />
 
       {changes.length > 0 && (
         <Card padding="none">

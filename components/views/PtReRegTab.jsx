@@ -281,7 +281,14 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     try {
       const recentFirst = [...done].reverse();
       const satisfaction = satLevel || satQuote.trim() ? { level: satLevel || null, quote: satQuote.trim() || null } : null;
+      // 목표 로드맵(트레이너가 만든 것 · 회원에게 보이든 아니든) — 리포트가 '지금 N단계 → 다음 단계'로 회원이 본 그림과 맞추게.
+      let roadmap = null;
+      if (supabase) {
+        const { data: rmRow } = await supabase.from("member_roadmap").select("title, stages, current, visible").eq("member_id", member.id).maybeSingle();
+        if (rmRow && Array.isArray(rmRow.stages) && rmRow.stages.length) roadmap = { title: rmRow.title || null, stages: rmRow.stages.map((s) => s.title), current: rmRow.current ?? 0, visible: Boolean(rmRow.visible) };
+      }
       const ptContext = {
+        roadmap,
         contract_count: ordered.length,
         round: curIdx + 1,
         remaining: { paid: rem.paid, service: rem.service },
