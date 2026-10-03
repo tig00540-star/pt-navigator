@@ -1,6 +1,6 @@
 // app/api/cron/owner-daily-report/route.js
 // -----------------------------------------------------------------------------
-// 대표 아침 보고서 — 매일 9시(KST · Vercel Cron "0 0 * * *" UTC) 센터(center 계정)마다 미리 만들어 둔다(2026-10-03).
+// 대표 아침 보고서 — 매일 아침 8시대(KST · Vercel Cron "0 23 * * *" UTC · Hobby 플랜은 그 1시간 안 아무 때나 → 9시 전엔 항상 준비) 센터(center 계정)마다 미리 만들어 둔다(2026-10-03).
 //   숫자 = lib/memberStatus ownerReportData(대표 화면과 같은 순수 함수 · 어제 결과 · 오늘 예정 포함)
 //   AI 총평 · 코칭 = lib/ownerReportAI(프리미엄 · 구독 활성 계정만)
 //   저장 = owner_daily_report(account_id, ymd) upsert — 대표 화면이 열자마자 읽는다(RLS: 대표만 읽기 · 쓰기는 여기 service_role만).

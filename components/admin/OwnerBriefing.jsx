@@ -7,7 +7,7 @@
    예전 위쪽 '오늘 챙길 것' 카드 3개는 ② 오늘 예정 · ④ 주의와 같은 회원을 한 번 더 보여줘서 합쳤다.
 
    데이터:
-   · 매일 9시(KST) 서버 예약 작업이 owner_daily_report에 미리 만든다(app/api/cron/owner-daily-report) → 열자마자 보인다.
+   · 매일 아침 8시대(KST) 서버 예약 작업이 owner_daily_report에 미리 만든다(app/api/cron/owner-daily-report) → 열자마자 보인다.
    · 그날 보고서가 아직 없으면(9시 전 · 작업 실패) 지금 데이터로 이 자리에서 만든다(예전 방식 · 하루 캐시).
    · 지난 보고서는 날짜를 골라 다시 본다(저장된 것만).
    · 숫자는 전부 lib/memberStatus ownerReportData(어제 결과 = dailyResults · 오늘 예정 = todayPlan). AI는 총평 · 코칭만.
@@ -205,10 +205,9 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
   const plan = d.plan || null;
   const reportYmd = d.dateISO || viewYmd;
   const genLabel = (() => {
-    if (source === "saved") return "아침 9시 기준";
-    if (!generatedAt) return "지금 기준";
+    if (!generatedAt) return source === "saved" ? "아침 보고서" : "지금 기준";
     const k = kstOf(generatedAt); const h = k.getUTCHours();
-    return `${h < 12 ? "오전" : "오후"} ${h % 12 || 12}시 ${String(k.getUTCMinutes()).padStart(2, "0")}분 기준`;
+    return `${source === "saved" ? "아침 보고서 · " : ""}${h < 12 ? "오전" : "오후"} ${h % 12 || 12}시 ${String(k.getUTCMinutes()).padStart(2, "0")}분 기준`;
   })();
   const what = (i) => (i.kind === "rereg" ? "재등록" : i.kind === "new" ? `${i.round ? `${i.round}차 OT ` : ""}신규 등록` : `${i.round ?? 1}차 OT`);
   const badge = (i) => (i.kind === "rereg" && i.result !== "success"
