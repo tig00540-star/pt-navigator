@@ -8,7 +8,7 @@ import { authHeader } from "@/lib/authHeader";
 import { invalidateCenterMachines } from "@/lib/centerMachines";
 import { supabase } from "@/lib/supabaseClient";
 import { useAccount } from "@/lib/useAccount";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
@@ -128,33 +128,33 @@ export default function CenterMachineSettings() {
     <div className="space-y-4">
       {isOwner ? (
         <Card as="section">
-          <Eyebrow icon={Dumbbell}>보유 장비</Eyebrow>
+          <SectionTitle icon={Dumbbell}>보유 장비</SectionTitle>
           <div className="mt-3 space-y-3">
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">장비 이름 *</span>
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">장비 이름 *</span>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={saving} placeholder="레그프레스 · 덤벨 세트 …" className={inputCls} />
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-muted">종류</span>
+                <span className="mb-1 block text-[12.5px] font-medium text-muted">종류</span>
                 <select value={kind} onChange={(e) => setKind(e.target.value)} disabled={saving} className={inputCls}>
                   {KINDS.map((k) => <option key={k.v} value={k.v}>{k.label}</option>)}
                 </select>
               </label>
               <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-muted">브랜드 <span className="text-muted">(선택)</span></span>
+                <span className="mb-1 block text-[12.5px] font-medium text-muted">브랜드 <span className="text-muted">(선택)</span></span>
                 <input type="text" value={brand} onChange={(e) => setBrand(e.target.value)} disabled={saving} placeholder="테크노짐 …" className={inputCls} />
               </label>
             </div>
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">규격·중량 <span className="text-muted">(선택)</span></span>
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">규격·중량 <span className="text-muted">(선택)</span></span>
               <input type="text" value={spec} onChange={(e) => setSpec(e.target.value)} disabled={saving} placeholder="예: 덤벨 2.5~40kg (덤벨은 한 항목으로)" className={inputCls} />
             </label>
             <label className="block">
               <span className="mb-1 flex items-center justify-between gap-2">
-                <span className="text-[11px] font-medium text-muted">실행 큐 <span className="text-muted">(한 줄 = 큐 1개)</span></span>
+                <span className="text-[12.5px] font-medium text-muted">실행 큐 <span className="text-muted">(한 줄 = 큐 1개)</span></span>
                 <button type="button" onClick={genCues} disabled={saving || cueLoading}
-                  className="inline-flex items-center gap-1 rounded-lg border border-line bg-elevate px-2 py-1 text-[11px] font-semibold text-primary-strong transition hover:border-primary disabled:opacity-50">
+                  className="inline-flex items-center gap-1 rounded-lg border border-line bg-elevate px-2 py-1 text-[12.5px] font-semibold text-primary-strong transition hover:border-primary disabled:opacity-50">
                   <Sparkles className="h-3.5 w-3.5" /> {cueLoading ? "생성 중…" : "AI 초안 생성"}
                 </button>
               </span>
@@ -170,19 +170,19 @@ export default function CenterMachineSettings() {
                 <Button variant="ghost" size="md" onClick={resetForm} disabled={saving}><X className="h-4 w-4" /> 취소</Button>
               )}
             </div>
-            <p className="text-[10px] leading-relaxed text-muted">여기 등록한 장비를 AI가 1·2차 OT·재등록 루틴에 &lsquo;있는 장비&rsquo;로 반영합니다. 덤벨·바벨은 종류를 &lsquo;프리웨이트&rsquo;로.</p>
+            <p className="text-[12px] leading-relaxed text-muted">여기 등록한 장비를 AI가 1·2차 OT·재등록 루틴에 &lsquo;있는 장비&rsquo;로 반영합니다. 덤벨·바벨은 종류를 &lsquo;프리웨이트&rsquo;로.</p>
           </div>
         </Card>
       ) : (
         /* 비owner도 카드로 — 제목이 카드 안이라는 규칙을 두 분기 모두 지키게. */
         <Card as="section">
-          <Eyebrow icon={Dumbbell}>보유 장비</Eyebrow>
-          <p className="mt-2 text-[11px] text-muted">장비는 대표가 관리합니다. (열람 전용)</p>
+          <SectionTitle icon={Dumbbell}>보유 장비</SectionTitle>
+          <p className="mt-2 text-[12.5px] text-muted">장비는 대표가 관리합니다. (열람 전용)</p>
         </Card>
       )}
 
       <Card as="section">
-        <Eyebrow icon={Dumbbell}>등록된 장비</Eyebrow>
+        <SectionTitle icon={Dumbbell}>등록된 장비</SectionTitle>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
@@ -192,18 +192,18 @@ export default function CenterMachineSettings() {
             {cats.map((cat) => (
               <div key={cat}>
                 <div className="flex items-center gap-1.5 py-1">
-                  <span className="text-[11px] font-semibold tracking-label-ko text-muted">{cat}</span>
-                  <span className="rounded-full bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">{groups[cat].length}</span>
+                  <span className="text-[12.5px] font-semibold tracking-label-ko text-muted">{cat}</span>
+                  <span className="rounded-full bg-elevate px-1.5 py-0.5 text-[12px] font-semibold text-sub">{groups[cat].length}</span>
                 </div>
                 <ul className="mt-1.5 flex flex-wrap gap-2">
                   {groups[cat].map((r) => (
                     <li key={r.id} className="flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5">
                       <span className="text-sm text-ink">{[r.brand, r.name].filter(Boolean).join(" ")}{r.spec ? ` · ${r.spec}` : ""}</span>
-                      {r.cues?.length > 0 && <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">큐 {r.cues.length}</span>}
+                      {r.cues?.length > 0 && <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[12px] font-semibold text-primary-strong">큐 {r.cues.length}</span>}
                       {isOwner && (confirmId === r.id ? (
                         <span className="flex items-center gap-1">
-                          <button onClick={() => remove(r.id)} className="rounded border border-rose-500/40 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">삭제?</button>
-                          <button onClick={() => setConfirmId(null)} className="text-[10px] text-muted">취소</button>
+                          <button onClick={() => remove(r.id)} className="rounded border border-rose-500/40 bg-rose-500/10 px-1.5 py-0.5 text-[12px] font-bold text-rose-700">삭제?</button>
+                          <button onClick={() => setConfirmId(null)} className="text-[12px] text-muted">취소</button>
                         </span>
                       ) : (
                         <span className="flex items-center gap-1">

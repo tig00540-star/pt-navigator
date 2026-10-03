@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { BookMarked, Plus, Trash2, Pencil, X, ExternalLink, Search, ChevronDown, ChevronRight, Star } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
@@ -140,23 +140,23 @@ export default function TrainerLibrary() {
     <div className="space-y-4">
       {/* 입력(신규/수정 겸용) */}
       <Card as="section">
-        <Eyebrow icon={BookMarked}>내 라이브러리</Eyebrow>
+        <SectionTitle icon={BookMarked}>내 라이브러리</SectionTitle>
         <div className="mt-3 space-y-3">
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">카테고리 <span className="text-muted">(선택)</span></span>
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">카테고리 <span className="text-muted">(선택)</span></span>
             <input list="lib-cats" type="text" value={category} onChange={(e) => setCategory(e.target.value)} disabled={saving} placeholder="거북목 · 라운드숄더 …" className={inputCls} />
             <datalist id="lib-cats">{existingCats.map((c) => <option key={c} value={c} />)}</datalist>
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">제목 *</span>
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">제목 *</span>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} disabled={saving} placeholder="거북목 교정 스트레칭" className={inputCls} />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">링크 *</span>
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">링크 *</span>
             <input type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} disabled={saving} placeholder="https://youtube.com/..." className={inputCls} />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">메모 <span className="text-muted">(선택)</span></span>
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">메모 <span className="text-muted">(선택)</span></span>
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="어떤 상황에 쓰는지" className={inputCls} />
           </label>
           <div className="flex gap-2">
@@ -175,7 +175,7 @@ export default function TrainerLibrary() {
 
       {/* 리스트(카테고리별 그룹) */}
       <Card as="section">
-        <Eyebrow icon={BookMarked}>저장한 자료</Eyebrow>
+        <SectionTitle icon={BookMarked}>저장한 자료</SectionTitle>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
@@ -196,8 +196,8 @@ export default function TrainerLibrary() {
                   <div key={cat}>
                     <button type="button" onClick={() => toggleCat(cat)} className="flex w-full items-center gap-1.5 py-1 text-left">
                       {isOpen(cat) ? <ChevronDown className="h-3.5 w-3.5 text-muted" /> : <ChevronRight className="h-3.5 w-3.5 text-muted" />}
-                      <span className="text-[11px] font-semibold tracking-label-ko text-muted">{cat}</span>
-                      <span className="rounded-full bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">{groups[cat].length}</span>
+                      <span className="text-[12.5px] font-semibold tracking-label-ko text-muted">{cat}</span>
+                      <span className="rounded-full bg-elevate px-1.5 py-0.5 text-[12px] font-semibold text-sub">{groups[cat].length}</span>
                     </button>
                     {isOpen(cat) && (
                       <ul className="mt-1.5 space-y-2">
@@ -209,14 +209,14 @@ export default function TrainerLibrary() {
                                   <span className="truncate">{r.title}</span><ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
                                 </a>
                                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                                  <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{SOURCE_LABEL[r.source] || "링크"}</span>
-                                  {r.note && <span className="text-[11px] text-muted">{r.note}</span>}
+                                  <span className="rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-sub">{SOURCE_LABEL[r.source] || "링크"}</span>
+                                  {r.note && <span className="text-[12.5px] text-muted">{r.note}</span>}
                                 </div>
                               </div>
                               {confirmId === r.id ? (
                                 <div className="flex shrink-0 items-center gap-1">
-                                  <button onClick={() => remove(r.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
-                                  <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[10px] font-medium text-sub transition hover:text-ink">취소</button>
+                                  <button onClick={() => remove(r.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[12px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
+                                  <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[12px] font-medium text-sub transition hover:text-ink">취소</button>
                                 </div>
                               ) : (
                                 <div className="flex shrink-0 items-center gap-1">

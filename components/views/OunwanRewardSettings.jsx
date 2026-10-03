@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { Trophy, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
@@ -98,13 +98,13 @@ export default function OunwanRewardSettings() {
   return (
     <div className="space-y-4">
       <Card as="section">
-        <Eyebrow icon={Trophy}>포상 만들기</Eyebrow>
-        <p className="mt-2 text-[11px] leading-relaxed text-muted">
+        <SectionTitle icon={Trophy}>포상 만들기</SectionTitle>
+        <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
           회원이 오운완을 누적 N회 채우면 줄 보상이에요. 회원 전용 페이지에 진행 바로 표시됩니다.
         </p>
         <div className="mt-3 space-y-3">
           <label className="block sm:max-w-[12rem]">
-            <span className="mb-1 block text-[11px] font-medium text-muted">달성 횟수 *</span>
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">달성 횟수 *</span>
             <NumberInput
               value={milestone}
               onValueChange={setMilestone}
@@ -113,7 +113,7 @@ export default function OunwanRewardSettings() {
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">포상 내용 *</span>
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">포상 내용 *</span>
             <input
               type="text"
               value={rewardText}
@@ -130,7 +130,7 @@ export default function OunwanRewardSettings() {
       </Card>
 
       <Card as="section">
-        <Eyebrow icon={Trophy}>등록한 포상</Eyebrow>
+        <SectionTitle icon={Trophy}>등록한 포상</SectionTitle>
         {loading ? (
           <p className="mt-3 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
@@ -142,7 +142,7 @@ export default function OunwanRewardSettings() {
                 key={r.id}
                 className="flex items-center gap-2 rounded-xl border border-line bg-elevate px-3 py-2.5"
               >
-                <span className="shrink-0 rounded-md bg-primary-soft px-2 py-0.5 font-mono text-[11px] font-bold text-primary-strong">
+                <span className="shrink-0 rounded-md bg-primary-soft px-2 py-0.5 font-mono text-[12.5px] font-bold text-primary-strong">
                   {r.milestone}회
                 </span>
                 <span className={r.active ? "truncate text-sm font-semibold text-ink" : "truncate text-sm font-medium text-muted line-through"}>
@@ -152,15 +152,15 @@ export default function OunwanRewardSettings() {
                 <button
                   onClick={() => toggleActive(r)}
                   className={r.active
-                    ? "ml-auto shrink-0 rounded-lg bg-primary-soft px-2 py-1 text-[11px] font-bold text-primary-strong ring-1 ring-primary/30"
-                    : "ml-auto shrink-0 rounded-lg bg-card px-2 py-1 text-[11px] font-medium text-muted ring-1 ring-line"}
+                    ? "ml-auto shrink-0 rounded-lg bg-primary-soft px-2 py-1 text-[12.5px] font-bold text-primary-strong ring-1 ring-primary/30"
+                    : "ml-auto shrink-0 rounded-lg bg-card px-2 py-1 text-[12.5px] font-medium text-muted ring-1 ring-line"}
                 >
                   {r.active ? "노출중" : "숨김"}
                 </button>
                 {confirmId === r.id ? (
                   <button
                     onClick={() => remove(r)}
-                    className="shrink-0 rounded-lg bg-primary px-2 py-1 text-[11px] font-bold text-white"
+                    className="shrink-0 rounded-lg bg-primary px-2 py-1 text-[12.5px] font-bold text-white"
                   >
                     삭제?
                   </button>
@@ -177,7 +177,7 @@ export default function OunwanRewardSettings() {
             ))}
           </ul>
         )}
-        <p className="mt-3 text-[10px] leading-relaxed text-muted">
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">
           숨김으로 두면 회원 전용 페이지에 안 보여요(기록은 남습니다). 지급 여부 기록은 준비 중입니다.
         </p>
       </Card>

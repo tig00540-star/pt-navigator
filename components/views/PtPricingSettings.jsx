@@ -7,11 +7,11 @@
    이 가격이 B(1차 OT AI) 프로그램 추천의 '내 실제 가격' 재료가 된다.
    ========================================================================= */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tag, Plus, Trash2, Pencil, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
@@ -25,6 +25,11 @@ export default function PtPricingSettings() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null); // null=신규 · id=수정
   const [confirmId, setConfirmId] = useState(null);  // 삭제 인라인 확인 대상
+  // 입력 폼은 '패키지 추가'를 누르거나 수정할 때만 연다(2026-10-03 · 폼이 화면을 다 차지해 등록한 패키지가 안 보였다). 패키지가 없으면 처음부터 열림.
+  const [formOpen, setFormOpen] = useState(false);
+  const formRef = useRef(null);
+  const showForm = formOpen || editingId != null || (!loading && rows.length === 0);
+  const openForm = () => { setFormOpen(true); setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 30); };
   // 폼 필드
   const [name, setName] = useState("");
   const [sessions, setSessions] = useState("");
@@ -61,6 +66,7 @@ export default function PtPricingSettings() {
     return () => { cancelled = true; };
   }, []);
   const resetForm = () => {
+    setFormOpen(false);
     setName(""); setSessions(""); setDurationLabel(""); setPrice("");
     setListPrice(""); setNote(""); setActive(true); setSort("");
     setEditingId(null);
@@ -136,6 +142,7 @@ export default function PtPricingSettings() {
     setActive(r.active !== false);
     setSort(r.sort == null ? "" : String(r.sort));
     setConfirmId(null);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
   };
 
   // 삭제 — 1탭째 인라인 확인, 확인 상태에서 재탭 시 실제 삭제(PtInbodyTab remove 미러).
@@ -161,114 +168,61 @@ export default function PtPricingSettings() {
 
   return (
     <div className="space-y-4">
-      {/* 입력 카드 (신규/수정 겸용) */}
-      <Card as="section">
-        <Eyebrow icon={Tag}>내 PT 가격 설정</Eyebrow>
-        <div className="mt-3 space-y-3">
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">패키지명 *</span>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={saving} placeholder="3개월 집중" className={inputCls} />
-          </label>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">세션수</span>
-              <NumberInput value={sessions} onValueChange={setSessions} disabled={saving} placeholder="회 (비우면 기간제)" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">기간</span>
-              <input type="text" value={durationLabel} onChange={(e) => setDurationLabel(e.target.value)} disabled={saving} placeholder="3개월·주2회" className={inputCls} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">실판매가(원) *</span>
-              <NumberInput value={price} onValueChange={setPrice} disabled={saving} placeholder="1200000" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">정가(원) <span className="text-muted">(선택)</span></span>
-              <NumberInput value={listPrice} onValueChange={setListPrice} disabled={saving} placeholder="할인 전 가격" />
-            </label>
-          </div>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">설명 <span className="text-muted">(선택)</span></span>
-            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="대상·특징" className={inputCls} />
-          </label>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex items-center gap-2 text-xs text-sub">
-              <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} disabled={saving} className="h-4 w-4 accent-primary" />
-              노출 (끄면 숨김)
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">표시 순서 <span className="text-muted">(선택)</span></span>
-              <input type="number" inputMode="numeric" value={sort} onChange={(e) => setSort(e.target.value)} disabled={saving} placeholder={String(rows.length)} className={inputCls} />
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="primary" size="md" onClick={save} disabled={saving} className="flex-1 gap-2">
-              {editingId ? <Pencil className="h-4 w-4" strokeWidth={2.5} /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
-              {saving ? "저장 중…" : editingId ? "수정 저장" : "패키지 추가"}
-            </Button>
-            {editingId && (
-              <Button variant="ghost" size="md" onClick={resetForm} disabled={saving}>
-                <X className="h-4 w-4" /> 취소
-              </Button>
-            )}
-          </div>
-        </div>
-      </Card>
-
       {/* 리스트 */}
       <Card as="section">
-        <Eyebrow icon={Tag}>등록한 패키지</Eyebrow>
+        <SectionTitle icon={Tag} aside={rows.length ? `${rows.length}개` : null}>내 PT 패키지</SectionTitle>
+        <p className="-mt-1.5 mb-3 text-[13px] text-sub">여기 가격으로 OT 리포트가 프로그램을 추천하고, 세일즈북 가격표에 그대로 보여요.</p>
         {loading ? (
-          <p className="mt-2 text-sm text-muted">불러오는 중…</p>
+          <p className="text-[13px] text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">아직 등록한 PT 패키지가 없어요. 추가하면 1차 OT AI가 이 가격으로 프로그램을 추천해요.</p>
+          <p className="text-[14px] text-muted">아직 등록한 PT 패키지가 없어요. 아래에서 추가해 주세요.</p>
         ) : (
-          <ul className="mt-2 space-y-2">
+          <ul className="space-y-2">
             {rows.map((r) => {
               const discounted = r.list_price != null && r.list_price > r.price;
               return (
-                <li key={r.id} className={`rounded-xl border border-line bg-elevate p-3 ${r.active === false ? "opacity-60" : ""}`}>
+                <li key={r.id} className={`rounded-xl bg-elevate p-3.5 ${editingId === r.id ? "ring-2 ring-primary/40" : ""} ${r.active === false ? "opacity-60" : ""}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-ink">{r.name}</span>
+                        <span className="text-[15px] font-semibold text-ink">{r.name}</span>
                         {r.sessions != null && (
-                          <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{r.sessions}회</span>
+                          <span className="rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-sub">{r.sessions}회</span>
                         )}
                         {r.duration_label && (
-                          <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{r.duration_label}</span>
+                          <span className="rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-sub">{r.duration_label}</span>
                         )}
                         {r.active === false && (
-                          <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-muted">숨김</span>
+                          <span className="rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-muted">숨김</span>
                         )}
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <span className="font-mono text-lg font-bold text-ink">{won(r.price)}</span>
+                        <span className="text-[17px] font-bold text-ink">{won(r.price)}</span>
                         {discounted && (
                           <>
-                            <span className="font-mono text-xs text-muted line-through">{won(r.list_price)}</span>
-                            <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-bold text-primary-strong">
+                            <span className="font-mono text-[13px] text-muted line-through">{won(r.list_price)}</span>
+                            <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[12px] font-bold text-primary-strong">
                               -{Math.round((1 - r.price / r.list_price) * 100)}%
                             </span>
                           </>
                         )}
                         {r.sessions > 0 && (
-                          <span className="text-[11px] text-muted">{won(Math.round(r.price / r.sessions))}/회</span>
+                          <span className="text-[12.5px] text-muted">회당 {won(Math.round(r.price / r.sessions))}</span>
                         )}
                       </div>
-                      {r.note && <div className="mt-1 text-[11px] text-muted">{r.note}</div>}
+                      {r.note && <div className="mt-1 text-[12.5px] text-muted">{r.note}</div>}
                     </div>
                     {confirmId === r.id ? (
                       <div className="flex shrink-0 items-center gap-1">
-                        <button onClick={() => remove(r.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
-                        <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[10px] font-medium text-sub transition hover:text-ink">취소</button>
+                        <button onClick={() => remove(r.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[12px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
+                        <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[12px] font-medium text-sub transition hover:text-ink">취소</button>
                       </div>
                     ) : (
                       <div className="flex shrink-0 items-center gap-1">
-                        <button onClick={() => startEdit(r)} className="text-muted transition hover:text-primary-strong" aria-label="수정">
+                        <button onClick={() => startEdit(r)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted transition hover:bg-card hover:text-primary-strong" aria-label="수정">
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button onClick={() => setConfirmId(r.id)} className="text-muted transition hover:text-rose-600" aria-label="삭제">
+                        <button onClick={() => setConfirmId(r.id)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted transition hover:bg-card hover:text-rose-600" aria-label="삭제">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -279,7 +233,68 @@ export default function PtPricingSettings() {
             })}
           </ul>
         )}
+        {!showForm && (
+          <Button variant="primary" size="md" onClick={openForm} className="mt-3 w-full gap-2">
+            <Plus className="h-4 w-4" strokeWidth={2.5} /> 패키지 추가
+          </Button>
+        )}
       </Card>
+
+      {/* 입력 카드 (신규/수정 겸용) — 열렸을 때만 */}
+      {showForm && (
+      <Card as="section" ref={formRef} className="scroll-mt-20">
+        <SectionTitle icon={editingId ? Pencil : Plus}>{editingId ? "패키지 수정" : "패키지 추가"}</SectionTitle>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">패키지명 *</span>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={saving} placeholder="3개월 집중" className={inputCls} />
+          </label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">세션수</span>
+              <NumberInput value={sessions} onValueChange={setSessions} disabled={saving} placeholder="회 (비우면 기간제)" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">기간</span>
+              <input type="text" value={durationLabel} onChange={(e) => setDurationLabel(e.target.value)} disabled={saving} placeholder="3개월·주2회" className={inputCls} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">실판매가(원) *</span>
+              <NumberInput value={price} onValueChange={setPrice} disabled={saving} placeholder="1200000" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">정가(원) <span className="text-muted">(선택)</span></span>
+              <NumberInput value={listPrice} onValueChange={setListPrice} disabled={saving} placeholder="할인 전 가격" />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-[12.5px] font-medium text-muted">설명 <span className="text-muted">(선택)</span></span>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="대상·특징" className={inputCls} />
+          </label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="flex items-center gap-2 text-[13px] text-sub">
+              <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} disabled={saving} className="h-4 w-4 accent-primary" />
+              노출 (끄면 숨김)
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">표시 순서 <span className="text-muted">(선택)</span></span>
+              <input type="number" inputMode="numeric" value={sort} onChange={(e) => setSort(e.target.value)} disabled={saving} placeholder={String(rows.length)} className={inputCls} />
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="primary" size="md" onClick={save} disabled={saving} className="flex-1 gap-2">
+              {editingId ? <Pencil className="h-4 w-4" strokeWidth={2.5} /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
+              {saving ? "저장 중…" : editingId ? "수정 저장" : "패키지 추가"}
+            </Button>
+            {(editingId || rows.length > 0) && (
+              <Button variant="ghost" size="md" onClick={resetForm} disabled={saving}>
+                <X className="h-4 w-4" /> 취소
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+      )}
 
       <Toast message={toast} />
     </div>

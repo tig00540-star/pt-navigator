@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import NumberInput from "@/components/ui/NumberInput";
@@ -65,15 +65,15 @@ export default function TrainerGoalSetter() {
   return (
     <div className="space-y-4">
       <Card as="section">
-        <Eyebrow icon={Target}>이달 목표매출</Eyebrow>
-        <div className="mt-2 text-[11px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
+        <SectionTitle icon={Target}>이달 목표 매출</SectionTitle>
+        <div className="mt-2 text-[12.5px] text-muted">{ym} · {loading ? "불러오는 중…" : current != null ? `현재 목표 ${won(current)}` : "목표 미설정"}</div>
         <div className="mt-3 flex gap-2">
           <NumberInput value={value} onValueChange={setValue} disabled={saving} placeholder="목표 순매출(원)" />
           <Button variant="primary" size="md" onClick={save} disabled={saving} className="shrink-0">
             {saving ? "저장 중…" : "저장"}
           </Button>
         </div>
-        <p className="mt-2 text-[11px] text-muted">달성률은 &lsquo;내 실적&rsquo;에서 확인돼요.</p>
+        <p className="mt-2 text-[12.5px] text-muted">달성률은 &lsquo;내 실적&rsquo;에서 확인돼요.</p>
       </Card>
       <Toast message={toast} />
     </div>

@@ -28,7 +28,6 @@ import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import MemberForm from "@/components/MemberForm";
 import MemberEditForm from "@/components/views/MemberEditForm";
-import { SETTINGS_SUBTABS } from "@/components/views/SettingsView";
 
 /* 회원 워크플로우 탭 그룹 색(purge-safe · 정적) — OT=amber, PT=sky */
 const GROUP_TAB = {
@@ -128,7 +127,7 @@ export default function AppChrome({ children }) {
       />
 
       {/* 헤더 — 폰: 로고·공지·대표 화면 + 서브탭. 태블릿·PC: 로고·공지·대표 화면은 왼쪽 메뉴로 가고 서브탭만 남는다(없으면 헤더도 없음). */}
-      <header className={`sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)] ${steps || info.section === "settings" || info.section === "salesbook" ? "" : "md:hidden"}`}>
+      <header className={`sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur-xl pt-[env(safe-area-inset-top)] ${steps || info.section === "salesbook" ? "" : "md:hidden"}`}>
         <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${wideMembers ? "lg:max-w-none lg:px-8" : ""}`}>
           <div className="flex items-center justify-between py-3 md:hidden">
             {/* 로고 락업 = 홈(허브)으로. 어느 화면에서든 한 번에 첫 화면으로 돌아온다. */}
@@ -171,13 +170,6 @@ export default function AppChrome({ children }) {
           {steps && <SubTabs items={steps} activeHref={pathname} tone={info.section} />}
           {info.section === "salesbook" && (
             <SubTabs items={SALESBOOK_SUBTABS} activeHref={info.sub === "cases" ? "/salesbook/cases" : "/salesbook"} tone="settings" />
-          )}
-          {info.section === "settings" && (
-            <SubTabs
-              items={SETTINGS_SUBTABS.map((t) => ({ label: t.label, href: `/settings/${t.id}` }))}
-              activeHref={`/settings/${info.sub || "me"}`}
-              tone="settings"
-            />
           )}
         </div>
       </header>

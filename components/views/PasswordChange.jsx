@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { KeyRound } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import { Input } from "@/components/ui/Field";
 import Toast from "@/components/ui/Toast";
@@ -75,7 +75,7 @@ export default function PasswordChange({ forced = false, onDone }) {
         <Button variant="primary" size="md" fullWidth onClick={submit} disabled={saving || !supabase} className="gap-2">
           <KeyRound className="h-4 w-4" strokeWidth={2.5} /> {saving ? "변경 중…" : "비밀번호 변경"}
         </Button>
-        <p className="text-[10px] leading-relaxed text-muted">
+        <p className="text-[12px] leading-relaxed text-muted">
           {supabase
             ? "임시 비밀번호로 로그인한 경우 여기서 새 비밀번호로 바꾸세요. (6자 이상)"
             : "데모 모드예요. Supabase 키를 설정하면 비밀번호를 바꿀 수 있어요."}
@@ -90,7 +90,7 @@ export default function PasswordChange({ forced = false, onDone }) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
         <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
-          <Eyebrow icon={KeyRound}>임시 비밀번호 변경</Eyebrow>
+          <SectionTitle icon={KeyRound}>임시 비밀번호 변경</SectionTitle>
           <p className="mt-1 text-[12px] text-muted">보안을 위해 임시 비밀번호를 새 비밀번호로 바꿔야 계속할 수 있어요.</p>
           {FORM_BODY}
         </div>
@@ -102,7 +102,7 @@ export default function PasswordChange({ forced = false, onDone }) {
   return (
     <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
       <summary className="cursor-pointer list-none">
-        <Eyebrow icon={KeyRound}>계정 · 비밀번호 변경</Eyebrow>
+        <SectionTitle icon={KeyRound}>비밀번호 변경</SectionTitle>
       </summary>
       {FORM_BODY}
     </details>

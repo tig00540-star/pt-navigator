@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Check, Gift, PenLine, Plus, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
@@ -142,8 +142,8 @@ export default function TrainerProfileSettings() {
   return (
     <div className="space-y-4">
       <Card as="section">
-        <Eyebrow icon={BookOpen}>회원 세일즈북</Eyebrow>
-        <p className="mb-4 mt-2 text-[12px] text-muted">회원에게 보여주는 세일즈북 표지·마무리 장과 신규 등록 혜택 장에 그대로 들어가요.</p>
+        <SectionTitle icon={BookOpen}>세일즈북에 들어갈 내 정보</SectionTitle>
+        <p className="-mt-1.5 mb-4 text-[13px] text-sub">회원에게 보여주는 세일즈북 표지·마무리 장과 신규 등록 혜택 장에 그대로 들어가요.</p>
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : (
@@ -176,7 +176,7 @@ export default function TrainerProfileSettings() {
                   onPointerLeave={drawEnd}
                   className="h-24 w-full touch-none rounded-lg border border-line bg-card"
                 />
-                <p className="mt-1 text-[11px] text-muted">손가락이나 펜으로 서명하세요. 한 번 저장하면 모든 세일즈북에 들어가요.</p>
+                <p className="mt-1 text-[12.5px] text-muted">손가락이나 펜으로 서명하세요. 한 번 저장하면 모든 세일즈북에 들어가요.</p>
               </div>
             </div>
 

@@ -12,7 +12,7 @@ import { Wallet, Plus, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import { payForScheme } from "@/lib/memberStatus";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import Toast from "@/components/ui/Toast";
@@ -110,7 +110,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
   const currentRow = schemes.find((s) => (s.trainer_id ?? null) === (scope ?? null)) || null;
   const hasOverride = (tid) => schemes.some((s) => s.trainer_id === tid);
   const scopeBtnCls = (active) =>
-    `rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+    `rounded-lg px-3 py-1.5 text-[13px] font-semibold transition disabled:opacity-50 ${
       active
         ? "border border-primary/30 bg-primary-soft text-primary-strong"
         : "border border-line bg-elevate text-muted hover:text-ink"
@@ -184,13 +184,13 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
 
   return (
     <div className="space-y-4">
-      <Eyebrow icon={Wallet}>{solo ? "내 급여 방식" : `급여 정책 설정 · ${scope == null ? "계정 기본" : (trainers.find((t) => t.id === scope)?.name || "트레이너")}`}</Eyebrow>
+      <SectionTitle icon={Wallet}>{solo ? "내 급여 방식" : `급여 정책 설정 · ${scope == null ? "계정 기본" : (trainers.find((t) => t.id === scope)?.name || "트레이너")}`}</SectionTitle>
 
       <Card as="section">
         {/* 스코프 선택 — 계정 기본 + 트레이너별 override. solo면 대상이 본인 1명뿐이라 숨김(scope=null 유지). */}
         {!solo && (
         <div className="mb-4">
-          <span className="mb-1.5 block text-[11px] font-medium text-muted">적용 대상</span>
+          <span className="mb-1.5 block text-[12.5px] font-medium text-muted">적용 대상</span>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => selectScope(null)} disabled={saving} className={scopeBtnCls(scope == null)}>
               계정 기본
@@ -203,7 +203,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
             ))}
           </div>
           {!loading && scope != null && !currentRow && (
-            <p className="mt-2 text-[11px] leading-relaxed text-muted">
+            <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
               이 트레이너는 계정 기본을 따르는 중이에요. 저장하면 전용 정책이 생겨요.
             </p>
           )}
@@ -216,14 +216,14 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
           <div className="space-y-4">
             {/* 방식 */}
             <div>
-              <span className="mb-1.5 block text-[11px] font-medium text-muted">지급 방식</span>
+              <span className="mb-1.5 block text-[12.5px] font-medium text-muted">지급 방식</span>
               <div className="flex gap-2">
                 {[{ k: "banded", l: "밴드 자동" }, { k: "manual", l: "수동(월별 입력)" }].map((o) => (
                   <button
                     key={o.k}
                     onClick={() => setType(o.k)}
                     disabled={saving}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                    className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition disabled:opacity-50 ${
                       type === o.k
                         ? "border border-primary/30 bg-primary-soft text-primary-strong"
                         : "border border-line bg-elevate text-muted hover:text-ink"
@@ -243,14 +243,14 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
               <>
                 {/* 밴드 기준 */}
                 <div>
-                  <span className="mb-1.5 block text-[11px] font-medium text-muted">밴드 기준</span>
+                  <span className="mb-1.5 block text-[12.5px] font-medium text-muted">밴드 기준</span>
                   <div className="flex gap-2">
                     {[{ k: "revenue", l: "매출 기준" }, { k: "session_count", l: "수업수 기준" }].map((o) => (
                       <button
                         key={o.k}
                         onClick={() => setBandBasis(o.k)}
                         disabled={saving}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                        className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition disabled:opacity-50 ${
                           bandBasis === o.k
                             ? "border border-primary/30 bg-primary-soft text-primary-strong"
                             : "border border-line bg-elevate text-muted hover:text-ink"
@@ -270,37 +270,37 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
                     bands.map((b, i) => (
                       <div key={i} className="rounded-xl border border-line bg-elevate p-3">
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="text-[11px] font-semibold text-sub">구간 {i + 1}</span>
+                          <span className="text-[12.5px] font-semibold text-sub">구간 {i + 1}</span>
                           <button onClick={() => removeBand(i)} disabled={saving} className="text-muted transition hover:text-rose-600 disabled:opacity-50" aria-label="구간 삭제">
                             <X className="h-4 w-4" />
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           <label className="block">
-                            <span className="mb-1 block text-[10px] font-medium text-muted">
+                            <span className="mb-1 block text-[12px] font-medium text-muted">
                               {bandBasis === "session_count" ? "수업 ○개 이상" : "매출 ○원 이상"}
                             </span>
                             <NumberInput value={b.min} onValueChange={(v) => updateBand(i, { min: v })} disabled={saving} placeholder="0" />
                           </label>
                           <label className="block">
-                            <span className="mb-1 block text-[10px] font-medium text-muted">지급 유형</span>
+                            <span className="mb-1 block text-[12px] font-medium text-muted">지급 유형</span>
                             <select value={b.payout_type} onChange={(e) => updateBand(i, { payout_type: e.target.value })} disabled={saving} className={inputCls}>
                               {PAYOUT_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                           </label>
                           <label className="block">
-                            <span className="mb-1 block text-[10px] font-medium text-muted">지급 값 ({payoutUnit(b.payout_type)})</span>
+                            <span className="mb-1 block text-[12px] font-medium text-muted">지급 값 ({payoutUnit(b.payout_type)})</span>
                             <input type="number" inputMode="numeric" value={b.payout_value} onChange={(e) => updateBand(i, { payout_value: e.target.value })} disabled={saving} placeholder="0" className={inputCls} />
                           </label>
                           <label className="block">
-                            <span className="mb-1 block text-[10px] font-medium text-muted">인센티브</span>
+                            <span className="mb-1 block text-[12px] font-medium text-muted">인센티브</span>
                             <select value={b.incentive_type} onChange={(e) => updateBand(i, { incentive_type: e.target.value })} disabled={saving} className={inputCls}>
                               {INCENTIVE_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                           </label>
                           {b.incentive_type !== "none" && (
                             <label className="col-span-2 block">
-                              <span className="mb-1 block text-[10px] font-medium text-muted">인센티브 값 ({b.incentive_type === "pct" ? "%" : "원"})</span>
+                              <span className="mb-1 block text-[12px] font-medium text-muted">인센티브 값 ({b.incentive_type === "pct" ? "%" : "원"})</span>
                               <input type="number" inputMode="numeric" value={b.incentive_value} onChange={(e) => updateBand(i, { incentive_value: e.target.value })} disabled={saving} placeholder="0" className={inputCls} />
                             </label>
                           )}
@@ -315,23 +315,23 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
 
                 {/* 라이브 미리보기 */}
                 <div className="rounded-xl border border-primary/30 bg-primary-soft p-3.5">
-                  <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">예상 급여 미리보기</div>
+                  <div className="text-[12.5px] font-semibold tracking-label-ko text-primary-strong">예상 급여 미리보기</div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-medium text-muted">예시 매출</span>
+                      <span className="mb-1 block text-[12px] font-medium text-muted">예시 매출</span>
                       <NumberInput value={sRev} onValueChange={setSRev} placeholder="0" />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-medium text-muted">예시 수업수</span>
+                      <span className="mb-1 block text-[12px] font-medium text-muted">예시 수업수</span>
                       <NumberInput value={sCnt} onValueChange={setSCnt} placeholder="0" />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-medium text-muted">예시 수업료합</span>
+                      <span className="mb-1 block text-[12px] font-medium text-muted">예시 수업료합</span>
                       <NumberInput value={sSum} onValueChange={setSSum} placeholder="0" />
                     </label>
                   </div>
                   <div className="mt-3 flex items-baseline justify-between">
-                    <span className="text-[11px] text-muted">
+                    <span className="text-[12.5px] text-muted">
                       {preview.computed === 0 && !preview.band ? "해당 밴드 없음" : `기본 ${won(preview.base)}${preview.incentive > 0 ? ` + 인센 ${won(preview.incentive)}` : ""}`}
                     </span>
                     <span className="font-mono text-xl font-bold text-primary-strong">
