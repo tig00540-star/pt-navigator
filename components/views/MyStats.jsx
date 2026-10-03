@@ -6,7 +6,7 @@
    admin과 동일 함수 재사용(revenueByTrainer·sessionPriceSumByTrainer·closingStats·payForScheme).
    ========================================================================= */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Award, ChevronDown, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
@@ -20,6 +20,9 @@ import OunwanRanking from "@/components/views/OunwanRanking";
 import Card from "@/components/ui/Card";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 
+// 'M월 D일'(KST) — 매출 내역 날짜.
+const dayKo = (iso) => { const t = Date.parse(iso || ""); if (Number.isNaN(t)) return ""; const d = new Date(t + 9 * 3600 * 1000); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`; };
+
 export default function MyStats({ members = [], isSolo = false, onSelect }) {
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -32,6 +35,14 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
   const [loading, setLoading] = useState(true);
   const [contractNames, setContractNames] = useState(new Map());
   const [reportOpen, setReportOpen] = useState(false);
+  // '이달 매출' 칸을 누르면 아래 매출 내역을 펼치고 그리로 내려간다(2026-10-03 대표: "누르면 언제 · 누구 · 몇 회 · 얼마").
+  const revRef = useRef(null);
+  const openRevenue = () => {
+    const el = revRef.current;
+    if (!el) return;
+    el.open = true;
+    setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 30); // 펼친 뒤 높이가 잡히고 나서
+  };
   const [goals, setGoals] = useState([]);        // trainer_goal(월별 목표) — 달성률·리포트 전달
 
   useEffect(() => {
@@ -186,7 +197,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
 
       {/* 매출 · 클로징 */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <StatTile label="이달 매출(내 등록)" value={won(rev.total)}>
+        <StatTile label="이달 매출(내 등록)" value={won(rev.total)} onClick={openRevenue}>
           <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[12.5px] text-sub">
             <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
             <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
@@ -258,10 +269,11 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       </details>
 
       {/* 매출 내역 — 누구·얼마·언제 (P2) */}
-      <details className="group rounded-2xl border border-line bg-card px-5 shadow-sm">
+      <details ref={revRef} className="group scroll-mt-20 rounded-2xl border border-line bg-card px-5 shadow-sm">
         <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
             <Wallet className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 매출 내역
+            {revRows.length + refundRows.length > 0 && <span className="text-[13px] font-normal text-muted">{revRows.length + refundRows.length}건</span>}
           </span>
           <span className="flex items-center gap-1.5 tabular-nums text-[15px] font-semibold text-ink">{won(rev.total)} <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" /></span>
         </summary>
@@ -269,30 +281,34 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
           <EmptyState className="pb-4 text-[13px]">이번 달 매출이 없어요.</EmptyState>
         ) : (
           <ul className="space-y-1.5 pb-4">
+            {/* 한 줄 = 한 계약: 누구 · 신규/재등록 · 얼마 / 언제 · 몇 회(+서비스) · 회당 */}
             {revRows.map((c) => (
-              <li key={c.id} className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl bg-elevate px-3.5 py-2 text-[14px]">
-                <div className="min-w-0">
-                  <span className="text-ink">{displayName(c.user_id)}</span>
-                  <Badge tone={c.kind === "reregister" ? "sky" : "primary"} className="ml-2">
-                    {c.kind === "reregister" ? "재등록" : "신규"}
-                  </Badge>
+              <li key={c.id} className="rounded-xl bg-elevate px-3.5 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-[15px] font-semibold text-ink">{displayName(c.user_id)}</span>
+                    <Badge tone={c.kind === "reregister" ? "sky" : "primary"}>{c.kind === "reregister" ? "재등록" : "신규"}</Badge>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-[15px] font-bold text-ink">{won(c.amount_total ?? 0)}</span>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="tabular-nums font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
-                  <span className="text-[12.5px] text-muted">{new Date(c.started_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
-                </div>
+                <p className="mt-0.5 text-[12.5px] text-sub">
+                  {dayKo(c.started_at)} · PT {c.sessions_total ?? 0}회{c.service_sessions ? ` + 서비스 ${c.service_sessions}회` : ""}
+                  {c.price_per_session ? ` · 회당 ${won(c.price_per_session)}` : ""}
+                </p>
               </li>
             ))}
             {refundRows.map((c) => (
-              <li key={"rf-" + c.id} className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl bg-rose-500/5 px-3.5 py-2 text-[14px]">
-                <div className="min-w-0">
-                  <span className="text-ink">{displayName(c.user_id)}</span>
-                  <Badge tone="rose" className="ml-2">환불</Badge>
+              <li key={"rf-" + c.id} className="rounded-xl bg-rose-500/5 px-3.5 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-[15px] font-semibold text-ink">{displayName(c.user_id)}</span>
+                    <Badge tone="rose">환불</Badge>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-[15px] font-bold text-danger-text">-{won(c.refund_amount)}</span>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="tabular-nums font-semibold text-rose-600">-{won(c.refund_amount)}</span>
-                  <span className="text-[12.5px] text-muted">{new Date(c.refunded_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
-                </div>
+                <p className="mt-0.5 text-[12.5px] text-sub">
+                  {dayKo(c.refunded_at)} 환불 · 원래 계약 PT {c.sessions_total ?? 0}회{c.started_at ? ` (${dayKo(c.started_at)} 등록)` : ""}
+                </p>
               </li>
             ))}
           </ul>
