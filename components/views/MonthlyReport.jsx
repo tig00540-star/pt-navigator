@@ -40,14 +40,14 @@ function prevYm(ym) {
 // prev===0 처리: 신규 발생(cur>0)이면 "신규", 둘 다 0이면 렌더 안 함(null).
 function Delta({ cur, prev }) {
   if (!prev && !cur) return null;
-  if (!prev) return <span className="text-[11px] font-semibold text-sub">신규</span>;
+  if (!prev) return <span className="text-[12.5px] font-semibold text-sub">신규</span>;
   const pct = Math.round(((cur - prev) / prev) * 100);
-  if (pct === 0) return <span className="text-[11px] text-muted">± 0%</span>;
+  if (pct === 0) return <span className="text-[12.5px] text-muted">± 0%</span>;
   const up = pct > 0;
   const Icon = up ? TrendingUp : TrendingDown;
   const cls = up ? "text-primary-strong" : "text-rose-600";
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${cls}`}>
+    <span className={`inline-flex items-center gap-0.5 text-[12.5px] font-semibold tabular-nums ${cls}`}>
       <Icon className="h-3 w-3" /> {Math.abs(pct)}%
     </span>
   );
@@ -56,7 +56,7 @@ function Delta({ cur, prev }) {
 // props.data = MyStats가 로드한 { contracts, logs, otRows, schemes, runs, uid, memberIds(Set), members, contractNames(Map), trainerName }
 export default function MonthlyReport({ data, onClose }) {
   const months = lastMonths(12);
-  const [ym, setYm] = useState(months[0]);          // 기본 = 이번달(KST). 원장이 지난달 고르면 셀렉트로.
+  const [ym, setYm] = useState(months[0]);          // 기본 = 이번 달(KST). 원장이 지난달 고르면 셀렉트로.
   const sheetRef = useRef(null);                     // 4-b 내보내기 타깃
   const { contracts, logs, otRows, schemes, runs, uid, memberIds, members, contractNames, trainerName, goals } = data;
 
@@ -105,7 +105,7 @@ export default function MonthlyReport({ data, onClose }) {
       {/* 상단 컨트롤 바 — 인쇄/이미지에서 제외(.no-print) */}
       <div className="no-print mx-auto mb-4 flex max-w-2xl items-center justify-between gap-3">
         <select value={ym} onChange={(e) => setYm(e.target.value)}
-          className="rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:border-primary">
+          className="min-h-[40px] rounded-lg border border-line bg-card px-3 text-[14px] text-ink outline-none focus:border-primary">
           {months.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
         <div className="flex items-center gap-2">
@@ -117,64 +117,64 @@ export default function MonthlyReport({ data, onClose }) {
       </div>
 
       {/* 리포트 본문 — 내보내기 타깃(흰 A4풍 시트) */}
-      <div ref={sheetRef} className="report-sheet mx-auto max-w-2xl rounded-2xl bg-bg p-6 shadow-xl">
+      <div ref={sheetRef} className="report-sheet mx-auto max-w-2xl rounded-2xl bg-bg p-5 shadow-xl break-keep text-pretty sm:p-6">
         {/* 리포트 헤더 */}
         <div className="mb-5 flex items-center justify-between border-b border-line pb-4">
           <div>
-            <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
-              <Award className="h-3.5 w-3.5" /> 월간 실적 보고서
+            <div className="flex items-center gap-2 text-[13px] text-sub">
+              <Award className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 월간 실적 보고서
             </div>
-            <h2 className="mt-1 text-xl font-bold text-ink">{personName(trainerName)} 트레이너 · {ym}</h2>
+            <h2 className="mt-1 text-[22px] font-bold tracking-[-0.03em] text-ink">{personName(trainerName)} 트레이너 · {ym}</h2>
           </div>
         </div>
 
         {/* 급여 헤드라인(확정/예상) */}
         <ToneCard tone="brand">
-          <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
+          <div className="flex items-center gap-2 text-[13px] text-sub">
             <Wallet className="h-3.5 w-3.5" /> {confirmed ? "확정" : "예상"} 급여
           </div>
           {confirmed ? (
-            <div className="mt-2 tabular-nums text-3xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
+            <div className="mt-2 tabular-nums text-[28px] font-bold tracking-[-0.03em] text-ink">{won(myRun.final_total)}</div>
           ) : pay.computed != null ? (
             <>
-              <div className="mt-2 tabular-nums text-3xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
-              <div className="mt-1 text-xs text-muted">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
+              <div className="mt-2 tabular-nums text-[28px] font-bold tracking-[-0.03em] text-ink">{won(pay.computed)}</div>
+              <div className="mt-0.5 text-[13px] text-sub">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
               {payP.computed != null && payP.computed > 0 && (
-                <div className="mt-1 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={pay.computed} prev={payP.computed} /></div>
+                <div className="mt-1 flex items-center gap-1 text-[12.5px] text-muted">전월대비 <Delta cur={pay.computed} prev={payP.computed} /></div>
               )}
               {nextBand && (
-                <div className="mt-1 text-[11px] text-muted">
+                <div className="mt-1 text-[12.5px] text-muted">
                   다음 급여 구간까지 {scheme.band_basis === "session_count" ? `${toNext}회` : won(toNext)}
                 </div>
               )}
             </>
           ) : (
-            <div className="mt-2 tabular-nums text-2xl font-extrabold text-muted">확정 대기(수동 급여)</div>
+            <div className="mt-2 text-[22px] font-bold text-muted">확정 대기(수동 급여)</div>
           )}
         </ToneCard>
 
         {/* 핵심 지표 grid */}
         <div className="grid gap-3 sm:grid-cols-2">
           <StatTile label="이달 순매출" value={won(rev.total)}>
-            <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-sub">
+            <div className="mt-2 flex flex-wrap gap-3 text-[12.5px] text-sub">
               <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
               <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
               {rev.refund > 0 && <span>환불 <b className="text-rose-600">-{won(rev.refund)}</b></span>}
             </div>
             {revP.total > 0 && (
-              <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={rev.total} prev={revP.total} /></div>
+              <div className="mt-1.5 flex items-center gap-1 text-[12.5px] text-muted">전월대비 <Delta cur={rev.total} prev={revP.total} /></div>
             )}
           </StatTile>
           <StatTile icon={Dumbbell} label="이달 수업" value={`${sessionCount}회`}>
             {sessP > 0 && (
-              <div className="mt-2 flex items-center gap-1 text-[11px] text-muted">전월대비 <Delta cur={sessionCount} prev={sessP} /></div>
+              <div className="mt-2 flex items-center gap-1 text-[12.5px] text-muted">전월대비 <Delta cur={sessionCount} prev={sessP} /></div>
             )}
           </StatTile>
           <StatTile icon={RefreshCw} label="재등록" value={`${rev.cntRe}건`}>
-            <div className="mt-2 text-[11px] text-muted">재등록 매출 {won(rev.reRev)}</div>
+            <div className="mt-2 text-[12.5px] text-muted">재등록 매출 {won(rev.reRev)}</div>
           </StatTile>
           <StatTile icon={Target} label="등록률(누적)" value={rate}>
-            <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공 · 전체 기간</div>
+            <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 중 {closing.success}명 등록 · 전체 기간</div>
           </StatTile>
         </div>
 
@@ -182,13 +182,13 @@ export default function MonthlyReport({ data, onClose }) {
         {target != null && (
           <div className="mb-4 rounded-2xl border border-line bg-card p-4">
             <div className="flex items-baseline justify-between">
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-label-ko text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
+              <span className="flex items-center gap-1.5 text-[13px] text-sub"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
               <span className="tabular-nums text-lg font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
-              <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
+              <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
             </div>
-            <div className="mt-1 text-[11px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
+            <div className="mt-1 text-[12.5px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
           </div>
         )}
 
@@ -201,22 +201,22 @@ export default function MonthlyReport({ data, onClose }) {
             <>
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-center">
-                  <div className="text-[10px] tracking-label-ko text-muted">성공</div>
+                  <div className="text-[12px] text-sub">등록</div>
                   <div className="tabular-nums text-lg font-bold text-primary-strong">{closing.success}</div>
                 </div>
                 <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-center">
-                  <div className="text-[10px] tracking-label-ko text-muted">보류</div>
+                  <div className="text-[12px] text-sub">보류</div>
                   <div className="tabular-nums text-lg font-bold text-amber-700">{closing.hold}</div>
                 </div>
                 <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-center">
-                  <div className="text-[10px] tracking-label-ko text-muted">실패</div>
+                  <div className="text-[12px] text-sub">안 함</div>
                   <div className="tabular-nums text-lg font-bold text-rose-700">{closing.fail}</div>
                 </div>
               </div>
-              <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 · 성공률 {rate}</div>
+              <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 · 등록률 {rate}</div>
               {approachRows.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-[11px] font-semibold text-sub">통한 방향</div>
+                  <div className="text-[12.5px] font-semibold text-sub">통한 방향</div>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {approachRows.map((a) => (
                       <Chip key={a.approach}>{labelOf(CLOSING_APPROACH_OPTS, a.approach)} <b className="ml-0.5 text-ink">{a.count}</b></Chip>
@@ -226,7 +226,7 @@ export default function MonthlyReport({ data, onClose }) {
               )}
               {reasonRows.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-[11px] font-semibold text-sub">놓친 이유</div>
+                  <div className="text-[12.5px] font-semibold text-sub">놓친 이유</div>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {reasonRows.map((x) => (
                       <Chip key={x.reason} muted>{labelOf(CLOSING_REASON_OPTS, x.reason)} <b className="ml-0.5 text-sub">{x.count}</b></Chip>
@@ -249,7 +249,7 @@ export default function MonthlyReport({ data, onClose }) {
             <EmptyState className="mt-2 py-1 text-sm">아직 재등록 시도 기록이 없어요.</EmptyState>
           ) : (
             <>
-              <div className="mt-2 flex items-center justify-between text-[11px]">
+              <div className="mt-2 flex items-center justify-between text-[12.5px]">
                 <span className="text-muted">누적 재등록</span>
                 <span className="tabular-nums text-sub">
                   성공 <b className="text-primary-strong">{reReg.success}</b> · 보류 <b className="text-amber-700">{reReg.hold}</b> · 미등록 <b className="text-rose-700">{reReg.fail}</b>
@@ -258,7 +258,7 @@ export default function MonthlyReport({ data, onClose }) {
               </div>
               {regReasonRows.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-[11px] font-semibold text-sub">미등록 사유</div>
+                  <div className="text-[12.5px] font-semibold text-sub">미등록 사유</div>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {regReasonRows.map((x) => (
                       <Chip key={x.reason} muted>{labelOf(REG_REASON_OPTS, x.reason)} <b className="ml-0.5 text-sub">{x.count}</b></Chip>
@@ -274,7 +274,7 @@ export default function MonthlyReport({ data, onClose }) {
         <ToneCard tone="zinc">
           <SectionHeader tone="zinc" icon={Wallet} title="매출 내역" count={revRows.length + refundRows.length} />
           {revRows.length === 0 && refundRows.length === 0 ? (
-            <EmptyState className="py-1 text-sm">이번달 매출이 없어요.</EmptyState>
+            <EmptyState className="py-1 text-sm">이번 달 매출이 없어요.</EmptyState>
           ) : (
             <ul className="space-y-1.5">
               {revRows.map((c) => (
@@ -301,7 +301,7 @@ export default function MonthlyReport({ data, onClose }) {
         <ToneCard tone="zinc">
           <SectionHeader tone="zinc" icon={Dumbbell} title="회원별 수업" count={sessionRows.length} hint={`총 ${sessionRows.reduce((s, r) => s + r.count, 0)}회`} />
           {sessionRows.length === 0 ? (
-            <EmptyState className="py-1 text-sm">이번달 수업 기록이 없어요.</EmptyState>
+            <EmptyState className="py-1 text-sm">이번 달 수업 기록이 없어요.</EmptyState>
           ) : (
             <ul className="space-y-1.5">
               {sessionRows.map((r) => (
@@ -314,7 +314,7 @@ export default function MonthlyReport({ data, onClose }) {
           )}
         </ToneCard>
 
-        <p className="mt-4 text-[10px] text-muted">※ 예상 급여는 완료 수업 기준 자동계산 · 실지급은 대표 확정액 기준. 등록률은 전체 기간 누적. 생성 {ym} 기준.</p>
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">예상 급여는 완료한 수업으로 자동 계산한 금액이고, 실제 지급액은 대표가 확정한 금액이에요. 등록률은 전체 기간 누적이에요. {ym} 기준.</p>
       </div>
     </div>
   );

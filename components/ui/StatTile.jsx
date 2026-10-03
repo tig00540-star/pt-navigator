@@ -8,11 +8,11 @@ import Card from "@/components/ui/Card";
 export default function StatTile({ icon: Icon, label, value, children, className = "" }) {
   return (
     <Card className={className}>
-      <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
-        {Icon && <Icon className="h-3.5 w-3.5" />}
+      <div className="flex items-center gap-1.5 text-[13px] text-sub">
+        {Icon && <Icon className="h-4 w-4 text-primary-strong" aria-hidden="true" />}
         {label}
       </div>
-      <div className="mt-1 tabular-nums text-2xl font-bold text-ink">{value}</div>
+      <div className="mt-1 tabular-nums text-[22px] font-bold tracking-[-0.02em] text-ink">{value}</div>
       {children}
     </Card>
   );

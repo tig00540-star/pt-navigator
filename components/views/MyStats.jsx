@@ -7,10 +7,10 @@
    ========================================================================= */
 
 import { useEffect, useMemo, useState } from "react";
-import { Award, Dumbbell, FileText, Target, Wallet } from "lucide-react";
+import { Award, ChevronDown, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
@@ -142,39 +142,44 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
 
   return (
     /* 넓은 화면(lg~): 왼쪽 급여·매출·수업 | 오른쪽 오운완 랭킹. 폰은 위아래 한 줄. */
-    <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+    <div className="space-y-4 break-keep text-pretty lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <div className="space-y-4">
       {loading ? (
-        <div className="py-10 text-center text-sm text-muted">불러오는 중…</div>
+        <div className="py-10 text-center text-[13px] text-muted">불러오는 중…</div>
       ) : (
         <>
-      <div className="flex items-center justify-between gap-2">
-        <Eyebrow icon={Award}>내 실적 · {ym}</Eyebrow>
+      <div className="flex items-end justify-between gap-2">
+        <div>
+          <p className="text-[13px] text-muted">{Number(ym.slice(5))}월</p>
+          <h1 className="mt-0.5 flex items-center gap-1.5 text-[22px] font-bold tracking-[-0.03em] text-ink">
+            <Award className="h-5 w-5 text-primary-strong" aria-hidden="true" /> 내 실적
+          </h1>
+        </div>
         <button onClick={() => setReportOpen(true)}
-          className="mb-4 flex shrink-0 items-center gap-1 rounded-lg border border-line bg-card px-3 py-1.5 text-xs font-semibold text-sub hover:text-ink">
-          <FileText className="h-3.5 w-3.5" /> 월간 리포트
+          className="flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-line bg-card px-3.5 text-[13px] font-semibold text-ink shadow-sm transition hover:border-line-strong">
+          <FileText className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 월간 리포트
         </button>
       </div>
 
       {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
       <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
-        <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted">
-          <Wallet className="h-3.5 w-3.5" /> 이달 {isSolo ? "급여(자동계산)" : `${confirmed ? "확정" : "예상"} 급여`}
+        <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
+          <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 {isSolo ? "급여(자동 계산)" : `${confirmed ? "확정" : "예상"} 급여`}
         </div>
         {confirmed ? (
           <>
-            <div className="mt-2 tabular-nums text-4xl font-extrabold text-primary-strong">{won(myRun.final_total)}</div>
-            <div className="mt-1 text-xs text-muted">대표 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동계산 ${won(pay.computed)}` : ""}</div>
+            <div className="mt-1.5 tabular-nums text-[30px] font-bold tracking-[-0.03em] text-ink">{won(myRun.final_total)}</div>
+            <div className="mt-0.5 text-[13px] text-sub">대표 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동 계산 ${won(pay.computed)}` : ""}</div>
           </>
         ) : pay.computed != null ? (
           <>
-            <div className="mt-2 tabular-nums text-4xl font-extrabold text-primary-strong">{won(pay.computed)}</div>
-            <div className="mt-1 text-xs text-muted">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
+            <div className="mt-1.5 tabular-nums text-[30px] font-bold tracking-[-0.03em] text-ink">{won(pay.computed)}</div>
+            <div className="mt-0.5 text-[13px] text-sub">미확정 · 기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}</div>
           </>
         ) : (
           <>
-            <div className="mt-2 text-2xl font-extrabold text-muted">{isSolo ? "급여 방식 미설정" : "대표 확정 대기"}</div>
-            <div className="mt-1 text-xs text-muted">{isSolo ? "급여 방식을 설정하면 자동계산돼요" : "자동계산 없음(수동 급여)"}</div>
+            <div className="mt-1.5 text-[22px] font-bold text-muted">{isSolo ? "급여 방식 미설정" : "대표 확정 대기"}</div>
+            <div className="mt-0.5 text-[13px] text-sub">{isSolo ? "급여 방식을 설정하면 자동으로 계산돼요" : "대표가 직접 정하는 급여예요"}</div>
           </>
         )}
       </div>
@@ -182,7 +187,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       {/* 매출 · 클로징 */}
       <div className="grid gap-3 sm:grid-cols-2">
         <StatTile label="이달 매출(내 등록)" value={won(rev.total)}>
-          <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-sub">
+          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[12.5px] text-sub">
             <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
             <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
             {rev.refund > 0 && (
@@ -191,7 +196,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
           </div>
         </StatTile>
         <StatTile icon={Target} label="등록률" value={rate}>
-          <div className="mt-2 text-[11px] text-muted">시도 {closing.attempted}명 중 {closing.success} 성공</div>
+          <div className="mt-1.5 text-[12.5px] text-sub">등록 제안 {closing.attempted}명 중 {closing.success}명 등록</div>
         </StatTile>
       </div>
 
@@ -199,52 +204,51 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       {target != null && (
         <Card padding="sm">
           <div className="flex items-baseline justify-between text-sm">
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-label-ko text-muted"><Target className="h-3.5 w-3.5" /> 이달 목표 달성</span>
-            <span className="tabular-nums font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
+            <span className="flex items-center gap-1.5 text-[13px] text-sub"><Target className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 이달 목표 달성</span>
+            <span className="tabular-nums text-[17px] font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
-            <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
+            <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
           </div>
-          <div className="mt-1 text-[11px] text-muted">{won(rev.total)} / 목표 {won(target)}</div>
+          <div className="mt-1 text-[12.5px] text-sub">{won(rev.total)} / 목표 {won(target)}</div>
         </Card>
       )}
 
       {/* #1 — PT 수업 현황(내 활성 PT 회원 전체 합). 회원 없으면 숨김. */}
       {ptMemberIds.size > 0 && (
         <Card>
-          <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
-            <Dumbbell className="h-3.5 w-3.5" /> PT 수업 현황 · 활성 회원 {ptMemberIds.size}명
+          <SectionTitle icon={Dumbbell} aside={`PT 회원 ${ptMemberIds.size}명`}>PT 수업 현황</SectionTitle>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[13px] text-sub">남은 수업</span>
+            <span className="tabular-nums text-[26px] font-bold tracking-[-0.02em] text-ink">{remAll.total}</span>
+            <span className="text-[14px] text-sub">회</span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="tabular-nums text-3xl font-extrabold text-primary-strong">{remAll.total}</span>
-            <span className="text-sm text-muted">회 잔여</span>
-          </div>
-          <div className="mt-1 text-xs text-sub">
+          <div className="mt-0.5 text-[13px] text-sub">
             완료 <b className="tabular-nums text-ink">{doneAll}</b> / 총{" "}
             <b className="tabular-nums text-ink">{sessTotalAll}</b>회
-            <span className="ml-1 text-[11px] text-muted">(유료 {remAll.paid}·서비스 {remAll.service})</span>
+            <span className="ml-1 text-muted">(유료 {remAll.paid} · 서비스 {remAll.service})</span>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
-            <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600"
+            <div className="h-full rounded-full bg-primary"
               style={{ width: `${sessTotalAll ? Math.round((doneAll / sessTotalAll) * 100) : 0}%` }} />
           </div>
         </Card>
       )}
 
       {/* 이번달 수업 — 누르면 회원별 (P2) */}
-      <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
-          <span className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
-            <Dumbbell className="h-3.5 w-3.5" /> 이번달 수업
+      <details className="group rounded-2xl border border-line bg-card px-5 shadow-sm">
+        <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
+            <Dumbbell className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 이번 달 수업
           </span>
-          <span className="tabular-nums text-lg font-bold text-ink">{totalSessions}회</span>
+          <span className="flex items-center gap-1.5 tabular-nums text-[15px] font-semibold text-ink">{totalSessions}회 <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" /></span>
         </summary>
         {sessionRows.length === 0 ? (
-          <EmptyState className="mt-3 text-sm">이번달 수업 기록이 없어요.</EmptyState>
+          <EmptyState className="pb-4 text-[13px]">이번 달 수업 기록이 없어요.</EmptyState>
         ) : (
-          <ul className="mt-3 space-y-1.5">
+          <ul className="space-y-1.5 pb-4">
             {sessionRows.map((r) => (
-              <li key={r.user_id} className="flex items-center justify-between rounded-lg border border-line bg-elevate px-3 py-2 text-sm">
+              <li key={r.user_id} className="flex min-h-[44px] items-center justify-between rounded-xl bg-elevate px-3.5 py-2 text-[14px]">
                 <span className="text-ink">{nameById.get(r.user_id) || "(알 수 없음)"}</span>
                 <span className="tabular-nums font-semibold text-sub">{r.count}회</span>
               </li>
@@ -254,19 +258,19 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       </details>
 
       {/* 매출 내역 — 누구·얼마·언제 (P2) */}
-      <details className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
-          <span className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
-            <Wallet className="h-3.5 w-3.5" /> 매출 내역
+      <details className="group rounded-2xl border border-line bg-card px-5 shadow-sm">
+        <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
+            <Wallet className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 매출 내역
           </span>
-          <span className="tabular-nums text-lg font-bold text-ink">{won(rev.total)}</span>
+          <span className="flex items-center gap-1.5 tabular-nums text-[15px] font-semibold text-ink">{won(rev.total)} <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" /></span>
         </summary>
         {revRows.length === 0 && refundRows.length === 0 ? (
-          <EmptyState className="mt-3 text-sm">이번달 매출이 없어요.</EmptyState>
+          <EmptyState className="pb-4 text-[13px]">이번 달 매출이 없어요.</EmptyState>
         ) : (
-          <ul className="mt-3 space-y-1.5">
+          <ul className="space-y-1.5 pb-4">
             {revRows.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-sm">
+              <li key={c.id} className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl bg-elevate px-3.5 py-2 text-[14px]">
                 <div className="min-w-0">
                   <span className="text-ink">{displayName(c.user_id)}</span>
                   <Badge tone={c.kind === "reregister" ? "sky" : "primary"} className="ml-2">
@@ -275,19 +279,19 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="tabular-nums font-semibold text-ink">{won(c.amount_total ?? 0)}</span>
-                  <span className="text-[11px] text-muted">{new Date(c.started_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
+                  <span className="text-[12.5px] text-muted">{new Date(c.started_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
                 </div>
               </li>
             ))}
             {refundRows.map((c) => (
-              <li key={"rf-" + c.id} className="flex items-center justify-between gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm">
+              <li key={"rf-" + c.id} className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl bg-rose-500/5 px-3.5 py-2 text-[14px]">
                 <div className="min-w-0">
                   <span className="text-ink">{displayName(c.user_id)}</span>
                   <Badge tone="rose" className="ml-2">환불</Badge>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="tabular-nums font-semibold text-rose-600">-{won(c.refund_amount)}</span>
-                  <span className="text-[11px] text-muted">{new Date(c.refunded_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
+                  <span className="text-[12.5px] text-muted">{new Date(c.refunded_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" })}</span>
                 </div>
               </li>
             ))}
@@ -295,7 +299,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         )}
       </details>
 
-      <p className="text-[10px] text-muted">{isSolo ? "※ 자동계산은 이달 완료 수업 기준입니다." : "※ 확정 전 예상 급여는 이달 완료 수업 기준 자동계산 · 실지급은 대표가 확정한 금액 기준입니다."}</p>
+      <p className="text-[12px] leading-relaxed text-muted">{isSolo ? "자동 계산은 이번 달 완료한 수업 기준이에요." : "확정 전 예상 급여는 이번 달 완료한 수업으로 자동 계산한 금액이에요. 실제 지급액은 대표가 확정한 금액이에요."}</p>
         </>
       )}
       </div>
@@ -303,7 +307,8 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
       {/* 오운완 랭킹 — 자기완결 위젯(rpc 1콜). '오늘' 탭이 아니라 여기인 이유:
           '오늘'은 앱 열 때마다 로드돼 부담이 크고, 랭킹은 주 1~2회 보는 실적성 정보다. */}
       <div className="lg:pt-[52px]">
-        <OunwanRanking members={members} onSelect={onSelect} />
+        {/* 내 담당만(홈 출석 랭킹과 같은 규칙 · 직접 맡은 회원이 없는 대표는 센터 전체) */}
+        <OunwanRanking members={members.some((m) => m.trainer_id === uid) ? members.filter((m) => m.trainer_id === uid) : members} onSelect={onSelect} />
       </div>
 
       {/* 월간 리포트 오버레이 (4-a) — 읽기 전용 재집계, MyStats 데이터 그대로 전달. */}

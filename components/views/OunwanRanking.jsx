@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Flame, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import MemberBadge from "@/components/ui/MemberBadge";
 import { viewFor } from "@/lib/memberStatus";
 
@@ -17,7 +17,7 @@ const TOP_N = 10; // 상위 N명만 — 목록이 길어지면 '실적' 화면�
 /* 정렬 기준 — 정적 맵(purge-safe · 동적 조립 금지).
    순수 횟수는 고빈도 회원이 유리하므로 연속일 뷰를 함께 제공(빈도 낮아도 1등 가능). */
 const MODES = {
-  month:  { label: "이번달 횟수", key: "month_count", unit: "회" },
+  month:  { label: "이번 달", key: "month_count", unit: "일" },
   streak: { label: "연속일",      key: "streak",      unit: "일" },
 };
 
@@ -63,25 +63,21 @@ export default function OunwanRanking({ members = [], onSelect }) {
   const k = MODES[mode].key;
 
   return (
-    <section className="mt-6 rounded-2xl border border-line bg-card p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <Eyebrow icon={Flame}>오운완 랭킹</Eyebrow>
-        {/* 기준 토글 — 선택/비선택 클래스는 완성된 문자열 삼항(동적 조립 금지) */}
-        <div className="mb-4 flex shrink-0 gap-1">
-          <button
-            onClick={() => setMode("month")}
+    <section className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <SectionTitle icon={Flame} className="mb-0">오운완 랭킹</SectionTitle>
+        {/* 기준 토글 — 알약(오늘 탭 '오늘 | 주간'과 같은 모양) · 클래스는 완성된 문자열 삼항(동적 조립 금지) */}
+        <div className="flex shrink-0 gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="랭킹 기준">
+          <button role="tab" aria-selected={mode === "month"} onClick={() => setMode("month")}
             className={mode === "month"
-              ? "rounded-lg bg-primary-soft px-2.5 py-1 text-[11px] font-bold text-primary-strong ring-1 ring-primary/30"
-              : "rounded-lg bg-elevate px-2.5 py-1 text-[11px] font-medium text-muted"}
-          >
+              ? "inline-flex min-h-[32px] items-center rounded-full bg-card px-3 text-[13px] font-semibold text-ink shadow-sm"
+              : "inline-flex min-h-[32px] items-center rounded-full px-3 text-[13px] text-sub hover:text-ink"}>
             {MODES.month.label}
           </button>
-          <button
-            onClick={() => setMode("streak")}
+          <button role="tab" aria-selected={mode === "streak"} onClick={() => setMode("streak")}
             className={mode === "streak"
-              ? "rounded-lg bg-primary-soft px-2.5 py-1 text-[11px] font-bold text-primary-strong ring-1 ring-primary/30"
-              : "rounded-lg bg-elevate px-2.5 py-1 text-[11px] font-medium text-muted"}
-          >
+              ? "inline-flex min-h-[32px] items-center rounded-full bg-card px-3 text-[13px] font-semibold text-ink shadow-sm"
+              : "inline-flex min-h-[32px] items-center rounded-full px-3 text-[13px] text-sub hover:text-ink"}>
             {MODES.streak.label}
           </button>
         </div>
@@ -93,13 +89,13 @@ export default function OunwanRanking({ members = [], onSelect }) {
             <button
               onClick={() => onSelect?.(r.user_id)}
               disabled={!onSelect}
-              className="flex w-full items-center gap-2 rounded-xl border border-line bg-elevate px-3 py-2.5 text-left transition hover:border-primary disabled:hover:border-line"
+              className="flex min-h-[48px] w-full items-center gap-2.5 rounded-xl bg-elevate px-3.5 py-2 text-left transition hover:bg-line/60"
             >
-              <span className="w-5 shrink-0 text-center font-mono text-xs font-bold text-muted">{i + 1}</span>
-              <span className="truncate text-sm font-semibold text-ink">{r.member.name}</span>
+              <span className={`w-5 shrink-0 text-center text-[14px] font-bold ${i < 3 ? "text-primary-strong" : "text-muted"}`}>{i + 1}</span>
+              <span className="truncate text-[15px] font-semibold text-ink">{r.member.name}</span>
               <MemberBadge view={viewFor(r.member)} />
-              <span className="ml-auto shrink-0 text-sm font-extrabold text-primary-strong">
-                {r[k]}<span className="ml-0.5 text-[11px] font-bold text-muted">{unit}</span>
+              <span className="ml-auto shrink-0 text-[15px] font-bold text-ink">
+                {r[k]}<span className="ml-0.5 text-[12px] font-medium text-muted">{unit}</span>
               </span>
               {onSelect && <ChevronRight className="h-4 w-4 shrink-0 text-muted" />}
             </button>
@@ -112,7 +108,7 @@ export default function OunwanRanking({ members = [], onSelect }) {
           덜어 정의만 남긴다. 둘 다 넣으려면 315px까지 줄여야 하는데 여유가 1px이라,
           폰트가 폴백(맑은 고딕, 약 16% 넓음)으로 잡히는 순간 다시 두 줄이 된다.
           nowrap은 일부러 안 건다 — 기기 글자 크기를 키운 사용자에겐 줄바꿈이 안전밸브다. */}
-      <p className="mt-3 text-[11px] leading-relaxed text-muted">
+      <p className="mt-3 text-[12px] leading-relaxed text-muted">
         오운완 = 유산소·개인운동·PT 중 하나라도 기록된 날
       </p>
     </section>
