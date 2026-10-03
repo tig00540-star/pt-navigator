@@ -11,7 +11,7 @@ import { Award, ChevronDown, ChevronRight, Coins, Dumbbell, FileText, Target, Wa
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
 import SectionTitle from "@/components/ui/SectionTitle";
-import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, payLinesForTrainer, sessionCountByTrainer, sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
+import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, payLinesForTrainer, sessionCountByTrainer, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
@@ -105,7 +105,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
   // ⚠️ 하위 헬퍼가 순수(입력만 읽고 부수효과 없음)라 안전. 훅은 early return 앞이라 순서 불변.
   const {
     ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
-    nameById, displayName, sessionRows, totalSessions, revRows, refundRows,
+    nameById, displayName, revRows, refundRows,
     ptMemberIds, sessTotalAll, remAll, doneAll,
     scheme, sessionCount, priceSum, payLines,
   } = useMemo(() => {
@@ -128,8 +128,6 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
     const nameById = new Map(members.map((m) => [m.id, m.name]));
     // hidden 회원은 members에 없으니 계약 이름 조회(contractNames)로 폴백.
     const displayName = (id) => nameById.get(id) || contractNames.get(id) || "(알 수 없음)";
-    const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
-    const totalSessions = sessionRows.reduce((s, r) => s + r.count, 0);
     const revRows = revenueContractsInMonth(contracts, uid, ym);        // session_log 행[]
     const refundRows = refundsInMonth(contracts, uid, ym);              // 이달 처리 환불[]
 
@@ -149,7 +147,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
 
     return {
       ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
-      nameById, displayName, sessionRows, totalSessions, revRows, refundRows,
+      nameById, displayName, revRows, refundRows,
       ptMemberIds, sessTotalAll, remAll, doneAll,
       scheme, sessionCount, priceSum,
       payLines: payLinesForTrainer(logs, contracts, ym, uid), // 급여 내역(회원 × 계약) — 위 수업 수 · 수업료 합과 같은 거름
@@ -173,7 +171,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         </div>
         <button onClick={() => setReportOpen(true)}
           className="flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-line bg-card px-3.5 text-[13px] font-semibold text-ink shadow-sm transition hover:border-line-strong">
-          <FileText className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 월간 리포트
+          <FileText className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 지난 달 · 보고서
         </button>
       </div>
 
@@ -201,35 +199,39 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         )}
       </button>
 
-      {/* 매출 · 클로징 */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <StatTile label="이달 매출(내 등록)" value={won(rev.total)} onClick={openRevenue}>
-          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[12.5px] text-sub">
-            <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
-            <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
-            {rev.refund > 0 && (
-              <span>환불 <b className="text-rose-600">-{won(rev.refund)}</b></span>
-            )}
+      {/* 매출 — 목표가 있으면 같은 칸 안에 진행 막대(2026-10-03 · 따로 있던 '목표 달성' 카드를 합침 · 같은 숫자를 두 번 보여주지 않게) */}
+      <StatTile label="이달 매출(내 등록)" value={won(rev.total)} onClick={openRevenue}>
+        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[12.5px] text-sub">
+          <span>신규 <b className="text-ink">{won(rev.newRev)}</b> · {rev.cntNew}건</span>
+          <span>재등록 <b className="text-sky-700">{won(rev.reRev)}</b> · {rev.cntRe}건</span>
+          {rev.refund > 0 && (
+            <span>환불 <b className="text-rose-600">-{won(rev.refund)}</b></span>
+          )}
+        </div>
+        {target != null && (
+          <div className="mt-3">
+            <div className="flex items-baseline justify-between text-[12.5px]">
+              <span className="text-sub">목표 {won(target)}</span>
+              <span className="tabular-nums font-semibold text-ink">{Math.round((rev.total / target) * 100)}%</span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-elevate">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
+            </div>
           </div>
-        </StatTile>
+        )}
+      </StatTile>
+
+      {/* 등록률 | 이번 달 수업 — 수업 수는 급여 기준(노쇼 포함 · 취소 · 보강 제외 · 계약 담당 기준)이 정본(2026-10-03 대표). 누르면 급여 내역(회원별). */}
+      <div className="grid grid-cols-2 gap-3">
         <StatTile icon={Target} label="등록률" value={rate}>
-          <div className="mt-1.5 text-[12.5px] text-sub">등록 제안 {closing.attempted}명 중 {closing.success}명 등록</div>
+          <div className="mt-1.5 text-[12.5px] text-sub">등록 제안 {closing.attempted}명 중 {closing.success}명</div>
+        </StatTile>
+        <StatTile icon={Dumbbell} label="이번 달 수업" value={`${sessionCount}회`} onClick={openPay}>
+          <div className="mt-1.5 text-[12.5px] text-sub">
+            회원 {new Set(payLines.map((l) => l.user_id)).size}명{payLines.some((l) => l.noshow) ? ` · 노쇼 ${payLines.reduce((s, l) => s + l.noshow, 0)}회 포함` : ""}
+          </div>
         </StatTile>
       </div>
-
-      {/* 이달 목표 달성 (설정돼 있을 때만) */}
-      {target != null && (
-        <Card padding="sm">
-          <div className="flex items-baseline justify-between text-sm">
-            <span className="flex items-center gap-1.5 text-[13px] text-sub"><Target className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 이달 목표 달성</span>
-            <span className="tabular-nums text-[17px] font-bold text-ink">{Math.round((rev.total / target) * 100)}%</span>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-elevate">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((rev.total / target) * 100))}%` }} />
-          </div>
-          <div className="mt-1 text-[12.5px] text-sub">{won(rev.total)} / 목표 {won(target)}</div>
-        </Card>
-      )}
 
       {/* #1 — PT 수업 현황(내 활성 PT 회원 전체 합). 회원 없으면 숨김. */}
       {ptMemberIds.size > 0 && (
@@ -251,28 +253,6 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
           </div>
         </Card>
       )}
-
-      {/* 이번달 수업 — 누르면 회원별 (P2) */}
-      <details className="group rounded-2xl border border-line bg-card px-5 shadow-sm">
-        <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-          <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
-            <Dumbbell className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 이번 달 수업
-          </span>
-          <span className="flex items-center gap-1.5 tabular-nums text-[15px] font-semibold text-ink">{totalSessions}회 <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" /></span>
-        </summary>
-        {sessionRows.length === 0 ? (
-          <EmptyState className="pb-4 text-[13px]">이번 달 수업 기록이 없어요.</EmptyState>
-        ) : (
-          <ul className="space-y-1.5 pb-4">
-            {sessionRows.map((r) => (
-              <li key={r.user_id} className="flex min-h-[44px] items-center justify-between rounded-xl bg-elevate px-3.5 py-2 text-[14px]">
-                <span className="text-ink">{nameById.get(r.user_id) || "(알 수 없음)"}</span>
-                <span className="tabular-nums font-semibold text-sub">{r.count}회</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </details>
 
       {/* 매출 내역 — 누구·얼마·언제 (P2) */}
       <details ref={revRef} className="group scroll-mt-20 rounded-2xl border border-line bg-card px-5 shadow-sm">

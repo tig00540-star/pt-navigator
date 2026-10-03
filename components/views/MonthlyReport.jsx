@@ -14,7 +14,7 @@ import Chip from "@/components/ui/Chip";
 import { labelOf, CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 import {
   revenueByTrainer, sessionCountByTrainer, sessionPriceSumByTrainer,
-  sessionsByMemberInMonth, revenueContractsInMonth, refundsInMonth,
+  payLinesForTrainer, revenueContractsInMonth, refundsInMonth,
   resolveScheme, payForScheme, closingStats,
   closingApproachStats, closingReasonStats, reregisterStats, reregisterReasonStats,
 } from "@/lib/memberStatus";
@@ -75,7 +75,15 @@ export default function MonthlyReport({ data, onClose }) {
   const payP = payForScheme(scheme, { monthRevenue: revP.total, sessionCount: sessP, sessionPriceSum: priceP });
   const myRun = runs.find((r) => r.trainer_id === uid && r.ym === ym) || null;
   const confirmed = myRun?.final_total != null;
-  const sessionRows = sessionsByMemberInMonth(logs, memberIds, ym);   // [{user_id, count}]
+  // 회원별 수업 = 급여 기준(위 '이달 수업' 숫자와 같은 거름 · 2026-10-03). 계약이 둘이면 회원으로 합친다.
+  const sessionRows = (() => {
+    const by = new Map();
+    for (const l of payLinesForTrainer(logs, contracts, ym, uid)) {
+      const cur = by.get(l.user_id) || { user_id: l.user_id, count: 0, noshow: 0 };
+      cur.count += l.count; cur.noshow += l.noshow; by.set(l.user_id, cur);
+    }
+    return [...by.values()].sort((a, b) => b.count - a.count);
+  })();
   const revRows = revenueContractsInMonth(contracts, uid, ym);
   const refundRows = refundsInMonth(contracts, uid, ym);
   // 클로징률 = 누적(월 스코프 불가). myOt = 내 회원 ot_log 전체.
@@ -299,7 +307,7 @@ export default function MonthlyReport({ data, onClose }) {
 
         {/* 수업 내역(회원별) */}
         <ToneCard tone="zinc">
-          <SectionHeader tone="zinc" icon={Dumbbell} title="회원별 수업" count={sessionRows.length} hint={`총 ${sessionRows.reduce((s, r) => s + r.count, 0)}회`} />
+          <SectionHeader tone="zinc" icon={Dumbbell} title="회원별 수업" count={sessionRows.length} hint={`총 ${sessionCount}회 · 노쇼 포함 · 취소 · 보강 제외(급여 기준)`} />
           {sessionRows.length === 0 ? (
             <EmptyState className="py-1 text-sm">이번 달 수업 기록이 없어요.</EmptyState>
           ) : (
@@ -307,7 +315,7 @@ export default function MonthlyReport({ data, onClose }) {
               {sessionRows.map((r) => (
                 <li key={r.user_id} className="flex items-center justify-between rounded-lg border border-line bg-card px-3 py-2 text-sm">
                   <span className="text-ink">{nameOf(r.user_id)}</span>
-                  <span className="tabular-nums font-semibold text-sub">{r.count}회</span>
+                  <span className="tabular-nums font-semibold text-sub">{r.count}회{r.noshow ? <span className="ml-1 text-[12px] font-normal text-muted">(노쇼 {r.noshow})</span> : null}</span>
                 </li>
               ))}
             </ul>
