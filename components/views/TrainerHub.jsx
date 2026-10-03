@@ -34,6 +34,7 @@ import ChurnRiskToday from "@/components/views/ChurnRiskToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
 import ReapproachToday from "@/components/views/ReapproachToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
+import InbodyDueToday from "@/components/views/InbodyDueToday";
 import PriceSheet from "@/components/salesbook/PriceSheet";
 import { useSalesbookAssets } from "@/components/salesbook/DeckLauncher";
 
@@ -59,6 +60,7 @@ const CARDS = {
   churn: { title: "이탈 위험", hint: "2주 넘게 수업이 없는 회원" },
   unconfirmed: { title: "운동일지 미확인", hint: "오늘 오는 회원 중 확인 안 한 일지" },
   reapproach: { title: "OT 다시 연락할 회원", hint: "보류한 OT 회원 중 연락할 날이 된 회원" },
+  inbody: { title: "인바디 잴 회원", hint: "마지막 측정이 2주 · 4주 넘은 PT 회원" },
 };
 
 function Tile({ icon: Icon, label, title, desc, tone, onClick }) {
@@ -213,6 +215,7 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
       case "churn": return <ChurnRiskToday members={scoped} onSelect={(mid, t) => go(mid, t ?? 10)} />;
       case "unconfirmed": return <UnconfirmedConfirmToday members={scoped} uid={uid} onSelect={(mid) => go(mid, 10)} />;
       case "reapproach": return <ReapproachToday members={scoped} onSelect={(mid) => go(mid, 1)} />;
+      case "inbody": return <InbodyDueToday members={scoped} onSelect={(mid) => go(mid, 12)} />;
       default: return null;
     }
   };

@@ -26,6 +26,7 @@ import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
 import TodoManual from "@/components/views/TodoManual";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
+import InbodyDueToday from "@/components/views/InbodyDueToday";
 import OunwanRanking from "@/components/home/OunwanRanking";
 import SectionTitle from "@/components/ui/SectionTitle";
 
@@ -181,6 +182,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
           <RegisterReapproachToday members={scoped} onSelect={(id) => go(id, 11)} />
           <UnclosedClosingToday members={scoped} onSelect={(id) => go(id, 5)} />
           <ChurnRiskToday members={scoped} onSelect={(id, t) => go(id, t ?? 10)} />
+          <InbodyDueToday members={scoped} onSelect={(id) => go(id, 12)} />
           <p className="text-[12px] text-muted">해당하는 회원이 있을 때만 카드가 떠요.</p>
         </Column>
 

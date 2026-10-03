@@ -9,7 +9,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 
 export const TILE_IDS = ["ot", "pt", "salesbook", "stats", "schedule", "cases", "price", "add"];
-export const CARD_IDS = ["ranking", "numbers", "regdue", "churn", "unconfirmed", "reapproach"];
+export const CARD_IDS = ["ranking", "numbers", "regdue", "churn", "unconfirmed", "reapproach", "inbody"];
 export const DEFAULT_LAYOUT = { tiles: ["ot", "pt", "salesbook", "stats"], cards: ["ranking"] };
 
 const KEY = "ot.homeLayout.v1";
