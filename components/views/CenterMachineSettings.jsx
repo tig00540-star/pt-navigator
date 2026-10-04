@@ -33,6 +33,7 @@ export default function CenterMachineSettings() {
   const [brand, setBrand] = useState("");
   const [kind, setKind] = useState("machine");
   const [spec, setSpec] = useState("");
+  const [stepKg, setStepKg] = useState("");    // 한 칸(kg · 선택) — 회원 개인운동 루틴 무게 맞추기(lib/routine)
   const [cues, setCues] = useState("");        // 줄 = 큐 1개
   const [cueLoading, setCueLoading] = useState(false);
   const { toast, showToast } = useToast();
@@ -55,7 +56,7 @@ export default function CenterMachineSettings() {
     return () => { cancelled = true; };
   }, []);
 
-  const resetForm = () => { setName(""); setBrand(""); setKind("machine"); setSpec(""); setCues(""); setEditingId(null); };
+  const resetForm = () => { setName(""); setBrand(""); setKind("machine"); setSpec(""); setStepKg(""); setCues(""); setEditingId(null); };
 
   // 머신별 실행 큐 AI 초안 — /api/machine-cues(생성만). 기존 입력에 덧붙이고 트레이너가 다듬어 저장.
   const genCues = async () => {
@@ -79,7 +80,7 @@ export default function CenterMachineSettings() {
     if (saving) return;
     if (!name.trim()) return showToast("장비 이름을 입력해 주세요");
     const cueArr = cues.split("\n").map((s) => s.trim()).filter(Boolean);
-    const payload = { name: name.trim(), brand: brand.trim() || null, kind, spec: spec.trim() || null, cues: cueArr.length ? cueArr : null };
+    const payload = { name: name.trim(), brand: brand.trim() || null, kind, spec: spec.trim() || null, cues: cueArr.length ? cueArr : null, step_kg: Number(stepKg) > 0 ? Number(stepKg) : null };
     setSaving(true);
     if (!supabase) {
       if (editingId) setRows((p) => p.map((r) => (r.id === editingId ? { ...r, ...payload } : r)));
@@ -108,7 +109,7 @@ export default function CenterMachineSettings() {
     }
   };
 
-  const startEdit = (r) => { setEditingId(r.id); setName(r.name ?? ""); setBrand(r.brand ?? ""); setKind(r.kind ?? "machine"); setSpec(r.spec ?? ""); setCues(Array.isArray(r.cues) ? r.cues.join("\n") : ""); setConfirmId(null); };
+  const startEdit = (r) => { setEditingId(r.id); setName(r.name ?? ""); setBrand(r.brand ?? ""); setKind(r.kind ?? "machine"); setSpec(r.spec ?? ""); setStepKg(r.step_kg ? String(r.step_kg) : ""); setCues(Array.isArray(r.cues) ? r.cues.join("\n") : ""); setConfirmId(null); };
 
   const remove = async (id) => {
     if (confirmId !== id) { setConfirmId(id); return; }
@@ -149,6 +150,10 @@ export default function CenterMachineSettings() {
             <label className="block">
               <span className="mb-1 block text-[12.5px] font-medium text-muted">규격·중량 <span className="text-muted">(선택)</span></span>
               <input type="text" value={spec} onChange={(e) => setSpec(e.target.value)} disabled={saving} placeholder="예: 덤벨 2.5~40kg (덤벨은 한 항목으로)" className={inputCls} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[12.5px] font-medium text-muted">한 칸 무게(kg) <span className="text-muted">(선택 · 회원 개인운동 루틴 무게를 이 칸에 맞춰요)</span></span>
+              <input type="number" inputMode="decimal" min="0" step="0.5" value={stepKg} onChange={(e) => setStepKg(e.target.value)} disabled={saving} placeholder="예: 5 (비우면 PT 기록 간격이나 기본값으로)" className={inputCls} />
             </label>
             <label className="block">
               <span className="mb-1 flex items-center justify-between gap-2">

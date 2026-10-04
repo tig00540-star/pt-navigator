@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Flame, Trophy, Sparkles } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import MyPtCard from "@/components/member/MyPtCard";
+import RoutineSection from "@/components/member/RoutineSection";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { holidayName } from "@/lib/holidays";
 import { buildExerciseSeries } from "@/lib/workout";
@@ -1099,6 +1100,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {subTab === "write" && (
           <>
+        {/* 오늘 할 개인운동(트레이너가 확정 · 보이기 켠 루틴 · 2026-10-04) — 맨 위 */}
+        <RoutineSection supabase={memberSupabase} me={me} ptLogs={logs} onSaved={() => { onReloadSchedule?.(); onReloadLogs?.(); }} />
+
         {/* 개인운동 기록(M3) — 폼만(목록은 내 기록 탭). */}
         <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="form" />
 
