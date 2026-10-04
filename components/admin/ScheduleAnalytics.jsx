@@ -34,11 +34,11 @@ function SummaryTile({ icon: Icon, label, value, sub, accent = "ink" }) {
   const color = accent === "rose" ? "text-danger-text" : accent === "cyan" ? "text-cyan-700" : "text-ink";
   return (
     <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
-      <div className="flex items-center gap-1.5 text-[11px] tracking-label-ko text-muted">
+      <div className="flex items-center gap-1.5 text-[12px] tracking-label-ko text-muted">
         {Icon && <Icon className="h-3.5 w-3.5" />}{label}
       </div>
       <div className={`mt-1.5 font-mono text-2xl font-extrabold ${color}`}>{value}</div>
-      {sub && <div className="mt-1 text-[11px] leading-relaxed text-muted">{sub}</div>}
+      {sub && <div className="mt-1 text-[12px] leading-relaxed text-muted">{sub}</div>}
     </div>
   );
 }
@@ -76,7 +76,7 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
 
   return (
     <div className="space-y-6">
-      <p className="text-[12px] leading-relaxed text-sub">예약이 <b className="text-ink">언제 몰리고</b>, 누가 <b className="text-ink">잘 채우는지</b> 최근 90일로 봐요.</p>
+      <p className="text-[13.5px] leading-relaxed text-sub">예약이 <b className="text-ink">언제 몰리고</b>, 누가 <b className="text-ink">잘 채우는지</b> 최근 90일로 봐요.</p>
 
       {/* 1) 요약 타일 4개 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -89,17 +89,17 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
       {/* 이번 달 진행 수업 (OT/PT) — 실제 진행 기록(예약과 별개) · 90일 히트맵과 창 다름 */}
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">이번 달 진행 수업 · 트레이너별 OT / PT</span>
-          <span className="text-[11px] text-muted">· 센터 합계 OT {otMonthTotal} · PT {ptMonthTotal}</span>
+          <CalendarClock className="h-4 w-4 shrink-0 text-primary-strong" />
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">이번 달 진행 수업 · 트레이너별 OT / PT</span>
+          <span className="text-[12px] text-muted">· 센터 합계 OT {otMonthTotal} · PT {ptMonthTotal}</span>
         </div>
         {trainers.length === 0 ? (
-          <p className="text-[12px] text-muted">트레이너 데이터가 없습니다.</p>
+          <p className="text-[12px] text-muted">트레이너 데이터가 없어요.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[420px] border-collapse text-sm">
               <thead>
-                <tr className="text-[11px] tracking-label-ko text-muted">
+                <tr className="text-[12px] tracking-label-ko text-muted">
                   <th className="border-b border-line px-2.5 py-2 text-left font-semibold">트레이너</th>
                   <th className="border-b border-line px-2.5 py-2 text-right font-semibold">OT 진행</th>
                   <th className="border-b border-line px-2.5 py-2 text-right font-semibold">PT 진행</th>
@@ -122,36 +122,36 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
             </table>
           </div>
         )}
-        <p className="mt-2 text-[10px] leading-relaxed text-muted">OT = ot_log(1·2차 관찰) · PT = 완료 수업(노쇼 제외) · 이번 달({ym}) 기준. 실제 진행 기록이라 예약과 별개예요.</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-muted">OT = ot_log(1·2차 관찰) · PT = 완료 수업(노쇼 제외) · 이번 달({ym}) 기준. 실제 진행 기록이라 예약과 별개예요.</p>
       </Card>
 
       {/* 예약 밀도 · 트레이너 스케줄 — 상시 노출 */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <LayoutGrid className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">예약 밀도 · 트레이너 스케줄</span>
+          <LayoutGrid className="h-4 w-4 shrink-0 text-primary-strong" />
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">예약 밀도 · 트레이너 스케줄</span>
         </div>
       {/* 2) 요일×시간 밀도 히트맵 */}
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <LayoutGrid className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">요일·시간대 예약 밀도</span>
-          {peak && <span className="text-[11px] text-cyan-700">· {DAYS[peak.wd]} {peak.hour}시가 가장 붐빔</span>}
+          <LayoutGrid className="h-4 w-4 shrink-0 text-primary-strong" />
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">요일·시간대 예약 밀도</span>
+          {peak && <span className="text-[12px] text-cyan-700">· {DAYS[peak.wd]} {peak.hour}시가 가장 붐빔</span>}
         </div>
         {grid.total === 0 ? (
-          <p className="text-[12px] text-muted">최근 90일 예약이 없습니다.</p>
+          <p className="text-[12px] text-muted">최근 90일 예약이 없어요.</p>
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[560px]">
               <div className="flex">
                 <div className="w-10 shrink-0" />
                 {DAYS.map((d, i) => (
-                  <div key={i} className={`flex-1 pb-1 text-center text-[11px] font-semibold ${i === 6 ? "text-rose-600" : i === 5 ? "text-sky-600" : "text-sub"}`}>{d}</div>
+                  <div key={i} className={`flex-1 pb-1 text-center text-[12px] font-semibold ${i === 6 ? "text-rose-600" : i === 5 ? "text-sky-600" : "text-sub"}`}>{d}</div>
                 ))}
               </div>
               {grid.hours.map((h, ci) => (
                 <div key={h} className="flex items-stretch">
-                  <div className="w-10 shrink-0 py-1 pr-1 text-right font-mono text-[10px] text-muted">{h}시</div>
+                  <div className="w-10 shrink-0 py-1 pr-1 text-right font-mono text-[12px] text-muted">{h}시</div>
                   {DAYS.map((_, wd) => {
                     const n = grid.grid[wd][ci];
                     const ratio = grid.max ? n / grid.max : 0;
@@ -166,7 +166,7 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
             </div>
           </div>
         )}
-        <p className="mt-2 text-[10px] leading-relaxed text-muted">
+        <p className="mt-2 text-[12px] leading-relaxed text-muted">
           진하게 = 예약 많음 · 빈칸 = 예약 없는 시간대. ※ 트레이너 정원(근무시간) 데이터가 없어 &lsquo;가동률 %&rsquo;가 아니라 예약 <b>밀도</b>예요.
         </p>
       </Card>
@@ -174,16 +174,16 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
       {/* 3) 트레이너별 스케줄 표 */}
       <Card>
         <div className="mb-3 flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 스케줄 · 완료·노쇼</span>
+          <CalendarClock className="h-4 w-4 shrink-0 text-primary-strong" />
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">트레이너별 스케줄 · 완료·노쇼</span>
         </div>
         {trainers.length === 0 ? (
-          <p className="text-[12px] text-muted">트레이너 데이터가 없습니다.</p>
+          <p className="text-[12px] text-muted">트레이너 데이터가 없어요.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
-                <tr className="text-[11px] tracking-label-ko text-muted">
+                <tr className="text-[12px] tracking-label-ko text-muted">
                   <th className="border-b border-line px-2.5 py-2 text-left font-semibold">트레이너</th>
                   <th className="border-b border-line px-2.5 py-2 text-right font-semibold">예약</th>
                   <th className="border-b border-line px-2.5 py-2 text-right font-semibold">완료</th>
@@ -213,7 +213,7 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
             </table>
           </div>
         )}
-        <p className="mt-2 px-1 text-[10px] leading-relaxed text-muted">완료율 = 완료 ÷ (완료+취소) · 노쇼율 = 운동일지 노쇼 ÷ 전체 수업(예약과 별개 집계).</p>
+        <p className="mt-2 px-1 text-[12px] leading-relaxed text-muted">완료율 = 완료 ÷ (완료+취소) · 노쇼율 = 운동일지 노쇼 ÷ 전체 수업(예약과 별개 집계).</p>
       </Card>
       </div>
 
@@ -221,26 +221,26 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
       <ToneCard tone="danger">
         <div className="mb-2 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-danger-text" />
-          <h3 className="text-sm font-bold text-ink">미처리 예약 · 완료/취소 안 됨</h3>
-          <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-danger-text">{pastDue.length}</span>
+          <h3 className="text-[15px] font-bold tracking-[-0.02em] text-ink">미처리 예약 · 완료/취소 안 됨</h3>
+          <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[12px] font-bold text-danger-text">{pastDue.length}</span>
         </div>
         {pastDue.length === 0 ? (
-          <p className="text-[12px] text-muted">미처리 예약이 없습니다.</p>
+          <p className="text-[12px] text-muted">미처리 예약이 없어요.</p>
         ) : (
           <>
             <ul className="space-y-1.5">
               {pastDue.slice(0, LIMIT).map((a) => (
                 <li key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-rose-500/20 bg-card px-3 py-2.5">
                   <span className="text-sm font-semibold text-ink">{memberName(a.user_id)}</span>
-                  <span className="text-[11px] text-muted">{nameOf(a.trainer_id)}</span>
-                  <span className="ml-auto font-mono text-[11px] text-muted">{kstTime(a.start_at)}</span>
+                  <span className="text-[12px] text-muted">{nameOf(a.trainer_id)}</span>
+                  <span className="ml-auto font-mono text-[12px] text-muted">{kstTime(a.start_at)}</span>
                 </li>
               ))}
             </ul>
-            {pastDue.length > LIMIT && <p className="mt-2 text-[11px] text-muted">외 {pastDue.length - LIMIT}건</p>}
+            {pastDue.length > LIMIT && <p className="mt-2 text-[12px] text-muted">외 {pastDue.length - LIMIT}건</p>}
           </>
         )}
-        <p className="mt-2 text-[10px] leading-relaxed text-muted">지난 예약을 완료(차감)나 취소로 정리하면 통계가 정확해져요.</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-muted">지난 예약을 완료(차감)나 취소로 정리하면 통계가 정확해져요.</p>
       </ToneCard>
     </div>
   );

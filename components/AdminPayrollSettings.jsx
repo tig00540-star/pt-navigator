@@ -237,7 +237,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
 
             {type === "manual" ? (
               <p className="rounded-lg border border-line bg-elevate px-3 py-2.5 text-[12px] leading-relaxed text-sub">
-                매월 확정 화면에서 대표가 최종 급여액을 직접 입력합니다. (자동 계산 없음)
+                매월 확정 화면에서 대표가 최종 급여액을 직접 입력해요. (자동 계산 없음)
               </p>
             ) : (
               <>
@@ -265,7 +265,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
                 {/* 밴드 리스트 */}
                 <div className="space-y-3">
                   {bands.length === 0 ? (
-                    <p className="text-[12px] text-muted">밴드가 없습니다. 아래 &lsquo;밴드 추가&rsquo;로 구간을 만드세요.</p>
+                    <p className="text-[12px] text-muted">밴드가 없어요. 아래 &lsquo;밴드 추가&rsquo;로 구간을 만드세요.</p>
                   ) : (
                     bands.map((b, i) => (
                       <div key={i} className="rounded-xl border border-line bg-elevate p-3">

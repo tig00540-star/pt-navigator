@@ -129,19 +129,19 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
 
   return (
     <div className="space-y-4">
-      <p className="text-[12px] leading-relaxed text-sub">
+      <p className="text-[13.5px] leading-relaxed text-sub">
         회원이 들어와서 <b className="text-ink">어디서 새는지</b>, 그리고 지금 챙길 사람이 누구인지.
       </p>
 
       {/* ── 신규 → 등록 ── */}
       <Card>
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">신규 OT → PT 등록</span>
+          <Filter className="h-4 w-4 shrink-0 text-primary-strong" />
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">신규 OT → PT 등록</span>
         </div>
 
         {funnel.intake === 0 ? (
-          <p className="mt-3 text-[12px] text-muted">OT로 들어온 회원이 없습니다.</p>
+          <p className="mt-3 text-[13px] text-muted">OT로 들어온 회원이 없어요.</p>
         ) : (
           <>
             <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -156,7 +156,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
                 const drop = prev && prev > 0 ? prev - s.n : null;
                 return (
                   <div key={s.label}>
-                    <div className="mb-1 flex items-center justify-between text-[11px]">
+                    <div className="mb-1 flex items-center justify-between text-[12px]">
                       <span className="font-semibold text-ink">{s.label} <span className="text-muted">{s.n}명</span></span>
                       <span className="font-mono text-muted">
                         {w}%{drop != null && drop > 0 && <span className="ml-1.5 text-danger-text">−{drop}명</span>}
@@ -174,7 +174,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
               <span>1차에서 등록 <b className="text-ink">{rpct(firstRate)}</b> <span className="text-muted">({funnel.firstSuccess}/{funnel.firstAttempt})</span></span>
               <span>2차에서 등록 <b className="text-ink">{rpct(secondRate)}</b> <span className="text-muted">({funnel.secondSuccess}/{funnel.secondAttempt})</span></span>
             </div>
-            <p className="mt-2 text-[10px] leading-relaxed text-muted">
+            <p className="mt-2 text-[12px] leading-relaxed text-muted">
               각 단계는 앞 단계에 포함돼요(2차 진행 회원은 1차에도 들어감). 지금 시점 기준이라 이번 달 성적이 아니라 누적입니다.
             </p>
           </>
@@ -184,11 +184,11 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
       {/* ── 월별 전환(코호트) — "나아지고 있나"에 답하는 자리 ── */}
       <Card>
         <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">달마다 등록률 · 나아지고 있나</span>
+          <Users className="h-4 w-4 shrink-0 text-primary-strong" />
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">달마다 등록률 · 나아지고 있나</span>
         </div>
         {trend.every((t) => t.intake === 0) ? (
-          <p className="mt-3 text-[12px] text-muted">아직 달별로 비교할 유입이 없습니다.</p>
+          <p className="mt-3 text-[12px] text-muted">아직 달별로 비교할 유입이 없어요.</p>
         ) : (
           <>
             <div className="mt-4 flex items-stretch justify-between gap-2" style={{ height: 110 }}>
@@ -204,13 +204,13 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
                         <div className="absolute inset-x-0 bottom-0 bg-cyan-500" style={{ height: `${fill}%` }} />
                       </div>
                     </div>
-                    <div className={`font-mono text-[10px] font-bold ${last ? "text-muted" : "text-ink"}`}>{rpct(t.rate)}</div>
-                    <div className="text-[10px] text-muted">{Number(t.ym.slice(5))}월</div>
+                    <div className={`font-mono text-[12px] font-bold ${last ? "text-muted" : "text-ink"}`}>{rpct(t.rate)}</div>
+                    <div className="text-[12px] text-muted">{Number(t.ym.slice(5))}월</div>
                   </div>
                 );
               })}
             </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-muted">
+            <p className="mt-3 text-[12px] leading-relaxed text-muted">
               그 달에 <b className="text-ink">들어온</b> 회원 중 몇 %가 등록했는지예요(회색 막대=유입 인원, 파란 부분=등록).
               이번 달은 아직 진행 중이라 낮게 보여요. 등록은 다음 달에도 일어나요.
             </p>
@@ -221,8 +221,8 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
       {/* ── PT 회원 유지 ── */}
       <Card>
         <div className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-muted" />
-          <span className="text-[11px] font-semibold tracking-label-ko text-muted">PT 회원 · 재등록과 이탈</span>
+          <RefreshCw className="h-4 w-4 shrink-0 text-primary-strong" />
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">PT 회원 · 재등록과 이탈</span>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <Stat label="재등록률" value={rpct(rereg.rate)} sub={rereg.attempted ? `${rereg.success}/${rereg.attempted}건` : "이력 없음"} accent="cyan" />
@@ -244,10 +244,10 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${empty ? "text-muted" : color}`} />
                 <div className="min-w-0 flex-1">
                   <div className={`text-sm font-bold ${empty ? "text-muted" : "text-ink"}`}>{l.title}</div>
-                  <div className="mt-0.5 text-[11px] text-muted">{l.hint}</div>
+                  <div className="mt-0.5 text-[12px] text-muted">{l.hint}</div>
                 </div>
                 {!empty && (
-                  <div className="mt-0.5 inline-flex shrink-0 items-center text-[11px] text-muted">
+                  <div className="mt-0.5 inline-flex shrink-0 items-center text-[12px] text-muted">
                     {isOpen ? "접기" : "누구인지 보기"}
                     <ChevronDown className={`h-3 w-3 transition ${isOpen ? "rotate-180" : ""}`} />
                   </div>
@@ -259,12 +259,12 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
                   {l.rows.map((r) => (
                     <li key={r.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px]">
                       <span className="font-medium text-sub">{memberName(r.user_id)}</span>
-                      <span className="text-[11px] text-muted">{nameOf(r.trainerId)}</span>
-                      {r.tag && <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${l.tone === "rose" ? "bg-rose-500/10 text-danger-text" : "bg-cyan-500/10 text-cyan-700"}`}>{r.tag}</span>}
-                      {r.note && <span className="ml-auto font-mono text-[11px] text-muted">{r.note}</span>}
+                      <span className="text-[12px] text-muted">{nameOf(r.trainerId)}</span>
+                      {r.tag && <span className={`rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${l.tone === "rose" ? "bg-rose-500/10 text-danger-text" : "bg-cyan-500/10 text-cyan-700"}`}>{r.tag}</span>}
+                      {r.note && <span className="ml-auto font-mono text-[12px] text-muted">{r.note}</span>}
                     </li>
                   ))}
-                  {l.more > 0 && <li className="pt-1 text-[11px] text-muted">외 {l.more}명 더 있어요</li>}
+                  {l.more > 0 && <li className="pt-1 text-[12px] text-muted">외 {l.more}명 더 있어요</li>}
                 </ul>
               )}
             </Card>
@@ -287,9 +287,9 @@ function Stat({ label, value, sub, accent }) {
   const color = accent === "rose" ? "text-danger-text" : accent === "cyan" ? "text-cyan-700" : "text-ink";
   return (
     <div className="rounded-xl border border-line bg-elevate px-3 py-2.5">
-      <div className="text-[10px] tracking-label-ko text-muted">{label}</div>
+      <div className="text-[12px] tracking-label-ko text-muted">{label}</div>
       <div className={`mt-0.5 font-mono text-lg font-extrabold ${color}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[10px] text-muted">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[12px] text-muted">{sub}</div>}
     </div>
   );
 }

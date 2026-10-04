@@ -41,7 +41,7 @@ export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreat
 
   return (
     <Card>
-      <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
+      <div className="flex items-center gap-2 text-[12px] font-semibold tracking-label-ko text-muted">
         <UserPlus className="h-3.5 w-3.5" /> 트레이너 추가
         {seatLimit != null && seatLimit > 0 && (
           <span className={`ml-auto font-mono ${full ? "text-danger-text" : "text-muted"}`}>
@@ -63,7 +63,7 @@ export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreat
           <div className="font-semibold text-primary-strong">계정을 만들었어요. 이 트레이너에게 전달해 주세요</div>
           <div className="mt-1 text-ink">이메일: <span className="font-mono">{result.email}</span></div>
           <div className="text-ink">임시 비번: <span className="font-mono text-primary-strong">{result.pw}</span></div>
-          <div className="mt-1 text-[11px] text-muted">⚠️ 이 화면에서만 보여요. 트레이너는 로그인 후 이 비번으로 접속합니다.</div>
+          <div className="mt-1 text-[12px] text-muted">⚠️ 이 화면에서만 보여요. 트레이너는 로그인 후 이 비번으로 접속해요.</div>
         </div>
       )}
     </Card>

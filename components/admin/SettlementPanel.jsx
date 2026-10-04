@@ -26,7 +26,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Card from "@/components/ui/Card";
 import { won } from "@/lib/format";
-import Eyebrow from "@/components/ui/Eyebrow";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 import { inputCls } from "@/components/ui/Field";
 import { kstToday } from "@/lib/date";
@@ -137,7 +137,7 @@ function ViewPane({
   return (
     <>
       <Card as="section">
-        <Eyebrow icon={Wallet}>정산</Eyebrow>
+        <SectionTitle icon={Wallet} className="mb-1">정산</SectionTitle>
 
         {/* 기간 — 기본은 앞뒤로 넘기기. 날짜를 직접 채우는 건 예외라 접어둔다. */}
         {!custom ? (
@@ -161,18 +161,18 @@ function ViewPane({
         ) : (
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">시작일</span>
+              <span className="mb-1 block text-[12px] font-medium text-muted">시작일</span>
               <input type="date" value={cFrom} onChange={(e) => setCFrom(e.target.value)} className={inputCls} />
             </label>
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">종료일</span>
+              <span className="mb-1 block text-[12px] font-medium text-muted">종료일</span>
               <input type="date" value={cTo} onChange={(e) => setCTo(e.target.value)} className={inputCls} />
             </label>
           </div>
         )}
         <div className="mt-1.5 text-center">
           <button type="button" onClick={() => (custom ? setCustom(false) : openCustom())}
-            className="text-[11px] font-semibold text-muted underline underline-offset-2">
+            className="text-[12px] font-semibold text-muted underline underline-offset-2">
             {custom ? "정산 기간으로 돌아가기" : "직접 고르기"}
           </button>
         </div>
@@ -189,7 +189,7 @@ function ViewPane({
         {byCat.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {byCat.map((c) => (
-              <span key={c.category} className="rounded-full border border-line bg-elevate px-2.5 py-1 text-[11px] text-sub">
+              <span key={c.category} className="rounded-full border border-line bg-elevate px-2.5 py-1 text-[12px] text-sub">
                 {c.category} <b className="font-mono text-ink">{won(c.amount)}</b>
               </span>
             ))}
@@ -216,7 +216,7 @@ function ViewPane({
               {startDay === 1 ? "매달 1일부터 말일까지" : `매달 ${startDay}일부터 다음달 ${startDay - 1}일까지`}
             </span>
             </div>
-            {custom && <p className="mt-1 text-[11px] text-muted">지금은 직접 고른 기간을 보고 있어요. 이 설정은 매달의 기본 기간이에요.</p>}
+            {custom && <p className="mt-1 text-[12px] text-muted">지금은 직접 고른 기간을 보고 있어요. 이 설정은 매달의 기본 기간이에요.</p>}
           </div>
         )}
       </Card>
@@ -269,9 +269,9 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
   return (
     <>
       <Card as="section">
-        <Eyebrow icon={Plus}>장부 적기</Eyebrow>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">
-          회원권 상세(기간·락커·운동복)는 메모에 자유롭게 적으세요. 예: &quot;김OO 3개월 + 락커&quot;
+        <SectionTitle icon={Plus} className="mb-1">장부 적기</SectionTitle>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">
+          회원권 상세(기간·락커·운동복)는 메모에 자유롭게 적어 주세요. 예: &quot;김OO 3개월 + 락커&quot;
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -302,19 +302,19 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
       <Card as="section">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-[13px] font-bold text-ink">이 기간 내역</span>
-          <span className="text-[11px] text-muted">{dayLabel(from)} ~ {dayLabel(to)}</span>
+          <span className="text-[12px] text-muted">{dayLabel(from)} ~ {dayLabel(to)}</span>
         </div>
 
         {ledger.length === 0 ? (
           <p className="mt-3 rounded-xl border border-dashed border-line bg-elevate px-4 py-6 text-center text-[12px] text-muted">
-            이 기간에 적은 내역이 없습니다.
+            이 기간에 적은 내역이 없어요.
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-line rounded-xl border border-line">
             {ledger.map((r) => (
               <li key={r.id} className="flex items-center gap-2 px-3 py-2.5">
                 <span className="font-mono text-[12px] text-muted">{r.date.slice(5)}</span>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${r.income ? "bg-primary-soft text-primary-strong" : "bg-elevate text-sub"}`}>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] ${r.income ? "bg-primary-soft text-primary-strong" : "bg-elevate text-sub"}`}>
                   {r.label}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-sub">{r.memo || ""}</span>
@@ -339,7 +339,7 @@ function Row({ label, value, sub, strong, accent }) {
     <div className="flex items-center justify-between gap-3 px-4 py-3">
       <span className="min-w-0">
         <span className={`block text-[13px] ${strong ? "font-extrabold text-ink" : "font-semibold text-sub"}`}>{label}</span>
-        {sub && <span className="mt-0.5 block text-[11px] text-muted">{sub}</span>}
+        {sub && <span className="mt-0.5 block text-[12px] text-muted">{sub}</span>}
       </span>
       <span className={`shrink-0 font-mono tabular-nums ${
         accent ? "text-[17px] font-extrabold text-primary-strong" : strong ? "text-[15px] font-extrabold text-ink" : "text-[14px] text-sub"

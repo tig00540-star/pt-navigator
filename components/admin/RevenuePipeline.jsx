@@ -13,6 +13,7 @@ import {
 } from "@/lib/memberStatus";
 import { won, wonApprox, personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
+import SectionTitle from "@/components/ui/SectionTitle";
 
 const pctText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 
@@ -20,7 +21,7 @@ const pctText = (r) => (r == null ? "—" : Math.round(r * 100) + "%");
 function Line({ label, value, accent }) {
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2">
-      <span className="text-[12px] font-semibold text-sub">{label}</span>
+      <span className="text-[13px] font-semibold text-sub">{label}</span>
       <span className={`shrink-0 font-mono tabular-nums ${accent ? "text-[15px] font-extrabold text-primary-strong" : "text-[13px] font-bold text-ink"}`}>{value}</span>
     </div>
   );
@@ -62,14 +63,14 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
 
   return (
     <div className="space-y-6">
-      <p className="text-[12px] leading-relaxed text-sub">이달 <b className="text-ink">번 돈과 목표</b>, 다음달 <b className="text-ink">들어올 돈 예상</b>을 한눈에.</p>
+      <p className="text-[13.5px] leading-relaxed text-sub">이달 <b className="text-ink">번 돈과 목표</b>, 다음 달 <b className="text-ink">들어올 돈 예상</b>을 한눈에.</p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         {/* 블록① 이달 매출/목표 게이지 */}
         <Card>
-          <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><Wallet className="h-3.5 w-3.5" /> 이달 매출 현황</div>
+          <SectionTitle icon={Wallet} className="mb-0">이달 매출 현황</SectionTitle>
           <div className="mt-2 font-mono text-4xl font-extrabold text-primary-strong">{won(net)}</div>
-          <div className="mt-1 text-xs text-muted">{Number(ym.slice(5))}월 현재 총 매출</div>
+          <div className="mt-1 text-[13px] text-muted">{Number(ym.slice(5))}월 현재 총 매출</div>
           {target != null ? (
             <div className="mt-4">
               {/* 목표 · 현재 · 달성률 세 줄 */}
@@ -82,37 +83,37 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
                 <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((goalPct ?? 0) * 100))}%` }} />
               </div>
               {goalPct != null && goalPct >= 1 && (
-                <div className="mt-2 inline-block rounded bg-cyan-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-cyan-700">목표 달성</div>
+                <div className="mt-2 inline-block rounded bg-cyan-500/10 px-1.5 py-0.5 text-[12px] font-semibold text-cyan-700">목표 달성</div>
               )}
 
               {/* 트레이너별 목표 — 합산 목표만으론 누가 밀리는지 모른다. */}
               {trainerRows.length > 0 && (
                 <div className="mt-4">
-                  <div className="mb-1.5 text-[11px] font-semibold tracking-label-ko text-muted">트레이너별 목표</div>
+                  <div className="mb-1.5 text-[13px] font-semibold text-sub">트레이너별 목표</div>
                   <ul className="space-y-1.5">
                     {trainerRows.map((t) => (
-                      <li key={t.id} className="flex items-center gap-2 text-[12px]">
+                      <li key={t.id} className="flex items-center gap-2 text-[13px]">
                         <span className="min-w-0 flex-1 truncate font-medium text-sub">{t.name}</span>
                         {t.goal == null ? (
-                          <span className="text-[11px] text-muted">목표 미설정</span>
+                          <span className="text-[12px] text-muted">목표 미설정</span>
                         ) : (
                           <>
                             <span className="font-mono text-ink">{won(t.rev)}</span>
-                            <span className="text-[11px] text-muted">/ {won(t.goal)}</span>
-                            <span className={`w-10 shrink-0 text-right font-mono text-[11px] font-bold ${t.pct >= 1 ? "text-cyan-700" : "text-muted"}`}>{pctText(t.pct)}</span>
+                            <span className="text-[12px] text-muted">/ {won(t.goal)}</span>
+                            <span className={`w-10 shrink-0 text-right font-mono text-[12px] font-bold ${t.pct >= 1 ? "text-cyan-700" : "text-muted"}`}>{pctText(t.pct)}</span>
                           </>
                         )}
                       </li>
                     ))}
                   </ul>
                   {trainerRows.some((t) => t.goal == null) && (
-                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted">목표를 안 세운 트레이너가 있어 센터 목표가 실제보다 작게 잡혀 있어요.</p>
+                    <p className="mt-1.5 text-[12px] leading-relaxed text-muted">목표를 안 세운 트레이너가 있어 센터 목표가 실제보다 작게 잡혀 있어요.</p>
                   )}
                 </div>
               )}
             </div>
           ) : (
-            <div className="mt-4 rounded-xl border border-line bg-elevate px-3 py-2.5 text-[11px] leading-relaxed text-muted">
+            <div className="mt-4 rounded-xl border border-line bg-elevate px-3 py-2.5 text-[12px] leading-relaxed text-muted">
               이달 목표가 아직 없어요. 트레이너가 &lsquo;내 실적&rsquo;에서 이달 목표를 설정하면 센터 합산 목표로 표시돼요.
             </div>
           )}
@@ -120,32 +121,32 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
 
         {/* 블록② 다음달 예측(추정) */}
         <Card>
-          <div className="flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><TrendingUp className="h-3.5 w-3.5" /> 다음달 예상 매출 · 추정</div>
+          <SectionTitle icon={TrendingUp} className="mb-0">다음 달 예상 매출 · 추정</SectionTitle>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
             <span className="font-mono text-4xl font-extrabold text-cyan-700">{forecast.total != null ? wonApprox(forecast.total) : "추정 불가"}</span>
-            <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-muted">추정</span>
+            <span className="rounded bg-elevate px-1.5 py-0.5 text-[12px] font-semibold text-muted">추정</span>
           </div>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-line bg-elevate p-3">
-              <div className="text-[11px] font-semibold text-sub">신규 유입에서</div>
+              <div className="text-[13px] font-semibold text-sub">신규 유입에서</div>
               {forecast.expectedNew != null ? (
                 <>
                   <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedNew)}</div>
-                  <div className="mt-1 text-[10px] leading-relaxed text-muted">OT 진행 {forecast.otPipeline}명 × 등록률 {pctText(forecast.convRate)} × 평균 {wonApprox(forecast.avgNew)}</div>
+                  <div className="mt-1 text-[12px] leading-relaxed text-muted">OT 진행 {forecast.otPipeline}명 × 등록률 {pctText(forecast.convRate)} × 평균 {wonApprox(forecast.avgNew)}</div>
                 </>
-              ) : <div className="mt-1 text-[11px] text-muted">OT 이력이 더 쌓이면 보여 드려요</div>}
+              ) : <div className="mt-1 text-[12px] text-muted">OT 이력이 더 쌓이면 보여 드려요</div>}
             </div>
             <div className="rounded-xl border border-line bg-elevate p-3">
-              <div className="text-[11px] font-semibold text-sub">재등록에서</div>
+              <div className="text-[13px] font-semibold text-sub">재등록에서</div>
               {forecast.expectedRe != null ? (
                 <>
                   <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedRe)}</div>
-                  <div className="mt-1 text-[10px] leading-relaxed text-muted">만료 임박 {forecast.expiringCount}명 × 재등록률 {pctText(forecast.reregRate)} × 평균 {wonApprox(forecast.avgRe)}</div>
+                  <div className="mt-1 text-[12px] leading-relaxed text-muted">만료 임박 {forecast.expiringCount}명 × 재등록률 {pctText(forecast.reregRate)} × 평균 {wonApprox(forecast.avgRe)}</div>
                 </>
-              ) : <div className="mt-1 text-[11px] text-muted">재등록 이력이 더 쌓이면 보여 드려요</div>}
+              ) : <div className="mt-1 text-[12px] text-muted">재등록 이력이 더 쌓이면 보여 드려요</div>}
             </div>
           </div>
-          <p className="mt-3 text-[10px] leading-relaxed text-muted">과거 등록률·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있습니다.</p>
+          <p className="mt-3 text-[12px] leading-relaxed text-muted">과거 등록률·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있어요.</p>
         </Card>
       </div>
 
@@ -153,33 +154,33 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
       <div className="space-y-4">
       {/* 블록③ 신규/재등록 구성비 */}
       <Card>
-        <div className="mb-3 flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><PieChart className="h-3.5 w-3.5" /> 이달 매출 구성 · 신규 vs 재등록</div>
+        <SectionTitle icon={PieChart}>이달 매출 구성 · 신규 vs 재등록</SectionTitle>
         {comp.gross === 0 ? (
-          <p className="text-[12px] text-muted">이달 매출이 아직 없습니다.</p>
+          <p className="text-[12px] text-muted">이달 매출이 아직 없어요.</p>
         ) : (
           <>
             <div className="flex h-3 w-full overflow-hidden rounded-full bg-line">
               <div className="h-full bg-primary" style={{ width: `${Math.round((comp.newShare ?? 0) * 100)}%` }} />
               <div className="h-full bg-cyan-500" style={{ width: `${Math.round((comp.reShare ?? 0) * 100)}%` }} />
             </div>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /><span className="text-sub">신규</span>
                 <b className="font-mono text-ink">{won(comp.newRev)}</b><span className="text-muted">({comp.cntNew}건 · {pctText(comp.newShare)})</span></span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-cyan-500" /><span className="text-sub">재등록</span>
                 <b className="font-mono text-ink">{won(comp.reRev)}</b><span className="text-muted">({comp.cntRe}건 · {pctText(comp.reShare)})</span></span>
             </div>
-            {comp.refund > 0 && <div className="mt-2 text-[11px] font-semibold text-danger-text">환불 −{won(comp.refund)} · 순매출 {won(comp.net)}</div>}
+            {comp.refund > 0 && <div className="mt-2 text-[12px] font-semibold text-danger-text">환불 −{won(comp.refund)} · 순매출 {won(comp.net)}</div>}
           </>
         )}
       </Card>
 
       {/* 블록④ 매출/환불 추이 (6개월) */}
       <Card>
-        <div className="mb-3 flex items-center gap-2 text-[11px] tracking-label-ko text-muted"><LineChart className="h-3.5 w-3.5" /> 매출·환불 추이 · 최근 6개월</div>
+        <SectionTitle icon={LineChart}>매출·환불 추이 · 최근 6개월</SectionTitle>
         {(() => {
           const maxNet = Math.max(1, ...trend.map((t) => t.net));
           const anyRev = trend.some((t) => t.rev > 0);
-          if (!anyRev) return <p className="text-[12px] text-muted">매출 이력이 없습니다.</p>;
+          if (!anyRev) return <p className="text-[12px] text-muted">매출 이력이 없어요.</p>;
           return (
             <div className="flex items-end justify-between gap-2" style={{ height: 120 }}>
               {trend.map((t) => (
@@ -187,15 +188,15 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
                   <div className="flex w-full flex-1 items-end">
                     <div className="mx-auto w-5 rounded-t bg-primary" style={{ height: `${Math.max(2, Math.round((t.net / maxNet) * 100))}%` }} title={won(t.net)} />
                   </div>
-                  <div className="font-mono text-[10px] text-ink">{manLabel(t.net)}</div>
-                  {t.refund > 0 && <div className="font-mono text-[9px] text-danger-text">−{manLabel(t.refund)}</div>}
-                  <div className="text-[10px] text-muted">{t.ym.slice(5)}월</div>
+                  <div className="font-mono text-[12px] text-ink">{manLabel(t.net)}</div>
+                  {t.refund > 0 && <div className="font-mono text-[12px] text-danger-text">−{manLabel(t.refund)}</div>}
+                  <div className="text-[12px] text-muted">{t.ym.slice(5)}월</div>
                 </div>
               ))}
             </div>
           );
         })()}
-        <p className="mt-3 text-[11px] leading-relaxed text-muted">막대는 그 달 매출(환불 뺀 금액), 빨간 숫자는 환불이에요. 단위는 만원입니다.</p>
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">막대는 그 달 매출(환불 뺀 금액), 빨간 숫자는 환불이에요. 단위는 만원이에요.</p>
       </Card>
       </div>
     </div>

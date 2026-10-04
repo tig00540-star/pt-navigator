@@ -120,12 +120,12 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
           </div>
           <div className="max-h-64 space-y-1 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="py-4 text-center text-xs text-muted">재배정할 PT 회원이 없습니다.</p>
+              <p className="py-4 text-center text-xs text-muted">재배정할 PT 회원이 없어요.</p>
             ) : filtered.map((m) => (
               <button key={m.id} onClick={() => pickMember(m)} className="flex w-full items-center gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-left transition hover:border-primary">
                 <span className="text-sm font-medium text-ink">{m.name}</span>
                 <span className="text-xs text-muted">{m.job}</span>
-                <span className="ml-auto text-[11px] text-muted">담당 {nameOf(m.trainer_id)}</span>
+                <span className="ml-auto text-[12px] text-muted">담당 {nameOf(m.trainer_id)}</span>
               </button>
             ))}
           </div>
@@ -136,9 +136,9 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
           <div className="flex items-center justify-between rounded-lg border border-line bg-elevate px-3 py-2">
             <div>
               <span className="text-sm font-semibold text-ink">{member.name}</span>
-              <span className="ml-2 text-[11px] text-muted">현 담당 {nameOf(member.trainer_id)}</span>
+              <span className="ml-2 text-[12px] text-muted">현 담당 {nameOf(member.trainer_id)}</span>
             </div>
-            <button onClick={() => { setMemberId(""); setErr(""); }} className="text-[11px] font-medium text-primary-strong hover:underline">회원 변경</button>
+            <button onClick={() => { setMemberId(""); setErr(""); }} className="text-[12px] font-medium text-primary-strong hover:underline">회원 변경</button>
           </div>
 
           {rem && rem.total > 0 ? (
@@ -149,7 +149,7 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
 
           {/* 새 담당 */}
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">새 담당 트레이너 *</span>
+            <span className="mb-1 block text-[12px] font-medium text-muted">새 담당 트레이너 *</span>
             <select value={trainerId} onChange={(e) => setTrainerId(e.target.value)}
               className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary">
               <option value="">선택하세요</option>
@@ -161,12 +161,12 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
           {rem && rem.total > 0 && (
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-muted">이월 잔여 세션</span>
+                <span className="mb-1 block text-[12px] font-medium text-muted">이월 잔여 세션</span>
                 <NumberInput value={sessions} onValueChange={setSessions} placeholder="20"
                   className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary" />
               </label>
               <label className="block">
-                <span className="mb-1 block text-[11px] font-medium text-muted">회당단가(원)</span>
+                <span className="mb-1 block text-[12px] font-medium text-muted">회당단가(원)</span>
                 <NumberInput value={price} onValueChange={setPrice} placeholder="50000"
                   className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary" />
               </label>

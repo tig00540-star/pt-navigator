@@ -29,22 +29,22 @@ export default function AdminEmptyOnboarding({ members = [], trainers = [], atab
 
   return (
     <div className="mb-6 rounded-2xl border border-line bg-elevate p-5">
-      <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">
+      <div className="text-[12px] font-semibold tracking-label-ko text-primary-strong">
         센터를 시작하는 중
       </div>
       <h2 className="mt-1 text-base font-bold text-ink">아직 데이터가 쌓이기 전이에요</h2>
       <p className="mt-1.5 text-[13px] leading-relaxed text-sub">{hint}</p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
+        <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[12px] text-sub">
           현재 트레이너 <b className="text-ink">{trainerCount}명</b>
         </span>
-        <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] text-sub">
+        <span className="rounded-lg border border-line bg-card px-2.5 py-1 text-[12px] text-sub">
           회원 <b className="text-ink">{memberCount}명</b>
         </span>
       </div>
 
-      <p className="mt-3 text-[11px] leading-relaxed text-muted">
+      <p className="mt-3 text-[12px] leading-relaxed text-muted">
         회원 등록 → OT 진행 → 수업 기록이 쌓이면 각 탭이 자동으로 채워져요.
       </p>
     </div>

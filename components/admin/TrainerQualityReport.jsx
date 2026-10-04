@@ -34,7 +34,7 @@ function SignalChips({ signals }) {
       {signals.map((s, i) => {
         if (s.type === "obs_thin") {
           return (
-            <span key={i} className="inline-flex flex-wrap items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[11px] text-danger-text">
+            <span key={i} className="inline-flex flex-wrap items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[12px] text-danger-text">
               {SIGNAL_LABEL.obs_thin} {s.detail}
               {Array.isArray(s.missing) && s.missing.length > 0 && (
                 <span className="text-danger-text/70">· 빠짐 {s.missing.map((k) => OBS_MISSING_LABEL[k] || k).join("·")}</span>
@@ -44,7 +44,7 @@ function SignalChips({ signals }) {
         }
         if (s.type === "gaps") {
           return (
-            <span key={i} className="inline-flex flex-wrap items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[11px] text-danger-text">
+            <span key={i} className="inline-flex flex-wrap items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[12px] text-danger-text">
               {SIGNAL_LABEL.gaps}
               {Array.isArray(s.detail) && s.detail.length > 0 && <span className="text-danger-text/70">· {s.detail.join(" / ")}</span>}
             </span>
@@ -54,14 +54,14 @@ function SignalChips({ signals }) {
           const r = s.detail?.result === "hold" ? "보류" : "실패";
           const reason = s.detail?.reason ? labelOf(CLOSING_REASON_OPTS, s.detail.reason) : null;
           return (
-            <span key={i} className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[11px] text-danger-text">
+            <span key={i} className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[12px] text-danger-text">
               클로징 {r}{reason ? ` · ${reason}` : ""}
             </span>
           );
         }
         // log_missing
         return (
-          <span key={i} className="inline-flex items-center rounded-md bg-elevate px-2 py-0.5 text-[11px] text-sub">
+          <span key={i} className="inline-flex items-center rounded-md bg-elevate px-2 py-0.5 text-[12px] text-sub">
             {SIGNAL_LABEL.log_missing}
           </span>
         );
@@ -75,9 +75,9 @@ function Metric({ label, value, tone, sub }) {
   const cls = tone === "warn" ? "text-danger-text" : tone === "good" ? "text-cyan-700" : "text-muted";
   return (
     <div className="min-w-0">
-      <div className="text-[10px] font-medium tracking-label-ko text-muted">{label}</div>
+      <div className="text-[12px] font-medium tracking-label-ko text-muted">{label}</div>
       <div className={`font-mono text-lg font-bold leading-tight ${cls}`}>{value}</div>
-      {sub && <div className="mt-0.5 truncate text-[10px] text-muted">{sub}</div>}
+      {sub && <div className="mt-0.5 truncate text-[12px] text-muted">{sub}</div>}
     </div>
   );
 }
@@ -120,19 +120,19 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
       {/* 헤더 + 토글 */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <ClipboardCheck className="h-4 w-4 text-fuchsia-600" />
+          <ClipboardCheck className="h-4 w-4 shrink-0 text-primary-strong" />
           <div>
-            <div className="text-sm font-semibold text-ink">오늘 코칭할 것</div>
-            <div className="text-[11px] text-muted">오늘 진행된 OT·수업을 열어보고, 트레이너가 놓친 것만 모았어요</div>
+            <div className="text-[15px] font-bold tracking-[-0.02em] text-ink">오늘 코칭할 것</div>
+            <div className="text-[13px] text-muted">오늘 진행된 OT·수업을 열어보고, 트레이너가 놓친 것만 모았어요</div>
           </div>
         </div>
-        <div className="inline-flex rounded-lg border border-line bg-elevate p-0.5">
+        <div className="inline-flex gap-1 rounded-full bg-elevate p-[3px]">
           {[["today", "오늘"], ["all", "전체 누적"]].map(([m, lbl]) => (
             <button
               key={m}
               type="button"
               onClick={() => setMode(m)}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition ${mode === m ? "bg-card text-ink shadow-sm" : "text-muted hover:text-sub"}`}
+              className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13.5px] transition ${mode === m ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}
             >
               {lbl}
             </button>
@@ -153,16 +153,16 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
           </div>
 
           {tc.cases.length === 0 ? (
-            <div className="rounded-2xl border border-line bg-card p-5 text-center text-xs text-muted">
-              {activityZero ? "오늘 진행한 OT·수업이 아직 없어요." : `오늘 챙길 부분 없어요. 오늘 진행 ${tc.obsCount + tc.sessionCount}건 모두 양호.`}
+            <div className="rounded-2xl border border-line bg-card p-5 text-center text-[13px] text-muted">
+              {activityZero ? "오늘 진행한 OT·수업이 아직 없어요." : `오늘 챙길 부분 없어요. 오늘 진행 ${tc.obsCount + tc.sessionCount}건 모두 괜찮아요.`}
             </div>
           ) : (
             <div className="space-y-4">
               {todayGroups.map(([tid, cases]) => (
                 <div key={tid}>
                   <div className="mb-1.5 flex items-center gap-2">
-                    <span className="text-xs font-semibold text-sub">{trainerName(tid)}</span>
-                    <span className="text-[11px] text-muted">코칭 {cases.length}건</span>
+                    <span className="text-[14px] font-semibold text-ink">{trainerName(tid)}</span>
+                    <span className="text-[12px] text-muted">코칭 {cases.length}건</span>
                   </div>
                   <div className="space-y-2">
                     {cases.map((c) => (
@@ -232,7 +232,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-ink">{personName(t.name)}</span>
                     {hasDrill && (
-                      <button type="button" onClick={() => toggle(t.id)} aria-expanded={open} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-muted hover:text-sub">
+                      <button type="button" onClick={() => toggle(t.id)} aria-expanded={open} className="inline-flex items-center gap-0.5 text-[12px] font-medium text-muted hover:text-sub">
                         근거 {open ? "접기" : "펼치기"}
                         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                       </button>
@@ -277,14 +277,14 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
                     <div className="mt-3 space-y-3 border-t border-line pt-3">
                       {o?.thinList?.length > 0 && (
                         <div>
-                          <div className="text-[11px] font-semibold text-muted">관찰 얇은 회원</div>
+                          <div className="text-[12px] font-semibold text-muted">관찰 얇은 회원</div>
                           <div className="mt-1 space-y-1">
                             {o.thinList.map((m) => (
                               <div key={m.user_id} className="flex flex-wrap items-center gap-1.5 text-[12px]">
                                 <span className="font-medium text-sub">{personName(nameById.get(m.user_id)) || "회원"}</span>
                                 <span className="text-danger-text">{pct(m.score)}</span>
                                 {Array.isArray(m.missing) && m.missing.length > 0 && (
-                                  <span className="text-[11px] text-muted">빠짐 {m.missing.map((k) => OBS_MISSING_LABEL[k] || k).join("·")}</span>
+                                  <span className="text-[12px] text-muted">빠짐 {m.missing.map((k) => OBS_MISSING_LABEL[k] || k).join("·")}</span>
                                 )}
                               </div>
                             ))}
@@ -294,13 +294,13 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
 
                       {g?.gapItems?.length > 0 && (
                         <div>
-                          <div className="text-[11px] font-semibold text-muted">브리핑 근거부족</div>
+                          <div className="text-[12px] font-semibold text-muted">브리핑 근거부족</div>
                           <div className="mt-1 space-y-1">
                             {g.gapItems.map((it, i) => (
                               <div key={i} className="flex flex-wrap items-center gap-1.5 text-[12px]">
-                                <span className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">{it.scope === "reg" ? "재등록" : "OT"}</span>
+                                <span className="rounded bg-elevate px-1.5 py-0.5 text-[12px] text-sub">{it.scope === "reg" ? "재등록" : "OT"}</span>
                                 <span className="font-medium text-sub">{personName(nameById.get(it.user_id)) || "회원"}</span>
-                                <span className="text-[11px] text-muted">{it.gaps.join(" / ")}</span>
+                                <span className="text-[12px] text-muted">{it.gaps.join(" / ")}</span>
                               </div>
                             ))}
                           </div>
@@ -309,15 +309,15 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
 
                       {otFails.length > 0 && (
                         <div>
-                          <div className="text-[11px] font-semibold text-muted">2차 클로징 실패·보류</div>
+                          <div className="text-[12px] font-semibold text-muted">2차 클로징 실패·보류</div>
                           <div className="mt-1 space-y-1">
                             {otFails.map((r) => (
                               <div key={r.id} className="flex flex-wrap items-center gap-1.5 text-[12px]">
                                 <span className="font-medium text-sub">{personName(nameById.get(r.user_id)) || "회원"}</span>
                                 <span className="text-danger-text">{r.closing_result === "hold" ? "보류" : "실패"}</span>
-                                {r.closing_reason && <span className="text-[11px] text-muted">{labelOf(CLOSING_REASON_OPTS, r.closing_reason)}</span>}
+                                {r.closing_reason && <span className="text-[12px] text-muted">{labelOf(CLOSING_REASON_OPTS, r.closing_reason)}</span>}
                                 {(r.closing_detail?.reaction || r.closing_detail?.outcome) && (
-                                  <span className="text-[11px] text-muted">· {[r.closing_detail?.reaction, r.closing_detail?.outcome].filter(Boolean).join(" → ")}</span>
+                                  <span className="text-[12px] text-muted">· {[r.closing_detail?.reaction, r.closing_detail?.outcome].filter(Boolean).join(" → ")}</span>
                                 )}
                               </div>
                             ))}
@@ -327,13 +327,13 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
 
                       {regFails.length > 0 && (
                         <div>
-                          <div className="text-[11px] font-semibold text-muted">재등록 실패·보류</div>
+                          <div className="text-[12px] font-semibold text-muted">재등록 실패·보류</div>
                           <div className="mt-1 space-y-1">
                             {regFails.map((r) => (
                               <div key={r.id} className="flex flex-wrap items-center gap-1.5 text-[12px]">
                                 <span className="font-medium text-sub">{personName(nameById.get(r.user_id)) || "회원"}</span>
                                 <span className="text-danger-text">{r.reg_result === "hold" ? "보류" : "실패"}</span>
-                                {r.reg_reason && <span className="text-[11px] text-muted">{labelOf(REG_REASON_OPTS, r.reg_reason)}</span>}
+                                {r.reg_reason && <span className="text-[12px] text-muted">{labelOf(REG_REASON_OPTS, r.reg_reason)}</span>}
                               </div>
                             ))}
                           </div>
@@ -355,7 +355,7 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
 
 function Footnotes() {
   return (
-    <div className="mt-4 space-y-0.5 text-[11px] leading-relaxed text-muted">
+    <div className="mt-4 space-y-0.5 text-[12px] leading-relaxed text-muted">
       <p>· 재등록 코칭은 「전체 누적」에서 봅니다(결과 시각 데이터 한계).</p>
       <p>· 1차 사전무장 브리핑은 저장되지 않아, 1차 품질은 관찰 충실도로 봅니다.</p>
     </div>

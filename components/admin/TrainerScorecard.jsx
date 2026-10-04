@@ -65,20 +65,20 @@ function ExpandDetail({ rev, id, ym, pay, run, onSaveRun, onGoPayroll }) {
     <div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-line bg-elevate p-3">
-          <div className="flex items-center justify-between text-[10px] tracking-label-ko text-muted">
+          <div className="flex items-center justify-between text-[12px] tracking-label-ko text-muted">
             <span>신규</span>
             <span>{rev.total > 0 ? Math.round((rev.newRev / rev.total) * 100) + "%" : "—"}</span>
           </div>
           <div className="mt-1 font-mono text-lg font-bold text-ink">{won(rev.newRev)}</div>
-          <div className="text-[11px] text-muted">{rev.cntNew}건</div>
+          <div className="text-[12px] text-muted">{rev.cntNew}건</div>
         </div>
         <div className="rounded-xl border border-line bg-elevate p-3">
-          <div className="flex items-center justify-between text-[10px] tracking-label-ko text-muted">
+          <div className="flex items-center justify-between text-[12px] tracking-label-ko text-muted">
             <span>재등록</span>
             <span>{rev.total > 0 ? Math.round((rev.reRev / rev.total) * 100) + "%" : "—"}</span>
           </div>
           <div className="mt-1 font-mono text-lg font-bold text-cyan-700">{won(rev.reRev)}</div>
-          <div className="text-[11px] text-muted">{rev.cntRe}건</div>
+          <div className="text-[12px] text-muted">{rev.cntRe}건</div>
         </div>
       </div>
       <PayrollConfirm trainerId={id} ym={ym} pay={pay} run={run} onSaved={onSaveRun} />
@@ -86,7 +86,7 @@ function ExpandDetail({ rev, id, ym, pay, run, onSaveRun, onGoPayroll }) {
         <button
           type="button"
           onClick={onGoPayroll}
-          className="mt-2 text-[11px] font-medium text-muted underline-offset-2 transition hover:text-sub hover:underline"
+          className="mt-2 text-[12px] font-medium text-muted underline-offset-2 transition hover:text-sub hover:underline"
         >
           급여 규칙(스킴) 수정 → 급여 탭
         </button>
@@ -99,7 +99,7 @@ function ExpandDetail({ rev, id, ym, pay, run, onSaveRun, onGoPayroll }) {
 function MetricTile({ label, value, g = "neutral" }) {
   return (
     <div className={`rounded-lg border border-line px-2.5 py-2 ${GRADE_CELL[g] || ""}`}>
-      <div className="text-[10px] tracking-label-ko text-muted">{label}</div>
+      <div className="text-[12px] tracking-label-ko text-muted">{label}</div>
       <div className={`mt-0.5 font-mono text-sm font-bold ${GRADE_TEXT[g]}`}>{value}</div>
     </div>
   );
@@ -200,7 +200,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
   }, [rows, sortKey]);
 
   if (rows.length === 0) {
-    return <div className="rounded-2xl border border-line bg-card p-5 text-xs text-muted">트레이너 데이터가 없습니다.</div>;
+    return <div className="rounded-2xl border border-line bg-card p-5 text-[13px] text-muted">트레이너 데이터가 없어요.</div>;
   }
 
   const gradesOf = (t) => ({
@@ -214,18 +214,18 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
 
   return (
     <div>
-      <p className="mb-3 text-[12px] leading-relaxed text-sub">
+      <p className="mb-3 text-[13.5px] leading-relaxed text-sub">
         트레이너 성적표예요. 누가 <b className="text-ink">등록·관리·매출</b>을 잘 내는지 한눈에.
       </p>
       {/* 줄 세우기 기준(표·카드 공용) — 칩이 '…순'이라 별도 라벨을 두지 않는다. */}
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {SORTS.map((s) => (
           <button key={s.key} onClick={() => setSortKey(s.key)}
-            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${sortKey === s.key ? "border-primary bg-primary-soft text-primary-strong" : "border-line bg-card text-sub hover:border-primary/40"}`}>
+            className={`min-h-[34px] rounded-full border px-3 text-[13px] font-semibold transition ${sortKey === s.key ? "border-primary bg-primary-soft text-primary-strong" : "border-line bg-card text-sub hover:border-primary/40"}`}>
             {s.label}
           </button>
         ))}
-        {sortKey === "churn" && <span className="text-[10px] text-muted">· 이탈 위험 높은 순</span>}
+        {sortKey === "churn" && <span className="text-[12px] text-muted">· 이탈 위험 높은 순</span>}
       </div>
 
       {/* 데스크톱(sm+) — 표 */}
@@ -233,7 +233,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
         <div className="overflow-x-auto rounded-2xl border border-line">
           <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead>
-              <tr className="bg-elevate text-[11px] tracking-label-ko text-muted">
+              <tr className="bg-elevate text-[12px] tracking-label-ko text-muted">
                 <th className="px-2.5 py-2.5 text-left font-semibold">#</th>
                 <th className="px-2.5 py-2.5 text-left font-semibold">트레이너</th>
                 <th className="px-2.5 py-2.5 text-right font-semibold">담당 회원</th>
@@ -273,7 +273,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                       <td className={`px-2.5 py-2.5 text-right font-mono font-semibold ${GRADE_TEXT[g.churn]}`}>{pct(t.churn.rate)}</td>
                       <td className="px-2.5 py-2.5 text-right font-mono font-bold text-primary-strong">{won(t.rev.total)}</td>
                       <td className="px-2.5 py-2.5 text-right font-mono text-ink">
-                        {payText(t)}{t.run?.final_total != null && <span className="ml-1 text-[9px] text-cyan-700">✓</span>}
+                        {payText(t)}{t.run?.final_total != null && <span className="ml-1 text-[12px] text-cyan-700">✓</span>}
                       </td>
                       <td className="px-2.5 py-2.5 text-right">
                         <button onClick={() => setExpandedId(open ? null : t.id)} aria-label="상세" className="text-muted transition hover:text-ink">
@@ -294,7 +294,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
             </tbody>
           </table>
         </div>
-        <p className="mt-2 px-1 text-[11px] leading-relaxed text-muted">
+        <p className="mt-2 px-1 text-[12px] leading-relaxed text-muted">
           담당 회원 = 지금 맡고 있는 활성 회원(OT/PT) · 이달 수업 = OT 상담 기록 + PT 운동일지 · 1차·2차 등록 = OT 상담 후 실제 PT 등록 비율 · 출석 = 회원 1인당 이달 PT 수업 수 · 이탈 위험 = 14일 이상 안 온 회원 비율 · <span className="text-cyan-700">파랑=우수</span> <span className="text-danger-text">빨강=주의</span> · &ldquo;—&rdquo;는 아직 데이터 부족.
         </p>
       </div>
@@ -313,7 +313,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                   <span className="text-sm font-semibold text-ink">{t.name}</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] tracking-label-ko text-muted">이달매출</div>
+                  <div className="text-[12px] tracking-label-ko text-muted">이달매출</div>
                   <div className="font-mono text-lg font-bold text-primary-strong">{won(t.rev.total)}</div>
                 </div>
               </div>

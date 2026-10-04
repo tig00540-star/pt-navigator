@@ -29,6 +29,8 @@ import { trainerSeatLimit } from "@/lib/plans";
 import MemberForm from "@/components/MemberForm";
 import MemberReassign from "@/components/admin/MemberReassign";
 import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import SectionTitle from "@/components/ui/SectionTitle";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerHub from "@/components/admin/OwnerHub";
 import SettlementPanel from "@/components/admin/SettlementPanel";
@@ -90,15 +92,9 @@ const groupOf = (tab) => AGROUPS.find((g) => g.tabs.includes(tab))?.id ?? (tab =
    재사용 UI 조각
    ========================================================================= */
 
-function Eyebrow({ icon: Icon, children }) {
-  return (
-    <div className="mb-4 flex items-center gap-2">
-      <Icon className="h-4 w-4 text-muted" />
-      <span className="text-xs font-semibold tracking-label-ko text-muted">
-        {children}
-      </span>
-    </div>
-  );
+// 섹션 제목 — 2026-10-05 트레이너 화면과 같은 SectionTitle(15px 굵게)로. 옛 12px 회색 라벨 자리.
+function Eyebrow({ icon, children }) {
+  return <SectionTitle icon={icon}>{children}</SectionTitle>;
 }
 
 function Bar({ pct, tone = "lime" }) {
@@ -432,11 +428,11 @@ export default function AdminDashboard() {
 
         {/* ===== 회원 등록·배정 — 대표가 트레이너 지정해 신규 회원 생성 ===== */}
         {atab === "ops" && (
-        <section className="mb-8">
+        <Card as="section" className="mb-6">
           <Eyebrow icon={UserPlus}>회원 등록·배정</Eyebrow>
-          <p className="mb-3 text-[12px] leading-relaxed text-muted">상담으로 받은 회원 정보를 입력하고 담당 트레이너를 지정해 등록해요.</p>
+          <p className="mb-3 text-[13px] leading-relaxed text-muted">상담으로 받은 회원 정보를 입력하고 담당 트레이너를 지정해 등록해요.</p>
           {trainers.length === 0 ? (
-            <p className="rounded-xl border border-line bg-elevate px-4 py-3 text-[12px] text-muted">
+            <p className="rounded-xl bg-elevate px-4 py-3 text-[13px] text-muted">
               먼저 트레이너를 초대해 주세요. 배정할 트레이너가 있어야 회원을 등록할 수 있어요.
             </p>
           ) : (
@@ -447,16 +443,16 @@ export default function AdminDashboard() {
           {showMemberCreate && (
             <MemberForm assignTrainers={trainers} onClose={() => setShowMemberCreate(false)} onSaved={handleMemberCreated} />
           )}
-        </section>
+        </Card>
         )}
 
         {/* ===== 회원 재배정(트레이너 인계) — PT 전용 · 잔여 이월계약 ===== */}
         {atab === "ops" && (
-        <section className="mb-8">
+        <Card as="section" className="mb-6">
           <Eyebrow icon={ArrowLeftRight}>회원 재배정 (트레이너 인계)</Eyebrow>
-          <p className="mb-3 text-[12px] leading-relaxed text-muted">PT 회원을 다른 트레이너에게 넘겨요. 잔여 세션은 이어지고, 그 잔여분 급여는 새 담당이 받습니다(과거 수업·매출은 그대로).</p>
+          <p className="mb-3 text-[13px] leading-relaxed text-muted">PT 회원을 다른 트레이너에게 넘겨요. 잔여 세션은 이어지고, 그 잔여분 급여는 새 담당이 받아요(지난 수업·매출은 그대로).</p>
           {trainers.length < 2 ? (
-            <p className="rounded-xl border border-line bg-elevate px-4 py-3 text-[12px] text-muted">
+            <p className="rounded-xl bg-elevate px-4 py-3 text-[13px] text-muted">
               인계하려면 트레이너가 2명 이상 필요해요.
             </p>
           ) : (
@@ -467,7 +463,7 @@ export default function AdminDashboard() {
           {showReassign && (
             <MemberReassign members={rows} trainers={trainers} contracts={contracts} logs={logs} onDone={handleReassigned} />
           )}
-        </section>
+        </Card>
         )}
 
         {/* ===== 트레이너 초대 온보딩 (A) ===== */}
@@ -525,9 +521,9 @@ export default function AdminDashboard() {
           >
             <span className="text-[13px] leading-relaxed text-sub">
               이달 <b className="text-ink">트레이너별 급여 계산·확정</b>은 <b className="text-ink">트레이너 탭</b>에서 해요.
-              여기선 급여 규칙(스킴)만 설정합니다.
+              여기선 급여 규칙(스킴)만 설정해요.
             </span>
-            <span className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-primary-strong">
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-[13px] font-semibold text-primary-strong">
               트레이너 탭 <ChevronRight className="h-3.5 w-3.5" />
             </span>
           </button>
@@ -544,9 +540,9 @@ export default function AdminDashboard() {
             aria-expanded={perfDetailOpen}
             className="mb-4 flex w-full items-center gap-2 text-left"
           >
-            <TrendingUp className="h-4 w-4 text-muted" />
-            <span className="text-xs font-semibold tracking-label-ko text-muted">클로징 · 재등록 상세 분석</span>
-            <span className="ml-1 text-[11px] font-normal text-muted">{perfDetailOpen ? "접기" : "펼치기"}</span>
+            <TrendingUp className="h-4 w-4 text-primary-strong" />
+            <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">클로징 · 재등록 상세 분석</span>
+            <span className="ml-1 text-[13px] font-normal text-muted">{perfDetailOpen ? "접기" : "펼치기"}</span>
             {perfDetailOpen
               ? <ChevronDown className="ml-auto h-4 w-4 text-muted" />
               : <ChevronRight className="ml-auto h-4 w-4 text-muted" />}
@@ -554,18 +550,18 @@ export default function AdminDashboard() {
           {perfDetailOpen && (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {/* 방향별 강점 */}
-            <div className="rounded-2xl border border-line bg-card p-5">
-              <div className="text-[11px] font-semibold tracking-label-ko text-muted">클로징 방향별 강점</div>
-              <div className="mt-1 text-xs text-muted">성공 클로징의 접근 방향 분포</div>
+            <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+              <div className="text-[15px] font-bold tracking-[-0.02em] text-ink">클로징 방향별 강점</div>
+              <div className="mt-0.5 text-[13px] text-muted">성공 클로징의 접근 방향 분포</div>
               <div className="mt-4 space-y-3">
                 {approachDist.length === 0 ? (
-                  <div className="text-xs text-muted">아직 성공 클로징 데이터가 없습니다.</div>
+                  <div className="text-[13px] text-muted">아직 성공 클로징 데이터가 없어요.</div>
                 ) : (
                   approachDist.map((d) => {
                     const max = approachDist[0].count || 1;
                     return (
                       <div key={d.approach}>
-                        <div className="mb-1 flex justify-between text-[11px] text-sub">
+                        <div className="mb-1 flex justify-between text-[13px] text-sub">
                           <span>{labelOf(CLOSING_APPROACH_OPTS, d.approach)}</span>
                           <span className="font-mono text-sub">{d.count}</span>
                         </div>
@@ -578,18 +574,18 @@ export default function AdminDashboard() {
             </div>
 
             {/* 클로징 실패·보류 사유 분포 */}
-            <div className="rounded-2xl border border-line bg-card p-5">
-              <div className="text-[11px] font-semibold tracking-label-ko text-muted">클로징 실패·보류 사유</div>
-              <div className="mt-1 text-xs text-muted">OT 클로징 약점 진단: 센터가 주로 놓치는 이유</div>
+            <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+              <div className="text-[15px] font-bold tracking-[-0.02em] text-ink">클로징 실패·보류 사유</div>
+              <div className="mt-0.5 text-[13px] text-muted">OT 클로징 약점 진단: 센터가 주로 놓치는 이유</div>
               <div className="mt-4 space-y-3">
                 {closingReasonDist.length === 0 ? (
-                  <div className="text-xs text-muted">아직 클로징 실패·보류 사유 데이터가 없습니다.</div>
+                  <div className="text-[13px] text-muted">아직 클로징 실패·보류 사유 데이터가 없어요.</div>
                 ) : (
                   closingReasonDist.map((d) => {
                     const max = closingReasonDist[0].count || 1;
                     return (
                       <div key={d.reason}>
-                        <div className="mb-1 flex justify-between text-[11px] text-sub">
+                        <div className="mb-1 flex justify-between text-[13px] text-sub">
                           <span>{labelOf(CLOSING_REASON_OPTS, d.reason)}</span>
                           <span className="font-mono text-sub">{d.count}</span>
                         </div>
@@ -602,18 +598,18 @@ export default function AdminDashboard() {
             </div>
 
             {/* 재등록 사유 분포 */}
-            <div className="rounded-2xl border border-line bg-card p-5">
-              <div className="text-[11px] font-semibold tracking-label-ko text-muted">재등록 실패·보류 사유</div>
-              <div className="mt-1 text-xs text-muted">거절을 데이터로 보는 약점 진단</div>
+            <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+              <div className="text-[15px] font-bold tracking-[-0.02em] text-ink">재등록 실패·보류 사유</div>
+              <div className="mt-0.5 text-[13px] text-muted">거절을 데이터로 보는 약점 진단</div>
               <div className="mt-4 space-y-3">
                 {reasonDist.length === 0 ? (
-                  <div className="text-xs text-muted">아직 재등록 사유 데이터가 없습니다.</div>
+                  <div className="text-[13px] text-muted">아직 재등록 사유 데이터가 없어요.</div>
                 ) : (
                   reasonDist.map((d) => {
                     const max = reasonDist[0].count || 1;
                     return (
                       <div key={d.reason}>
-                        <div className="mb-1 flex justify-between text-[11px] text-sub">
+                        <div className="mb-1 flex justify-between text-[13px] text-sub">
                           <span>{labelOf(REG_REASON_OPTS, d.reason)}</span>
                           <span className="font-mono text-sub">{d.count}</span>
                         </div>

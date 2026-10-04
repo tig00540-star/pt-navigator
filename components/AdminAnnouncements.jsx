@@ -142,7 +142,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-fuchsia-700">
+      <div className="flex items-center gap-2 text-[12px] font-semibold tracking-label-ko text-fuchsia-700">
         <Megaphone className="h-3.5 w-3.5" /> 공지 (대표 → 트레이너)
       </div>
 
@@ -154,7 +154,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
 
           {/* 대상 */}
           <div>
-            <div className="mb-1.5 text-[11px] font-medium text-muted">대상</div>
+            <div className="mb-1.5 text-[12px] font-medium text-muted">대상</div>
             <div className="flex gap-2">
               {[{ k: "all", l: "전체 트레이너" }, { k: "specific", l: "특정 지정" }].map((o) => (
                 <button
@@ -174,7 +174,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
             {targetMode === "specific" && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {trainers.length === 0 ? (
-                  <span className="text-[11px] text-muted">트레이너가 없어요.</span>
+                  <span className="text-[12px] text-muted">트레이너가 없어요.</span>
                 ) : (
                   trainers.map((t) => {
                     const on = targetIds.includes(t.id);
@@ -183,7 +183,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
                         key={t.id}
                         onClick={() => toggleTarget(t.id)}
                         disabled={posting}
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition disabled:opacity-50 ${
+                        className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition disabled:opacity-50 ${
                           on
                             ? "border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-700"
                             : "border border-line bg-elevate text-sub hover:text-ink"
@@ -203,7 +203,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
             <label className="flex items-center gap-2 text-xs text-sub">
               <input type="checkbox" checked={mustAck} onChange={(e) => setMustAck(e.target.checked)} disabled={posting} className="h-4 w-4 accent-fuchsia-500" />
               필수확인 (앱 열 때 확인 요구)
-              <span className="text-[10px] text-muted">· 드물게 · 꼭 봐야 할 것만</span>
+              <span className="text-[12px] text-muted">· 드물게 · 꼭 봐야 할 것만</span>
             </label>
             <label className="flex items-center gap-2 text-xs text-sub">
               <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} disabled={posting} className="h-4 w-4 accent-fuchsia-500" />
@@ -228,7 +228,7 @@ export default function AdminAnnouncements({ trainers = [] }) {
 
       {/* 목록 */}
       <Card as="section">
-        <div className="mb-3 text-[11px] font-semibold tracking-label-ko text-muted">게시한 공지</div>
+        <div className="mb-3 text-[12px] font-semibold tracking-label-ko text-muted">게시한 공지</div>
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : sorted.length === 0 ? (
@@ -247,29 +247,29 @@ export default function AdminAnnouncements({ trainers = [] }) {
                         {a.pinned && <Pin className="h-3.5 w-3.5 text-fuchsia-700" />}
                         <span className="text-sm font-semibold text-ink">{a.title}</span>
                         {a.must_ack ? (
-                          <span className="rounded bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-700">필수확인</span>
+                          <span className="rounded bg-fuchsia-500/10 px-1.5 py-0.5 text-[12px] font-semibold text-fuchsia-700">필수확인</span>
                         ) : (
-                          <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">일반</span>
+                          <span className="rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-sub">일반</span>
                         )}
                       </div>
                       <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-sub">{a.body}</p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         {targeted ? (
                           a.target_trainer_ids.map((tid) => (
-                            <span key={tid} className="rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">{nameOf(tid)}</span>
+                            <span key={tid} className="rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-sub">{nameOf(tid)}</span>
                           ))
                         ) : (
-                          <span className="flex items-center gap-1 rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-sub">
+                          <span className="flex items-center gap-1 rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-sub">
                             <Users className="h-3 w-3" /> 전체
                           </span>
                         )}
-                        <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">{n}/{m} 읽음</span>
+                        <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[12px] font-semibold text-primary-strong">{n}/{m} 읽음</span>
                       </div>
                     </div>
                     {confirmId === a.id ? (
                       <div className="flex shrink-0 items-center gap-1">
-                        <button onClick={() => remove(a)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
-                        <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[10px] font-medium text-sub transition hover:text-ink">취소</button>
+                        <button onClick={() => remove(a)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[12px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
+                        <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[12px] font-medium text-sub transition hover:text-ink">취소</button>
                       </div>
                     ) : (
                       <div className="flex shrink-0 items-center gap-1">

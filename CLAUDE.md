@@ -145,9 +145,13 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **SQL** `docs/migrations/2026-10-04-member-routine.sql`: `center_machine.step_kg` · `member_routine`(센터 범위) · `member_routine_view`(보이기 + **최근 28일 안 PT 있을 때만**) · `member_routine_log`(회원 본인 쓰기 · 트레이너 읽기).
 - 법무 점검(2026-10-04) 큰 건(민감정보 별도 동의 · 처리방침 · 회원 페이지 고지)은 2026-10-05에 반영 → 아래 "PT 종료 · 읽기 전용 · 동의". 건강정보 동의 안 한 회원은 '아파서 멈췄어요' 대신 안내 문구(`healthOk`).
 
+### 대표 화면 스타일 통일 (2026-10-05)
+
+트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.
+
 ### 대표 아침 보고서 + 대표 피드백 (2026-10-03)
 
-대표 화면 '브리핑' 탭 = 보고서 한 장(`components/admin/OwnerBriefing`): AI 총평 → **① 어제 결과(건별)** → **② 오늘 예정** → ③ 이달 · 앞으로 들어올 매출 → ④ 주의 회원 → ⑤ 코칭. 예전 위쪽 '오늘 챙길 것' 카드 3개는 ②·④와 겹쳐 합쳤다.
+대표 화면 '보고서' 탭(id `briefing` · 2026-10-05 구 '오늘 챙길 것' 개명) = 보고서 한 장(`components/admin/OwnerBriefing`): AI 총평 → **① 어제 결과(건별)** → **② 오늘 예정** → ③ 이달 · 앞으로 들어올 매출 → ④ 주의 회원 → ⑤ 코칭. 예전 위쪽 '오늘 챙길 것' 카드 3개는 ②·④와 겹쳐 합쳤다.
 - **숫자:** `ownerReportData`(+ `dailyResults` 어제 결과 · `todayPlan` 오늘 예정 · `lib/memberStatus`). 어제 결과 = 그날 시작한 매출 계약(신규 · 재등록 · 횟수 · 회당 · 금액) + 그날 결과를 남긴 OT(보류 · 제안 못 함 · 그만 · 이유 · 회원의 말) + 그날 남긴 재등록 보류 · 안 함. OT 등록은 같은 날 신규 계약이 있으면 계약 줄로만.
 - **결과 시각:** `ot_log.closing_recorded_at` · `session_log.reg_recorded_at` — **DB 트리거**가 결과(closing_result · reg_result)나 OT 피드백 저장 시각(`report.feedbackAt` · ObservationTab이 씀)이 바뀔 때 서버 시각으로 채운다(`docs/migrations/2026-10-03-owner-daily-report.sql`). 이전 기록은 비어 있어 보고서에 안 잡힌다.
 - **매일 아침 8시대(KST) 미리 만들기:** Vercel Cron `0 23 * * *`(UTC · **Hobby 플랜이라 그 1시간 안 아무 때나** 돈다 → 9시 전엔 항상 준비) → `app/api/cron/owner-daily-report`(CRON_SECRET · center 계정마다 service_role로 읽어 ownerReportData + AI(프리미엄 · 구독 활성만) → `owner_daily_report` upsert(account_id, ymd)). 대표만 SELECT · 클라 쓰기 없음. 화면은 그날 행이 있으면 그것('아침 보고서 · 오전 8시 23분 기준'처럼 실제 만든 시각), 없으면 지금 데이터로 만든다(예전 방식 · 하루 캐시 `owner-report-v3`). 지난 보고서는 날짜 선택. 점검: `?account=<id>`로 한 센터만.

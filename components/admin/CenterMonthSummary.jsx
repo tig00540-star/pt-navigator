@@ -15,11 +15,11 @@ import Card from "@/components/ui/Card";
 function Tile({ icon: Icon, label, value, sub }) {
   return (
     <Card padding="md">
-      <div className="flex items-center gap-1.5 text-[11px] tracking-label-ko text-muted">
+      <div className="flex items-center gap-1.5 text-[13px] font-semibold text-muted">
         {Icon && <Icon className="h-3.5 w-3.5" />}{label}
       </div>
       <div className="mt-1.5 font-mono text-2xl font-extrabold text-ink">{value}</div>
-      {sub && <div className="mt-1 text-[11px] leading-relaxed text-muted">{sub}</div>}
+      {sub && <div className="mt-1 text-[12px] leading-relaxed text-muted">{sub}</div>}
     </Card>
   );
 }
