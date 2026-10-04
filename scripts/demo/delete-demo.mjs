@@ -57,6 +57,14 @@ async function main() {
   if (memberIds.length) {
     for (const t of ["cardio_log", "schedule_check", "member_photo"]) await del(t, sb.from(t).delete(opt).in("user_id", memberIds));
   }
+  // 2026-10-05 이후 기능 — 트레이너를 가리키는 키(대표 피드백 작성자 · 사례 작성자)가 있어 트레이너보다 먼저 지운다.
+  //   (동의 · 루틴 · 루틴 기록 · 요청 · 로드맵은 회원 삭제 때 같이 지워지지만 계정 범위로 먼저 정리한다)
+  for (const t of ["owner_feedback", "owner_daily_report", "sales_case", "member_routine", "member_roadmap"]) {
+    await del(t, sb.from(t).delete(opt).eq("account_id", accountId));
+  }
+  if (memberIds.length) {
+    for (const t of ["member_routine_log", "member_routine_request", "member_consent"]) await del(t, sb.from(t).delete(opt).in(t === "member_consent" ? "member_id" : "user_id", memberIds));
+  }
   // 수업 로그를 지우면 회원 확인(workout_log_confirmation)은 연쇄 삭제된다.
   for (const t of ["appointment", "daily_workout_log", "inbody_log", "ot_log", "session_log", "trainer_todo"]) {
     await del(t, sb.from(t).delete(opt).eq("account_id", accountId));
