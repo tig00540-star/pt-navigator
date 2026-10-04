@@ -1460,6 +1460,25 @@ async function fetchCenterMachines(request) {
 
 // 대표 피드백(2026-10-03) — 대표가 아침 보고서에서 이 회원 건에 남긴 말(최근 3개). 트레이너 토큰 RLS(받는 트레이너 · 대표만 읽힘).
 // 표가 아직 없거나(SQL 전) 실패하면 조용히 빈 배열 — 리포트 생성은 막지 않는다.
+// 건강정보 동의 철회 확인(2026-10-05) — 가장 최근 health 동의 행이 agreed=false면 true.
+//   철회한 회원의 불편 부위 · 부상 이력은 AI에 보내지 않는다(member_consent · 트레이너 토큰 RLS · 센터 범위).
+//   동의 기록이 아예 없는 예전 회원은 그대로(등록 화면이 이제 동의 체크로 막음) · 표 없음/실패도 그대로(fail-open).
+async function fetchHealthWithdrawn(request, memberId) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const authz = request.headers.get("authorization") || "";
+  const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
+  if (!url || !anon || !token || typeof memberId !== "string") return false;
+  const sb = createClient(url, anon, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await sb.from("member_consent").select("agreed")
+    .eq("member_id", memberId).eq("kind", "health").order("created_at", { ascending: false }).limit(1);
+  if (error) return false;
+  return data?.[0]?.agreed === false;
+}
+
 async function fetchOwnerFeedback(request, memberId) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -1533,10 +1552,14 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
   }
 
-  const { phase, member, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
+  const { phase, member: rawMember, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture" && phase !== "roadmap") {
     return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
   }
+  // 건강정보 동의를 철회한 회원 = 불편 부위 · 부상 이력을 빼고 보낸다(프롬프트엔 '-'로 보임).
+  const member = rawMember && typeof rawMember === "object" && (await fetchHealthWithdrawn(request, rawMember.id))
+    ? { ...rawMember, pain: null, injury_history: null }
+    : rawMember;
   // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
   const boundedCases = Array.isArray(closingCases) ? closingCases.slice(0, MAX_CLOSING_CASES) : closingCases;
   // n차 OT(2차+) — 이전 차수 기록. 차수 수는 현실적으로 한 자리수라 10개로 상한.

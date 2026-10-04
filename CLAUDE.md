@@ -162,7 +162,7 @@ SQL `docs/migrations/2026-10-05-pt-end-consent.sql`.
 - **6개월 뒤 닫힘**: `auth_member_id()`가 inactive + `status_changed_at` 6개월 지나면 NULL(모든 회원 읽기 0행) · `member-auth`도 같은 규칙으로 로그인 거절("이 페이지는 닫혔어요…"). `status_changed_at` NULL이면 만료로 안 봄. **복귀 구분 없음(대표 결정)** — `InactiveView` [다시 PT 시작하기] = pt_active(같은 회원 · 기록 이어짐) + 미루기 7일(새 계약 적을 시간).
 - **'회원 페이지 끄기'**(구 'PT 종료' 버튼 · `MemberAppLink` · `/api/member-revoke`) = 링크 폐기 + 세션 삭제(즉시 차단 · 기록은 그대로). PT 종료와 별개. 지난 회원 화면에선 `readOnly`(새 링크 발급 없음).
 - **동의 `member_consent`**(덧붙이기만 · 철회도 agreed=false 새 행 · account_id 트리거): kind general(필수)/health(선택) · method member_page/trainer_check. 문구 단일 출처 `lib/consent.js`(`CONSENT_VERSION` 올리면 회원 페이지가 다시 묻는다). ① 회원 페이지 첫 화면 `ConsentGate`(필수 전엔 기록 안 보임 · 표 없거나 조회 실패면 건너뜀 = 잠금 금지) ② 하단 `MemberFooter`(운영 센터명 `member_me.center_name` · 처리방침 · 약관 · 안전 안내 · 건강정보 동의/철회) ③ 트레이너 `HealthConsentBlock`(새 회원 · 정보 수정 — '동의 받았어요' 체크해야 불편 부위 · 부상 이력 칸이 열리고, 동의 기록이 남아야 저장 · 동의 없으면 그 칸은 건드리지 않음 · 종이 동의서 `/legal/consent-form`).
-- 처리방침(민감정보 · 국외 이전 · 6개월 · 파기)·약관(루틴 · 6개월) 개정 — 시행일 `COMPANY.privacyDate`. ⚠️ **`COMPANY.dataRegion`(Supabase 지역) 비어 있으면 방침에 '확인 필요'로 보인다 → 배포 전 기입.** ⚠️ 열린 문제: 회원이 건강정보 동의를 철회해도 이미 저장된 불편 부위 · 부상 이력과 AI 전송(ot-brief)은 아직 그대로(후속). 법률 자문 아님 · 영업 전 전문가 검토 권장.
+- 처리방침(민감정보 · 국외 이전 · 6개월 · 파기)·약관(루틴 · 6개월) 개정 — 시행일 `COMPANY.privacyDate`. Supabase = 서울(`COMPANY.dataRegion`) → 저장은 국외 이전 아님(위탁만) · 국외 이전 = Anthropic · OpenAI · Vercel. 건강정보 동의를 **철회한** 회원은 `ot-brief`가 불편 부위 · 부상 이력을 빼고 AI에 보낸다(`fetchHealthWithdrawn` · 동의 기록이 아예 없는 예전 회원은 그대로 · 저장값은 안 지움). 약관 제11조 = 개인정보 처리위탁(개인정보 보호법 제26조 위탁 문서 · 재위탁 · 해지 30일 파기 · 회원 동의 시 트레이너 다른 계정으로 이전 · 사본 제공은 지금 수동). 열린 문제: 'PT 종료 후 N년 파기' 숫자 미정 · 트레이너 이전 기능 미구현. 법률 자문 아님 · 영업 전 전문가 검토 권장.
 
 ### 수업일지 회원 확인·서명 (v2 · 2026-07-21)
 
