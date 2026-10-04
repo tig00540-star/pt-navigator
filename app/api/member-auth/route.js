@@ -52,7 +52,7 @@ export async function POST(req) {
   // 1) 토큰으로 회원 조회(service_role = RLS 우회)
   const { data: member } = await svc
     .from("user_table")
-    .select("id, name, phone_number, member_auth_id, account_id, status, status_changed_at")
+    .select("id, name, phone_number, member_auth_id, account_id, status, status_changed_at, hidden")
     .eq("member_token", token)
     .maybeSingle();
   if (!member) {
@@ -68,10 +68,16 @@ export async function POST(req) {
   }
 
   // 2.4) 지난 회원(PT 종료)이 된 지 6개월이 지나면 닫힘(2026-10-05). DB auth_member_id()와 같은 규칙 — 여기선 로그인 자체를 안내와 함께 거절.
+  // 환불 · 삭제(숨김) 회원은 열지 않는다(2026-10-06 · DB auth_member_id도 같은 조건).
+  if (member.hidden) {
+    console.warn(`[member-auth] 403 숨김 회원 member_id=${member.id}`);
+    return Response.json({ error: "이 페이지는 닫혔어요. 궁금한 점은 트레이너에게 말해 주세요." }, { status: 403 });
+  }
   if (member.status === "inactive" && member.status_changed_at) {
-    const until = new Date(member.status_changed_at);
-    until.setMonth(until.getMonth() + 6);
-    if (until < new Date()) {
+    // DB(now() - interval '6 months')와 같은 방향으로 센다 — 말일(8/31 등) 경계에서 앱과 DB가 하루 이틀 어긋나지 않게.
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 6);
+    if (new Date(member.status_changed_at) < cutoff) {
       console.warn(`[member-auth] 403 열람 기간 끝남 member_id=${member.id}`);
       return Response.json(
         { error: "이 페이지는 닫혔어요. 다시 시작하려면 트레이너에게 말해 주세요." },

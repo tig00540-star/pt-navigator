@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchByIds } from "@/lib/fetchByIds";
 import { viewFor, activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
@@ -26,8 +27,9 @@ export default function RegisterDueToday({ members, onSelect }) {
       const [{ data: cs }, { data: ls }] = await Promise.all([
         // 컬럼 좁힘(P1-9) — activeContract·remainingSessions·reregisterDue가 읽는 필드만.
         // ChurnRiskToday가 같은 계산에 쓰는 셋과 동일. select("*")는 max-rows·전송량 낭비.
-        supabase.from("session_log").select("id, user_id, started_at, created_at, sessions_total, service_sessions").in("user_id", ptIds),
-        supabase.from("daily_workout_log").select("user_id, contract_id, voided").in("user_id", ptIds),
+        // 끝까지(1000행 잘림 방지) · handed_over 포함(인계로 닫힌 계약을 남은 것으로 세지 않게 · 2026-10-06)
+        fetchByIds(supabase, "session_log", "id, user_id, started_at, created_at, sessions_total, service_sessions, handed_over", "user_id", ptIds),
+        fetchByIds(supabase, "daily_workout_log", "user_id, contract_id, voided", "user_id", ptIds),
       ]);
       if (cancelled) return;
       const contracts = cs || [];

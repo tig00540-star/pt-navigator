@@ -15,6 +15,7 @@
 import { useEffect, useState } from "react";
 import { ClipboardCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchByIds } from "@/lib/fetchByIds";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
@@ -60,14 +61,10 @@ export default function UnconfirmedConfirmToday({ members, uid, onSelect }) {
         if (!memberIds.length) { if (!cancelled) setRows([]); return; }
 
         // ② 이 회원들의 수업로그 + 확인(confirm)만. 소수(.in) 조회라 fetchAllRows 불필요.
+        // 끝까지(1000행 잘림 방지 · 2026-10-06) — 회원 몇 명의 1년치 일지 · 확인만으로도 1000을 넘는다.
         const [{ data: ls }, { data: cf }] = await Promise.all([
-          supabase.from("daily_workout_log")
-            .select("id, user_id, session_at, created_at, voided, source")
-            .in("user_id", memberIds),
-          supabase.from("workout_log_confirmation")
-            .select("log_id")
-            .eq("result", "confirm")
-            .in("member_id", memberIds),
+          fetchByIds(supabase, "daily_workout_log", "id, user_id, session_at, created_at, voided, source", "user_id", memberIds),
+          fetchByIds(supabase, "workout_log_confirmation", "log_id", "member_id", memberIds, (q) => q.eq("result", "confirm")),
         ]);
         if (cancelled) return;
 

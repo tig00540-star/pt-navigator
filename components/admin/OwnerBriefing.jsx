@@ -45,7 +45,7 @@ const RESULT_META = {
 function loadCache() { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
 function saveCache(o) { try { localStorage.setItem(LS_KEY, JSON.stringify(o)); } catch { /* 프라이빗 · 용량 = 무시 */ } }
 
-export default function OwnerBriefing({ members = [], otRows = [], contracts = [], logs = [], appts = [], goals = [], trainers = [], ym }) {
+export default function OwnerBriefing({ members = [], otRows = [], contracts = [], logs = [], appts = [], goals = [], trainers = [], ym, ready = true }) {
   const [nowISO] = useState(() => new Date().toISOString());
   const todayYmd = useMemo(() => kstOf(nowISO).toISOString().slice(0, 10), [nowISO]);
   const nameById = useMemo(() => new Map((members || []).filter((m) => m?.id).map((m) => [m.id, m.name])), [members]);
@@ -110,7 +110,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
 
   // 마운트: 오늘 9시 보고서가 있으면 그것, 없으면 지금 데이터로 만든다.
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !ready) return; // 대표 화면 데이터가 다 온 뒤에(2026-10-06)
     let cancelled = false;
     (async () => {
       let uid = null;
@@ -136,7 +136,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
       genLive(uid);
     })();
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function openDate(ymd) {
     setViewYmd(ymd);

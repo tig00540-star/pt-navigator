@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchByIds } from "@/lib/fetchByIds";
 import { unbookedActiveMembers } from "@/lib/memberStatus";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
@@ -17,6 +18,8 @@ import ListRow from "@/components/ui/ListRow";
 export default function NoNextBookingToday({ members, uid, onSelect, limit }) {
   // ChurnRiskToday 패턴: fetch는 effect([uid])에서 한 번, 파생은 useMemo로 분리.
   // → members 신원이 매 렌더 바뀌어도(scoped 새 배열) 순수 재파생만, DB 재조회 X.
+  // 받은 회원 것만 · 끝까지(1000행 잘림 방지 · 2026-10-06).
+  const memKey = (members || []).map((m) => m.id).sort().join(",");
   const [appts, setAppts] = useState([]);
   const [cons, setCons] = useState([]);
   const [lgs, setLgs] = useState([]);
@@ -33,8 +36,8 @@ export default function NoNextBookingToday({ members, uid, onSelect, limit }) {
             ? supabase.from("appointment").select("user_id, start_at, status, trainer_id")
                 .eq("status", "booked").eq("trainer_id", uid).gte("start_at", nowISO)
             : Promise.resolve({ data: [] }),
-          supabase.from("session_log").select("id, user_id, started_at, created_at, sessions_total, service_sessions, handed_over"),
-          supabase.from("daily_workout_log").select("user_id, contract_id, session_at, created_at, voided, source"),
+          fetchByIds(supabase, "session_log", "id, user_id, started_at, created_at, sessions_total, service_sessions, handed_over", "user_id", memKey ? memKey.split(",") : []),
+          fetchByIds(supabase, "daily_workout_log", "user_id, contract_id, session_at, created_at, voided, source", "user_id", memKey ? memKey.split(",") : []),
         ]);
         if (cancelled) return;
         setAppts(ap.data || []);
@@ -45,7 +48,7 @@ export default function NoNextBookingToday({ members, uid, onSelect, limit }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [uid]);
+  }, [uid, memKey]);
 
   // members 바뀌면 순수 재파생만(재조회 없음). nowISO는 파생 시점 기준.
   const rows = useMemo(

@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { reapproachToday } from "@/lib/memberStatus";
+import { reapproachToday, viewFor } from "@/lib/memberStatus";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
@@ -34,6 +34,7 @@ export default function ReapproachToday({ members, onSelect }) {
   const [rows, setRows] = useState([]);
   const today = todayISOLocal();
   const memberKey = (members || []).map((m) => m.id).join(",");
+  const otKey = (members || []).filter((m) => viewFor(m) === "ot").map((m) => m.id).join(",");
 
   useEffect(() => {
     if (!supabase || !memberKey) return; // 데모/무회원: 초기 [] 유지 → 카드 미표시(라이브 전용 위젯, 폴백 결 유지)
@@ -41,18 +42,18 @@ export default function ReapproachToday({ members, onSelect }) {
     (async () => {
       // both round의 hold 행만 당겨오고, 날짜(도래·null) 판정은 reapproachToday에 위임.
       const ids = memberKey.split(",");
+      // 회원별 최신 차수를 가려야 해서 결과와 무관하게 다 가져온다(2026-10-06) · OT 회원만 넘긴다.
       const { data } = await supabase
         .from("ot_log")
-        .select("user_id, ot_round, closing_result, closing_reapproach_at")
-        .eq("closing_result", "hold")
+        .select("user_id, ot_round, closing_result, closing_reapproach_at, created_at")
         .in("user_id", ids); // ★ 내 회원만
       if (cancelled) return;
-      setRows(reapproachToday(data || [], today));
+      setRows(reapproachToday(data || [], today, new Set(otKey ? otKey.split(",") : [])));
     })();
     return () => {
       cancelled = true;
     };
-  }, [today, memberKey]);
+  }, [today, memberKey, otKey]);
 
   if (!rows.length) return null;
 
@@ -86,7 +87,7 @@ export default function ReapproachToday({ members, onSelect }) {
                 <span className={over > 0 ? "font-medium text-amber-600" : "font-medium text-primary-strong"}>
                   {over > 0 ? `${over}일 경과` : "오늘"}
                 </span>
-                <span className="text-muted">· {r.ot_round}차 보류</span>
+                <span className="text-muted">· {r.ot_round}차 {r.closing_result === "none" ? "· 다음 OT" : "보류"}</span>
               </div>
             </ListRow>
           );

@@ -59,7 +59,13 @@ export default function SettlementPanel({
   startDay = 1, onChangeStartDay, onIncomeChanged, onExpenseChanged,
 }) {
   // view(보기/적기)는 상단 세그먼트가 준다 — 하위탭이 화면마다 다른 자리에 있으면 안 된다.
-  const [ymBase, setYmBase] = useState(ym);     // 보는 정산 기간의 기준월
+  // 보는 정산 기간의 기준월 — 처음엔 '오늘이 들어 있는 기간'(2026-10-06). 시작일이 15일이면 1~14일엔 지난달 15일 기간이다
+  //   (예전엔 이번 달로 시작해 아직 안 온 다음 기간이 먼저 보였다). 시작일은 늦게 올 수 있어 사용자가 넘기기 전까진 따라간다.
+  const [picked, setPicked] = useState(null);
+  const [kstDay] = useState(() => Number(new Date(Date.now() + 9 * 3600000).toISOString().slice(8, 10))); // 화면을 연 날(KST)
+  const curBase = startDay > 1 && kstDay < Math.min(Math.max(Number(startDay) || 1, 1), 28) ? shiftYm(ym, -1) : ym;
+  const ymBase = picked ?? curBase;
+  const setYmBase = (v) => setPicked(typeof v === "function" ? v(ymBase) : v);
   const [custom, setCustom] = useState(false);  // 직접 고르기(예외 상황)
   const [cFrom, setCFrom] = useState("");
   const [cTo, setCTo] = useState("");

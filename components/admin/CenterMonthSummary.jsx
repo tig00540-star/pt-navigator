@@ -9,7 +9,7 @@
    ========================================================================= */
 import { useMemo } from "react";
 import { CalendarClock, UserCircle, Users } from "lucide-react";
-import { otSessionsThisMonthByTrainer, sessionsThisMonthByTrainer, sessionsCount } from "@/lib/memberStatus";
+import { otSessionsThisMonthByTrainer, sessionsThisMonthByTrainer, sessionsCount, otHeld } from "@/lib/memberStatus";
 import Card from "@/components/ui/Card";
 
 function Tile({ icon: Icon, label, value, sub }) {
@@ -33,7 +33,7 @@ export default function CenterMonthSummary({ members = [], otRows = [], logs = [
   const ptTotal = useMemo(() => [...ptSess.values()].reduce((s, n) => s + n, 0), [ptSess]);
   // 누적도 '합계'와 같은 범위(OT+PT)로 — 예전엔 PT만 세서 옆 합계와 기준이 달랐다.
   const allTime = useMemo(
-    () => sessionsCount(logs) + otRows.filter((r) => r && r.ot_round >= 1).length,
+    () => sessionsCount(logs) + otRows.filter((r) => r && r.ot_round >= 1 && otHeld(r)).length,
     [logs, otRows]
   );
   const otMembers = useMemo(() => visible.filter((m) => m.status === "ot_active").length, [visible]);

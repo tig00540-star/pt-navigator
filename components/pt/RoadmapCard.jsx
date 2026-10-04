@@ -43,10 +43,19 @@ export default function RoadmapCard({ member, contracts = [], logs = [] }) {
   const save = async (next, msg) => {
     setBusy("save");
     try {
+      // 빈 단계를 먼저 빼고, 지금 단계 번호는 남은 단계 기준으로 다시 센다(2026-10-06 · 빈 칸 앞뒤로 번호가 밀리던 문제).
+      const kept = [];
+      let cur = 0;
+      next.stages.forEach((s, i) => {
+        const t = String(s?.title ?? "").trim();
+        if (!t) return;
+        if (i <= (next.current ?? 0)) cur = kept.length;
+        kept.push({ title: t, detail: String(s?.detail ?? "").trim() });
+      });
       const payload = {
         member_id: member.id, title: next.title?.trim() || null,
-        stages: next.stages.map((s) => ({ title: s.title.trim(), detail: s.detail.trim() })).filter((s) => s.title),
-        current: Math.max(0, Math.min(next.current ?? 0, Math.max(0, next.stages.length - 1))),
+        stages: kept,
+        current: Math.max(0, Math.min(cur, Math.max(0, kept.length - 1))),
         visible: next.visible ?? row?.visible ?? false,
         ai_meta: next.ai_meta ?? row?.ai_meta ?? null,
         updated_at: new Date().toISOString(),

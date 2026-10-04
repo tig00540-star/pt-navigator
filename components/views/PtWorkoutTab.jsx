@@ -1,14 +1,14 @@
 "use client";
 
 /* =========================================================================
-   PT 운동일지 탭 — PTView 본체(수업 확인서·운동일지·방향·급한불·타임라인·계약)를
+   PT 운동일지 탭 — PTView 본체(수업 확인서·운동일지·방향·타임라인·계약)를
    자기완결 탭으로 이관. 공유 데이터(contracts/logs/loading)만 props, 나머지는 자기 소유.
    회원전환 리셋은 부모가 key로 리마운트(자동). 재등록 결과·브리핑은 PtReRegTab 소관.
    ========================================================================= */
 
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { ChevronDown, ClipboardList, Compass, Dumbbell, Flame, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { ChevronDown, ClipboardList, Compass, Dumbbell, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
@@ -18,7 +18,6 @@ import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/hooks/useToast";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
-import AcuteBriefView from "@/components/views/AcuteBriefView";
 import { SOURCE_OPTS, labelOf } from "@/lib/labels";
 import { hasVal } from "@/lib/format";
 import SetsEditor from "@/components/views/SetsEditor";
@@ -79,12 +78,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [direction, setDirection] = useState(member.pt_direction ?? "");
   const [editingDir, setEditingDir] = useState(false);
   const [dirSaving, setDirSaving] = useState(false);
-  // 급한불(⑤) — 회원 급변 대처. 세션 전용(DB 무관·캐시 없음).
-  const [acuteSituation, setAcuteSituation] = useState("");
-  const [acuteBrief, setAcuteBrief] = useState(null);
-  const [acuteMeta, setAcuteMeta] = useState(null);
-  const [acuteGenerating, setAcuteGenerating] = useState(false);
-  const [acuteError, setAcuteError] = useState("");
   const { toast, showToast } = useToast();
   // 센터 보유 머신 이름(세트 그리드 자동완성용). 데모면 빈 목록 = 기존처럼 자유 타이핑.
   const [machineOptions, setMachineOptions] = useState([]);
@@ -382,41 +375,9 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     }
   };
 
-  // 급한불(⑤) 생성 — /api/ot-brief phase:"acute". 세션 전용(캐시·DB write 없음).
-  const generateAcute = async () => {
-    if (acuteGenerating) return;
-    const situation = acuteSituation.trim();
-    if (!situation) return;
-    setAcuteGenerating(true);
-    setAcuteError("");
-    try {
-      const acuteContext = {
-        situation,
-        recent_logs: timeline.filter((l) => !l.voided && l.ai_summary).slice(0, 3).map((l) => l.ai_summary),
-      };
-      const res = await fetch("/api/ot-brief", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "acute", member, acuteContext }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        setAcuteError(d.error || "AI 생성에 실패했습니다.");
-        return;
-      }
-      const data = await res.json();
-      setAcuteBrief(data);
-      setAcuteMeta({ generatedAt: new Date().toISOString() });
-    } catch (e) {
-      setAcuteError("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
-    } finally {
-      setAcuteGenerating(false);
-    }
-  };
-
   const goalSet = hasVal(member.goal) && member.goal !== "미설정";
 
-  // 자료남기기 순서(2026-10-02 · 수업 끝나고 적는 순서): 운동일지 → 인바디·사진 → 현재 방향 → 급한불(접힘). flex order로 배치.
+  // 자료남기기 순서(2026-10-02 · 수업 끝나고 적는 순서): 운동일지 → 인바디·사진 → 현재 방향. flex order로 배치(급한불은 2026-10-06 대표 결정으로 제거).
   return (
     <div className="flex flex-col gap-6">
       {/* ═══ 회원자료(열람) ═══ */}
@@ -596,7 +557,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {log.sets_structured.map((ex, i) => (
                             <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] text-sub">
-                              {ex.exercise} {ex.sets.map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
+                              {ex.exercise} {(Array.isArray(ex.sets) ? ex.sets : []).map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
                             </span>
                           ))}
                         </div>
@@ -766,46 +727,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
 
       {/* 인바디 입력 + 사진 업로드(children · 기록) */}
       {mode === "record" && <div className="order-2 space-y-6">{children}</div>}
-
-      {/* 급한불(⑤) — 회원 급변 대처(수업 전 준비). 세션 전용·DB 무관. 상시 의료 배너. */}
-      {mode !== "view" && (
-      <details className="order-4 rounded-2xl border border-line bg-card p-5 shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center gap-2">
-          <SectionTitle icon={Flame} className="mb-0">급한불: 회원 급변 대처</SectionTitle>
-        </summary>
-        <div className="mt-4 space-y-3">
-          {/* 상시 의료 배너 — AI 출력과 무관하게 항상 노출(이중 방어). */}
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
-            <p className="text-[11px] leading-relaxed text-red-700">
-              ⚠️ 진단·치료·처방 도구가 아닙니다. 부상·급성 통증은 <b>병원·의료진 판단이 우선</b>입니다.
-              아래는 트레이너 판단을 돕는 &lsquo;방향&rsquo;일 뿐 의학적 지시가 아닙니다.
-            </p>
-          </div>
-          <textarea
-            value={acuteSituation}
-            onChange={(e) => setAcuteSituation(e.target.value)}
-            disabled={acuteGenerating}
-            rows={2}
-            placeholder="회원 급변 상황 한 줄 (예: 어제 데드리프트 후 허리 삐끗, 숙이면 찌릿)"
-            className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
-          />
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[11px] text-muted">
-              {acuteMeta?.generatedAt ? `분석: ${new Date(acuteMeta.generatedAt).toLocaleString("ko-KR")}` : "세션 전용 · 저장 안 됨"}
-            </span>
-            <button
-              onClick={generateAcute}
-              disabled={acuteGenerating || !acuteSituation.trim()}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-500/20 active:scale-95 disabled:opacity-50"
-            >
-              <Flame className="h-3.5 w-3.5" /> {acuteGenerating ? "분석 중…" : acuteBrief ? "다시 분석" : "급변 대처 분석"}
-            </button>
-          </div>
-          {acuteError && <p className="text-[11px] text-amber-700">{acuteError}</p>}
-          <AcuteBriefView brief={acuteBrief} />
-        </div>
-      </details>
-      )}
 
       {/* 계약 등록 모달 — PtConfirmBanner 확인모달과 동일 톤. buildContract·ContractAmountFields 재사용. */}
       {showContract && (

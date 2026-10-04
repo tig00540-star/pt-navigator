@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Camera, CheckCircle2, ClipboardCheck, Footprints, HeartPulse, Sparkles, UserPlus, Users } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchByIds } from "@/lib/fetchByIds";
 import { viewFor } from "@/lib/memberStatus";
 import { hrefFor, hrefForMember } from "@/lib/nav";
 import Card from "@/components/ui/Card";
@@ -90,8 +91,9 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
         apQ
           .gte("start_at", new Date(startMs).toISOString()).lt("start_at", new Date(startMs + 86400000).toISOString())
           .order("start_at", { ascending: true }),
-        ids.length ? supabase.from("daily_workout_log").select("id, user_id, session_at, created_at, voided, source").in("user_id", ids).gte("created_at", since30) : { data: [] },
-        ids.length ? supabase.from("workout_log_confirmation").select("log_id").eq("result", "confirm").in("member_id", ids) : { data: [] },
+        ids.length ? fetchByIds(supabase, "daily_workout_log", "id, user_id, session_at, created_at, voided, source", "user_id", ids, (q) => q.gte("created_at", since30)) : { data: [] },
+        // 확인은 최근 30일 것만 — 회원 전체 확인 이력을 부르면 1000행에서 잘렸다(2026-10-06).
+        ids.length ? fetchByIds(supabase, "workout_log_confirmation", "log_id", "member_id", ids, (q) => q.eq("result", "confirm").gte("confirmed_at", since30)) : { data: [] },
         ids.length ? supabase.from("cardio_log").select("user_id, kind, minutes, created_at").in("user_id", ids).gte("created_at", since3) : { data: [] },
         ids.length ? supabase.from("member_photo").select("user_id, label, created_at").in("user_id", ids).gte("created_at", since3) : { data: [] },
         ids.length ? supabase.from("schedule_check").select("user_id, kind, created_at").in("user_id", ids).gte("created_at", since3) : { data: [] },

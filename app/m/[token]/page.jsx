@@ -324,7 +324,8 @@ function PhotoSection({ me, photos, onReload, mode, readOnly = false }) {
       .upload(path, blob, { contentType: "image/jpeg" });
     if (upErr) {
       setBusy(false);
-      setErr("업로드하지 못했어요: " + upErr.message);
+      console.error("사진 업로드 실패", upErr);
+      setErr("사진을 올리지 못했어요. 다시 시도해 주세요.");
       return;
     }
     // 3) DB insert(하드닝) — 실패 시 방금 올린 파일 롤백(고아 방지).
@@ -918,11 +919,15 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
   if (consent && !(consent.general?.agreed && consent.general.version === CONSENT_VERSION)) {
     return <ConsentGate supabase={memberSupabase} me={me} onSignOut={onSignOut} onDone={(rows) => onConsentRows?.(rows)} />;
   }
-  const healthOk = consent ? Boolean(consent.health?.agreed) : true;
+  // 동의 기록을 못 읽었으면(조회 실패) 건강정보는 '동의 안 함'으로 본다 — 모르면 민감정보를 받지 않는다(2026-10-06).
+  const healthOk = consent ? Boolean(consent.health?.agreed) : false;
 
   // 지난 회원(PT 종료) = 볼 수만 있음 · 6개월(DB가 쓰기를 막고, 6개월 뒤엔 아무것도 안 읽힌다 · 2026-10-05).
-  const readOnly = me.status === "inactive";
-  const viewUntil = readOnly && me.status_changed_at ? (() => { const d = new Date(me.status_changed_at); d.setMonth(d.getMonth() + 6); return d; })() : null;
+  const ended = me.status === "inactive";
+  // 남은 수업 0회 = 입력 잠금(대표 결정 2026-10-05 · DB auth_member_writable과 같은 조건). 운동일지 '확인'은 그대로 된다.
+  const noSessions = !ended && me.writable === false;
+  const readOnly = ended || noSessions;
+  const viewUntil = ended && me.status_changed_at ? (() => { const d = new Date(me.status_changed_at); d.setMonth(d.getMonth() + 6); return d; })() : null;
   const tab = readOnly ? "read" : subTab;
 
   const latest = inbody.length ? inbody[inbody.length - 1] : null;
@@ -987,9 +992,11 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {readOnly && (
           <div className="mb-6 rounded-2xl border border-line bg-card px-4 py-3.5 shadow-sm">
-            <p className="text-[15px] font-bold text-ink">PT가 끝나서 기록을 볼 수만 있어요</p>
+            <p className="text-[15px] font-bold text-ink">{noSessions ? "남은 수업이 없어서 기록을 남길 수 없어요" : "PT가 끝나서 기록을 볼 수만 있어요"}</p>
             <p className="mt-0.5 text-[13.5px] leading-relaxed text-sub">
-              {viewUntil ? `${viewUntil.getFullYear()}년 ${viewUntil.getMonth() + 1}월 ${viewUntil.getDate()}일까지 볼 수 있어요. ` : ""}다시 시작하려면 트레이너에게 말해 주세요. 기록은 그대로 이어져요.
+              {noSessions
+                ? "재등록하면 개인운동 · 유산소 · 사진 기록이 다시 열려요. 지금까지 기록은 그대로 볼 수 있어요."
+                : `${viewUntil ? `${viewUntil.getFullYear()}년 ${viewUntil.getMonth() + 1}월 ${viewUntil.getDate()}일까지 볼 수 있어요. ` : ""}다시 시작하려면 트레이너에게 말해 주세요. 기록은 그대로 이어져요.`}
             </p>
           </div>
         )}
@@ -1005,7 +1012,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {tab === "read" && (
           <>
         {/* 수업일지 확인 유도 — 배너(항상) + pending≥3 소프트 모달. onReload=loadHome(logs 재조회). */}
-        {!readOnly && <ConfirmFlow logs={logs} onReload={onReloadLogs} />}
+        {!ended && <ConfirmFlow logs={logs} onReload={onReloadLogs} />}
 
         {/* 내 PT — 남은 수업 · 다음 수업 · 목표 로드맵(2026-10-03 · 자기완결 · 표 없으면 숨김) */}
         <MyPtCard supabase={memberSupabase} />
@@ -1227,6 +1234,12 @@ export default function MemberHome() {
         memberSupabase.from("trainer_reward").select("*").eq("active", true).order("milestone"),
         memberSupabase.from("member_consent").select("kind, agreed, created_at, version"),
       ]);
+      // 공용 기기: 다른 회원 링크를 열었는데 앞 회원 세션이 남아 있으면 로그아웃하고 이 링크로 다시 로그인(2026-10-06).
+      if (meRes.data?.member_token && token && meRes.data.member_token.toLowerCase() !== String(token).toLowerCase()) {
+        await memberSupabase.auth.signOut({ scope: "local" });
+        setPhase("login");
+        return;
+      }
       setMe(meRes.data ?? null);
       setLogs(logRes.data ?? []);
       setInbody(inbodyRes.data ?? []);
@@ -1241,7 +1254,7 @@ export default function MemberHome() {
     } catch {
       setPhase("home"); // 부분 실패해도 빈 상태로 진입(me null → 재로그인 안내 카드) — 무한 스피너 방지
     }
-  }, []);
+  }, [token]);
 
   // 기존 세션 있으면 바로 홈, 없으면 로그인. setState는 async IIFE 안에서(set-state-in-effect 회피).
   useEffect(() => {
@@ -1283,7 +1296,7 @@ export default function MemberHome() {
   };
 
   const signOut = async () => {
-    if (memberSupabase) await memberSupabase.auth.signOut();
+    if (memberSupabase) await memberSupabase.auth.signOut({ scope: "local" }); // 이 기기만(다른 기기 로그인은 그대로)
     setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setOunwan(null); setRewards([]); setConsentRows(null); setLast4(""); setPhase("login");
   };
 

@@ -87,7 +87,8 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
     if (!form.name.trim()) { setErr("이름은 필수입니다."); return; }
     if (!supabase) { setErr("데모 모드라 저장할 수 없어요."); return; }
     setSaving(true); setErr("");
-    const gateOff = Boolean(prior?.error);
+    // 표가 없을 때(42P01 · SQL 전)만 예전처럼 칸을 연다. 그 밖의 조회 실패는 '동의 모름'으로 보고 건강정보 칸을 건드리지 않는다(2026-10-06).
+    const gateOff = prior?.error?.code === "42P01";
     const payload = {};
     for (const f of FIELDS) {
       if (HEALTH_KEYS.has(f.k) && !gateOff && !healthOk) continue; // 동의 없으면 건강정보 칸은 건드리지 않는다
@@ -153,7 +154,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
             <>
               {/* 폰 1열 — MemberForm과 동일 17필드. 긴 라벨 줄바꿈으로 인한 세로 어긋남 방지. */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {FIELDS.filter((f) => prior?.error || !HEALTH_KEYS.has(f.k)).map((f) => (
+                {FIELDS.filter((f) => prior?.error?.code === "42P01" || !HEALTH_KEYS.has(f.k)).map((f) => (
                   <div key={f.k} className={f.k === "name" ? "sm:col-span-2" : ""}>
                     <label className="mb-1 block text-[11px] font-medium text-muted">
                       {f.label}{f.k === "name" && <span className="text-primary-strong"> *</span>}
@@ -170,6 +171,9 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
                   </div>
                 ))}
               </div>
+              {prior?.error && prior.error.code !== "42P01" && (
+                <p className="mt-3 rounded-xl bg-elevate px-3 py-2 text-[12.5px] text-muted">건강정보 동의 기록을 확인하지 못했어요. 불편 부위 · 부상 이력은 다시 열었을 때 고칠 수 있어요.</p>
+              )}
               {!prior?.error && (
                 <div className="mt-3">
                   <HealthConsentBlock checked={healthOk} onChange={setHealthOk} prior={prior}>

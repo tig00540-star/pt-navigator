@@ -5,12 +5,25 @@
    대사가 아닌 칸(이유·설명)엔 plainText로 표시만 지워서 쓴다(여기저기 칠하면 아무것도 안 보인다).
    ========================================================================= */
 
+// AI가 문장 자리에 객체 · 배열을 보내도 화면이 깨지지 않게 글자로 바꾼다(2026-10-06 · "Objects are not valid as a React child").
+function asText(v) {
+  if (v == null || typeof v === "string" || typeof v === "number") return v;
+  if (Array.isArray(v)) {
+    if (v.some((x) => x && typeof x === "object" && "$$typeof" in x)) return v; // JSX 자식 묶음은 그대로
+    return v.map(asText).filter((x) => x != null && x !== "").join(" ");
+  }
+  if (typeof v === "object" && !("$$typeof" in v)) return Object.values(v).map(asText).filter((x) => x != null && x !== "").join(" ");
+  return v;
+}
+
 export function plainText(s) {
-  return typeof s === "string" ? s.replace(/\*\*/g, "") : s;
+  const t = asText(s);
+  return typeof t === "string" ? t.replace(/\*\*/g, "") : t;
 }
 
 // tone="quiet" — 빨강 대신 굵게만(강조가 많은 화면에서 빨강은 꼭 필요한 곳에만 · 2026-10-02).
 export default function Emph({ children, tone = "primary" }) {
+  children = asText(children);
   if (typeof children !== "string") return children ?? null;
   const parts = children.split(/\*\*(.+?)\*\*/g);
   return (

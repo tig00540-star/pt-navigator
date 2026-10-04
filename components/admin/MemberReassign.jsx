@@ -96,7 +96,7 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
     onDone();
   };
 
-  const trainerOpts = trainers.filter((t) => !member || t.id !== member.trainer_id);
+  const trainerOpts = trainers.filter((t) => t.active !== false && (!member || t.id !== member.trainer_id));
 
   return (
     <Modal variant="center" onClose={onDone}>

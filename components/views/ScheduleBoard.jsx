@@ -223,17 +223,26 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     // 멱등 가드(이중차감 방지) — 이전 시도에서 로그 insert 성공 후 appointment update 실패 시,
     // 재시도가 로그를 다시 만들지 않도록 이 예약의 완료 로그가 이미 있으면 재사용한다.
     // 키: (user_id, session_at=appt.start_at, source∈voice/manual) — 한 회원이 같은 시각 두 세션일 수 없어 사실상 유일.
+    // 2026-10-06 오류 점검: 같은 날(KST) 이미 써 둔 운동일지가 있으면 그것과 연결 — 일지를 먼저 쓰고 예약을 '완료'로
+    //   누르면 일지가 하나 더 생겨 수업이 두 번 빠지던 문제. 다른 예약에 이미 연결된 일지는 건너뛴다.
     let logId = null;
-    const { data: dupLog } = await supabase
+    const ymdK = new Date(Date.parse(appt.start_at) + 9 * 3600000).toISOString().slice(0, 10);
+    const dayStart = new Date(`${ymdK}T00:00:00+09:00`).toISOString();
+    const dayEnd = new Date(Date.parse(dayStart) + 86400000).toISOString();
+    const { data: sameDay } = await supabase
       .from("daily_workout_log")
-      .select("id")
+      .select("id, session_at, voided")
       .eq("user_id", appt.user_id)
-      .eq("session_at", appt.start_at)
       .in("source", ["voice", "manual"])
-      .limit(1);
-    if (dupLog && dupLog.length > 0) {
-      logId = dupLog[0].id;
-    } else {
+      .gte("session_at", dayStart)
+      .lt("session_at", dayEnd);
+    const cand = (sameDay || []).filter((l) => !l.voided);
+    if (cand.length) {
+      const { data: linked } = await supabase.from("appointment").select("id, log_id").in("log_id", cand.map((l) => l.id));
+      const taken = new Set((linked || []).filter((a) => a.id !== appt.id).map((a) => a.log_id));
+      logId = cand.find((l) => !taken.has(l.id))?.id ?? null;
+    }
+    if (!logId) {
       const { data: logIns, error: logErr } = await supabase
         .from("daily_workout_log")
         .insert({ user_id: appt.user_id, contract_id: contractId, session_at: appt.start_at, source: usedVoice ? "voice" : "manual", ai_summary: body || null, raw_voice_text: usedVoice ? (rawText || null) : null, sent_at: sentAt })

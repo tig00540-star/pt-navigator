@@ -753,45 +753,6 @@ ${SAY_STYLE}
 ※ objection_defense 5개 각 1개.`;
 }
 
-// ⑤ phase="acute" user 프롬프트 — 회원 급변 대처(수업 전 준비). ⑤ 치트키/급한불.
-// ⚠️ 의료 경계 최우선: 진단·치료·처방 아님. 부상·급성 통증은 병원·의료진 먼저. 숫자 처방 금지·방향만.
-// ⚠️ DB 무관: 저장/캐시 없음(세션 전용). ot_log 비의존.
-function acutePrompt(member, ctx) {
-  const m = member || {};
-  const c = ctx || {};
-  const recent = Array.isArray(c.recent_logs) ? c.recent_logs.filter(Boolean) : [];
-  return `[상황] PT 회원에게 급변(부상·통증 급발생·컨디션 급변 등)이 생겨, 오늘 수업을 어떻게 조정할지 '수업 전'에 준비하는 자리다. 아래는 트레이너가 방금 입력한 '급변 상황'이다.
-[회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
-[현재 PT 방향/목표] ${g(m.pt_direction)}
-[급변 상황(트레이너 입력)] ${g(c.situation)}
-[최근 수업 기록]
-${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
-
-이 '급변 상황'을 근거로, 트레이너가 오늘 수업을 안전하게 조정하도록 '방향'을 제시하라. 없는 증상·원인을 지어내지 마라.
-
-[★의료 경계 — 이 출력의 최우선 안전선]
-- 이건 진단·치료·처방이 아니다. 트레이너는 의료인이 아니다.
-- 부상·급성 통증·의학적 징후(디스크·삠·붓기·저림·급성 통증 등)로 보이면, 최우선 출력은 '병원·의료진 먼저 확인'이다. safety에 그 판단 신호와 넘지 말 선을 담아라.
-- 네가 줄 수 있는 건 (a) 오늘 '피할' 움직임·부하 방향과 (b) 의학적 확인 이후를 전제로 한 '복귀 결'까지다. '지금 이걸 대신 시켜라'는 대체 처방이 아니다.
-- 상황이 단순 컨디션 저하 등 비의학적이면 safety는 짧게(무리 없는 선 안내).
-
-[출력 규칙 — 스파링 파트너]
-- 숫자 처방 절대 금지(횟수·중량·각도·세트·템포·시간 X). 움직임 '방향'과 '원리'까지만.
-- 방법도 간략히 — 트레이너가 스스로 응용·공부할 여지를 남겨라(정답 대본·레시피 금지 = 하향평준화 방지).
-- 이건 '몸 대처'지 세일즈가 아니다. "그러니 등록/재등록 하라"는 세일즈 몰이 절대 금지.
-- 근거가 얇으면 지어내지 말고 data_gaps에 '무엇을 더 확인하면 좋은지' 남겨라.
-
-[출력 언어·형식] 자연스러운 한국어. 영문 코드값·필드명을 값 텍스트에 노출 금지. 아래 JSON 스키마만 출력(설명·마크다운·코드펜스 금지). ★data_gaps를 포함한 모든 값 텍스트는 반드시 한국어 문장으로만. 영어 단어·문장 절대 금지.
-{
-  "data_gaps": ["..."],
-  "safety": "의료 경계 안내 — 병원·의료진 우선이 필요한 신호 + 트레이너가 넘지 말 선(진단·치료 아님). 비의학적이면 짧게.",
-  "avoid": [ { "movement": "오늘 피할 움직임·부하 방향", "why": "왜 위험/악화되는지 원리 한 줄" } ],
-  "alternatives": [ { "direction": "의학적 확인 이후를 전제로 접근 가능한 결(방향까지만, 없으면 빈 배열)", "why": "그 방향의 원리 한 줄" } ],
-  "principle": "이 상황을 관통하는 원리 한 줄 (트레이너가 같은 원리로 자기 판단을 응용하도록)",
-  "note": "수업 전 한 줄 준비 프레이밍 (압박·세일즈 아님)"
-}`;
-}
-
 // ⑥ phase="salesbook" user 프롬프트 — 회원 대면 세일즈북(2차 준비 자료). 독자=회원 본인.
 // ⚠️ 트레이너용 브리핑을 변환하지 않고 원천(1차 관찰)에서 회원 톤으로 재생성. 숫자는 recommendedProgram만.
 // ⚠️ 금액은 값 텍스트 금지(앱이 packages[ref].price 렌더). 거절방어·클로징시퀀스·member_read 등 내부요소 없음.
@@ -1552,8 +1513,8 @@ export async function POST(request) {
     return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
   }
 
-  const { phase, member: rawMember, report, ptContext, acuteContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
-  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "acute" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture" && phase !== "roadmap") {
+  const { phase, member: rawMember, report, ptContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
+  if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture" && phase !== "roadmap") {
     return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
   }
   // 건강정보 동의를 철회한 회원 = 불편 부위 · 부상 이력을 빼고 보낸다(프롬프트엔 '-'로 보임).
@@ -1576,15 +1537,14 @@ export async function POST(request) {
     : phase === "first_salesbook" ? firstSalesbookPrompt(member, report, recommendedProgram, packages)
     : phase === "inbody" ? inbodyPrompt(member, inbody)
     : phase === "roadmap" ? roadmapPrompt(member, ptContext)
-    : phase === "posture" ? posturePrompt(member, posture)
-    : acutePrompt(member, acuteContext);
-  // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. acute·salesbook 제외(회원 대면엔 불필요).
-  const centerMachines = (phase === "acute" || phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture" || phase === "roadmap") ? [] : await fetchCenterMachines(request);
+    : posturePrompt(member, posture);
+  // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. salesbook 제외(회원 대면엔 불필요).
+  const centerMachines = (phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture" || phase === "roadmap") ? [] : await fetchCenterMachines(request);
   // 대표 피드백 — 리포트 3종(first · second · reregister)만.
   const fbBlock = REPORT_PHASES.has(phase) ? ownerFeedbackBlock(await fetchOwnerFeedback(request, member?.id)) : "";
   const withFb = fbBlock ? `${basePrompt}\n\n${fbBlock}` : basePrompt;
   const prompt =
-    (phase === "acute" || centerMachines.length === 0)
+    (centerMachines.length === 0)
       ? withFb
       : `${equipmentBlock(centerMachines)}\n[기구 활용] 운동 구성은 위 [보유 장비]를 우선 활용하되, 목표에 더 맞는 장비가 목록에 없으면 그것도 함께 알려줘라(목록은 아직 추가 중일 수 있음). 규격의 중량 범위는 참고만 — 숫자 처방(세트·횟수·중량)은 여전히 금지, 방향까지만.\n\n${withFb}`;
   // ① 확정 스키마 출력 ~5.5k 토큰 → 8192 필수(4096이면 JSON 잘려 파싱 불가). ③(Sonnet)은 5120,

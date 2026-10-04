@@ -572,8 +572,9 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
 
   // 관찰 있음 · 미성공 → ③ 실 AI (캐시 우선, 캐시 없으면 버튼 트리거).
   if (generating || waiting) return renderGenerating();
-  if (brief) return renderBrief(brief, briefMeta);
-  if (aiError)
-    return renderDemo(`데모 폴백 (AI 실패: ${aiError}). 아래는 예시예요.`);
+  // AI 실패 · 저장 실패는 그대로 알리고 다시 만들 수 있게(2026-10-06) — 예전엔 실제 회원 화면에 가짜 예시를 띄웠다.
+  const errNote = aiError ? <p className="mb-3 rounded-xl border border-rose-500/30 bg-rose-500/5 px-4 py-3 text-[14px] leading-relaxed text-danger-text">{aiError}</p> : null;
+  if (brief) return <>{errNote}{renderBrief(brief, briefMeta)}</>;
+  if (aiError) return <>{errNote}{renderPreGenerate()}</>;
   return renderPreGenerate();
 }

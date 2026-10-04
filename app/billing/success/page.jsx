@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic"; // useSearchParams — 정적 프리렌�
 
 function Confirm() {
   const sp = useSearchParams();
-  const [state, setState] = useState("confirming"); // confirming | done | error
+  const [state, setState] = useState("confirming");
+  const [paid, setPaid] = useState(false); // 체험을 이미 쓴 계정 = 바로 첫 달 결제(2026-10-06) // confirming | done | error
   const [msg, setMsg] = useState("");
   const ran = useRef(false); // StrictMode 이중 실행/재요청 방지
 
@@ -40,7 +41,7 @@ function Confirm() {
           body: JSON.stringify({ authKey, customerKey, plan }),
         });
         const body = await res.json().catch(() => ({}));
-        if (res.ok) setState("done");
+        if (res.ok) { setPaid(Boolean(body.paid)); setState("done"); }
         else { setState("error"); setMsg(body.error || "결제 처리에 실패했어요."); }
       } catch {
         setState("error"); setMsg("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
@@ -59,9 +60,11 @@ function Confirm() {
         )}
         {state === "done" && (
           <>
-            <div className="text-lg font-semibold text-ink">7일 무료 체험이 시작됐어요 🎉</div>
+            <div className="text-lg font-semibold text-ink">{paid ? "결제가 완료됐어요" : "7일 무료 체험이 시작됐어요 🎉"}</div>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              카드가 등록됐고, 체험 기간 동안은 청구되지 않아요. 기간이 끝나면 등록하신 카드로 자동 결제됩니다(언제든 해지 가능).
+              {paid
+                ? "첫 달 결제가 끝났어요. 다음 달부터 같은 날 등록하신 카드로 자동 결제돼요(언제든 해지 가능)."
+                : "카드가 등록됐고, 체험 기간 동안은 청구되지 않아요. 기간이 끝나면 등록하신 카드로 자동 결제돼요(언제든 해지 가능)."}
             </p>
             <Link href="/" className="mt-5 inline-block w-full">
               <Button variant="primary" size="md" fullWidth>앱 시작하기</Button>

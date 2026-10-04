@@ -240,14 +240,25 @@ export default function AuthGate({ children }) {
 function Paywall({ status, onSignOut, uid }) {
   const noAccount = status?.has_account === false;
   const expired = status?.is_expired === true;
-  const title = noAccount ? "계정을 준비 중이에요" : expired ? "무료 체험이 종료됐어요" : "구독하고 시작하세요";
+  const title = noAccount ? "계정을 준비 중이에요" : expired ? "이용 기간이 끝났어요" : "구독하고 시작하세요";
   const desc = noAccount
     ? "계정 정보를 불러오지 못했어요. 잠시 후 다시 로그인해 주세요."
     : expired
-    ? "체험 기간이 끝났어요. 아래에서 플랜을 선택하고 이어서 이용하세요."
+    ? "이용 기간이 끝났어요. 카드를 등록하면 바로 이어서 이용할 수 있어요."
     : "7일 무료로 먼저 써보세요. 체험 기간엔 청구되지 않고, 언제든 해지할 수 있어요.";
 
-  const [plan, setPlan] = useState("solo");
+  // 요금제는 계정 종류로 정해진다(서버도 같은 규칙 · 2026-10-06) — 센터 계정이 솔로 가격으로 결제되던 구멍을 막는다.
+  const [plan, setPlan] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!supabase || !uid) return;
+      const { data } = await supabase.from("trainer").select("account:account_id(type)").eq("id", uid).maybeSingle();
+      if (alive) setPlan(data?.account?.type === "center" ? "center" : "solo");
+    })();
+    return () => { alive = false; };
+  }, [uid]);
+  const trialUsed = expired; // 기간이 끝난 계정 = 체험(또는 결제)을 이미 썼다 → 등록 즉시 결제
   const [busy, setBusy] = useState(false);
   const [payErr, setPayErr] = useState("");
   const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
@@ -285,13 +296,13 @@ function Paywall({ status, onSignOut, uid }) {
 
         {!noAccount && (
           <>
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              {Object.values(PLANS).map((p) => (
+            <div className="mb-4 grid gap-2">
+              {Object.values(PLANS).filter((p) => !plan || p.key === plan).map((p) => (
                 <button
                   key={p.key}
                   type="button"
                   aria-pressed={plan === p.key}
-                  onClick={() => setPlan(p.key)}
+                  onClick={() => {}}
                   className={`rounded-lg border px-3 py-2.5 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-primary ${
                     plan === p.key ? "border-primary bg-primary-soft" : "border-line bg-elevate hover:border-line-strong"}`}
                 >
@@ -305,11 +316,11 @@ function Paywall({ status, onSignOut, uid }) {
               ))}
             </div>
             {payErr && <div className="mb-2 text-xs font-semibold text-danger-text">{payErr}</div>}
-            <Button variant="primary" size="md" fullWidth onClick={startCheckout} disabled={busy}>
-              {busy ? "결제창 여는 중…" : "카드 등록하고 7일 무료 시작"}
+            <Button variant="primary" size="md" fullWidth onClick={startCheckout} disabled={busy || !plan}>
+              {busy ? "결제창 여는 중…" : trialUsed ? "카드 등록하고 이어서 이용하기" : "카드 등록하고 7일 무료 시작"}
             </Button>
             <p className="mt-2 text-center text-[11px] leading-relaxed text-muted">
-              7일간 무료 · 체험 중 청구 없음 · 이후 자동결제 · 언제든 해지
+              {trialUsed ? "등록하면 바로 첫 달이 결제돼요 · 이후 매달 자동결제 · 언제든 해지" : "7일간 무료 · 체험 중 청구 없음 · 이후 자동결제 · 언제든 해지"}
             </p>
           </>
         )}

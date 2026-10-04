@@ -182,10 +182,23 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
   }, [form.result, form.proposed]);
 
   const save = async () => {
-    if (!canEdit || saving) return;
+    if (!canEdit || saving || loading) return; // 기존 행을 다 읽기 전엔 저장하지 않는다(같은 차수 행이 두 개 생기던 문제)
     if (missing) { showToast(missing); return; }
     setSaving(true);
     try {
+      // 저장 직전 다시 읽기(2026-10-06) — 서버가 그사이 붙인 세일즈북 · 다른 기기에서 고친 덱을 덮지 않게.
+      //   행이 아직 없다고 알고 있어도 한 번 더 찾는다(리포트 생성이 막 행을 만들었을 수 있음).
+      let targetId = rowId;
+      let base = existingReport || {};
+      let prevResult;
+      if (supabase) {
+        const q = targetId
+          ? supabase.from("ot_log").select("id, report, closing_result").eq("id", targetId).maybeSingle()
+          : supabase.from("ot_log").select("id, report, closing_result").eq("user_id", member.id).eq("ot_round", round).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const { data: fresh, error: fe } = await q;
+        if (fe) throw fe;
+        if (fresh) { targetId = fresh.id; base = fresh.report || {}; prevResult = fresh.closing_result; }
+      }
       const proposed = form.result === "success" ? true : !!form.proposed;
       const closing_result = form.result === "success" ? "success" : form.result === "stop" ? "fail" : proposed ? "hold" : "none";
       const tagLabel = (t) => MOVE_TAGS.find((x) => x.value === t)?.label || t;
@@ -203,7 +216,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
       const isClosed = closing_result !== "none";
       const resultLabel = RESULTS.find((r) => r.value === form.result)?.label || "";
       const report = {
-        ...(existingReport || {}),
+        ...base,
         movements: moves,
         reaction: { stimulus, attitudeTags: form.traits, memo: "" },
         goal: { identified: Boolean(form.wantWhy.trim()), type: goalType, detail: form.wantWhy.trim() },
@@ -213,7 +226,9 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
         proposed,
         next: form.result === "continue" ? "continue" : null,
         feedback_v: 2,
-        feedbackAt: new Date().toISOString(), // 저장 시각 — DB 트리거가 ot_log.closing_recorded_at(서버 시각)을 채우는 신호 · 대표 아침 보고서 어제 결과
+        // 저장 시각 — DB 트리거가 ot_log.closing_recorded_at(서버 시각)을 채우는 신호 · 대표 아침 보고서 어제 결과.
+        //   결과가 그대로인 고쳐 쓰기(오타 수정 등)는 옛 시각을 유지 → 2주 전 OT가 '어제 결과'로 다시 올라오지 않게(2026-10-06).
+        feedbackAt: prevResult === closing_result && base.feedbackAt ? base.feedbackAt : new Date().toISOString(),
       };
       const payload = {
         user_id: member.id,
@@ -223,7 +238,8 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
         closing_result,
         closing_approach: approach,
         closing_reason: askReason ? form.reason || null : null,
-        ...(form.result === "continue" ? { closing_reapproach_at: form.nextDate || null } : {}),
+        // 결과를 바꾸면 옛 값이 남지 않게(다음 OT 날짜는 '이어가요'일 때만 · 결과 요약은 결과가 있을 때만)
+        closing_reapproach_at: form.result === "continue" ? form.nextDate || null : null,
         ...(isClosed ? {
           closing_detail: {
             approach: proposed ? "등록 제안함" : "등록 제안 못 함",
@@ -234,13 +250,14 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
             age: member.age ?? null, job: member.job ?? null, residence: member.residence ?? null,
             mbti: member.mbti ?? null, pain: member.pain ?? null, goal: member.goal ?? null, goal_type: goalType,
           },
-        } : {}),
+        } : { closing_detail: null, closing_profile: null }),
         report,
       };
-      if (rowId) {
-        const { data, error } = await supabase.from("ot_log").update(payload).eq("id", rowId).select("id");
+      if (targetId) {
+        const { data, error } = await supabase.from("ot_log").update(payload).eq("id", targetId).select("id");
         if (error) throw error;
         if (!data || data.length === 0) { showToast("저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
+        if (targetId !== rowId) setRowId(targetId);
       } else {
         const { data, error } = await supabase.from("ot_log").insert(payload).select("id").single();
         if (error) throw error;
@@ -322,7 +339,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
         )}
 
         {form.result === "continue" && (
-          <Q label="다음 OT 날짜" hint="대시보드·오늘 할 일에 떠요">
+          <Q label="다음 OT 날짜" hint="그날 '오늘 할 일'에 떠요">
             <div className="mb-2 flex flex-wrap gap-1.5">
               {[["내일", 1], ["3일 뒤", 3], ["1주 뒤", 7]].map(([l, d]) => (
                 <Chip key={l} on={form.nextDate === isoAfter(d)} onClick={() => set("nextDate", isoAfter(d))}>{l}</Chip>
@@ -419,7 +436,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
       </div>
 
       <div className="space-y-2">
-        <Button variant="primary" size="lg" fullWidth onClick={save} disabled={!canEdit || saving}>
+        <Button variant="primary" size="lg" fullWidth onClick={save} disabled={!canEdit || saving || loading}>
           {saving ? "저장 중…" : "피드백 저장"}
         </Button>
         {missing && !saving && <p className="text-center text-[12px] text-muted">{missing}</p>}

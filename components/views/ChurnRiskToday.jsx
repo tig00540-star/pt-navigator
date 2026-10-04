@@ -7,6 +7,7 @@ import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchByIds } from "@/lib/fetchByIds";
 import { viewFor, activeContract, remainingSessions } from "@/lib/memberStatus";
 
 const STALE_DAYS = 14; // 이 일수 이상 수업 없으면 이탈 위험(여기 숫자만 바꾸면 조정됨)
@@ -19,6 +20,8 @@ function daysSince(iso) {
 }
 
 export default function ChurnRiskToday({ members = [], onSelect }) {
+  // 받은 PT 회원 것만 · 끝까지(1000행 잘림 방지 · 2026-10-06). 예전엔 센터 전체를 한 번에 불러 잘렸다.
+  const ptKey = members.filter((m) => viewFor(m) === "pt").map((m) => m.id).sort().join(",");
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,9 +32,10 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
       if (!supabase) return;
       setLoading(true);
       try {
+        const ids = ptKey ? ptKey.split(",") : [];
         const [{ data: cs }, { data: ls }] = await Promise.all([
-          supabase.from("session_log").select("id, user_id, started_at, created_at, sessions_total, service_sessions"),
-          supabase.from("daily_workout_log").select("user_id, contract_id, session_at, created_at, voided, source"),
+          fetchByIds(supabase, "session_log", "id, user_id, started_at, created_at, sessions_total, service_sessions, handed_over", "user_id", ids),
+          fetchByIds(supabase, "daily_workout_log", "user_id, contract_id, session_at, created_at, voided, source", "user_id", ids),
         ]);
         if (cancelled) return;
         setContracts(cs || []);
@@ -44,7 +48,7 @@ export default function ChurnRiskToday({ members = [], onSelect }) {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [ptKey]);
 
   // 회원×로그 O(n²) 집계 — 데이터 변경 시에만 재계산(모든 훅은 early return 앞에).
   const risky = useMemo(() =>

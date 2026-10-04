@@ -82,9 +82,11 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
   const cancelReq = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.from("member_routine_request").delete().in("id", reqs.map((x) => x.id)).select("id");
-      if (!error) setReqs([]);
-    } finally { setBusy(false); }
+      const { data, error } = await supabase.from("member_routine_request").delete().in("id", reqs.map((x) => x.id)).select("id");
+      // 0행 = 트레이너가 이미 처리했거나 지울 수 없는 상태 → 다시 읽어 실제 상태를 보여 준다
+      if (error || !data?.length) { console.error("루틴 요청 취소 실패", error); setMsg("취소하지 못했어요. 이미 트레이너가 확인했을 수 있어요."); await load(); return; }
+      setReqs([]);
+    } catch { setMsg("인터넷 연결을 확인하고 다시 시도해 주세요."); } finally { setBusy(false); }
   };
 
   // ── 루틴 없음: 요청 ──
@@ -135,7 +137,9 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
       });
       const { data, error } = await supabase.from("member_routine_log").insert({ user_id: me.id, performed_on: today, day_key: day.key, items }).select("id");
       if (error || !data?.length) { console.error("개인운동 기록 실패", error); setMsg("기록하지 못했어요. 다시 시도해 주세요."); return; }
-      await supabase.from("schedule_check").insert({ user_id: me.id, on_date: today, kind: "personal", note: `개인운동 루틴 · ${day.label}` }).select("id");
+      // 오운완 하루 체크 — 실패하면 알려 준다(루틴 기록은 이미 남음 · 다시 누르면 기록이 두 번 생기니 저장 버튼은 닫는다)
+      const sc = await supabase.from("schedule_check").insert({ user_id: me.id, on_date: today, kind: "personal", note: `개인운동 루틴 · ${day.label}` }).select("id");
+      if (sc.error || !sc.data?.length) { console.error("오운완 체크 실패", sc.error); setMsg("운동은 기록했어요. 오운완 체크는 '기록 남기기'의 개인운동에서 한 번 더 눌러 주세요."); }
       setSavedToday(true); setVals({}); setPick(null);
       await load();
       onSaved?.();
@@ -169,7 +173,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
                 {it.locked || x.weight === 0 ? (
                   <span className="min-w-[3.4rem] text-[15px] font-bold text-ink">{x.weight ? `${r2(x.weight)}kg` : "맨몸"}</span>
                 ) : (
-                  <Step label="무게" unit="kg" value={r2(x.weight)} onDec={() => setV(it, nv, { weight: r2(Math.max(0, x.weight - step)) })} onInc={() => setV(it, nv, { weight: r2(x.weight + step) })} decOff={x.weight - step < 0} incOff={x.weight + step > maxW + 1e-9} />
+                  <Step label="무게" unit="kg" value={r2(x.weight)} onDec={() => setV(it, nv, { weight: r2(Math.max((nv.weight ?? 0) > 0 ? step : 0, x.weight - step)) })} onInc={() => setV(it, nv, { weight: r2(x.weight + step) })} decOff={x.weight - step <= 0 && (nv.weight ?? 0) > 0} incOff={x.weight + step > maxW + 1e-9} />
                 )}
                 <Step label="횟수" unit="회" value={x.reps} onDec={() => setV(it, nv, { reps: Math.max(1, x.reps - 1) })} onInc={() => setV(it, nv, { reps: Math.min(30, x.reps + 1) })} decOff={x.reps <= 1} incOff={x.reps >= 30} />
                 <Step label="세트" unit="세트" value={x.sets} onDec={() => setV(it, nv, { sets: Math.max(1, x.sets - 1) })} onInc={() => setV(it, nv, { sets: Math.min(4, x.sets + 1) })} decOff={x.sets <= 1} incOff={x.sets >= 4} />

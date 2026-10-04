@@ -66,7 +66,8 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
   const [err, setErr] = useState("");
   const [showDetail, setShowDetail] = useState(false); // OT 사전 문진 접기(기본 닫힘 · 입력 부담↓)
   const [healthOk, setHealthOk] = useState(false); // 건강정보 동의 받음(트레이너 확인) — 체크해야 불편 부위 · 부상 이력 칸이 열린다
-  const savedIdRef = useRef(null); // 회원은 저장됐는데 건강정보 단계가 실패한 뒤 다시 누를 때 회원이 두 번 생기지 않게
+  const savedIdRef = useRef(null);
+  const carryDoneRef = useRef(false); // 이월계약까지 저장됐나(실패 뒤 재시도 때 계약만 다시) // 회원은 저장됐는데 건강정보 단계가 실패한 뒤 다시 누를 때 회원이 두 번 생기지 않게
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -126,8 +127,9 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
     }
     memberId = u[0].id;
     savedIdRef.current = memberId;
-    // 이월계약 INSERT (handover/external만) — 실패해도 회원은 등록됨(PT 뷰 '계약 등록'으로 회복).
-    if (isCarry) {
+    }
+    // 이월계약 INSERT (handover/external만) — 실패하면 저장을 다시 눌러 계약만 다시 시도한다(2026-10-06).
+    if (isCarry && !carryDoneRef.current) {
       const payload = {
         ...buildContract({
           userId: memberId,
@@ -145,10 +147,10 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
         .select();
       if (cErr || !c || c.length === 0) {
         setSaving(false);
-        setErr("회원은 등록했지만 이월계약은 저장하지 못했어요. PT 화면의 '계약 등록'에서 마저 등록해 주세요.");
+        setErr("회원은 등록했지만 이월계약은 저장하지 못했어요. 저장을 다시 눌러 주세요.");
         return;
       }
-    }
+      carryDoneRef.current = true;
     }
     // 건강정보 — 동의 기록을 먼저 남기고, 남았을 때만 불편 부위 · 부상 이력을 저장한다(2026-10-05).
     const pain = form.pain.trim();

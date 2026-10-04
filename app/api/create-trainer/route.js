@@ -77,7 +77,8 @@ export async function POST(req) {
   });
   if (ce || !created?.user?.id) {
     console.error("[create-trainer] 계정 생성 실패:", ce?.message || "unknown");
-    return Response.json({ error: "계정 생성 실패: " + (ce?.message || "unknown") }, { status: 400 });
+    const dup = /already|registered|exists/i.test(ce?.message || "");
+    return Response.json({ error: dup ? "이미 가입된 이메일이에요. 다른 이메일로 초대해 주세요." : "트레이너 계정을 만들지 못했어요. 다시 시도해 주세요." }, { status: 400 });
   }
 
   const { error: te } = await sb.from("trainer").insert({
@@ -86,7 +87,7 @@ export async function POST(req) {
   if (te) {
     console.error(`[create-trainer] trainer insert 실패 — 계정 롤백 uid=${created.user.id}:`, te.message);
     await sb.auth.admin.deleteUser(created.user.id); // 정합성: trainer 실패 시 방금 만든 계정 롤백
-    return Response.json({ error: "trainer 등록 실패: " + te.message }, { status: 400 });
+    return Response.json({ error: "트레이너를 등록하지 못했어요. 다시 시도해 주세요." }, { status: 400 });
   }
 
   return Response.json({ ok: true, id: created.user.id, email, tempPassword: password });

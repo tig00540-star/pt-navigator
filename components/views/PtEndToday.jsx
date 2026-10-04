@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { Flag } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchByIds } from "@/lib/fetchByIds";
 import { viewFor, activeContract, toInactive } from "@/lib/memberStatus";
 import { useMembers } from "@/components/app/MembersProvider";
 import ToneCard from "@/components/ui/ToneCard";
@@ -39,8 +40,8 @@ export default function PtEndToday({ members = [], onSelect }) {
     (async () => {
       if (!ids.length) { if (!cancelled) setRows([]); return; }
       const [{ data: cs, error: ce }, { data: ls, error: le }] = await Promise.all([
-        supabase.from("session_log").select("id, user_id, started_at, sessions_total, service_sessions, handed_over").in("user_id", ids),
-        supabase.from("daily_workout_log").select("user_id, contract_id, voided, session_at, created_at").in("user_id", ids),
+        fetchByIds(supabase, "session_log", "id, user_id, started_at, sessions_total, service_sessions, handed_over", "user_id", ids),
+        fetchByIds(supabase, "daily_workout_log", "user_id, contract_id, voided, session_at, created_at", "user_id", ids),
       ]);
       if (ce || le) { console.error("PT 종료 대상 조회 실패", ce || le); return; }
       if (cancelled) return;

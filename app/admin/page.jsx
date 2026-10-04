@@ -110,6 +110,15 @@ function Bar({ pct, tone = "lime" }) {
   );
 }
 
+
+// 장부(지출 · FC매출)를 가져올 시작일 — 13개월 전 1일(KST). 정산 화면에서 지난 기간으로 넘겨도 비지 않게(2026-10-06).
+//   예전엔 '지난달 1일'부터만 가져와 두 달 전 기간은 지출 0 → 순이익이 부풀었다.
+function ledgerStart() {
+  const k = new Date(Date.now() + 9 * 3600 * 1000);
+  const t = k.getUTCFullYear() * 12 + k.getUTCMonth() - 13;
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}-01`;
+}
+
 /* =========================================================================
    ADMIN PAGE
    ========================================================================= */
@@ -132,6 +141,7 @@ export default function AdminDashboard() {
   const [expenses, setExpenses] = useState([]); // expense(이번달 · 지출/순이익 · 비차단 fetch)
   const [incomes, setIncomes] = useState([]);   // income(FC·기타 매출 수기 · 정산 전용 · 트레이너 지표 미반영)
   const [startDay, setStartDay] = useState(1);  // account.settlement_start_day — 센터별 정산 주기(1일/15일 등)
+  const [dataReady, setDataReady] = useState(false); // 첫 데이터 로드 끝(2026-10-06)
   const [atab, setAtab] = useState("hub"); // admin 섹션(기본=허브 홈 · 9탭을 5묶음으로 고른다)
   const wide = useIsWide(); // 태블릿 가로·PC = 홈을 한 화면 대시보드로(OwnerWideHome)
   // 탭 이동 공통 — 옛 id(funnel·retention)를 새 화면(flow)으로 흘린다.
@@ -164,11 +174,10 @@ export default function AdminDashboard() {
         // ⑦ trainer_id seam: 로그인 붙으면 각 select에 .eq("trainer_id", me) 추가(지금은 단일 트레이너 우회 = 전체=본인).
         const apptCutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString(); // 스케줄 분석 최근 90일 창
         // ⚠️ 정산 시작일이 15일이면 기간이 전달에 걸친다 → 지난달 1일부터 가져온다(월초만 가져오면 앞이 빈다).
-        const exKst = new Date(Date.now() + 9 * 3600 * 1000);
-        const exStart = new Date(exKst.getFullYear(), exKst.getMonth() - 1, 1).toISOString().slice(0, 10); // 이번달 지출(KST)
+        const exStart = ledgerStart(); // 장부 창(13개월)
         const [u, o, c, l, tr, ps, pr, tg, ap, ex, inc, acc] = await Promise.all([
-          supabase.from("user_table").select("*"),
-          supabase.from("ot_log").select("*"),
+          fetchAllRows(() => supabase.from("user_table").select("*")),
+          fetchAllRows(() => supabase.from("ot_log").select("*")),
           // ⚠️ session_log·daily_workout_log는 센터 전체를 부른다 → 1000행 잘림 위험(P0-6).
           //    페이지 페처로 끝까지 훑는다(급여·매출·QC 집계의 입력이라 잘리면 숫자가 틀림).
           //    나머지(user_table·ot_log·trainer·pay_scheme·payroll_run)는 증가가 느려 당장 무관.
@@ -181,9 +190,9 @@ export default function AdminDashboard() {
           // 스케줄 분석: 최근 90일 예약(canceled 포함=취소율). 창은 좁지만 다트레이너면 1000행 넘을 수 있어 페이지네이션.
           fetchAllRows(() => supabase.from("appointment").select("*").gte("start_at", apptCutoff)),
           // 지출: 비차단 · 테이블 없거나 실패해도 []로 폴백(지출/순이익만 빈값).
-          supabase.from("expense").select("*").gte("spent_on", exStart),
+          fetchAllRows(() => supabase.from("expense").select("*").gte("spent_on", exStart)),
           // FC·기타 매출(수기) + 정산 시작일: 비차단 · 마이그레이션 전이면 []/1로 폴백(정산 카드만 빈값).
-          supabase.from("income").select("*").gte("earned_on", exStart),
+          fetchAllRows(() => supabase.from("income").select("*").gte("earned_on", exStart)),
           supabase.from("account").select("settlement_start_day").maybeSingle(),
         ]);
         const firstErr = u.error || o.error || c.error || l.error;
@@ -203,6 +212,7 @@ export default function AdminDashboard() {
         setExpenses(ex.data || []); // 비차단 — expense 테이블 없거나 실패해도 []로 폴백(지출/순이익만 빈값)
         setIncomes(inc.data || []);  // 비차단 — income 테이블 없으면 []로 폴백(FC·기타 매출만 빈값)
         setStartDay(acc.data?.settlement_start_day ?? 1); // 컬럼 없으면 1(달력 월)
+        setDataReady(true); // 보고서는 이게 켜진 뒤에만 만든다(빈 숫자로 만든 보고서가 하루 종일 남던 문제)
       } catch {
         setDbNote("불러오지 못했어요. 새로고침해 주세요.");
         setRole((r) => r ?? "denied"); // role 고착 방지(에러=잠금, 안전측)
@@ -216,7 +226,8 @@ export default function AdminDashboard() {
   const handleMemberCreated = async () => {
     setShowMemberCreate(false);
     if (!supabase) return;
-    const { data } = await supabase.from("user_table").select("*");
+    const { data, error } = await supabase.from("user_table").select("*");
+    if (error) { console.error("회원 다시 읽기 실패", error); setDbNote("목록을 새로 불러오지 못했어요. 새로고침해 주세요."); return; } // 실패로 화면이 0이 되지 않게
     setRows(data || []);
   };
 
@@ -230,6 +241,7 @@ export default function AdminDashboard() {
       fetchAllRows(() => supabase.from("session_log").select("*")),
       fetchAllRows(() => supabase.from("appointment").select("*").gte("start_at", cutoff)),
     ]);
+    if (u.error || c.error || ap.error) { console.error("재배정 후 다시 읽기 실패", u.error || c.error || ap.error); setDbNote("목록을 새로 불러오지 못했어요. 새로고침해 주세요."); return; }
     setRows(u.data || []);
     setContracts(c.data || []);
     setAppts(ap.data || []);
@@ -239,18 +251,16 @@ export default function AdminDashboard() {
   const reloadExpenses = async () => {
     if (!supabase) return;
     // ⚠️ 정산 시작일이 15일이면 기간이 전달에 걸친다 → 지난달 1일부터 가져온다(월초만 가져오면 앞부분이 빈다).
-    const kst = new Date(Date.now() + 9 * 3600 * 1000);
-    const exStart = new Date(kst.getFullYear(), kst.getMonth() - 1, 1).toISOString().slice(0, 10);
-    const { data } = await supabase.from("expense").select("*").gte("spent_on", exStart);
+    const { data, error } = await fetchAllRows(() => supabase.from("expense").select("*").gte("spent_on", ledgerStart()));
+    if (error) { console.error("지출 다시 읽기 실패", error); return; }
     setExpenses(data || []);
   };
 
   // FC·기타 매출(수기) — 지출과 같은 창으로 가져온다. 실패해도 비차단(그 탭만 빈 상태).
   const reloadIncomes = async () => {
     if (!supabase) return;
-    const kst = new Date(Date.now() + 9 * 3600 * 1000);
-    const start = new Date(kst.getFullYear(), kst.getMonth() - 1, 1).toISOString().slice(0, 10);
-    const { data } = await supabase.from("income").select("*").gte("earned_on", start);
+    const { data, error } = await fetchAllRows(() => supabase.from("income").select("*").gte("earned_on", ledgerStart()));
+    if (error) { console.error("FC매출 다시 읽기 실패", error); return; }
     setIncomes(data || []);
   };
 
@@ -420,6 +430,7 @@ export default function AdminDashboard() {
         {atab === "briefing" && (
         <section className="mb-8">
           <OwnerBriefing
+            ready={dataReady}
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
             appts={appts} goals={goals} trainers={trainers} ym={ym}
             onGoTab={goTab} />

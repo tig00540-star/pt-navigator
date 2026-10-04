@@ -60,7 +60,10 @@ const EMPTY_REV = { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 };
 const EMPTY_CLOSE = { r1: { attempted: 0, success: 0, rate: null }, r2: { attempted: 0, success: 0, rate: null } };
 
 /* 펼침 상세 — 기존 트레이너별 실적의 신규/재등록 split + PayrollConfirm 재사용(급여 확정 흐름 보존). */
-function ExpandDetail({ rev, id, ym, pay, run, onSaveRun, onGoPayroll }) {
+function ExpandDetail({ rev, id, ym, pay, run, prev, onSaveRun, onGoPayroll }) {
+  // 급여 확정은 이번 달 · 지난달 둘 다(2026-10-06) — 달이 바뀌면 지난달 급여를 확정할 길이 없던 문제.
+  const [payMonth, setPayMonth] = useState("prev");
+  const usePrev = payMonth === "prev" && prev;
   return (
     <div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -81,7 +84,17 @@ function ExpandDetail({ rev, id, ym, pay, run, onSaveRun, onGoPayroll }) {
           <div className="text-[12px] text-muted">{rev.cntRe}건</div>
         </div>
       </div>
-      <PayrollConfirm trainerId={id} ym={ym} pay={pay} run={run} onSaved={onSaveRun} />
+      {prev && (
+        <div className="mt-3 inline-flex gap-1 rounded-full bg-elevate p-[3px]" aria-label="급여 확정 달">
+          {[["prev", `지난달 (${Number(prev.ym.slice(5))}월)`], ["cur", `이번 달 (${Number(ym.slice(5))}월 · 진행 중)`]].map(([k, label]) => (
+            <button key={k} type="button" onClick={() => setPayMonth(k)} aria-pressed={payMonth === k}
+              className={`inline-flex min-h-[34px] items-center rounded-full px-3 text-[13px] transition ${payMonth === k ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      <PayrollConfirm key={usePrev ? prev.ym : ym} trainerId={id} ym={usePrev ? prev.ym : ym} pay={usePrev ? prev.pay : pay} run={usePrev ? prev.run : run} onSaved={onSaveRun} />
       {onGoPayroll && (
         <button
           type="button"
@@ -143,6 +156,11 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
   const revMap = useMemo(() => new Map(revenueByTrainer(contracts, ym).map((r) => [r.trainer_id, r])), [contracts, ym]);
   const sessCount = useMemo(() => sessionCountByTrainer(logs, contracts, ym), [logs, contracts, ym]);
   const sessPriceSum = useMemo(() => sessionPriceSumByTrainer(logs, contracts, ym), [logs, contracts, ym]);
+  // 지난달 급여(확정용) — 같은 계산을 지난달로 한 번 더.
+  const prevYm = useMemo(() => { const t = Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7)) - 2; return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}`; }, [ym]);
+  const revMapPrev = useMemo(() => new Map(revenueByTrainer(contracts, prevYm).map((r) => [r.trainer_id, r])), [contracts, prevYm]);
+  const sessCountPrev = useMemo(() => sessionCountByTrainer(logs, contracts, prevYm), [logs, contracts, prevYm]);
+  const sessPriceSumPrev = useMemo(() => sessionPriceSumByTrainer(logs, contracts, prevYm), [logs, contracts, prevYm]);
 
   // 담당 회원 수(현재 · !hidden · status 기준). all=ot+pt, pt=pt_active(세션소진·이탈률 status 분모), ot=ot_active.
   const memberCounts = useMemo(() => {
@@ -178,14 +196,21 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
         monthRevenue: rev.total, sessionCount: sessCount.get(id) || 0, sessionPriceSum: sessPriceSum.get(id) || 0,
       });
       const run = runs.find((r) => r.ym === ym && r.trainer_id === id) || null;
-      return { id, name: nameOf(id), rev, close, rereg, churn, logRate, cnt, sess, burn, pay, run };
+      const prev = {
+        ym: prevYm,
+        pay: payForScheme(resolveScheme(schemes, id), {
+          monthRevenue: (revMapPrev.get(id) || EMPTY_REV).total, sessionCount: sessCountPrev.get(id) || 0, sessionPriceSum: sessPriceSumPrev.get(id) || 0,
+        }),
+        run: runs.find((r) => r.ym === prevYm && r.trainer_id === id) || null,
+      };
+      return { id, name: nameOf(id), rev, close, rereg, churn, logRate, cnt, sess, burn, pay, run, prev };
     });
     // 순위 = 매출 내림차순(항상). 메달은 매출>0 상위3에만.
     const byRev = [...list].sort((a, b) => b.rev.total - a.rev.total);
     const rankOf = new Map(byRev.map((r, i) => [r.id, i + 1]));
     for (const r of list) r.rank = rankOf.get(r.id);
     return list;
-  }, [trainers, revMap, closeMap, reregMap, churnMap, logRateMap, memberCounts, sessMonth, otSessMonth, sessCount, sessPriceSum, schemes, runs, ym]);
+  }, [trainers, revMap, closeMap, reregMap, churnMap, logRateMap, memberCounts, sessMonth, otSessMonth, sessCount, sessPriceSum, schemes, runs, ym, prevYm, revMapPrev, sessCountPrev, sessPriceSumPrev]);
 
   const sorted = useMemo(() => {
     const nz = (v) => (v == null ? -Infinity : v);
@@ -284,7 +309,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                     {open && (
                       <tr className="border-t border-line bg-elevate/30">
                         <td colSpan={13} className="px-3 py-3">
-                          <ExpandDetail rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} />
+                          <ExpandDetail rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} prev={t.prev} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} />
                         </td>
                       </tr>
                     )}
@@ -332,7 +357,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                 className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-line bg-elevate py-2 text-[12px] font-semibold text-sub transition hover:border-primary/40">
                 {open ? "접기" : "상세 · 급여 확정"} {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               </button>
-              {open && <div className="mt-3"><ExpandDetail rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} /></div>}
+              {open && <div className="mt-3"><ExpandDetail rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} prev={t.prev} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} /></div>}
             </Card>
           );
         })}

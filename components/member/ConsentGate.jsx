@@ -41,10 +41,10 @@ export default function ConsentGate({ supabase, me, onDone, onSignOut }) {
     if (!general || busy) return;
     setBusy(true); setErr("");
     try {
-      const rows = [
-        { member_id: me.id, kind: "general", agreed: true, method: "member_page", version: CONSENT_VERSION },
-        { member_id: me.id, kind: "health", agreed: health, method: "member_page", version: CONSENT_VERSION },
-      ];
+      // 건강정보는 체크했을 때만 남긴다 — 안 체크한 건 '아직 동의 안 함'(기록 없음)이지 '철회'가 아니다(2026-10-06).
+      //   철회 기록이 생기면 트레이너가 종이 동의를 받아도 체크할 수 없게 막히기 때문.
+      const rows = [{ member_id: me.id, kind: "general", agreed: true, method: "member_page", version: CONSENT_VERSION }];
+      if (health) rows.push({ member_id: me.id, kind: "health", agreed: true, method: "member_page", version: CONSENT_VERSION });
       const { data, error } = await supabase.from("member_consent").insert(rows).select("kind, agreed, created_at, version");
       if (error || !data || data.length === 0) {
         console.error("동의 저장 실패", error);
