@@ -21,6 +21,8 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
 const r2 = (x) => Math.round(x * 100) / 100;
+// 은/는 — 마지막 글자 받침으로('레그프레스는' · '레그컬은').
+const eunNeun = (w) => { const c = String(w || "").trim().slice(-1).charCodeAt(0); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? "은" : "는"; };
 const kg = (w) => `${r2(w)}kg`;
 const mdKo = (iso) => { const t = Date.parse(iso || ""); if (Number.isNaN(t)) return ""; const k = new Date(t + 9 * 3600000); return `${k.getUTCMonth() + 1}/${k.getUTCDate()}`; };
 
@@ -255,7 +257,7 @@ export default function RoutineCard({ member, logs = [] }) {
   const raisedItems = allItems.filter((it) => nvOf(it).ptRaised);
   const locked = allItems.filter((i) => i.locked).map((i) => i.name);
   // 설명 대사 — 법무 점검 수정안(안전 보장 표현 빼기 · 회원 전용 페이지 · 회원이 한 말을 근거로)
-  const script = `${String(member?.name || "회원").slice(-2)}님, 혼자 오시는 날 할 루틴을 회원 페이지에 넣어 드렸어요. 오늘 저랑 한 무게보다 가볍게, 70% 정도로 잡았어요. 혼자 하실 때 무리 없게 시작하려고요. 하시다가 가벼우면 플러스, 무거우면 마이너스 누르고 실제로 하신 만큼만 체크해 주세요. 그 기록을 보고 다음 루틴이 조금씩 올라가요. 혼자서는 여기까지만 올라가게 정해 뒀어요. 더 무거운 건 다음 수업 때 저랑 같이 올려요. 컨디션 안 좋은 날은 숫자 다 못 채워도 괜찮아요. 아프거나 찌릿하면 바로 멈추고, 화면의 '아파서 멈췄어요'를 눌러 저한테 알려 주세요.${locked.length ? ` ${locked.join(", ")}은 ${hasPain ? "불편하다고 하셔서 " : ""}무게가 안 올라가게 묶어 뒀어요.` : ""}`;
+  const script = `${String(member?.name || "회원").slice(-2)}님, 혼자 오시는 날 할 루틴을 회원 페이지에 넣어 드렸어요. 오늘 저랑 한 무게보다 가볍게, 70% 정도로 잡았어요. 혼자 하실 때 무리 없게 시작하려고요. 하시다가 가벼우면 플러스, 무거우면 마이너스 누르고 실제로 하신 만큼만 체크해 주세요. 그 기록을 보고 다음 루틴이 조금씩 올라가요. 혼자서는 여기까지만 올라가게 정해 뒀어요. 더 무거운 건 다음 수업 때 저랑 같이 올려요. 컨디션 안 좋은 날은 숫자 다 못 채워도 괜찮아요. 아프거나 찌릿하면 바로 멈추고, 화면의 '아파서 멈췄어요'를 눌러 저한테 알려 주세요.${locked.length ? ` ${locked.join(", ")}${eunNeun(locked.at(-1))} ${hasPain ? "불편하다고 하셔서 " : ""}무게가 안 올라가게 묶어 뒀어요.` : ""}`;
   const recalc = (it) => { const sr = ptSeries.find((x) => x.exercise === it.name); const nx = sr ? itemFromSeries(sr, machines) : null; return nx ? { ...nx, locked: it.locked, note: it.note || nx.note } : it; };
 
   return (
