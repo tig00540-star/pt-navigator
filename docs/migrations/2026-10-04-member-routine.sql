@@ -44,7 +44,8 @@ create policy "auth_all_member_routine"
   using (account_id = auth_account_id())
   with check (account_id = auth_account_id() and member_in_my_account(member_id::text));
 
--- 회원에게는 보이기 켜짐 + 최근 4주 안에 PT 수업이 있을 때만(트레이너가 지켜보는 동안만 · 법무 점검 2026-10-04).
+-- 회원에게는 보이기 켜짐 + 최근 4주 안에 PT 수업이 있을 때만(트레이너가 지켜보는 동안만 · 법무 점검 2026-10-04)
+-- + 확정 뒤 PT가 28일 넘게 끊겼다가 다시 시작했으면 트레이너가 다시 확정할 때까지 숨김.
 create or replace view member_routine_view
   with (security_invoker = false) as
   select r.split, r.days, r.confirmed_at, r.updated_at
@@ -54,6 +55,17 @@ create or replace view member_routine_view
       select 1 from daily_workout_log l
        where l.user_id = r.member_id and not coalesce(l.voided, false) and coalesce(l.source, '') <> 'noshow'
          and coalesce(l.session_at, l.created_at) > now() - interval '28 days'
+    )
+    -- 오래 쉬었다가 돌아온 경우: 확정 뒤 PT 사이에 28일 넘게 빈 적이 있으면 숨김(근력이 떨어졌을 수 있어 트레이너가 다시 확정해야 보임)
+    and not exists (
+      select 1 from (
+        select coalesce(session_at, created_at) as d,
+               lag(coalesce(session_at, created_at)) over (order by coalesce(session_at, created_at)) as p
+          from daily_workout_log
+         where user_id = r.member_id and not coalesce(voided, false) and coalesce(source, '') <> 'noshow'
+      ) g
+      where g.d > r.confirmed_at
+        and greatest(coalesce(g.p, r.confirmed_at), r.confirmed_at) < g.d - interval '28 days'
     );
 
 grant select on member_routine_view to authenticated;

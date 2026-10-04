@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowDown, ArrowUp, ChevronDown, Dumbbell, Eye, EyeOff, Lock, Minus, Pencil, Plus, RefreshCw, Trash2, Unlock } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { buildExerciseSeries } from "@/lib/workout";
-import { draftRoutine, itemFromSeries, inferStep, groupOf, machineFor, nextValues, latestPtTop, isRisky, SPLITS, GROUP_LABEL } from "@/lib/routine";
+import { draftRoutine, itemFromSeries, inferStep, groupOf, machineFor, nextValues, latestPtTop, isRisky, breakSinceConfirm, SPLITS, GROUP_LABEL } from "@/lib/routine";
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Toast from "@/components/ui/Toast";
@@ -261,6 +261,11 @@ export default function RoutineCard({ member, logs = [] }) {
   return (
     <Card as="section">
       <SectionTitle icon={Dumbbell} aside={row.visible ? "회원에게 보이는 중" : "회원에게 안 보임"}>개인운동 루틴 · 혼자 주 {row.split}번</SectionTitle>
+      {breakSinceConfirm(logs, conf) && (
+        <div className="mb-3 rounded-xl bg-ot-soft px-3.5 py-3 text-[13px] leading-relaxed text-ink">
+          PT가 4주 넘게 끊겼다가 다시 시작했어요. 그동안 근력이 달라졌을 수 있어서 <b className="font-semibold">회원 화면에서 루틴을 숨겨 뒀어요.</b> &lsquo;고치기 → 최신 PT 기록으로 다시 계산 → 확정&rsquo;을 하면 다시 보여요.
+        </div>
+      )}
       {painItems.length > 0 && (
         <div className="mb-3 flex items-start gap-2 rounded-xl bg-rose-50 px-3.5 py-3 text-[13px] leading-relaxed text-danger-text">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
