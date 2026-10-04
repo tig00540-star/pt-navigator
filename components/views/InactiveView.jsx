@@ -31,7 +31,7 @@ export default function InactiveView({ member, onGoList, onMemberPatch }) {
 
   const restart = async () => {
     if (busy) return;
-    const patch = { ...toPtActive(member), pt_end_snooze_until: new Date(Date.now() + 7 * 86400000).toISOString() };
+    const patch = { ...toPtActive(member), status_note: null, pt_end_snooze_until: new Date(Date.now() + 7 * 86400000).toISOString() };
     if (!supabase) { onMemberPatch?.(member.id, patch); return; }
     setBusy(true);
     try {
