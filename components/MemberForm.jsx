@@ -5,13 +5,15 @@
    · admin(대표): `assignTrainers` 제공 → '담당 트레이너' 선택 필드 노출 + insert에 trainer_id 세팅
      (user_table + carry 계약 session_log 둘 다 · buildContract는 trainer_id 안 넣으므로 바깥에서 덧씌움).
    ========================================================================= */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { initialStatus, buildContract } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Modal from "@/components/ui/Modal";
 import NumberInput from "@/components/ui/NumberInput";
 import Button from "@/components/ui/Button";
+import HealthConsentBlock, { recordHealthConsent } from "@/components/views/HealthConsentBlock";
+import { CONSENT_VERSION } from "@/lib/consent";
 import { UserPlus, X, ChevronDown, ChevronRight } from "lucide-react";
 
 // 입력 칸 하나 — opts 있으면 datalist(드롭다운 제안 + 자유 입력=기타). 모듈 레벨(렌더 내 정의 금지 · lint).
@@ -63,6 +65,8 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [showDetail, setShowDetail] = useState(false); // OT 사전 문진 접기(기본 닫힘 · 입력 부담↓)
+  const [healthOk, setHealthOk] = useState(false); // 건강정보 동의 받음(트레이너 확인) — 체크해야 불편 부위 · 부상 이력 칸이 열린다
+  const savedIdRef = useRef(null); // 회원은 저장됐는데 건강정보 단계가 실패한 뒤 다시 누를 때 회원이 두 번 생기지 않게
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -88,6 +92,8 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
     setSaving(true);
     setErr("");
     try {
+    let memberId = savedIdRef.current;
+    if (!memberId) {
     const { data: u, error } = await supabase
       .from("user_table")
       .insert({
@@ -98,11 +104,9 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
         residence: form.residence || null,
         mbti: form.mbti || null,
         gender: form.gender || null,
-        pain: form.pain || null,
         goal: form.goal || null,
         goal_deadline: form.goal_deadline || null,
         training_pace: form.training_pace || null,
-        injury_history: form.injury_history || null,
         exercise_level: form.exercise_level || null,
         quit_reason: form.quit_reason || null,
         past_exercise: form.past_exercise || null,
@@ -120,11 +124,13 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
       setErr(error ? "등록하지 못했어요. 다시 시도해 주세요." : "등록하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
       return;
     }
+    memberId = u[0].id;
+    savedIdRef.current = memberId;
     // 이월계약 INSERT (handover/external만) — 실패해도 회원은 등록됨(PT 뷰 '계약 등록'으로 회복).
     if (isCarry) {
       const payload = {
         ...buildContract({
-          userId: u[0].id,
+          userId: memberId,
           origin: form.origin, // handover/external → counts_as_revenue=false(매출 제외)
           sessions_total: Number(form.carrySessions),
           price_per_session: Number(form.carryPrice),
@@ -140,6 +146,20 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
       if (cErr || !c || c.length === 0) {
         setSaving(false);
         setErr("회원은 등록했지만 이월계약은 저장하지 못했어요. PT 화면의 '계약 등록'에서 마저 등록해 주세요.");
+        return;
+      }
+    }
+    }
+    // 건강정보 — 동의 기록을 먼저 남기고, 남았을 때만 불편 부위 · 부상 이력을 저장한다(2026-10-05).
+    const pain = form.pain.trim();
+    const injury = form.injury_history.trim();
+    if (healthOk && (pain || injury)) {
+      const ok = await recordHealthConsent(supabase, memberId, CONSENT_VERSION);
+      const { data: hu, error: he } = ok
+        ? await supabase.from("user_table").update({ pain: pain || null, injury_history: injury || null }).eq("id", memberId).select("id")
+        : { data: null, error: null };
+      if (!ok || he || !hu || hu.length === 0) {
+        setErr("회원은 등록했어요. 건강정보는 저장하지 못했어요. 저장을 다시 누르거나 정보 수정에서 적어 주세요.");
         return;
       }
     }
@@ -169,7 +189,11 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
     { k: "phone_number", label: "휴대폰 번호 (회원 전용 페이지 로그인용)", ph: "010-1234-5678", type: "tel" },
     { k: "age", label: "나이", ph: "34", type: "number" },
     { k: "goal", label: "목적", ph: "바디프로필", opts: OPTS.goal },
+  ];
+  // 건강정보(민감정보) — 동의 확인 체크 아래에서만 열린다.
+  const HEALTH = [
     { k: "pain", label: "불편 부위", ph: "우측 무릎 통증" },
+    { k: "injury_history", label: "부상·수술 이력", ph: "없음 / 2년 전 무릎 수술", opts: OPTS.injury_history },
   ];
   // OT 사전 문진(접기 · 전부 선택) — 비워도 되지만 있으면 AI 근거가 좋아짐.
   const DETAIL = [
@@ -178,7 +202,6 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
     { k: "mbti", label: "MBTI", ph: "ISTJ" },
     { k: "goal_deadline",  label: "목표 시점·계기",  ph: "예: 8월 결혼 / 없으면 비움" },
     { k: "training_pace",  label: "원하는 페이스",    ph: "제대로", opts: OPTS.training_pace },
-    { k: "injury_history", label: "부상·수술 이력",  ph: "없음 / 2년 전 무릎 수술", opts: OPTS.injury_history },
     { k: "exercise_level", label: "운동 경험",        ph: "처음", opts: OPTS.exercise_level },
     { k: "quit_reason",    label: "예전 중단 이유",   ph: "혼자 막막", opts: OPTS.quit_reason },
     { k: "past_exercise",  label: "받아본 유료 운동", ph: "없음", opts: OPTS.past_exercise },
@@ -240,6 +263,15 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
               <option value="male">남성</option>
             </select>
           </div>
+        </div>
+
+        {/* 건강정보 — 동의 받았다고 체크해야 칸이 열린다 */}
+        <div className="mt-3">
+          <HealthConsentBlock checked={healthOk} onChange={setHealthOk}>
+            {HEALTH.map((f) => (
+              <FieldCell key={f.k} f={f} value={form[f.k]} onChange={set(f.k)} />
+            ))}
+          </HealthConsentBlock>
         </div>
 
         {/* OT 사전 문진 — 접기(기본 닫힘). 비워도 등록되고, 채우면 AI 근거가 좋아짐. */}

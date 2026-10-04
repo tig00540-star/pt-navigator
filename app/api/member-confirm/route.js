@@ -47,10 +47,15 @@ export async function POST(req) {
     console.warn("[member-confirm] 401 세션무효:", ue?.message || "no uid");
     return Response.json({ error: "세션 무효" }, { status: 401 });
   }
-  const { data: me } = await sb.from("user_table").select("id").eq("member_auth_id", u.user.id).maybeSingle();
+  const { data: me } = await sb.from("user_table").select("id, status").eq("member_auth_id", u.user.id).maybeSingle();
   if (!me?.id) {
     console.warn(`[member-confirm] 403 회원 미매핑 uid=${u.user.id}`);
     return Response.json({ error: "권한 없음" }, { status: 403 });
+  }
+  // 지난 회원(PT 종료) = 회원 페이지 읽기 전용(2026-10-05) — 확인도 새로 쓰는 것이라 막는다.
+  if (me.status === "inactive") {
+    console.warn(`[member-confirm] 403 지난 회원 member_id=${me.id}`);
+    return Response.json({ error: "PT가 끝나서 기록을 볼 수만 있어요." }, { status: 403 });
   }
   const memberId = me.id;
 

@@ -16,6 +16,7 @@ import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday"
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
+import PtEndToday from "@/components/views/PtEndToday";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { ListChecks } from "lucide-react";
 
@@ -37,6 +38,7 @@ export default function TodoTab({ members, uid, onSelect }) {
       <ReapproachToday members={scoped} onSelect={(id) => onSelect(id, 1)} />
       <RegisterDueToday members={scoped} onSelect={(id) => onSelect(id, 11)} />
       <RegisterReapproachToday members={scoped} onSelect={(id) => onSelect(id, 11)} />
+      <PtEndToday members={scoped} onSelect={(id) => onSelect(id, 11)} />
       <InbodyDueToday members={scoped} onSelect={(id) => onSelect(id, 12)} />
 
       {/* 자동 4~5 — 신규 파생 섹션(미확정 클로징=2차 OT, 미처리 예약=스케줄) */}

@@ -12,6 +12,9 @@ import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, 
 import { memberSupabase } from "@/lib/memberSupabase";
 import MyPtCard from "@/components/member/MyPtCard";
 import RoutineSection from "@/components/member/RoutineSection";
+import ConsentGate from "@/components/member/ConsentGate";
+import MemberFooter from "@/components/member/MemberFooter";
+import { CONSENT_VERSION, latestConsent } from "@/lib/consent";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { holidayName } from "@/lib/holidays";
 import { buildExerciseSeries } from "@/lib/workout";
@@ -144,7 +147,7 @@ function LoginCard({ last4, setLast4, onSubmit, busy, err }) {
 }
 
 // 유산소 자가입력(M1) — 회원이 자기 cardio_log를 CRUD(트레이너는 읽기만). 회원용 큰 글씨·입력 최소.
-function CardioSection({ me, cardio, onReload, mode }) {
+function CardioSection({ me, cardio, onReload, mode, readOnly = false }) {
   const [on, setOn] = useState(() => todayStr());
   const [kind, setKind] = useState("");
   const [minutes, setMinutes] = useState("");
@@ -252,6 +255,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
                 </div>
                 {c.note && <div className="mt-0.5 text-sm text-muted">{c.note}</div>}
               </div>
+              {!readOnly && (
               <button
                 onClick={() => remove(c.id)}
                 disabled={busy}
@@ -260,6 +264,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+              )}
             </li>
           ))}
         </ul>
@@ -271,7 +276,7 @@ function CardioSection({ me, cardio, onReload, mode }) {
 
 // 비포애프터 사진 자가입력(M2) — 압축→비공개버킷 업로드→member_photo insert. 열람은 서명 URL(1h).
 // 회원은 본인 폴더만(스토리지 RLS). 업로드 전 반드시 compressImage(원본 금지).
-function PhotoSection({ me, photos, onReload, mode }) {
+function PhotoSection({ me, photos, onReload, mode, readOnly = false }) {
   const [label, setLabel] = useState("progress");
   const [takenOn, setTakenOn] = useState(() => todayStr());
   const [busy, setBusy] = useState(false);
@@ -420,6 +425,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
               <span className="absolute bottom-2 left-2 rounded-md bg-card/85 px-2 py-0.5 text-[11px] text-sub">
                 {fmtDay(p.taken_on)}
               </span>
+              {!readOnly && (
               <button
                 onClick={() => remove(p)}
                 disabled={busy}
@@ -428,6 +434,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+              )}
             </div>
           ))}
         </div>
@@ -441,7 +448,7 @@ function PhotoSection({ me, photos, onReload, mode }) {
 
 // 개인운동 기록 자가입력(M3) — 회원은 개인운동만 기록(kind="personal" 고정).
 // PT 받은 날은 수업로그로 자동 체크되므로 회원 입력에서 PT 구분 제거.
-function ScheduleSection({ me, schedule, onReload, mode }) {
+function ScheduleSection({ me, schedule, onReload, mode, readOnly = false }) {
   const [on, setOn] = useState(() => todayStr());
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -529,6 +536,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
                 <div className="text-xs font-semibold text-primary-strong">{fmtDay(s.on_date)}</div>
                 {s.note && <div className="mt-1 whitespace-pre-wrap text-base text-ink">{s.note}</div>}
               </div>
+              {!readOnly && (
               <button
                 onClick={() => remove(s.id)}
                 disabled={busy}
@@ -537,6 +545,7 @@ function ScheduleSection({ me, schedule, onReload, mode }) {
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+              )}
             </li>
           ))}
         </ul>
@@ -696,7 +705,7 @@ function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
           ? streak > 1 ? `${streak}일 연속으로 해내고 있어요 🔥` : "오늘도 몸을 움직였어요 👏"
           : "운동을 기록하면 오늘 오운완이 채워져요."}
       </p>
-      {!todayDone && (
+      {!todayDone && onGoWrite && (
         <button
           onClick={onGoWrite}
           className="mt-3 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition active:scale-95"
@@ -887,8 +896,10 @@ function ConfirmFlow({ logs, onReload }) {
   );
 }
 
-function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, rewards, onReloadLogs }) {
+function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, rewards, onReloadLogs, consentRows, onConsentRows }) {
   const [subTab, setSubTab] = useState("read"); // read=내 기록(첫 화면) · write=기록 남기기
+  // 동의(2026-10-05) — consentRows가 null이면 표 없음 · 조회 실패 → 묻지 않는다(잠금 금지).
+  const consent = useMemo(() => (consentRows ? latestConsent(consentRows) : null), [consentRows]);
   if (!me) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg px-6">
@@ -902,6 +913,17 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
       </div>
     );
   }
+
+  // 필수 동의(이번 문구 버전) 전엔 기록을 안 보여 준다.
+  if (consent && !(consent.general?.agreed && consent.general.version === CONSENT_VERSION)) {
+    return <ConsentGate supabase={memberSupabase} me={me} onSignOut={onSignOut} onDone={(rows) => onConsentRows?.(rows)} />;
+  }
+  const healthOk = consent ? Boolean(consent.health?.agreed) : true;
+
+  // 지난 회원(PT 종료) = 볼 수만 있음 · 6개월(DB가 쓰기를 막고, 6개월 뒤엔 아무것도 안 읽힌다 · 2026-10-05).
+  const readOnly = me.status === "inactive";
+  const viewUntil = readOnly && me.status_changed_at ? (() => { const d = new Date(me.status_changed_at); d.setMonth(d.getMonth() + 6); return d; })() : null;
+  const tab = readOnly ? "read" : subTab;
 
   const latest = inbody.length ? inbody[inbody.length - 1] : null;
   const prev = inbody.length > 1 ? inbody[inbody.length - 2] : null;
@@ -963,16 +985,27 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           </div>
         </header>
 
-        {/* 서브 탭 — 내 기록(열람) / 기록 남기기(입력). 내 기록이 첫 화면. */}
+        {readOnly && (
+          <div className="mb-6 rounded-2xl border border-line bg-card px-4 py-3.5 shadow-sm">
+            <p className="text-[15px] font-bold text-ink">PT가 끝나서 기록을 볼 수만 있어요</p>
+            <p className="mt-0.5 text-[13.5px] leading-relaxed text-sub">
+              {viewUntil ? `${viewUntil.getFullYear()}년 ${viewUntil.getMonth() + 1}월 ${viewUntil.getDate()}일까지 볼 수 있어요. ` : ""}다시 시작하려면 트레이너에게 말해 주세요. 기록은 그대로 이어져요.
+            </p>
+          </div>
+        )}
+
+        {/* 서브 탭 — 내 기록(열람) / 기록 남기기(입력). 내 기록이 첫 화면. 지난 회원은 탭 없이 내 기록만. */}
+        {!readOnly && (
         <div className="mb-6 flex gap-1.5">
           <button onClick={() => setSubTab("read")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${subTab === "read" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted"}`}>내 기록</button>
           <button onClick={() => setSubTab("write")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${subTab === "write" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted"}`}>기록 남기기</button>
         </div>
+        )}
 
-        {subTab === "read" && (
+        {tab === "read" && (
           <>
         {/* 수업일지 확인 유도 — 배너(항상) + pending≥3 소프트 모달. onReload=loadHome(logs 재조회). */}
-        <ConfirmFlow logs={logs} onReload={onReloadLogs} />
+        {!readOnly && <ConfirmFlow logs={logs} onReload={onReloadLogs} />}
 
         {/* 내 PT — 남은 수업 · 다음 수업 · 목표 로드맵(2026-10-03 · 자기완결 · 표 없으면 숨김) */}
         <MyPtCard supabase={memberSupabase} />
@@ -983,7 +1016,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           stats={ounwan}
           rewards={rewards}
           todayDone={Boolean(buildActivityMap(logs, cardio, schedule)[todayStr()])}
-          onGoWrite={() => setSubTab("write")}
+          onGoWrite={readOnly ? null : () => setSubTab("write")}
         />
 
         {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음). 한눈 개요 먼저. */}
@@ -1092,16 +1125,16 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         )}
 
         {/* 회원 입력 기록 열람 — 기록 남기기에 저장한 것도 여기 모아 보기(목록만). */}
-        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="list" />
-        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} mode="list" />
-        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="list" />
+        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="list" readOnly={readOnly} />
+        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} mode="list" readOnly={readOnly} />
+        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="list" readOnly={readOnly} />
           </>
         )}
 
-        {subTab === "write" && (
+        {tab === "write" && (
           <>
         {/* 오늘 할 개인운동(트레이너가 확정 · 보이기 켠 루틴 · 2026-10-04) — 맨 위 */}
-        <RoutineSection supabase={memberSupabase} me={me} ptLogs={logs} onSaved={() => { onReloadSchedule?.(); onReloadLogs?.(); }} />
+        <RoutineSection supabase={memberSupabase} me={me} ptLogs={logs} healthOk={healthOk} onSaved={() => { onReloadSchedule?.(); onReloadLogs?.(); }} />
 
         {/* 개인운동 기록(M3) — 폼만(목록은 내 기록 탭). */}
         <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="form" />
@@ -1114,8 +1147,10 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           </>
         )}
 
+        <MemberFooter supabase={memberSupabase} me={me} consent={consent} onChanged={(rows) => onConsentRows?.(rows)} />
+
         {/* 로그아웃 */}
-        <div className="text-center">
+        <div className="mt-4 text-center">
           <button onClick={onSignOut} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted transition hover:text-ink">
             <LogOut className="h-3.5 w-3.5" /> 로그아웃
           </button>
@@ -1136,6 +1171,7 @@ export default function MemberHome() {
   const [schedule, setSchedule] = useState([]);
   const [ounwan, setOunwan] = useState(null);   // ounwan_stats() 1행 {total, month_count, streak} — 누적·연속의 유일한 소스
   const [rewards, setRewards] = useState([]);   // 내 트레이너의 활성 포상(회원 read 정책 스코프)
+  const [consentRows, setConsentRows] = useState(null); // member_consent 본인 행 · null = 표 없음/조회 실패(동의 화면 건너뜀)
   const [last4, setLast4] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -1176,7 +1212,7 @@ export default function MemberHome() {
   const loadHome = useCallback(async () => {
     if (!memberSupabase) return;
     try {
-      const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes, ounwanRes, rewardRes] = await Promise.all([
+      const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes, ounwanRes, rewardRes, consentRes] = await Promise.all([
         memberSupabase.from("member_me").select("*").maybeSingle(),
         // 수업 날짜(session_at) 기준 최신순 — 늦게 적은 일지가 맨 위로 오지 않게. 옛 행(session_at 없음)은 뒤로.
         memberSupabase.from("member_workout_log").select("*")
@@ -1189,6 +1225,7 @@ export default function MemberHome() {
         // 오운완 집계 — 서버 RPC(정의 단일 출처). 위 조회들의 limit과 무관하게 전체 이력 기준.
         memberSupabase.rpc("ounwan_stats"),
         memberSupabase.from("trainer_reward").select("*").eq("active", true).order("milestone"),
+        memberSupabase.from("member_consent").select("kind, agreed, created_at, version"),
       ]);
       setMe(meRes.data ?? null);
       setLogs(logRes.data ?? []);
@@ -1198,6 +1235,8 @@ export default function MemberHome() {
       setSchedule(schedRes.data ?? []);
       setOunwan(ounwanRes.data?.[0] ?? null);   // RPC는 setof → 배열. 실패/0행이면 null(카드가 0으로 표시)
       setRewards(rewardRes.data ?? []);
+      if (consentRes.error) console.error("동의 기록 조회 실패", consentRes.error);
+      setConsentRows(consentRes.error ? null : consentRes.data ?? []);
       setPhase("home");
     } catch {
       setPhase("home"); // 부분 실패해도 빈 상태로 진입(me null → 재로그인 안내 카드) — 무한 스피너 방지
@@ -1245,11 +1284,11 @@ export default function MemberHome() {
 
   const signOut = async () => {
     if (memberSupabase) await memberSupabase.auth.signOut();
-    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setOunwan(null); setRewards([]); setLast4(""); setPhase("login");
+    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setOunwan(null); setRewards([]); setConsentRows(null); setLast4(""); setPhase("login");
   };
 
   if (phase === "checking") return <ScreenMsg>불러오는 중…</ScreenMsg>;
   if (phase === "login")
     return <LoginCard last4={last4} setLast4={setLast4} onSubmit={submit} busy={busy} err={err} />;
-  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} ounwan={ounwan} rewards={rewards} onReloadLogs={loadHome} />;
+  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} ounwan={ounwan} rewards={rewards} onReloadLogs={loadHome} consentRows={consentRows} onConsentRows={(rows) => setConsentRows((p) => [...(p || []), ...rows])} />;
 }

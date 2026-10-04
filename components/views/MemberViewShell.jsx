@@ -29,6 +29,6 @@ export default function MemberViewShell({ member, children, onGoList, showList, 
   // tab 0(회원 목록)은 view 무관 우선 표시 — PT/보관 뷰에서도 '회원 목록' 복귀 가능(2b-1).
   if (showList) return children;
   if (view === "pt") return <PTView member={member} tab={tab} onGoList={onGoList} onMemberPatch={onMemberPatch} onMembersChanged={onMembersChanged} />;
-  if (view === "inactive") return <InactiveView member={member} onGoList={onGoList} />;
+  if (view === "inactive") return <InactiveView member={member} onGoList={onGoList} onMemberPatch={onMemberPatch} />;
   return children; // 'ot' — 기존 6탭 그대로
 }

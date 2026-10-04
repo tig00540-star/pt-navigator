@@ -35,7 +35,7 @@ const Shell = ({ title, children }) => (
   </section>
 );
 
-export default function RoutineSection({ supabase, me, ptLogs = [], onSaved }) {
+export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, healthOk = true }) {
   const [routine, setRoutine] = useState(undefined);  // undefined=불러오는 중 · null=없음 · false=표 없음
   const [rlogs, setRlogs] = useState([]);
   const [reqs, setReqs] = useState([]);
@@ -181,10 +181,15 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved }) {
                   className={`inline-flex min-h-[40px] items-center gap-1 rounded-lg px-3.5 text-[14px] font-semibold ${x.done && !x.pain ? "bg-primary text-white" : "border border-line bg-card text-ink"}`}>
                   <Check className="h-4 w-4" aria-hidden="true" /> 했어요
                 </button>
+                {/* 통증 기록은 건강정보 — 건강정보 동의(2026-10-05)한 회원만 남긴다. 안 했으면 말로 알리게 안내만. */}
+                {healthOk ? (
                 <button type="button" onClick={() => setV(it, nv, { done: !x.pain, pain: !x.pain })} aria-pressed={x.pain}
                   className={`inline-flex min-h-[40px] items-center rounded-lg px-3 text-[13px] font-semibold ${x.pain ? "bg-rose-600 text-white" : "text-danger-text"}`}>
                   아파서 멈췄어요
                 </button>
+                ) : (
+                  <span className="inline-flex min-h-[40px] items-center text-[12.5px] text-sub">아프면 바로 멈추고 트레이너에게 말해 주세요</span>
+                )}
               </div>
             </li>
           );

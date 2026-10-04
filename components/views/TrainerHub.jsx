@@ -36,6 +36,7 @@ import ReapproachToday from "@/components/views/ReapproachToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
+import PtEndToday from "@/components/views/PtEndToday";
 import PriceSheet from "@/components/salesbook/PriceSheet";
 import { useSalesbookAssets } from "@/components/salesbook/DeckLauncher";
 
@@ -260,6 +261,8 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
       <div className="[&>section]:mb-0 empty:hidden"><OwnerFeedbackToday members={members} uid={uid} /></div>
       {/* 루틴 요청 — 있을 때만(회원이 회원 전용 페이지에서 요청) */}
       <div className="[&>section]:mb-0 empty:hidden"><RoutineRequestToday members={scoped} onSelect={(mid) => go(mid, 10)} /></div>
+      {/* PT 종료 처리할까요? — 남은 수업 0회 회원이 있을 때만 */}
+      <div className="[&>section]:mb-0 empty:hidden"><PtEndToday members={scoped} onSelect={(mid) => go(mid, 11)} /></div>
 
       {editing ? (
         <Card as="section" className="space-y-5">

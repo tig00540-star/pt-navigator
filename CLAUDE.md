@@ -143,7 +143,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **트레이너** `components/pt/RoutineCard`(PT 대시보드): 루틴 만들기(혼자 주 몇 번) → 편집(종목 추가 = PT 종목 · 센터 장비 · 직접 / 숫자 · 무게 고정 · 한 줄 · 순서 · '최신 PT 기록으로 다시 계산') → 확정(confirmed_at/by) → 회원에게 보이기(visible_at/by · **불편 부위 있는 회원은 '확인했어요' 체크 필수** · pain_checked_at). 트레이너가 정한 무게: PT 종목 상한 = max(85%, 값) · PT 기록 없는 종목 상한 = 값. 보기 = 다음 숫자 · 지난 PT 이후 개인운동 · 아파서 멈춤 경고 · 설명 대사(법무 수정안).
 - **회원** `components/member/RoutineSection`('기록 남기기' 맨 위): 숫자 미리 채움 → +/− 로 실제 한 대로(무게 +는 오늘 한 칸 · 상한까지 · 고정 무게는 못 바꿈) → '했어요' / '아파서 멈췄어요' → 기록 저장 + `schedule_check` personal(오운완). 안전 안내 상시(법무 초안) · 부위 이름 대신 '트레이너가 고정한 무게'.
 - **SQL** `docs/migrations/2026-10-04-member-routine.sql`: `center_machine.step_kg` · `member_routine`(센터 범위) · `member_routine_view`(보이기 + **최근 28일 안 PT 있을 때만**) · `member_routine_log`(회원 본인 쓰기 · 트레이너 읽기).
-- ⚠️ 법무 점검(2026-10-04) 미해결 큰 건: 불편 부위 · 부상 이력(민감정보) **별도 동의 장치 없음** · 처리방침 보완(민감정보 · 국외 이전 · 파기) · 회원 페이지 고지 없음 — 루틴과 별개로 영업 전 해결 필요.
+- 법무 점검(2026-10-04) 큰 건(민감정보 별도 동의 · 처리방침 · 회원 페이지 고지)은 2026-10-05에 반영 → 아래 "PT 종료 · 읽기 전용 · 동의". 건강정보 동의 안 한 회원은 '아파서 멈췄어요' 대신 안내 문구(`healthOk`).
 
 ### 대표 아침 보고서 + 대표 피드백 (2026-10-03)
 
@@ -153,6 +153,16 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **매일 아침 8시대(KST) 미리 만들기:** Vercel Cron `0 23 * * *`(UTC · **Hobby 플랜이라 그 1시간 안 아무 때나** 돈다 → 9시 전엔 항상 준비) → `app/api/cron/owner-daily-report`(CRON_SECRET · center 계정마다 service_role로 읽어 ownerReportData + AI(프리미엄 · 구독 활성만) → `owner_daily_report` upsert(account_id, ymd)). 대표만 SELECT · 클라 쓰기 없음. 화면은 그날 행이 있으면 그것('아침 보고서 · 오전 8시 23분 기준'처럼 실제 만든 시각), 없으면 지금 데이터로 만든다(예전 방식 · 하루 캐시 `owner-report-v3`). 지난 보고서는 날짜 선택. 점검: `?account=<id>`로 한 센터만.
 - **AI 프롬프트 공용** `lib/ownerReportAI`(`buildOwnerAIInput` · `generateOwnerAI`) — `app/api/owner-report`(열 때)와 9시 작업이 같이 쓴다. 회원 이름은 AI에 안 넘김(트레이너 이름 · 이유 분류 · 회원의 말만).
 - **대표 피드백** `owner_feedback`: 어제 결과 줄마다 '피드백 남기기'(대표만 insert · 본인 담당 건엔 버튼 없음) → 받는 트레이너 `OwnerFeedbackToday`(폰 홈 오늘 카드 아래 · '오늘' 탭 맨 위 · 넓은 홈) · '확인했어요' = rpc `mark_owner_feedback_seen`(트레이너는 본문 수정 불가) → 대표 화면에 '트레이너 확인함'. 같은 회원의 다음 리포트(first · second · reregister) 프롬프트에 `[★대표 피드백]` 블록(`app/api/ot-brief` fetchOwnerFeedback · 최근 3개 · 대사에 그대로 옮기거나 대표 언급 금지).
+
+### PT 종료 · 회원 페이지 읽기 전용 · 개인정보/건강정보 동의 (2026-10-05)
+
+SQL `docs/migrations/2026-10-05-pt-end-consent.sql`.
+- **PT 종료 = '오늘' 카드 `PtEndToday`**('PT 종료 처리할까요?' · 오늘 탭 할 일 · 폰 홈(있을 때만) · 넓은 홈): 계약이 있고 잔여 있는 계약이 하나도 없는 PT 회원(미리 재등록 = 대상 아님). [PT 종료] → `toInactive`(status inactive · `status_note` '남은 수업 0회') / [7일 뒤 다시 알림] → `user_table.pt_end_snooze_until`. 회원 목록에선 '보관'·홈 '지난 회원'.
+- **지난 회원 = 회원 페이지 읽기 전용(자동)**: DB가 막는다 — `auth_member_writable()`이 회원 자가입력 정책(cardio · photo + 저장소 · schedule_check · routine log · routine request) insert/update/delete에 전부 붙음 + `member-confirm` 라우트도 inactive 거절. 화면(`app/m/[token]`)은 `member_me.status`로 '기록 남기기' 탭 · 확인 유도 · 삭제 버튼을 숨기고 배너("○월 ○일까지 볼 수만 있어요").
+- **6개월 뒤 닫힘**: `auth_member_id()`가 inactive + `status_changed_at` 6개월 지나면 NULL(모든 회원 읽기 0행) · `member-auth`도 같은 규칙으로 로그인 거절("이 페이지는 닫혔어요…"). `status_changed_at` NULL이면 만료로 안 봄. **복귀 구분 없음(대표 결정)** — `InactiveView` [다시 PT 시작하기] = pt_active(같은 회원 · 기록 이어짐) + 미루기 7일(새 계약 적을 시간).
+- **'회원 페이지 끄기'**(구 'PT 종료' 버튼 · `MemberAppLink` · `/api/member-revoke`) = 링크 폐기 + 세션 삭제(즉시 차단 · 기록은 그대로). PT 종료와 별개. 지난 회원 화면에선 `readOnly`(새 링크 발급 없음).
+- **동의 `member_consent`**(덧붙이기만 · 철회도 agreed=false 새 행 · account_id 트리거): kind general(필수)/health(선택) · method member_page/trainer_check. 문구 단일 출처 `lib/consent.js`(`CONSENT_VERSION` 올리면 회원 페이지가 다시 묻는다). ① 회원 페이지 첫 화면 `ConsentGate`(필수 전엔 기록 안 보임 · 표 없거나 조회 실패면 건너뜀 = 잠금 금지) ② 하단 `MemberFooter`(운영 센터명 `member_me.center_name` · 처리방침 · 약관 · 안전 안내 · 건강정보 동의/철회) ③ 트레이너 `HealthConsentBlock`(새 회원 · 정보 수정 — '동의 받았어요' 체크해야 불편 부위 · 부상 이력 칸이 열리고, 동의 기록이 남아야 저장 · 동의 없으면 그 칸은 건드리지 않음 · 종이 동의서 `/legal/consent-form`).
+- 처리방침(민감정보 · 국외 이전 · 6개월 · 파기)·약관(루틴 · 6개월) 개정 — 시행일 `COMPANY.privacyDate`. ⚠️ **`COMPANY.dataRegion`(Supabase 지역) 비어 있으면 방침에 '확인 필요'로 보인다 → 배포 전 기입.** ⚠️ 열린 문제: 회원이 건강정보 동의를 철회해도 이미 저장된 불편 부위 · 부상 이력과 AI 전송(ot-brief)은 아직 그대로(후속). 법률 자문 아님 · 영업 전 전문가 검토 권장.
 
 ### 수업일지 회원 확인·서명 (v2 · 2026-07-21)
 

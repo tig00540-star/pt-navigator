@@ -68,6 +68,7 @@ export function mapMemberRow(r) {
     pt_direction: r.pt_direction ?? "",
     status_changed_at: r.status_changed_at ?? null,
     status_note: r.status_note ?? null,
+    pt_end_snooze_until: r.pt_end_snooze_until ?? null,
     summary: r.name === DEMO_MEMBER.name
       ? DEMO_MEMBER.summary
       : ["AI 성향 요약은 회원 데이터를 바탕으로 곧 생성됩니다."],

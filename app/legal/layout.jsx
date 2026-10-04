@@ -11,8 +11,8 @@ const DOCS = [
 export default function LegalLayout({ children }) {
   return (
     <div className="min-h-dvh bg-bg text-ink">
-      <div className="mx-auto max-w-[760px] px-6 py-12">
-        <Link href="/lp" className="inline-flex items-center gap-2.5 no-underline">
+      <div className="mx-auto max-w-[760px] px-6 py-12 print:py-0">
+        <Link href="/lp" className="inline-flex items-center gap-2.5 no-underline print:hidden">
           <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true" className="flex-none">
             <circle cx="32" cy="32" r="27" fill="none" stroke="var(--color-ink)" strokeWidth="3.4" />
             <path d="M32 7 L37.5 33 L26.5 33 Z" fill="#dc2626" />
@@ -23,7 +23,7 @@ export default function LegalLayout({ children }) {
           </span>
         </Link>
 
-        <nav className="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-b border-line pb-5">
+        <nav className="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-b border-line pb-5 print:hidden">
           {DOCS.map(([href, label]) => (
             <Link key={href} href={href} className="text-[13.5px] font-semibold text-sub no-underline transition-colors hover:text-ink">
               {label}
@@ -31,9 +31,9 @@ export default function LegalLayout({ children }) {
           ))}
         </nav>
 
-        <main className="mt-8">{children}</main>
+        <main className="mt-8 print:mt-0">{children}</main>
 
-        <div className="mt-14 border-t border-line pt-8">
+        <div className="mt-14 border-t border-line pt-8 print:hidden">
           <CompanyInfo />
           <p className="mt-4 text-[12px] text-muted">© 2026 오직 트레이너</p>
         </div>

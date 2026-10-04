@@ -1,4 +1,6 @@
-// components/views/MemberAppLink.jsx — 회원앱 링크 발급·복사·PT 종료 (S3). PT 뷰 상단 바.
+// components/views/MemberAppLink.jsx — 회원 전용 페이지 링크 발급·복사·끄기 (S3). PT 뷰 · 지난 회원 화면.
+//   2026-10-05: 'PT 종료' 버튼 → '회원 페이지 끄기'(PT 종료는 '오늘' 탭 카드가 한다 · 지난 회원은 6개월 동안 읽기 전용).
+//   readOnly(지난 회원) = 새 링크는 만들지 않는다(볼 수만 있는 기간이라).
 "use client";
 
 import { useState } from "react";
@@ -11,7 +13,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { copyText } from "@/lib/clipboard";
 
-export default function MemberAppLink({ member, onMemberPatch }) {
+export default function MemberAppLink({ member, onMemberPatch, readOnly = false }) {
   const token = member?.member_token || null;
   const linked = Boolean(member?.member_auth_id); // 회원이 최소 1회 로그인함
   const [busy, setBusy] = useState(false);
@@ -54,11 +56,11 @@ export default function MemberAppLink({ member, onMemberPatch }) {
     showToast(ok ? "링크를 복사했어요" : "복사하지 못했어요. 링크를 길게 눌러 복사해 주세요");
   };
 
-  // PT 종료 = 서버가 회원 auth 유저 삭제(세션 무효) + member_token/auth_id=null. (완전 차단)
+  // 회원 페이지 끄기 = 서버가 회원 auth 유저 삭제(세션 무효) + member_token/auth_id=null. (완전 차단 · 기록은 그대로)
   const endPt = async () => {
     if (busy) return;
     if (!supabase) {
-      showToast("데모 모드라 실제로 종료되지 않아요");
+      showToast("데모 모드라 실제로 꺼지지 않아요");
       return;
     }
     setBusy(true);
@@ -72,11 +74,12 @@ export default function MemberAppLink({ member, onMemberPatch }) {
       if (!res.ok || !json.ok) {
         setBusy(false);
         setConfirmEnd(false);
-        showToast(json.error || "PT 종료 실패");
+        console.error("회원 페이지 끄기 실패", json.error);
+        showToast("회원 페이지를 끄지 못했어요. 다시 시도해 주세요.");
         return;
       }
       onMemberPatch?.(member.id, { member_token: null, member_auth_id: null }); // 배지 사라짐·[링크 생성]으로 복귀
-      showToast("PT를 종료했어요. 회원 전용 페이지 접속도 막았어요");
+      showToast("회원 페이지를 껐어요. 기록은 그대로 남아 있어요.");
     } catch {
       showToast("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
     }
@@ -94,8 +97,9 @@ export default function MemberAppLink({ member, onMemberPatch }) {
             {linked ? "연결됨" : "발급됨"}
           </Badge>
         )}
+        {token && readOnly && <Badge tone="neutral">볼 수만 있음</Badge>}
         <div className="ml-auto flex items-center gap-1.5">
-          {!token ? (
+          {!token ? (readOnly ? null :
             <Button variant="primary" size="sm" onClick={issue} disabled={busy}>
               <Link2 className="h-3.5 w-3.5" /> {busy ? "생성 중…" : "링크 생성"}
             </Button>
@@ -105,23 +109,34 @@ export default function MemberAppLink({ member, onMemberPatch }) {
                 <Copy className="h-3.5 w-3.5" /> 링크 복사
               </Button>
               {confirmEnd ? (
-                <Button variant="danger" size="sm" onClick={endPt} disabled={busy}>
-                  <Check className="h-3.5 w-3.5" /> {busy ? "종료 중…" : "정말 종료"}
-                </Button>
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmEnd(false)} disabled={busy}>취소</Button>
+                  <Button variant="danger" size="sm" onClick={endPt} disabled={busy}>
+                    <Check className="h-3.5 w-3.5" /> {busy ? "끄는 중…" : "끄기"}
+                  </Button>
+                </>
               ) : (
                 <Button variant="danger" subtle size="sm" onClick={() => setConfirmEnd(true)} disabled={busy}>
-                  <Ban className="h-3.5 w-3.5" /> PT 종료
+                  <Ban className="h-3.5 w-3.5" /> 회원 페이지 끄기
                 </Button>
               )}
             </>
           )}
         </div>
       </div>
-      {confirmEnd && (
-        <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
-          PT를 종료하면 이 회원의 전용 페이지 접근이 차단됩니다(로그인 세션 무효 + 링크 폐기). 회원 기록(운동일지·인바디)은 그대로 보존돼요. 다시 열려면 [링크 생성]으로 새 링크를 발급하면 됩니다.
+      {confirmEnd ? (
+        <p className="mt-1.5 text-[12px] leading-relaxed text-sub">
+          {member.name} 회원의 회원 페이지를 끌까요? 회원은 지금부터 기록을 볼 수 없어요. (기록은 지워지지 않아요)
         </p>
-      )}
+      ) : token ? (
+        <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+          {readOnly
+            ? "PT가 끝나서 회원은 기록을 볼 수만 있어요. 끄면 회원이 이 링크로 더 이상 들어올 수 없어요."
+            : "끄면 회원이 이 링크로 더 이상 들어올 수 없어요. 기록은 센터에 그대로 남고, 다시 보내면 다시 켜져요."}
+        </p>
+      ) : readOnly ? (
+        <p className="mt-1 text-[11.5px] leading-relaxed text-muted">회원 페이지가 꺼져 있어요. 다시 PT를 시작하면 링크를 새로 만들 수 있어요.</p>
+      ) : null}
       <Toast message={toast} />
     </div>
   );

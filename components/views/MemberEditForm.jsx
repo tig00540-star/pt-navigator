@@ -6,6 +6,8 @@ import { AlertTriangle, Pencil, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import HealthConsentBlock, { loadHealthConsent, recordHealthConsent } from "@/components/views/HealthConsentBlock";
+import { CONSENT_VERSION } from "@/lib/consent";
 
 // datalist 제안값 — MemberForm과 동일(목록에서 고르거나 직접 타이핑=기타).
 const O = {
@@ -37,6 +39,9 @@ const FIELDS = [
   { k: "member_note", label: "바라는 점(선택)", ph: "회원이 미리 남긴 말" },
 ];
 
+// 건강정보(민감정보) — 동의 확인 아래에서만 보이고, 동의가 있어야 저장한다(2026-10-05).
+const HEALTH_KEYS = new Set(["pain", "injury_history"]);
+
 // 표시용 플레이스홀더('-'·'미설정')는 실제 값이 아니라 편집 프리필에서 비운다.
 const clean = (v) => (v == null || v === "-" || v === "미설정" ? "" : String(v));
 
@@ -45,6 +50,8 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
   const [form, setForm] = useState(null); // null = 로딩 중
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  const [prior, setPrior] = useState(null); // 가장 최근 건강정보 동의 행 · { error }면 표 없음(SQL 전) → 예전처럼 칸을 그냥 연다
+  const [healthOk, setHealthOk] = useState(false);
 
   // 원본(user_table) 프리필 — 표시용 매핑('-'/'미설정') 대신 실제 값.
   useEffect(() => {
@@ -56,8 +63,13 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
         if (!cancelled) setForm(o);
         return;
       }
-      const { data } = await supabase.from("user_table").select("*").eq("id", member.id).maybeSingle();
+      const [{ data }, hc] = await Promise.all([
+        supabase.from("user_table").select("*").eq("id", member.id).maybeSingle(),
+        loadHealthConsent(supabase, member.id),
+      ]);
       if (cancelled) return;
+      setPrior(hc);
+      setHealthOk(Boolean(hc?.agreed));
       const row = data || {};
       const o = {};
       for (const f of FIELDS) o[f.k] = row[f.k] == null ? "" : String(row[f.k]);
@@ -75,8 +87,10 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
     if (!form.name.trim()) { setErr("이름은 필수입니다."); return; }
     if (!supabase) { setErr("데모 모드라 저장할 수 없어요."); return; }
     setSaving(true); setErr("");
+    const gateOff = Boolean(prior?.error);
     const payload = {};
     for (const f of FIELDS) {
+      if (HEALTH_KEYS.has(f.k) && !gateOff && !healthOk) continue; // 동의 없으면 건강정보 칸은 건드리지 않는다
       const v = form[f.k];
       if (f.k === "name") payload.name = v.trim();
       else if (f.k === "age") payload.age = v ? Number(v) : null;
@@ -85,6 +99,12 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
     }
     // error 없이 0행 = 조용한 실패. .select()로 확정.
     try {
+      // 이번에 처음 동의 확인 + 건강정보를 적었으면 동의 기록부터(남아야 저장).
+      if (!gateOff && healthOk && !prior?.agreed && (form.pain.trim() || form.injury_history.trim())) {
+        const ok = await recordHealthConsent(supabase, member.id, CONSENT_VERSION);
+        if (!ok) { setErr("동의 기록을 남기지 못했어요. 다시 시도해 주세요."); return; }
+        setPrior({ agreed: true, method: "trainer_check" });
+      }
       const { data, error } = await supabase.from("user_table").update(payload).eq("id", member.id).select();
       setSaving(false);
       if (error || !data || data.length === 0) { setErr(error ? "저장하지 못했어요. 다시 시도해 주세요." : "저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
@@ -133,7 +153,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
             <>
               {/* 폰 1열 — MemberForm과 동일 17필드. 긴 라벨 줄바꿈으로 인한 세로 어긋남 방지. */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {FIELDS.map((f) => (
+                {FIELDS.filter((f) => prior?.error || !HEALTH_KEYS.has(f.k)).map((f) => (
                   <div key={f.k} className={f.k === "name" ? "sm:col-span-2" : ""}>
                     <label className="mb-1 block text-[11px] font-medium text-muted">
                       {f.label}{f.k === "name" && <span className="text-primary-strong"> *</span>}
@@ -150,6 +170,20 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
                   </div>
                 ))}
               </div>
+              {!prior?.error && (
+                <div className="mt-3">
+                  <HealthConsentBlock checked={healthOk} onChange={setHealthOk} prior={prior}>
+                    {FIELDS.filter((f) => HEALTH_KEYS.has(f.k)).map((f) => (
+                      <div key={f.k}>
+                        <label className="mb-1 block text-[11px] font-medium text-muted">{f.label}</label>
+                        <input type="text" value={form[f.k]} onChange={setF(f.k)} placeholder={f.ph} list={f.opts ? `mle-${f.k}` : undefined}
+                          className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary" />
+                        {f.opts && <datalist id={`mle-${f.k}`}>{f.opts.map((o) => <option key={o} value={o} />)}</datalist>}
+                      </div>
+                    ))}
+                  </HealthConsentBlock>
+                </div>
+              )}
               {err && <p className="mt-3 text-xs font-medium text-rose-600">{err}</p>}
               <div className="mt-4 flex justify-end gap-2">
                 <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>취소</Button>

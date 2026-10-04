@@ -28,6 +28,7 @@ import TodoManual from "@/components/views/TodoManual";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
+import PtEndToday from "@/components/views/PtEndToday";
 import OunwanRanking from "@/components/home/OunwanRanking";
 import SectionTitle from "@/components/ui/SectionTitle";
 
@@ -182,6 +183,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
           <ReapproachToday members={scoped} onSelect={(id) => go(id, 1)} />
           <RegisterDueToday members={scoped} onSelect={(id) => go(id, 11)} />
           <RegisterReapproachToday members={scoped} onSelect={(id) => go(id, 11)} />
+          <PtEndToday members={scoped} onSelect={(id) => go(id, 11)} />
           <UnclosedClosingToday members={scoped} onSelect={(id) => go(id, 5)} />
           <ChurnRiskToday members={scoped} onSelect={(id, t) => go(id, t ?? 10)} />
           <InbodyDueToday members={scoped} onSelect={(id) => go(id, 12)} />
