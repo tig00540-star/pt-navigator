@@ -11,6 +11,8 @@
 --  3) member_me 뷰에 열 덧붙이기: member_token(공용 기기에서 다른 회원 링크를 열면 로그아웃시키려고) · writable.
 --  4) 장부(income · expense) — 대표만 읽고 쓴다(예전엔 같은 센터 트레이너도 됐다).
 --  5) 건강정보: 회원이 회원 페이지에서 철회했으면 트레이너 '받았어요' 기록을 DB가 거절한다(화면만 막던 것).
+--  6) 급여 확정 알림 칸(payroll_run.seen_at) + mark_payroll_seen.
+--  7) 개인운동 · 유산소 기록 날짜는 오늘 · 어제 · 그제까지만.
 -- =============================================================================
 
 -- 1) 회원 id
@@ -113,6 +115,31 @@ drop policy if exists "trainer_consent_insert" on member_consent;
 create policy "trainer_consent_insert" on member_consent for insert to authenticated
   with check (method = 'trainer_check' and trainer_id = auth.uid() and member_in_my_account(member_id::text)
               and not member_health_withdrawn(member_id));
+
+-- 6) 급여 확정 알림 — 트레이너가 '확인했어요'를 누를 칸 + 본인 행만 표시하는 함수(트레이너는 급여 금액을 못 고친다).
+--    대표가 다시 확정하면 화면이 seen_at을 비워 다시 뜬다.
+alter table payroll_run add column if not exists seen_at timestamptz;
+create or replace function mark_payroll_seen(rid uuid) returns void
+language sql security definer set search_path = public as $$
+  update payroll_run set seen_at = coalesce(seen_at, now())
+   where id = rid and trainer_id = auth.uid() and account_id = auth_account_id();
+$$;
+revoke all on function mark_payroll_seen(uuid) from public;
+grant execute on function mark_payroll_seen(uuid) to authenticated;
+
+-- 7) 회원 기록 날짜 — 개인운동 · 유산소는 오늘 · 어제 · 그제까지만(대표 결정 2026-10-06 · 오운완 몰아 채우기 방지).
+create or replace function kst_today() returns date language sql stable as $$ select (now() at time zone 'Asia/Seoul')::date $$;
+grant execute on function kst_today() to authenticated;
+drop policy if exists "member_cardio_insert" on cardio_log;
+create policy "member_cardio_insert" on cardio_log for insert to authenticated
+  with check (user_id = auth_member_id() and auth_member_writable() and performed_on between kst_today() - 2 and kst_today());
+drop policy if exists "member_cardio_update" on cardio_log;
+create policy "member_cardio_update" on cardio_log for update to authenticated
+  using (user_id = auth_member_id() and auth_member_writable())
+  with check (user_id = auth_member_id() and auth_member_writable() and performed_on between kst_today() - 2 and kst_today());
+drop policy if exists "member_sched_insert" on schedule_check;
+create policy "member_sched_insert" on schedule_check for insert to authenticated
+  with check (user_id = auth_member_id() and auth_member_writable() and on_date between kst_today() - 2 and kst_today());
 
 -- =============================================================================
 -- 검증(에러 없으면 OK):

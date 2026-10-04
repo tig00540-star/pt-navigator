@@ -97,6 +97,14 @@ function fmtDay(iso) {
 const fmtDelta = (d) => (d > 0 ? "+" : "") + (Math.round(d * 10) / 10);
 
 // 오늘(로컬) YYYY-MM-DD — date input 기본값. 클라 마운트 후 계산(lazy init)이라 hydration 무관.
+// 기록 날짜는 그제까지만(오운완 몰아 채우기 방지 · 대표 결정 2026-10-06 · DB 정책도 같은 조건).
+function dayStr(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+const EARLIEST_DAYS = -2;
+
 function todayStr() {
   const d = new Date();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -164,6 +172,7 @@ function CardioSection({ me, cardio, onReload, mode, readOnly = false }) {
     if (!memberSupabase) { setErr("데모 모드라 실제로 기록되지 않아요."); return; }
     if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
     if (!on) { setErr("날짜를 선택해 주세요."); return; }
+    if (on < dayStr(EARLIEST_DAYS) || on > dayStr(0)) { setErr("오늘 · 어제 · 그제 기록만 남길 수 있어요."); return; }
     setBusy(true); setErr("");
     // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). user_id는 me.id만(RLS with check가 스푸핑 차단).
     const { data, error } = await memberSupabase
@@ -214,7 +223,7 @@ function CardioSection({ me, cardio, onReload, mode, readOnly = false }) {
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             날짜
-            <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
+            <input type="date" value={on} min={dayStr(EARLIEST_DAYS)} max={dayStr(0)} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             시간(분)
@@ -464,6 +473,7 @@ function ScheduleSection({ me, schedule, onReload, mode, readOnly = false }) {
     if (!memberSupabase) { setErr("데모 모드라 실제로 기록되지 않아요."); return; }
     if (!me?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
     if (!on) { setErr("날짜를 선택해 주세요."); return; }
+    if (on < dayStr(EARLIEST_DAYS) || on > dayStr(0)) { setErr("오늘 · 어제 · 그제 기록만 남길 수 있어요."); return; }
     setBusy(true); setErr("");
     // 하드닝: .select()로 반환 확인 — 0행이면 실패(RLS/정책). kind는 personal 고정.
     const { data, error } = await memberSupabase
@@ -508,7 +518,7 @@ function ScheduleSection({ me, schedule, onReload, mode, readOnly = false }) {
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             날짜
-            <input type="date" value={on} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
+            <input type="date" value={on} min={dayStr(EARLIEST_DAYS)} max={dayStr(0)} onChange={(e) => setOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
           <label className="col-span-2 min-w-0 text-xs font-medium text-muted">
             오늘 한 운동

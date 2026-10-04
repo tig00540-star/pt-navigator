@@ -14,6 +14,7 @@ import PastDueAppointments from "@/components/views/PastDueAppointments";
 import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
+import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
 import PtEndToday from "@/components/views/PtEndToday";
@@ -32,6 +33,7 @@ export default function TodoTab({ members, uid, onSelect }) {
 
       {/* 대표 피드백(아침 보고서에서 대표가 남긴 것) — 맨 위 */}
       <OwnerFeedbackToday members={members} uid={uid} />
+      <PayrollConfirmedToday uid={uid} />
       <RoutineRequestToday members={scoped} onSelect={(id) => onSelect(id, 10)} />
 
       {/* 자동 1~3 — 기존 위젯 재사용(회원 탭에서 이관). 탭 목적지만 감싸서 지정. */}

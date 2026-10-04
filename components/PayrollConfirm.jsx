@@ -34,6 +34,7 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
       computed_total: pay?.computed ?? null,
       final_total: Number(final),
       updated_at: new Date().toISOString(),
+      seen_at: null, // 확정(다시 확정 포함)하면 트레이너에게 다시 알림(2026-10-06)
     }; // account_id는 DB DEFAULT
     setSaving(true);
     if (!supabase) { onSaved?.({ ...(run || {}), ...payload, id: run?.id || `demo-${Date.now()}` }); showToast("확정됨(데모)"); setSaving(false); return; }
