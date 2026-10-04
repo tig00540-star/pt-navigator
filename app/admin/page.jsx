@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle,
+  FileText,
   ArrowLeft,
   ArrowLeftRight,
   Home,
@@ -55,7 +55,7 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 // admin 섹션 탭(7) — 게이팅만(섹션 내용·계산 불변). fuchsia accent(--color-admin).
 const ATABS = [
   { id: "overview",  label: "한눈에" },    // ← Phase A 데스크톱 콘솔
-  { id: "briefing",  label: "브리핑" },
+  { id: "briefing",  label: "보고서" },
   { id: "perf",      label: "트레이너" },  // ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
   { id: "revenue",   label: "매출" },
   { id: "settle",       label: "정산 보기" },   // 기간 정산(PT+FC+기타−지출=순이익)
@@ -71,7 +71,7 @@ const ATABS = [
    대표는 하루에 여러 번 열지 않는다. 탭 9개를 가로로 훑게 하는 대신 5개로 줄인다. */
 const AGROUPS = [
   { id: "hub",      label: "홈",         tabs: ["hub"], icon: Home },
-  { id: "briefing", label: "오늘 챙길 것", tabs: ["briefing"], icon: AlertTriangle },
+  { id: "briefing", label: "보고서", tabs: ["briefing"], icon: FileText },
   { id: "revenue",  label: "매출",        tabs: ["revenue"], icon: Wallet },
   // 정산은 '보는' 화면이 아니라 '하는' 화면(입력·월말 마감)이라 매출 분석 옆 세그먼트에
   // 숨으면 매달 찾아 들어가야 한다. 원장이 반복하는 실무라 상단에 제 집을 준다.
@@ -335,12 +335,6 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-1.5 rounded-full border border-primary/30 bg-primary-soft px-3 py-1 sm:flex">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-primary-strong">
-                LIVE
-              </span>
-            </div>
             <Link
               href="/"
               className="flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-ink transition hover:border-primary hover:text-primary-strong"
@@ -352,14 +346,15 @@ export default function AdminDashboard() {
         </div>
         {/* 섹션 탭 네비 (admin fuchsia) */}
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:max-w-[1440px] lg:px-8">
-          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap md:hidden">
+          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden" aria-label="대표 화면 메뉴">
             {AGROUPS.map((g) => {
               const active = groupOf(atab) === g.id;
               return (
                 <button key={g.id} onClick={() => setAtab(g.tabs[0])}
-                  className={`relative px-4 py-2.5 text-xs font-semibold transition ${active ? "text-fuchsia-700" : "text-muted hover:text-ink"}`}>
+                  aria-current={active ? "page" : undefined}
+                  className={`relative min-h-[44px] px-3.5 text-[14px] transition ${active ? "font-bold text-admin-text" : "font-medium text-sub hover:text-ink"}`}>
                   {g.label}
-                  {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-fuchsia-500" />}
+                  {active && <span className="absolute inset-x-2.5 bottom-0 h-[3px] rounded-full bg-admin" />}
                 </button>
               );
             })}
@@ -368,15 +363,17 @@ export default function AdminDashboard() {
             const g = AGROUPS.find((x) => x.id === groupOf(atab));
             if (!g || g.tabs.length < 2) return null;
             return (
-              <div className="flex gap-1.5 pb-2.5 md:pt-2.5">
-                {g.tabs.map((t) => (
-                  <button key={t} onClick={() => setAtab(t)}
-                    className={`min-h-[38px] rounded-lg px-3.5 text-[13px] font-bold transition ${
-                      atab === t ? "bg-admin-soft text-admin-text" : "bg-elevate text-muted hover:text-ink"
-                    }`}>
-                    {ATAB_LABEL[t] || t}
-                  </button>
-                ))}
+              <div className="flex overflow-x-auto py-2.5">
+                <nav className="flex gap-1 rounded-full bg-elevate p-[3px]" aria-label={g.label}>
+                  {g.tabs.map((t) => (
+                    <button key={t} onClick={() => setAtab(t)} aria-current={atab === t ? "page" : undefined}
+                      className={`inline-flex min-h-[40px] shrink-0 items-center rounded-full px-4 text-[14px] transition ${
+                        atab === t ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"
+                      }`}>
+                      {ATAB_LABEL[t] || t}
+                    </button>
+                  ))}
+                </nav>
               </div>
             );
           })()}
@@ -385,7 +382,7 @@ export default function AdminDashboard() {
 
       {dbNote && (
         <div className="mx-auto max-w-6xl px-4 pt-3 sm:px-6 lg:max-w-[1440px] lg:px-8">
-          <div className="rounded-lg border border-line bg-card px-3 py-2 text-[11px] text-sub">
+          <div className="rounded-lg border border-line bg-card px-3 py-2 text-[13px] text-sub">
             {dbNote}
           </div>
         </div>

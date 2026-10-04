@@ -10,12 +10,13 @@
    ========================================================================= */
 
 import { useMemo } from "react";
-import { AlertTriangle, ChevronRight, Filter, Target } from "lucide-react";
+import { AlertTriangle, ArrowRight, ChevronRight, Filter, Target } from "lucide-react";
 import Card from "@/components/ui/Card";
 import { manwon, won } from "@/lib/format";
 import { ownerBriefing, revenueCompositionInMonth, otFunnel, reregisterStats } from "@/lib/memberStatus";
 import OwnerOverview from "@/components/admin/OwnerOverview";
 
+const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 const pct = (v) => (v == null ? "—" : `${Math.round(v * 100)}%`);
 
 function Box({ title, icon: Icon, action, onAction, children }) {
@@ -26,7 +27,7 @@ function Box({ title, icon: Icon, action, onAction, children }) {
           <Icon className="h-4 w-4 text-admin-text" aria-hidden="true" /> {title}
         </h2>
         {action && (
-          <button type="button" onClick={onAction} className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-fuchsia-700 hover:underline">
+          <button type="button" onClick={onAction} className="inline-flex min-h-[32px] items-center gap-0.5 text-[13px] font-semibold text-admin-text hover:underline">
             {action} <ChevronRight className="h-3.5 w-3.5" />
           </button>
         )}
@@ -41,7 +42,8 @@ export default function OwnerWideHome({
   trainers = [], ym, centerName, onGoTab,
 }) {
   const visible = useMemo(() => members.filter((m) => !m.hidden), [members]);
-  const nowISO = new Date().toISOString();
+  const now = new Date();
+  const nowISO = now.toISOString();
   const brief = useMemo(() => ownerBriefing({ members: visible, otRows, contracts, logs, appts, goals, ym, nowISO }),
     // nowISO는 렌더마다 바뀌므로 의존성에서 뺀다(분 단위 차이는 의미 없음).
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,31 +70,26 @@ export default function OwnerWideHome({
     <div className="space-y-5">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[13px] text-muted">{ym}</p>
-          <h1 className="text-[24px] font-bold tracking-[-0.03em] text-ink">{centerName || "내 센터"} 현황</h1>
+          <p className="text-[13px] text-muted">{now.getMonth() + 1}월 {now.getDate()}일 {WEEKDAY[now.getDay()]}요일</p>
+          <h1 className="mt-0.5 text-[24px] font-bold tracking-[-0.03em] text-ink">{centerName || "내 센터"} 대표님</h1>
         </div>
       </div>
 
-      {/* ① 지금 손쓰면 지킬 수 있는 매출 */}
-      <Card as="button" interactive padding="sm" onClick={() => onGoTab("briefing")}
-        className="flex w-full items-center justify-between gap-3 border-primary/30 bg-primary-soft text-left">
-        <span className="flex min-w-0 items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card text-primary-strong">
-            <AlertTriangle className="h-4 w-4" strokeWidth={2.2} />
+      {/* ① 보고서 바로가기 — 지금 손쓰면 지킬 수 있는 매출(브리핑 top3 영향액 합) · 폰 홈과 같은 버튼 */}
+      <button type="button" onClick={() => onGoTab("briefing")}
+        className="flex min-h-[60px] w-full items-center justify-between gap-3 rounded-2xl bg-primary px-5 text-left text-white shadow-sm transition hover:bg-primary-strong active:scale-[0.995]">
+        <span className="min-w-0">
+          <span className="block text-[13px] text-white/80">
+            {top3.length ? `지금 손쓰면 지킬 수 있는 매출 약 ${manwon(atRisk)}` : "오늘은 급한 건이 없어요"}
           </span>
-          <span className="min-w-0">
-            <span className="block text-[12px] font-semibold text-primary-strong">지금 손쓰면 지킬 수 있는 매출</span>
-            <span className="block truncate text-[16px] font-bold tracking-[-0.02em] text-ink">
-              {top3.length === 0 ? "오늘은 급한 건이 없어요" : `약 ${manwon(atRisk)} · ${top3.length}건`}
-            </span>
-          </span>
+          <span className="block truncate text-[17px] font-bold tracking-[-0.02em]">오늘 보고서 보기{top3.length ? ` · 챙길 것 ${top3.length}건` : ""}</span>
         </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-primary-strong" />
-      </Card>
+        <ArrowRight className="h-5 w-5 shrink-0" aria-hidden="true" />
+      </button>
 
       {/* ② 3칸 */}
       <div className="grid grid-cols-3 gap-4">
-        <Box title="오늘 챙길 것" icon={AlertTriangle} action="자세히" onAction={() => onGoTab("briefing")}>
+        <Box title="오늘 챙길 것" icon={AlertTriangle} action="보고서" onAction={() => onGoTab("briefing")}>
           {brief.length === 0 ? (
             <p className="py-4 text-center text-[13px] text-muted">지금은 비어 있어요.</p>
           ) : (
@@ -157,7 +154,7 @@ export default function OwnerWideHome({
       {/* ③ 기존 '한눈에' 콘솔 */}
       <OwnerOverview
         members={members} otRows={otRows} contracts={contracts} logs={logs}
-        trainers={trainers} appts={appts} expenses={expenses} ym={ym} onGoTab={onGoTab} />
+        trainers={trainers} appts={appts} expenses={expenses} ym={ym} onGoTab={onGoTab} inHome />
     </div>
   );
 }
