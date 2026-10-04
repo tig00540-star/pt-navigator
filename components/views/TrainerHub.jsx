@@ -35,6 +35,7 @@ import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday"
 import ReapproachToday from "@/components/views/ReapproachToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
+import RoutineRequestToday from "@/components/views/RoutineRequestToday";
 import PriceSheet from "@/components/salesbook/PriceSheet";
 import { useSalesbookAssets } from "@/components/salesbook/DeckLauncher";
 
@@ -257,6 +258,8 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
 
       {/* 대표 피드백 — 편집 목록과 무관하게, 확인 안 한 게 있을 때만 */}
       <div className="[&>section]:mb-0 empty:hidden"><OwnerFeedbackToday members={members} uid={uid} /></div>
+      {/* 루틴 요청 — 있을 때만(회원이 회원 전용 페이지에서 요청) */}
+      <div className="[&>section]:mb-0 empty:hidden"><RoutineRequestToday members={scoped} onSelect={(mid) => go(mid, 10)} /></div>
 
       {editing ? (
         <Card as="section" className="space-y-5">
