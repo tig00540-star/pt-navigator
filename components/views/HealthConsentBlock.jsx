@@ -10,10 +10,12 @@ import { ShieldCheck } from "lucide-react";
 export default function HealthConsentBlock({ checked, onChange, prior, children }) {
   const withdrawn = prior && prior.agreed === false;
   const locked = Boolean(prior?.agreed); // 이미 동의 기록 있음 → 체크 해제로 철회하지 않는다(철회는 회원 본인 · 기록은 덧붙이기만)
+  // 회원이 회원 페이지에서 철회했으면 트레이너 체크로 되살리지 않는다(법무 점검 2026-10-05) — 회원이 회원 페이지에서 다시 동의해야 열린다.
+  const memberWithdrew = withdrawn && prior.method === "member_page";
   return (
     <div className="rounded-xl border border-line bg-card p-3">
       <label className="flex cursor-pointer items-start gap-2.5">
-        <input type="checkbox" checked={checked} disabled={locked} onChange={(e) => onChange(e.target.checked)}
+        <input type="checkbox" checked={checked} disabled={locked || memberWithdrew} onChange={(e) => onChange(e.target.checked)}
           className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary disabled:cursor-default" />
         <span className="min-w-0">
           <span className="flex items-center gap-1 text-[13.5px] font-semibold text-ink">
@@ -23,10 +25,12 @@ export default function HealthConsentBlock({ checked, onChange, prior, children 
           <span className="mt-0.5 block text-[12px] leading-relaxed text-muted">
             {locked
               ? `동의 기록이 있어요(${prior.method === "member_page" ? "회원이 회원 페이지에서" : "트레이너 확인"}).`
+              : memberWithdrew
+              ? "회원이 회원 페이지에서 건강정보 동의를 철회했어요. 회원이 회원 페이지에서 다시 동의해야 적을 수 있어요."
               : withdrawn
-              ? "회원이 건강정보 동의를 철회했어요. 다시 받았을 때만 체크해 주세요."
+              ? "건강정보 동의가 철회된 상태예요. 다시 받았을 때만 체크해 주세요."
               : "불편 부위 · 부상 이력은 민감정보라 따로 동의가 필요해요. "}
-            {!locked && (
+            {!locked && !memberWithdrew && (
               <a href="/legal/consent-form" target="_blank" rel="noreferrer" className="font-semibold text-sub underline underline-offset-2">종이 동의서 인쇄</a>
             )}
           </span>
