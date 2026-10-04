@@ -1,12 +1,14 @@
 "use client";
 
 /* =========================================================================
-   회원 목록 — 검색 + 세그먼트(전체/OT/PT/보관) + 카드.
+   회원 목록 — 검색 + 세그먼트(전체/OT/PT/종료 회원) + 카드.
+   2026-10-06: '보관' → '종료 회원' · 그 안을 PT 종료(계약이 있었던 회원) · OT 종료(등록 안 하고 끝난 회원)로 나눠 보여 준다.
    app/page.jsx 안에 있던 MemberListTab을 그대로 옮긴 것(동작 동일).
    허브에서 'OT 회원'·'PT 회원'으로 들어오면 initialSegment로 그 필터가 걸린 채 열린다.
    ========================================================================= */
 
-import { useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { ChevronRight, Search, User, UserPlus } from "lucide-react";
 import { hasVal } from "@/lib/format";
 import Badge from "@/components/ui/Badge";
@@ -40,11 +42,28 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
     const v = viewFor(m);
     return segment === "all" ? v !== "inactive" : v === segment;
   });
-  const list = q.trim()
+  // 종료 회원 중 PT 계약이 있었던 회원(= PT 종료). 나머지는 OT 종료. 종료 탭을 열 때만 계약 유무를 묻는다.
+  const endedKey = segment === "inactive" ? bySegment.map((m) => m.id).sort().join(",") : "";
+  const [ptEnded, setPtEnded] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!endedKey || !supabase) return;
+      const { data, error } = await supabase.from("session_log").select("user_id").in("user_id", endedKey.split(","));
+      if (error) { console.error("종료 회원 계약 조회 실패", error); return; }
+      if (!cancelled) setPtEnded(new Set((data || []).map((r) => r.user_id)));
+    })();
+    return () => { cancelled = true; };
+  }, [endedKey]);
+  const isPtEnded = (m) => (ptEnded ? ptEnded.has(m.id) : /남은 수업/.test(m.status_note || ""));
+
+  const listRaw = q.trim()
     ? bySegment.filter((m) =>
         `${m.name} ${m.job}`.toLowerCase().includes(q.trim().toLowerCase())
       )
     : bySegment;
+  // 종료 회원은 PT 종료 먼저, 그다음 OT 종료(그룹 머리글은 아래 map에서).
+  const list = segment === "inactive" ? [...listRaw].sort((a, b) => Number(isPtEnded(b)) - Number(isPtEnded(a))) : listRaw;
 
   return (
     <div>
@@ -82,7 +101,7 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
           { key: "all", label: "전체", n: totalActive },
           { key: "ot", label: "OT", n: counts.ot },
           { key: "pt", label: "PT", n: counts.pt },
-          { key: "inactive", label: "보관", n: counts.inactive },
+          { key: "inactive", label: "종료 회원", n: counts.inactive },
         ].map((s) => (
           <button
             key={s.key}
@@ -116,13 +135,21 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
         </div>
       ) : (
         <div className={compact ? "grid gap-2" : "stagger grid gap-3 sm:grid-cols-2"}>
-          {list.map((m) => {
+          {list.map((m, idx) => {
             const on = m.id === selectedId;
             const goalSet = hasVal(m.goal) && m.goal !== "미설정";
+            const group = segment === "inactive" ? (isPtEnded(m) ? "PT 종료" : "OT 종료") : null;
+            const prevGroup = segment === "inactive" && idx > 0 ? (isPtEnded(list[idx - 1]) ? "PT 종료" : "OT 종료") : null;
+            const groupCount = group ? list.filter((x) => (isPtEnded(x) ? "PT 종료" : "OT 종료") === group).length : 0;
             return (
+              <Fragment key={m.id}>
+              {group && group !== prevGroup && (
+                <h3 className="col-span-full mt-1 text-[13px] font-semibold text-sub">
+                  {group} <span className="font-normal text-muted">{groupCount}명 · {group === "PT 종료" ? "PT를 마친 회원" : "OT만 하고 등록하지 않은 회원"}</span>
+                </h3>
+              )}
               <Card
                 as="button"
-                key={m.id}
                 onClick={() => onSelect(m.id)}
                 interactive
                 selected={on}
@@ -148,6 +175,7 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
                 </div>
                 <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted group-hover:text-primary-strong" />
               </Card>
+              </Fragment>
             );
           })}
         </div>

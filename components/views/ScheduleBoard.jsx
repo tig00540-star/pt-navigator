@@ -10,7 +10,9 @@
    ========================================================================= */
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, UserRound, X } from "lucide-react";
+import Link from "next/link";
+import { hrefForMember } from "@/lib/nav";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor, activeContract, nextAction } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
@@ -19,6 +21,8 @@ import Modal from "@/components/ui/Modal";
 import { useToast } from "@/hooks/useToast";
 import Button from "@/components/ui/Button";
 import VoiceLogTab from "@/components/tabs/VoiceLogTab";
+import TrainerEventForm from "@/components/views/TrainerEventForm";
+import { expandEvents, colorOf, repeatLabel } from "@/lib/trainerEvents";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 import { holidayName } from "@/lib/holidays";
 
@@ -79,6 +83,12 @@ export default function ScheduleBoard({ members = [], onSelect }) {
   const [acting, setActing] = useState(false);
   const [trainers, setTrainers] = useState([]);            // owner=계정 전체 / 트레이너=본인 1행
   const [trainerFilter, setTrainerFilter] = useState("all");
+  // 개인 일정(2026-10-06) — 회의 · 청소 · 휴무 등. 칸 누르기 → '회원 수업 | 개인 일정'.
+  const [events, setEvents] = useState([]);
+  const [myUid, setMyUid] = useState(null);
+  const [pickTab, setPickTab] = useState("member"); // member | event
+  const [pickMin, setPickMin] = useState(0);        // 회원 수업 시작 분(0 | 30)
+  const [evEdit, setEvEdit] = useState(null);       // { occ } 개인 일정 열기
   const { toast, showToast } = useToast();
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
@@ -103,6 +113,25 @@ export default function ScheduleBoard({ members = [], onSelect }) {
       } finally {
         if (!cancelled) setLoading(false);
       }
+    })();
+    return () => { cancelled = true; };
+  }, [weekStart, weekEnd]);
+
+  // 개인 일정 — 이 주에 걸리는 것(한 번짜리는 이 주 · 반복은 이 주 전에 시작한 것 전부 → 화면에서 펼침). 표 없으면(SQL 전) 조용히 빈 채로.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const { data: ses } = await supabase.auth.getSession();
+      if (!cancelled) setMyUid(ses?.session?.user?.id ?? null);
+      const from = addDays(weekStart, -1).toISOString();
+      const [one, rep] = await Promise.all([
+        supabase.from("trainer_event").select("*").eq("repeat", "none").gte("start_at", from).lt("start_at", weekEnd.toISOString()),
+        supabase.from("trainer_event").select("*").neq("repeat", "none").lt("start_at", weekEnd.toISOString()),
+      ]);
+      const err = one.error || rep.error;
+      if (err) { if (err.code !== "42P01") console.error("개인 일정 조회 실패", err); return; }
+      if (!cancelled) setEvents([...(one.data || []), ...(rep.data || [])]);
     })();
     return () => { cancelled = true; };
   }, [weekStart, weekEnd]);
@@ -162,6 +191,19 @@ export default function ScheduleBoard({ members = [], onSelect }) {
   const memberView = (id) => viewFor(members.find((m) => m.id === id) || {});
   const isOwnerView = trainers.length > 1; // 여러 트레이너가 보이면 owner 뷰
   const viewAppts = trainerFilter === "all" ? appts : appts.filter((a) => a.trainer_id === trainerFilter);
+  const viewEvents = trainerFilter === "all" ? events : events.filter((e) => e.trainer_id === trainerFilter);
+  const occs = expandEvents(viewEvents, weekStart, weekEnd);
+  // 칸(시간)에 걸치는 개인 일정 · 하루 종일 일정
+  const occAt = (dayIdx, hour) => {
+    const day = addDays(weekStart, dayIdx);
+    const from = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour).getTime();
+    return occs.filter((o) => !o.ev.all_day && o.start.getTime() < from + 3600000 && o.end.getTime() > from);
+  };
+  const allDayAt = (dayIdx) => {
+    const day = addDays(weekStart, dayIdx);
+    return occs.filter((o) => o.ev.all_day && sameDay(o.start, day));
+  };
+  const occChip = (o, first) => `block w-full truncate rounded border border-dashed px-1.5 py-0.5 text-left text-[11px] font-semibold ${colorOf(o.ev.color).chip}${first ? "" : " opacity-70"}`;
 
   const apptAt = (dayIdx, hour) => {
     const day = addDays(weekStart, dayIdx);
@@ -177,7 +219,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     if (saving || !pick) return;
     setSaving(true);
     const slot = addDays(weekStart, pick.dayIdx);
-    slot.setHours(pick.hour, 0, 0, 0);
+    slot.setHours(pick.hour, pickMin, 0, 0); // 정각 · 30분(2026-10-06)
     const payload = { user_id: member.id, start_at: slot.toISOString() };
     if (!supabase) {
       setAppts((p) => [...p, { ...payload, id: `demo-${Date.now()}`, status: "booked" }]);
@@ -327,6 +369,13 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     .filter((a) => a.status !== "canceled" && sameDay(new Date(a.start_at), now))
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   const remainingToday = todayList.filter((a) => a.status === "booked").length;
+  const todayOccs = occs.filter((o) => sameDay(o.start, now));
+  // 오늘 목록 = 수업 + 개인 일정(시간 순 · 하루 종일은 맨 위)
+  const todayRows = [
+    ...todayOccs.filter((o) => o.ev.all_day).map((o) => ({ kind: "event", key: `e-${o.ev.id}-${o.ymd}`, t: 0, o })),
+    ...[...todayList.map((a) => ({ kind: "appt", key: a.id, t: new Date(a.start_at).getTime(), a })),
+        ...todayOccs.filter((o) => !o.ev.all_day).map((o) => ({ kind: "event", key: `e-${o.ev.id}-${o.ymd}`, t: o.start.getTime(), o }))].sort((x, y) => x.t - y.t),
+  ];
 
   const chipCls = (a) =>
     `block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold ${
@@ -406,6 +455,9 @@ export default function ScheduleBoard({ members = [], onSelect }) {
                       <div className={`text-xs font-semibold ${labelTone}`}>{d}</div>
                       <div className={`font-mono text-[10px] ${dateTone}`}>{day.getMonth() + 1}/{day.getDate()}</div>
                       {hol && <div className="mt-0.5 truncate text-[9px] font-medium text-rose-600" title={hol}>{hol}</div>}
+                      {allDayAt(i).map((o) => (
+                        <button key={`${o.ev.id}-${o.ymd}`} type="button" onClick={() => setEvEdit({ occ: o })} className={`mt-1 ${occChip(o, true)}`}>{o.ev.title}</button>
+                      ))}
                     </div>
                   );
                 })}
@@ -415,19 +467,33 @@ export default function ScheduleBoard({ members = [], onSelect }) {
                   <div className="sticky left-0 z-10 w-12 shrink-0 border-r border-line bg-card px-1 py-2 text-right font-mono text-[10px] text-muted">{h}시</div>
                   {DAY_LABELS.map((_, i) => {
                     const list = apptAt(i, h);
+                    const evs = occAt(i, h);
                     return (
                       <div
                         key={i}
-                        onClick={() => setPick({ dayIdx: i, hour: h })}
+                        onClick={() => { setPickTab("member"); setPickMin(0); setPick({ dayIdx: i, hour: h }); }}
                         className="group min-h-[44px] flex-1 cursor-pointer border-l border-line p-1 transition hover:bg-elevate"
                       >
+                        {evs.length > 0 && (
+                          <div className="mb-1 space-y-1">
+                            {evs.map((o) => {
+                              const first = o.start.getHours() === h || (o.start.getDate() !== addDays(weekStart, i).getDate() && h === startHour);
+                              return (
+                                <button key={`${o.ev.id}-${o.ymd}`} type="button" onClick={(e) => { e.stopPropagation(); setEvEdit({ occ: o }); }} className={occChip(o, first)}>
+                                  {first ? `${o.start.getMinutes() ? `${hhmm(o.start.toISOString())} ` : ""}${o.ev.title}` : `↳ ${o.ev.title}`}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                         {list.length === 0 ? (
-                          <Plus className="h-3 w-3 text-line group-hover:text-muted" />
+                          evs.length ? null : <Plus className="h-3 w-3 text-line group-hover:text-muted" />
                         ) : (
                           <div className="space-y-1">
                             {list.map((a) => (
                               <button key={a.id} onClick={(e) => { e.stopPropagation(); handleApptTap(a); }} className={chipCls(a)}>
                                 {a.status === "done" ? "✓ " : ""}
+                                {new Date(a.start_at).getMinutes() ? <span className="mr-0.5 font-mono font-normal">:{pad(new Date(a.start_at).getMinutes())}</span> : null}
                                 <span className={`${viewMeta(memberView(a.user_id)).dot} mr-1 inline-block h-1.5 w-1.5 rounded-full`} />
                                 {memberNameEl(a.user_id)}
                                 {isOwnerView && trainerFilter === "all" && (
@@ -457,11 +523,20 @@ export default function ScheduleBoard({ members = [], onSelect }) {
               남은 수업 <b className="font-semibold text-primary-strong">{remainingToday}</b>개
             </span>
           </div>
-          {todayList.length === 0 ? (
+          {todayRows.length === 0 ? (
             <div className="rounded-2xl border border-line bg-card p-8 text-center text-[14px] text-muted shadow-sm">오늘 예약이 없어요.</div>
           ) : (
             <ul className="space-y-2">
-              {todayList.map((a) => (
+              {todayRows.map((r) => r.kind === "event" ? (
+                <li key={r.key}>
+                  <button type="button" onClick={() => setEvEdit({ occ: r.o })}
+                    className={`flex min-h-[48px] w-full items-center gap-3 rounded-xl border border-dashed px-3 text-left ${colorOf(r.o.ev.color).chip}`}>
+                    <span className="font-mono text-[14px] font-semibold">{r.o.ev.all_day ? "종일" : `${hhmm(r.o.start.toISOString())}–${hhmm(r.o.end.toISOString())}`}</span>
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{r.o.ev.title}</span>
+                    {isOwnerView && <span className="shrink-0 text-[12.5px] opacity-80">{trainerName(r.o.ev.trainer_id)}</span>}
+                  </button>
+                </li>
+              ) : ((a) => (
                 <li key={a.id}>
                   <button
                     onClick={() => handleApptTap(a)}
@@ -481,7 +556,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
                     )}
                   </button>
                 </li>
-              ))}
+              ))(r.a))}
             </ul>
           )}
         </div>
@@ -493,9 +568,31 @@ export default function ScheduleBoard({ members = [], onSelect }) {
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-bold text-ink">
-                {addDays(weekStart, pick.dayIdx).getMonth() + 1}/{addDays(weekStart, pick.dayIdx).getDate()} {DAY_LABELS[pick.dayIdx]} {pick.hour}시 회원 배치
+                {addDays(weekStart, pick.dayIdx).getMonth() + 1}/{addDays(weekStart, pick.dayIdx).getDate()} {DAY_LABELS[pick.dayIdx]} {pick.hour}시
               </h3>
               <button onClick={() => setPick(null)} className="text-muted hover:text-ink"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="mb-3 flex gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="무엇을 넣을까요">
+              {[["member", "회원 수업"], ["event", "개인 일정"]].map(([k, l]) => (
+                <button key={k} type="button" role="tab" aria-selected={pickTab === k} onClick={() => setPickTab(k)}
+                  className={`inline-flex min-h-[36px] flex-1 items-center justify-center rounded-full text-[14px] transition ${pickTab === k ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}>{l}</button>
+              ))}
+            </div>
+            {pickTab === "event" ? (
+              <TrainerEventForm date={addDays(weekStart, pick.dayIdx)} hour={pick.hour} showToast={showToast}
+                onCancel={() => setPick(null)}
+                onSaved={(row) => { setEvents((p) => [...p, row]); setPick(null); }} />
+            ) : (
+            <>
+            <div className="mb-2 flex items-center gap-2 text-[13px] text-sub">
+              시작
+              {[0, 30].map((m) => (
+                <button key={m} type="button" aria-pressed={pickMin === m} onClick={() => setPickMin(m)}
+                  className={`min-h-[32px] rounded-full border px-3 font-semibold ${pickMin === m ? "border-ink bg-ink text-white" : "border-line bg-card text-sub"}`}>
+                  {pick.hour}:{pad(m)}
+                </button>
+              ))}
+              <span className="text-muted">· 수업 1시간</span>
             </div>
             <div className="relative mb-2">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -512,7 +609,30 @@ export default function ScheduleBoard({ members = [], onSelect }) {
                 </button>
               ))}
             </div>
+            </>
+            )}
           </div>
+        </Modal>
+      )}
+
+      {/* 개인 일정 열기 — 내 일정이면 고치기 · 지우기, 남의 일정(대표가 볼 때)은 보기만 */}
+      {evEdit && (
+        <Modal size="sm" onClose={() => setEvEdit(null)} className="p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-ink">개인 일정{evEdit.occ.ev.repeat !== "none" ? ` · ${repeatLabel(evEdit.occ.ev)}` : ""}</h3>
+            <button onClick={() => setEvEdit(null)} className="text-muted hover:text-ink"><X className="h-4 w-4" /></button>
+          </div>
+          {!supabase || evEdit.occ.ev.trainer_id === myUid ? (
+            <TrainerEventForm event={evEdit.occ.ev} occurrenceYmd={evEdit.occ.ymd} date={evEdit.occ.start} showToast={showToast}
+              onCancel={() => setEvEdit(null)}
+              onSaved={(row) => { setEvents((p) => p.map((e) => (e.id === row.id ? row : e))); setEvEdit(null); }}
+              onDeleted={(id) => { setEvents((p) => p.filter((e) => e.id !== id)); setEvEdit(null); }} />
+          ) : (
+            <div className={`rounded-xl border border-dashed p-3 ${colorOf(evEdit.occ.ev.color).chip}`}>
+              <p className="text-[15px] font-bold">{evEdit.occ.ev.title}</p>
+              <p className="mt-1 text-[13px]">{evEdit.occ.ev.all_day ? "하루 종일" : `${hhmm(evEdit.occ.start.toISOString())}–${hhmm(evEdit.occ.end.toISOString())}`} · {trainerName(evEdit.occ.ev.trainer_id)}</p>
+            </div>
+          )}
         </Modal>
       )}
 
@@ -524,10 +644,19 @@ export default function ScheduleBoard({ members = [], onSelect }) {
               <h3 className="text-base font-bold text-ink">{memberName(action.user_id)}</h3>
               <button onClick={() => setAction(null)} className="text-muted hover:text-ink"><X className="h-4 w-4" /></button>
             </div>
-            <p className="mb-4 text-xs text-muted">
-              {new Date(action.start_at).getMonth() + 1}/{new Date(action.start_at).getDate()} {hhmm(action.start_at)}
-              {action.status === "done" && " · 완료됨"}
-            </p>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <p className="text-xs text-muted">
+                {new Date(action.start_at).getMonth() + 1}/{new Date(action.start_at).getDate()} {hhmm(action.start_at)}
+                {action.status === "done" && " · 완료됨"}
+              </p>
+              {/* 회원 정보로 바로 가기(2026-10-06 대표 요청) */}
+              {actionMember && (
+                <Link href={hrefForMember(actionMember.id, viewFor(actionMember))} onClick={() => setAction(null)}
+                  className="inline-flex min-h-[36px] shrink-0 items-center gap-1 rounded-lg border border-line bg-card px-3 text-[13px] font-semibold text-ink no-underline shadow-sm hover:border-line-strong">
+                  <UserRound className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 회원 정보
+                </Link>
+              )}
+            </div>
 
             {action.status === "done" ? (
               <p className="text-sm text-sub">완료 처리된 수업입니다. (완료 취소는 후속)</p>

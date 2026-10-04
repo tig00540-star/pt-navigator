@@ -282,6 +282,21 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       return;
     }
     setLogs((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 −1
+    // 오늘(KST) 이 회원의 '예약' 하나를 자동으로 '완료'로 연결 — 스케줄에서 또 누르지 않게 · 미처리 예약으로 안 뜨게(대표 결정 2026-10-06).
+    //   지금 시각에 가장 가까운 예약 하나. 실패해도 일지는 이미 저장됐으니 조용히 넘어간다(콘솔만).
+    try {
+      const ymdK = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      const dayStart = new Date(`${ymdK}T00:00:00+09:00`).toISOString();
+      const dayEnd = new Date(Date.parse(dayStart) + 86400000).toISOString();
+      const { data: todays } = await supabase.from("appointment").select("id, start_at")
+        .eq("user_id", member.id).eq("status", "booked").gte("start_at", dayStart).lt("start_at", dayEnd);
+      if (todays && todays.length) {
+        const nowMs = Date.now();
+        const pick = [...todays].sort((x, y) => Math.abs(Date.parse(x.start_at) - nowMs) - Math.abs(Date.parse(y.start_at) - nowMs))[0];
+        const { error: ae } = await supabase.from("appointment").update({ status: "done", log_id: data[0].id }).eq("id", pick.id).select("id");
+        if (ae) console.error("오늘 예약 자동 완료 실패", ae);
+      }
+    } catch (e) { console.error("오늘 예약 자동 완료 실패", e); }
     if (source !== "noshow") clearForm();
     showToast(
       source === "noshow"
@@ -637,9 +652,32 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           </div>
         ) : (
           <p className="mt-2 text-sm text-sub">
-            {direction || <span className="text-muted">아직 방향이 설정되지 않았습니다.</span>}
+            {direction || <span className="text-muted">아직 방향을 정하지 않았어요.</span>}
           </p>
         )}
+      </Card>
+      )}
+
+      {/* 수업권 · 재등록 — 운동일지 카드에서 빼서 따로(2026-10-06 대표: 찾기 헷갈림) · 자료남기기 맨 위 */}
+      {mode !== "view" && (
+      <Card as="section" className="order-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <SectionTitle icon={Dumbbell} className="mb-1">수업권 · 재등록</SectionTitle>
+            {active ? (
+              <p className="flex flex-wrap items-center gap-2 text-[14px] text-sub">
+                <span>남은 수업 <b className="text-primary-strong">{rem.paid}</b> · 서비스 <b className="text-ink">{rem.service}</b></span>
+                {due && <span className="rounded-md bg-ot-soft px-2 py-0.5 text-[12px] font-semibold text-ot-text">재등록 타이밍</span>}
+                {pendingTotal > 0 && <span className="rounded-md bg-elevate px-2 py-0.5 text-[12px] font-semibold text-sub">다음 계약 {pendingTotal}회 대기</span>}
+              </p>
+            ) : (
+              <p className="text-[14px] text-sub">진행 중인 계약이 없어요. 등록이나 재등록이 필요해요.</p>
+            )}
+          </div>
+          <Button variant="primary" size="md" onClick={() => setShowContract(true)} className="shrink-0">
+            <RefreshCw className="h-4 w-4" /> {isReReg ? "재등록 (새 계약)" : "계약 등록"}
+          </Button>
+        </div>
       </Card>
       )}
 
@@ -647,45 +685,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       {mode !== "view" && (
       <Card as="section" className="order-1">
         <SectionTitle icon={NotebookPen}>오늘 운동일지 · 수업 확인서</SectionTitle>
-
-        {/* 잔여 카드 */}
-        <div className="mb-4 rounded-xl border border-line bg-elevate p-4">
-          {active ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <Dumbbell className="h-4 w-4 shrink-0 text-primary-strong" />
-              <span className="text-sm text-sub">
-                잔여 유료 <b className="text-primary-strong">{rem.paid}</b> · 서비스{" "}
-                <b className="text-ink">{rem.service}</b>
-              </span>
-              {due && (
-                <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                  재등록 타이밍
-                </span>
-              )}
-              {pendingTotal > 0 && (
-                <span className="rounded-md border border-line bg-elevate px-2 py-0.5 text-[10px] font-semibold text-sub">
-                  다음 계약 {pendingTotal}회 대기
-                </span>
-              )}
-              <button
-                onClick={() => setShowContract(true)}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary-soft px-3 py-1.5 text-xs font-bold text-primary-strong transition hover:bg-primary-soft active:scale-95"
-              >
-                <RefreshCw className="h-3.5 w-3.5" /> 재등록
-              </button>
-            </div>
-          ) : (
-            <div>
-              <p className="flex items-center gap-2 text-sm text-sub">
-                <Dumbbell className="h-4 w-4 shrink-0 text-muted" />
-                진행 중인 계약이 없어요. 등록이나 재등록이 필요해요.
-              </p>
-              <Button variant="primary" size="sm" onClick={() => setShowContract(true)} className="mt-3">
-                <Dumbbell className="h-3.5 w-3.5" /> 계약 등록
-              </Button>
-            </div>
-          )}
-        </div>
 
         {/* 음성으로 채우기 (선택 · 서브) — 손입력이 주(主), 음성은 STT로 아래 칸을 채워주는 보조. 저장·차감은 아래 한 곳. */}
         <details className="mb-3 rounded-xl border border-line bg-elevate p-3">

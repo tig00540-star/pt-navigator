@@ -19,6 +19,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import RoadmapCard from "@/components/pt/RoadmapCard";
 import RoutineCard from "@/components/pt/RoutineCard";
+import RegistrationHistory from "@/components/pt/RegistrationHistory";
 
 const KST_TODAY = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const kstDay = (iso) => (iso ? new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10) : null);
@@ -230,6 +231,9 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
 
       {/* 개인운동 루틴 — 회원 전용 페이지 '오늘 할 개인운동'(트레이너 확정 · 보이기 켤 때만 · 2026-10-04) */}
       <RoutineCard member={member} logs={logs} />
+
+      {/* 등록 이력 — 처음 계약부터 지금까지(2026-10-06 대표 요청) */}
+      <RegistrationHistory contracts={contracts} logs={logs} />
 
       {changes.length > 0 && (
         <Card padding="none">

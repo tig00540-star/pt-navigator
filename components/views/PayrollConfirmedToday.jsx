@@ -12,6 +12,17 @@ import { won } from "@/lib/format";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 
+// 짧은 격려 한 줄 — 달마다 바뀐다(같은 달은 늘 같은 문장).
+const CHEERS = [
+  (m) => `${m}월 한 달 동안 정말 고생 많으셨어요!`,
+  (m) => `${m}월에도 회원들 몸을 바꿔 주셔서 고마워요. 고생 많으셨어요!`,
+  (m) => `${m}월도 꾸준히 달려 주셔서 고마워요!`,
+  (m) => `${m}월 수업 하나하나가 쌓여 만든 결과예요. 고생하셨어요!`,
+  (m) => `바쁜 ${m}월이었죠. 푹 쉬고 다음 달도 힘내요!`,
+  (m) => `트레이너님 덕분에 ${m}월도 센터가 잘 돌아갔어요. 고생 많으셨어요!`,
+];
+const cheerOf = (ym) => CHEERS[(Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7))) % CHEERS.length](Number(ym.slice(5, 7)));
+
 export default function PayrollConfirmedToday({ uid }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(null);
@@ -48,6 +59,7 @@ export default function PayrollConfirmedToday({ uid }) {
             <div className="min-w-0">
               <div className="text-[15px] font-semibold text-ink">{Number(r.ym.slice(5))}월 급여</div>
               <div className="mt-0.5 font-mono text-[17px] font-bold text-primary-strong">{won(r.final_total)}</div>
+              <div className="mt-1 text-[13px] text-sub">{cheerOf(r.ym)}</div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Link href="/stats" className="text-[13px] font-semibold text-sub hover:text-ink">내역</Link>

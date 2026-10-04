@@ -11,7 +11,7 @@
 const VIEW_META = {
   ot:       { label: "OT", badge: "bg-ot-soft text-ot-text",   avatar: "bg-ot-soft text-ot-text",   dot: "bg-ot" },
   pt:       { label: "PT", badge: "bg-pt-soft text-pt-text",   avatar: "bg-pt-soft text-pt-text",   dot: "bg-pt" },
-  inactive: { label: "보관", badge: "bg-elevate text-muted",     avatar: "bg-elevate text-muted",     dot: "bg-muted" },
+  inactive: { label: "종료", badge: "bg-elevate text-muted",     avatar: "bg-elevate text-muted",     dot: "bg-muted" },
 };
 
 export function viewMeta(view) {

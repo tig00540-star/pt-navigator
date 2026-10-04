@@ -314,7 +314,7 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
         {counts.inactive > 0 && (
           <button type="button" onClick={() => onGo(0, { segment: "inactive" })}
             className="inline-flex min-h-[40px] items-center rounded-lg px-3 text-[13px] text-sub transition hover:text-ink">
-            지난 회원 {counts.inactive}명
+            종료 회원 {counts.inactive}명
           </button>
         )}
         {!editing && (
