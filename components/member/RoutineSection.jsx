@@ -20,42 +20,43 @@ const todayKst = () => new Date(Date.now() + 9 * 3600000).toISOString().slice(0,
 const ago = (iso) => { if (!iso) return "아직 안 했어요"; const d = Math.floor((Date.now() - Date.parse(iso)) / 86400000); return d <= 0 ? "오늘 했어요" : d === 1 ? "어제 했어요" : `${d}일 전에 했어요`; };
 const agoShort = (iso) => { if (!iso) return "안 함"; const d = Math.floor((Date.now() - Date.parse(iso)) / 86400000); return d <= 0 ? "오늘" : d === 1 ? "어제" : `${d}일 전`; };
 
-function Step({ label, value, onDec, onInc, decOff, incOff, unit }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      <button type="button" onClick={onDec} disabled={decOff} aria-label={`${label} 줄이기`} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Minus className="h-4 w-4" /></button>
-      <span className="min-w-[3.4rem] text-center text-[15px] font-bold text-ink">{value}{unit}</span>
-      <button type="button" onClick={onInc} disabled={incOff} aria-label={`${label} 늘리기`} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Plus className="h-4 w-4" /></button>
-    </span>
-  );
-}
-
 const SKIP_REASONS = [["no_space", "자리 없음"], ["no_time", "시간 없음"], ["broken", "기구 고장"], ["etc", "기타"]];
 const skipLabel = (k) => SKIP_REASONS.find((x) => x[0] === k)?.[1] || "기타";
 const wTxt = (w) => (w ? `${r2(w)}kg` : "맨몸");
 // 세트별 줄 → "20kg×12 · 25kg×10"
 const rowsTxt = (rows) => rows.map((x) => `${wTxt(x.weight)}×${x.reps}`).join(" · ");
 
-// 세트마다 다르게 — 한 줄에 무게 · 횟수. 무게는 회원이 실제 든 그대로(상한을 넘겨도 기록 · 트레이너에게 표시 · 처방은 상한 안).
-function SetRows({ rows, step, lockedWeight, onChange }) {
+// 작은 ± — 세트 한 줄(번호 · 무게 · 횟수 · 지우기)이 폰 폭(약 300px)에 한 줄로 들어가게.
+function MiniStep({ label, value, unit, onDec, onInc, decOff, incOff, wide }) {
+  return (
+    <span className="inline-flex shrink-0 items-center">
+      <button type="button" onClick={onDec} disabled={decOff} aria-label={`${label} 줄이기`} className="flex h-8 w-7 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
+      <span className={`${wide ? "w-[3.3rem]" : "w-[2.2rem]"} text-center text-[14px] font-bold tabular-nums text-ink`}>{value}<span className="text-[11px] font-semibold text-sub">{unit}</span></span>
+      <button type="button" onClick={onInc} disabled={incOff} aria-label={`${label} 늘리기`} className="flex h-8 w-7 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
+    </span>
+  );
+}
+
+// 세트별 입력(2026-10-06 대표: 한 줄로 적기 없앰 · 세트마다 무게 · 횟수). 무게는 회원이 실제 든 그대로(상한을 넘겨도 기록 · 트레이너에게 표시 · 처방은 상한 안).
+function SetRows({ rows, step, lockedWeight, onChange, maxSets = 8 }) {
   const set = (i, patch) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   return (
-    <div className="mt-2 space-y-1.5">
+    <div className="mt-2 space-y-1">
       {rows.map((r, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-card/60 px-2 py-1">
-          <span className="w-10 shrink-0 text-[12.5px] font-semibold text-sub">{i + 1}세트</span>
+        <div key={i} className="flex items-center gap-1 rounded-lg bg-card/60 px-1 py-1">
+          <span className="w-4 shrink-0 text-center text-[12.5px] font-bold text-sub">{i + 1}</span>
           {lockedWeight != null ? (
-            <span className="min-w-[3.4rem] text-[14px] font-bold text-ink">{wTxt(lockedWeight)}</span>
+            <span className="w-[6.7rem] shrink-0 text-center text-[14px] font-bold text-ink">{wTxt(lockedWeight)}</span>
           ) : (
-            <Step label="무게" unit="kg" value={r2(r.weight)} onDec={() => set(i, { weight: r2(Math.max(0, r.weight - step)) })} onInc={() => set(i, { weight: r2(r.weight + step) })} decOff={r.weight <= 0} incOff={r.weight >= 300} />
+            <MiniStep label="무게" unit="kg" wide value={r2(r.weight)} onDec={() => set(i, { weight: r2(Math.max(0, r.weight - step)) })} onInc={() => set(i, { weight: r2(r.weight + step) })} decOff={r.weight <= 0} incOff={r.weight >= 300} />
           )}
-          <Step label="횟수" unit="회" value={r.reps} onDec={() => set(i, { reps: Math.max(1, r.reps - 1) })} onInc={() => set(i, { reps: Math.min(50, r.reps + 1) })} decOff={r.reps <= 1} incOff={r.reps >= 50} />
+          <MiniStep label="횟수" unit="회" value={r.reps} onDec={() => set(i, { reps: Math.max(1, r.reps - 1) })} onInc={() => set(i, { reps: Math.min(50, r.reps + 1) })} decOff={r.reps <= 1} incOff={r.reps >= 50} />
           {rows.length > 1 && (
-            <button type="button" onClick={() => onChange(rows.filter((_, j) => j !== i))} aria-label={`${i + 1}세트 지우기`} className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-ink"><X className="h-4 w-4" /></button>
+            <button type="button" onClick={() => onChange(rows.filter((_, j) => j !== i))} aria-label={`${i + 1}세트 지우기`} className="ml-auto flex h-8 w-6 shrink-0 items-center justify-center rounded-lg text-muted hover:text-ink"><X className="h-4 w-4" /></button>
           )}
         </div>
       ))}
-      {rows.length < 8 && (
+      {rows.length < maxSets && (
         <button type="button" onClick={() => onChange([...rows, { ...rows[rows.length - 1] }])} className="min-h-[34px] text-[13px] font-semibold text-sub">+ 세트 추가</button>
       )}
     </div>
@@ -170,7 +171,8 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
   }
 
   const today = todayKst();
-  const v = (it, nv) => vals[it.name] || { weight: nv.weight, reps: nv.reps, sets: nv.sets, done: false, pain: false, skip: null, rows: null };
+  const rowsOf = (it, nv) => Array.from({ length: Math.max(1, nv.sets || 1) }, () => ({ weight: it.locked ? it.weight : nv.weight, reps: nv.reps }));
+  const v = (it, nv) => vals[it.name] || { weight: nv.weight, reps: nv.reps, sets: nv.sets, done: false, pain: false, skip: null, rows: rowsOf(it, nv) };
   const setV = (it, nv, patch) => setVals((m) => ({ ...m, [it.name]: { ...v(it, nv), ...patch } }));
   const extraDone = extras.filter((e) => e.name.trim());
   const doneCount = plan.filter(({ it, nv }) => v(it, nv).done).length + extraDone.length;
@@ -183,7 +185,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
   const addExtra = () => {
     const n = extraName.trim();
     if (!n) return;
-    setExtras((xs) => [...xs, { key: `${Date.now()}`, name: n.slice(0, 40), weight: 0, reps: 12, sets: 2, rows: null }]);
+    setExtras((xs) => [...xs, { key: `${Date.now()}`, name: n.slice(0, 40), weight: 0, reps: 12, sets: 2, rows: [{ weight: 0, reps: 12 }, { weight: 0, reps: 12 }] }]);
     setExtraName("");
   };
   const setExtra = (key, patch) => setExtras((xs) => xs.map((e) => (e.key === key ? { ...e, ...patch } : e)));
@@ -230,11 +232,9 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
         {plan.map(({ it, nv }) => {
           const x = v(it, nv);
           const step = it.step || 5;
-          const maxW = it.locked ? it.weight : Math.min(nv.cap, r2(nv.weight + step));   // 오늘 한 칸까지 · 상한까지
-          const atCap = !it.locked && x.weight >= nv.cap;
           const ptRecent = days.length === 1 && recentPt.has(it.group);
           return (
-            <li key={it.name} className={`rounded-xl px-3.5 py-3 ${x.done ? "bg-primary-soft" : x.skip ? "bg-elevate opacity-60" : "bg-elevate"}`}>
+            <li key={it.name} className={`rounded-xl px-3 py-3 ${x.done ? "bg-primary-soft" : x.skip ? "bg-elevate opacity-60" : "bg-elevate"}`}>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span className="text-[15px] font-bold text-ink">{it.name}</span>
                 {it.locked && <span className="inline-flex items-center gap-0.5 text-[12px] text-sub"><Lock className="h-3 w-3" /> 트레이너가 고정한 무게</span>}
@@ -248,24 +248,12 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
                   <button type="button" onClick={() => setV(it, nv, { skip: null })} className="min-h-[34px] text-[13px] font-semibold text-primary-strong">되돌리기</button>
                 </div>
               ) : (<>
-              {x.rows ? (
-                <SetRows rows={x.rows} step={step} lockedWeight={it.locked ? it.weight : null} onChange={(rows) => setV(it, nv, { rows: rows.length ? rows : null })} />
-              ) : (
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-                {it.locked || x.weight === 0 ? (
-                  <span className="min-w-[3.4rem] text-[15px] font-bold text-ink">{x.weight ? `${r2(x.weight)}kg` : "맨몸"}</span>
-                ) : (
-                  <Step label="무게" unit="kg" value={r2(x.weight)} onDec={() => setV(it, nv, { weight: r2(Math.max((nv.weight ?? 0) > 0 ? step : 0, x.weight - step)) })} onInc={() => setV(it, nv, { weight: r2(x.weight + step) })} decOff={x.weight - step <= 0 && (nv.weight ?? 0) > 0} incOff={x.weight + step > maxW + 1e-9} />
-                )}
-                <Step label="횟수" unit="회" value={x.reps} onDec={() => setV(it, nv, { reps: Math.max(1, x.reps - 1) })} onInc={() => setV(it, nv, { reps: Math.min(30, x.reps + 1) })} decOff={x.reps <= 1} incOff={x.reps >= 30} />
-                <Step label="세트" unit="세트" value={x.sets} onDec={() => setV(it, nv, { sets: Math.max(1, x.sets - 1) })} onInc={() => setV(it, nv, { sets: Math.min(4, x.sets + 1) })} decOff={x.sets <= 1} incOff={x.sets >= 4} />
-              </div>
+              <SetRows rows={x.rows || rowsOf(it, nv)} step={step} lockedWeight={it.locked ? it.weight : null} maxSets={6}
+                onChange={(rows) => setV(it, nv, { rows: rows.length ? rows : rowsOf(it, nv) })} />
+              {!it.locked && (x.rows || []).some((r) => r.weight > nv.cap + 1e-9) && (
+                <p className="mt-1.5 text-[12.5px] text-sub">혼자 하는 상한({r2(nv.cap)}kg)보다 무거워요. 그대로 기록되고, 다음 PT 때 트레이너와 확인해요.</p>
               )}
-              <button type="button" onClick={() => setV(it, nv, { rows: x.rows ? null : Array.from({ length: x.sets }, () => ({ weight: it.locked ? it.weight : x.weight, reps: x.reps })) })}
-                className="mt-1.5 min-h-[32px] text-[12.5px] font-semibold text-sub underline-offset-2 hover:underline">
-                {x.rows ? "한 줄로 적기" : "세트마다 무게 · 횟수가 달랐어요"}
-              </button>
-              {(atCap || nv.capReached) && !it.locked && <p className="mt-1.5 text-[12.5px] text-sub">혼자서는 여기까지예요. 더 무거운 건 다음 PT 때 트레이너와 올려요.</p>}
+              {nv.capReached && !it.locked && <p className="mt-1.5 text-[12.5px] text-sub">혼자서는 여기까지예요. 더 무거운 건 다음 PT 때 트레이너와 올려요.</p>}
               {nv.painStop && <p className="mt-1.5 text-[12.5px] text-sub">지난번 아파서 멈춘 종목이에요. 트레이너가 확인할 때까지 무게가 그대로예요.</p>}
               <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" onClick={() => setV(it, nv, { done: !(x.done && !x.pain), pain: false })} aria-pressed={x.done && !x.pain}
@@ -308,17 +296,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
               <span className="text-[14px] font-bold text-ink">+ {e.name}</span>
               <button type="button" onClick={() => setExtras((xs) => xs.filter((z) => z.key !== e.key))} aria-label="빼기" className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-muted"><X className="h-4 w-4" /></button>
             </div>
-            {e.rows ? (
-              <SetRows rows={e.rows} step={2.5} lockedWeight={null} onChange={(rows) => setExtra(e.key, { rows: rows.length ? rows : null })} />
-            ) : (
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <Step label="무게" unit="kg" value={r2(e.weight)} onDec={() => setExtra(e.key, { weight: r2(Math.max(0, e.weight - 2.5)) })} onInc={() => setExtra(e.key, { weight: r2(e.weight + 2.5) })} decOff={e.weight <= 0} incOff={e.weight >= 300} />
-                <Step label="횟수" unit="회" value={e.reps} onDec={() => setExtra(e.key, { reps: Math.max(1, e.reps - 1) })} onInc={() => setExtra(e.key, { reps: Math.min(50, e.reps + 1) })} decOff={e.reps <= 1} incOff={e.reps >= 50} />
-                <Step label="세트" unit="세트" value={e.sets} onDec={() => setExtra(e.key, { sets: Math.max(1, e.sets - 1) })} onInc={() => setExtra(e.key, { sets: Math.min(8, e.sets + 1) })} decOff={e.sets <= 1} incOff={e.sets >= 8} />
-              </div>
-            )}
-            <button type="button" onClick={() => setExtra(e.key, { rows: e.rows ? null : Array.from({ length: e.sets }, () => ({ weight: e.weight, reps: e.reps })) })}
-              className="mt-1 min-h-[32px] text-[12.5px] font-semibold text-sub">{e.rows ? "한 줄로 적기" : "세트마다 달랐어요"}</button>
+            <SetRows rows={e.rows} step={2.5} lockedWeight={null} onChange={(rows) => setExtra(e.key, { rows: rows.length ? rows : [{ weight: 0, reps: 12 }] })} />
           </div>
         ))}
         <div className="mt-2 flex gap-2">
