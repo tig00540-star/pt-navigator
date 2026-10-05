@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
 import { buildExerciseSeries } from "@/lib/workout";
 import { hasVal } from "@/lib/format";
+import { confirmDue } from "@/lib/workoutHash";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import RoadmapCard from "@/components/pt/RoadmapCard";
@@ -70,6 +71,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
   const [todayAppt, setTodayAppt] = useState(false);
   const [inbody, setInbody] = useState([]);
   const [ounwan, setOunwan] = useState(null);
+  const [nowMs] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +110,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
     const month = done.filter((l) => (kstDay(l.session_at ?? l.created_at) || "").startsWith(ym)).length;
     const wroteToday = logs.some((l) => !l.voided && kstDay(l.session_at ?? l.created_at) === KST_TODAY());
     const confirmed = new Set((confirms || []).filter((c) => c.result === "confirm").map((c) => c.log_id));
-    const unconfirmed = done.filter((l) => !confirmed.has(l.id) && (kstDay(l.session_at ?? l.created_at) || "") < KST_TODAY()).length;
+    const unconfirmed = done.filter((l) => !confirmed.has(l.id) && confirmDue(l, nowMs)).length;
     // 몇 번째 계약 — 시작일 순서(인계로 닫힌 계약 포함 · 회원 입장에선 이어진 등록).
     const ordered = [...contracts].sort((a, b) => String(a.started_at ?? "").localeCompare(String(b.started_at ?? "")));
     const nth = active ? ordered.findIndex((c) => c.id === active.id) + 1 : ordered.length;
@@ -121,7 +123,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
       .sort((x, y) => (y.b - y.a) - (x.b - x.a))
       .slice(0, 2);
     return { active, rem, due, last, month, wroteToday, unconfirmed, nth, total, used, lifts };
-  }, [contracts, logs, confirms]);
+  }, [contracts, logs, confirms, nowMs]);
 
   // 인바디 — 목표가 근력·벌크면 골격근·체중, 아니면 체중·체지방률.
   const ib = useMemo(() => {

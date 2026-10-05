@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { ClipboardCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { fetchByIds } from "@/lib/fetchByIds";
+import { confirmDue } from "@/lib/workoutHash";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
@@ -69,13 +70,13 @@ export default function UnconfirmedConfirmToday({ members, uid, onSelect }) {
         if (cancelled) return;
 
         const confirmed = new Set((cf || []).map((c) => c.log_id));
-        const today = todayStr;
+        const nowMs = Date.now();
         const counts = new Map();
         for (const l of ls || []) {
-          // §1 미확인 정의(회원 게이트와 동일): 확인 대상 실수업 + 오늘 이전(유예) + confirm 없음.
+          // §1 미확인 정의(회원 게이트와 동일): 확인 대상 실수업 + 수업 1시간 지남 + confirm 없음.
           if (l.voided === true) continue;                       // coalesce(voided,false)=false
           if ((l.source ?? "") === "noshow") continue;           // coalesce(source,'')<>'noshow'
-          if (ymdKST(l.session_at ?? l.created_at) >= today) continue; // 오늘 수업은 유예
+          if (!confirmDue(l, nowMs)) continue;                   // 수업 1시간 뒤부터
           if (confirmed.has(l.id)) continue;                     // 이미 회원 확인함
           counts.set(l.user_id, (counts.get(l.user_id) || 0) + 1);
         }

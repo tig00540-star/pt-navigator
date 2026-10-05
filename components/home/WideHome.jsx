@@ -14,6 +14,7 @@ import Link from "next/link";
 import { CalendarDays, Camera, CheckCircle2, ClipboardCheck, Footprints, HeartPulse, Sparkles, UserPlus, Users } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { fetchByIds } from "@/lib/fetchByIds";
+import { confirmDue } from "@/lib/workoutHash";
 import { viewFor } from "@/lib/memberStatus";
 import { hrefFor, hrefForMember } from "@/lib/nav";
 import Card from "@/components/ui/Card";
@@ -102,12 +103,13 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
       if (cancelled) return;
       setAppts(ap.data || []);
 
-      // 운동일지 확인 대기 — 회원 게이트와 같은 정의: 실수업(무효·노쇼 제외) + 오늘 이전 + 확인 없음.
+      // 운동일지 확인 대기 — 회원 게이트와 같은 정의: 실수업(무효·노쇼 제외) + 수업 1시간 지남 + 확인 없음.
+      const nowMs = Date.now();
       const ok = new Set((conf.data || []).map((c) => c.log_id));
       const cnt = new Map();
       for (const l of logs.data || []) {
         if (l.voided === true || (l.source ?? "") === "noshow" || ok.has(l.id)) continue;
-        if (ymdKST(new Date(l.session_at ?? l.created_at)) >= today) continue;
+        if (!confirmDue(l, nowMs)) continue;
         cnt.set(l.user_id, (cnt.get(l.user_id) || 0) + 1);
       }
       setUnconfirmed([...cnt].map(([user_id, n]) => ({ user_id, n })).sort((a, b) => b.n - a.n));
