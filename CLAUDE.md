@@ -166,6 +166,13 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **화면:** 트레이너 설정 '내 OT 신청 QR'(`MyIntakeCard` · QR 보기 · 링크 복사(카톡 문구) · 이미지 저장 · 새 링크로 바꾸기 = `components/intake/IntakeQr`) · **'새 OT 회원' 알림**(`OtApplicationToday` · 폰 홈 · 오늘 탭 맨 위 · 넓은 홈 · 확인 = rpc `mark_ot_application_seen`) · 대표 등록·이탈 탭 맨 위 **'OT 신청 · 배정'**(`OtIntakePanel` · 배정 대기 · 센터 QR + 트레이너별 링크 복사 · 최근 30일 진행 신청→배정→첫 OT 예약→1차 OT→등록 · 트레이너별 숫자) · 대표 홈 맨 위 **'배정 대기 N건'**(`OtPendingCard`).
 - **원하는 시간 = `user_table.preferred_slots`**({days 월=1, hours, note, text}) + `availability` 글(AI가 그대로 읽음) · 표시 `lib/slots` `formatSlots`(이어진 시각 묶음 "19~22시") · OT 대시보드 회원 카드 · 스케줄 예약 창(고른 칸과 맞는 회원 위로 + '원하는 시간').
 
+### 폰 푸시 알림 (2026-10-06 · SQL `docs/migrations/2026-10-06-push.sql` · env `NEXT_PUBLIC_VAPID_PUBLIC_KEY` · `VAPID_PRIVATE_KEY` · `VAPID_SUBJECT`)
+
+- **구조:** `public/sw.js`(알림 받기 · 누르기만 · **캐시 안 함**) · `next.config.mjs` sw.js 캐시 금지 헤더 · 기기 구독 `push_subscription`(endpoint 고유 · 트레이너 또는 회원 · **클라 정책 없음 → `/api/push/subscribe`(service_role)만**) · 트레이너 종류 설정 `notify_pref.prefs`(없는 키 = 켜짐 · 본인만). 보내기 `lib/pushServer` `sendPush`(키 없으면 건너뜀 · 410/404 구독 삭제 · prefs 확인) · 요청자 판별 `lib/serverCaller`. 브라우저 `lib/pushClient`(`enablePush` · `disablePush` · `pushState` · `notifyPush`).
+- **보내는 곳(종류 = `lib/notifyTypes`):** 화면이 저장 직후 `/api/push/notify {type, id}` → **서버가 DB에서 다시 읽어 받는 사람 · 권한 확인**(ot_assigned · owner_feedback · payroll · routine_request · log_written · test). 서버 직접: `/api/ot-intake`(트레이너 QR → ot_new · 센터 QR → 대표 ot_pending) · `/api/member-confirm`('내용이 달라요' → dispute) · 아침 보고서 cron(대표 owner_report). 응답 뒤 `after()`.
+- **화면:** 트레이너 설정 **'알림'** 탭(`NotifySettings` · 이 폰 켜기/끄기 · 시험 알림 · 종류별 on/off · 대표 줄은 대표만) · 회원 전용 페이지 홈 **'운동일지 알림 받기'**(`MemberPushCard` · 지난 회원 없음).
+- ⚠️ **아이폰은 홈 화면에 추가한 앱에서만** 알림 가능(iOS 16.4+) → 화면이 안내. 운동일지 자동 확인 24시간 단축은 회원 알림이 충분히 퍼진 뒤(대표 결정 대기).
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.

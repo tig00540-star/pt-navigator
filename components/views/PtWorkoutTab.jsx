@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { ChevronDown, ClipboardList, Compass, Dumbbell, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
+import { notifyPush } from "@/lib/pushClient";
 import { activeContract, remainingSessions, reregisterDue, buildContract } from "@/lib/memberStatus";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
@@ -285,6 +286,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       return;
     }
     setLogs((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 −1
+    if (payload.source !== "noshow") notifyPush(authHeader(), "log_written", data[0].id);   // 회원 폰으로 '운동일지 확인해 주세요'(알림 켠 회원만)
     // 오늘(KST) 이 회원의 '예약' 하나를 자동으로 '완료'로 연결 — 스케줄에서 또 누르지 않게 · 미처리 예약으로 안 뜨게(대표 결정 2026-10-06).
     //   지금 시각에 가장 가까운 예약 하나. 실패해도 일지는 이미 저장됐으니 조용히 넘어간다(콘솔만).
     try {

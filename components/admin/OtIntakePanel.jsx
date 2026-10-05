@@ -20,6 +20,8 @@ import Toast from "@/components/ui/Toast";
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import IntakeQr from "@/components/intake/IntakeQr";
+import { notifyPush } from "@/lib/pushClient";
+import { authHeader } from "@/lib/authHeader";
 
 const ago = (iso) => {
   const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
@@ -94,6 +96,7 @@ export default function OtIntakePanel({ members = [], otRows = [], appts = [], t
       const { error } = await supabase.rpc("assign_ot_application", { p_app: app.id, p_trainer: tid });
       if (error) { console.error("배정 실패", error); showToast("배정하지 못했어요. 다시 시도해 주세요."); return; }
       showToast(`${app.name} 님을 ${tName(tid)} 트레이너에게 배정했어요`);
+      notifyPush(authHeader(), "ot_assigned", app.id);   // 그 트레이너 폰으로 '새 OT 회원'(꺼 두면 안 감)
       await load(); await onChanged?.();
     } finally { setBusyId(null); }
   };

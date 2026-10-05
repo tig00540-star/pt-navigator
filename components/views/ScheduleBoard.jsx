@@ -14,6 +14,8 @@ import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Search, UserRound
 import Link from "next/link";
 import { hrefForMember } from "@/lib/nav";
 import { supabase } from "@/lib/supabaseClient";
+import { authHeader } from "@/lib/authHeader";
+import { notifyPush } from "@/lib/pushClient";
 import { viewFor, activeContract, nextAction } from "@/lib/memberStatus";
 import { personName } from "@/lib/format";
 import Toast from "@/components/ui/Toast";
@@ -291,6 +293,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
         .select();
       if (logErr || !logIns || logIns.length === 0) { showToast("완료 처리하지 못했어요. 다시 시도해 주세요."); setActing(false); return; }
       logId = logIns[0].id;
+      notifyPush(authHeader(), "log_written", logId);   // 회원 폰으로 '운동일지 확인해 주세요'
     }
     const { data: up, error: upErr } = await supabase
       .from("appointment")

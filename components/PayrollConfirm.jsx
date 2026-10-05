@@ -9,6 +9,8 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { notifyPush } from "@/lib/pushClient";
+import { authHeader } from "@/lib/authHeader";
 import { won } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
@@ -43,10 +45,12 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
         const { data, error } = await supabase.from("payroll_run").update(payload).eq("id", run.id).select();
         if (error || !data || data.length === 0) { showToast("확정하지 못했어요. 다시 시도해 주세요."); return; }
         onSaved?.(data[0]);
+        notifyPush(authHeader(), "payroll", data[0].id);
       } else {
         const { data, error } = await supabase.from("payroll_run").insert(payload).select();
         if (error || !data || data.length === 0) { showToast("확정하지 못했어요. 다시 시도해 주세요."); return; }
         onSaved?.(data[0]);
+        notifyPush(authHeader(), "payroll", data[0].id);   // 트레이너 폰으로 '급여 확정'(꺼 두면 안 감)
       }
       showToast("급여를 확정했어요");
     } catch {

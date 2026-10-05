@@ -12,6 +12,7 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 import { ownerReportData } from "@/lib/memberStatus";
 import { buildOwnerAIInput, generateOwnerAI } from "@/lib/ownerReportAI";
 import { personName } from "@/lib/format";
+import { sendPush, ownerIds } from "@/lib/pushServer";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -96,7 +97,13 @@ export async function GET(req) {
     while (i < list.length) {
       const a = list[i++];
       if (Date.now() > deadline) { skipped.push(a.id); continue; }
-      try { done.push(await buildFor(sb, a, nowMs, apiKey)); }
+      try {
+        const r = await buildFor(sb, a, nowMs, apiKey);
+        done.push(r);
+        // 대표 폰으로 '아침 보고서'(꺼 두면 안 감 · 실패해도 보고서는 저장됨)
+        await sendPush(sb, { trainerIds: await ownerIds(sb, a.id), type: "owner_report", title: "아침 보고서가 준비됐어요",
+          body: r.items ? `어제 결과 ${r.items}건과 오늘 챙길 것을 확인해 보세요` : "오늘 챙길 것을 확인해 보세요", url: "/admin" }).catch(() => {});
+      }
       catch (e) { console.error("[owner-daily-report] 실패", a.id, e?.message || e); failed.push(a.id); }
     }
   };

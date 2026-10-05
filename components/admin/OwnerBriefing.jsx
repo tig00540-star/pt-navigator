@@ -20,6 +20,8 @@ import { buildOwnerAIInput } from "@/lib/ownerReportAI";
 import { won, wonApprox, manwon, personName } from "@/lib/format";
 import { labelOf, CLOSING_REASON_OPTS, REG_REASON_OPTS } from "@/lib/labels";
 import { supabase } from "@/lib/supabaseClient";
+import { notifyPush } from "@/lib/pushClient";
+import { authHeader } from "@/lib/authHeader";
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 
@@ -172,6 +174,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
       }).select("id, ref_id, body, created_at, seen_at");
       if (error || !data?.length) { console.error("피드백 저장 실패", error); setFbErr("저장하지 못했어요. 대표만 저장할 수 있어요."); return; }
       setFeedback((m) => ({ ...m, [item.ref_id]: [...(m[item.ref_id] || []), data[0]] }));
+      notifyPush(authHeader(), "owner_feedback", data[0].id);   // 받는 트레이너 폰으로(꺼 두면 안 감)
       setFbOpen(null); setFbText("");
     } catch {
       setFbErr("인터넷 연결을 확인하고 다시 시도해 주세요.");

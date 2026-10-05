@@ -6,6 +6,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { CONSENT_VERSION } from "@/lib/consent";
 import { formatSlots } from "@/lib/slots";
+import { after } from "next/server";
+import { sendPush, ownerIds } from "@/lib/pushServer";
 
 export const runtime = "nodejs";
 
@@ -71,5 +73,19 @@ export async function POST(req) {
   });
   if (error) { console.error("[ot-intake] 제출 실패", error.message); return Response.json({ error: "server" }, { status: 500 }); }
   if (data?.error) return Response.json(data, { status: data.error === "busy" ? 429 : 404 });
+  // 폰 알림(응답 뒤 · 실패해도 신청은 저장됨): 트레이너 QR → 그 트레이너 '새 OT 회원' · 센터 QR → 대표 '배정 대기'
+  if (!data?.repeat) after(async () => {
+    try {
+      const { data: l } = await sb.from("intake_link").select("id, account_id, trainer_id").eq("code", code).eq("active", true).maybeSingle();
+      if (!l) return;
+      const when = slots?.text ? ` · 원하는 시간 ${slots.text}` : "";
+      if (l.trainer_id) {
+        const { data: m } = await sb.from("ot_application").select("member_id").eq("link_id", l.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        await sendPush(sb, { trainerIds: [l.trainer_id], type: "ot_new", title: "새 OT 회원이 신청했어요", body: `${name} 님${when}`, url: m?.member_id ? `/ot/${m.member_id}` : "/today" });
+      } else {
+        await sendPush(sb, { trainerIds: await ownerIds(sb, l.account_id), type: "ot_pending", title: "OT 신청이 들어왔어요", body: `${name} 님 · 담당 트레이너를 정해 주세요${when}`, url: "/admin" });
+      }
+    } catch (e) { console.error("[ot-intake] 알림 실패", e?.message || e); }
+  });
   return Response.json({ ok: true, kind: data?.kind || null });
 }

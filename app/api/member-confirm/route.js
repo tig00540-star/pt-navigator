@@ -11,6 +11,8 @@
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { contentHashNode } from "@/lib/workoutHash";
+import { after } from "next/server";
+import { sendPush } from "@/lib/pushServer";
 
 export const runtime = "nodejs";
 
@@ -117,5 +119,13 @@ export async function POST(req) {
     return Response.json({ error: "저장 실패" }, { status: 500 });
   }
 
+  // '내용이 달라요' → 담당 트레이너 폰으로(응답 뒤 · 꺼 두면 안 감)
+  if (result === "dispute") after(async () => {
+    try {
+      const { data: m } = await sb.from("user_table").select("name, trainer_id").eq("id", memberId).maybeSingle();
+      if (m?.trainer_id) await sendPush(sb, { trainerIds: [m.trainer_id], type: "dispute", title: "회원이 '내용이 달라요'라고 했어요",
+        body: `${m.name || "회원"} · ${note ? `"${note.slice(0, 60)}"` : "운동일지를 확인해 주세요"}`, url: `/pt/${memberId}/logs` });
+    } catch (e) { console.error("[member-confirm] 알림 실패", e?.message || e); }
+  });
   return Response.json({ ok: true, confirmed_at: data.confirmed_at });
 }

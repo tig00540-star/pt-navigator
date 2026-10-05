@@ -10,6 +10,7 @@ import PasswordChange from "@/components/views/PasswordChange";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OunwanRewardSettings from "@/components/views/OunwanRewardSettings";
 import MyIntakeCard from "@/components/intake/MyIntakeCard";
+import NotifySettings from "@/components/notify/NotifySettings";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -21,6 +22,7 @@ export const SETTINGS_SUBTABS = [
   { id: "gear",    label: "장비 · 큐" },
   { id: "library", label: "도서관" },
   { id: "reward",  label: "포상" },   // 오운완 누적 N회 → 보상 정의(회원앱 진행 바에 반영)
+  { id: "notify",  label: "알림" },   // 폰 푸시 알림 켜기 · 종류별 on/off(2026-10-06)
 ];
 
 export default function SettingsView({ isSolo = false, sub = "me" }) {
@@ -70,6 +72,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
       {sub === "gear" && <CenterMachineSettings />}
       {sub === "library" && <TrainerLibrary />}
       {sub === "reward" && <OunwanRewardSettings />}
+      {sub === "notify" && <NotifySettings />}
     </div>
   );
 }

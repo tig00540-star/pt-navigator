@@ -12,6 +12,7 @@ import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, 
 import { memberSupabase } from "@/lib/memberSupabase";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import MyPtCard from "@/components/member/MyPtCard";
+import MemberPushCard from "@/components/member/MemberPushCard";
 import RoutineSection from "@/components/member/RoutineSection";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
@@ -1095,6 +1096,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {/* 내 PT — 남은 수업 · 다음 수업 · 목표 로드맵(2026-10-03 · 자기완결 · 표 없으면 숨김) */}
         <MyPtCard supabase={memberSupabase} />
+
+        {/* 운동일지 알림 받기(폰 푸시 · 2026-10-06) — 지난 회원은 없음 */}
+        {!ended && <MemberPushCard supabase={memberSupabase} />}
 
         {/* 오운완 카드 — 최상단. 누적·연속은 RPC(ounwan) 값만 사용(§2 규칙).
             '오늘 했는지'만 로컬 파생 — 오늘은 항상 최근 조회 창 안이라 정확하다. */}

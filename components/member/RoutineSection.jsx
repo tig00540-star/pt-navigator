@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Dumbbell, Hand, Lock, MessageCircle, Minus, Plus, X } from "lucide-react";
 import { nextValues, latestPtTop, pickDayIndex, recentPtGroups, effectiveSet } from "@/lib/routine";
+import { notifyPush } from "@/lib/pushClient";
 
 const r2 = (x) => Math.round(x * 100) / 100;
 const todayKst = () => new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
@@ -114,6 +115,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
       const { data, error } = await supabase.from("member_routine_request").insert({ user_id: me.id }).select("*");
       if (error || !data?.length) { console.error("루틴 요청 실패", error); setMsg("요청하지 못했어요. 다시 시도해 주세요."); return; }
       setReqs((x) => [...x, data[0]]);
+      notifyPush(supabase.auth.getSession().then(({ data: s }) => (s?.session?.access_token ? { Authorization: `Bearer ${s.session.access_token}` } : {})), "routine_request", data[0].id);   // 담당 트레이너 폰으로
     } catch { setMsg("인터넷 연결을 확인하고 다시 시도해 주세요."); } finally { setBusy(false); }
   };
   const cancelReq = async () => {
