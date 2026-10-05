@@ -83,8 +83,10 @@ begin
   select * into a from ot_application where id = p_app for update;
   ans := coalesce(a.answers, '{}'::jsonb);
   slot_txt := coalesce(nullif(a.slots->>'text', ''), nullif(trim(both ' ·' from concat_ws(' · ',
-    (select string_agg((array['월','화','수','목','금','토','일'])[d::int], '·' order by d::int) from jsonb_array_elements_text(a.slots->'days') d),
-    (select string_agg(h || '시', '·' order by h::int) from jsonb_array_elements_text(a.slots->'hours') h),
+    (select string_agg((array['월','화','수','목','금','토','일'])[x.v::int], '·' order by x.v::int)
+       from jsonb_array_elements_text(coalesce(a.slots->'days', '[]'::jsonb)) as x(v)),
+    (select string_agg(y.v || '시', '·' order by y.v::int)
+       from jsonb_array_elements_text(coalesce(a.slots->'hours', '[]'::jsonb)) as y(v)),
     nullif(a.slots->>'note', ''))), ''));   -- text = 앱이 만든 한 줄("월·수 · 19~22시")
 
   if a.duplicate_of is not null and exists (select 1 from user_table where id = a.duplicate_of and not coalesce(hidden, false)) then
