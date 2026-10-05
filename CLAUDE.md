@@ -192,7 +192,7 @@ SQL `docs/migrations/2026-10-05-pt-end-consent.sql`.
 - **해시 공용 `lib/workoutHash.js`:** `workoutCanonical(log)` 단일 출처 → `contentHashNode`(라우트·Node crypto 주입) / `contentHashBrowser`(트레이너 뱃지·subtle). **★둘이 반드시 같은 canonical** — 다르면 오탐("항상 변경됨"). `sets_structured` jsonb 키 순서는 양쪽 PostgREST라 안정(스모크 확인 권장).
 - **회원 게이트(`ConfirmFlow` in `app/m/[token]/page.jsx`):** **소프트** — 상단 배너+뱃지 상시, `pending≥3`일 때만 소프트 모달(닫기·"나중에" snooze). 확인 전용. ⚠️ **fail-open**(503/로드실패 시 게이트 끔 · 락아웃 금지). 유예: **수업 시작 1시간 뒤부터**(`lib/workoutHash` `confirmDue` · 회원 알림 · 트레이너 미확인 숫자 4곳 공용 · 2026-10-06 · 옛: 다음 날부터).
 - **트레이너 대응(`PtWorkoutTab` 대시보드=tab 10):** 각 로그 뱃지(확인됨/미확인) + **해시 대조 "확인 후 변경됨 ⚠️"**. 로그 **수정**(ai_summary 인라인) + **삭제=void(소프트)**(`voided=true` · 오운완·차감 자동 제외 · 무르기). ⚠️ **하드 DELETE 금지**(confirmation `on delete cascade`로 서명 삭제). RLS는 `auth_all_daily_workout_log`(for all)로 트레이너 수정/삭제 이미 허용.
-- **미확인 팔로업(`UnconfirmedConfirmToday` in `TodoTab`):** 오늘 booked 예약 회원 중 미확인 수업 있으면 '할일'에 표시 → 탭 시 회원자료(tab 10) 진입. 리마인더+진입일 뿐(확인은 회원 JWT로만).
+- **미확인 팔로업(`UnconfirmedConfirmToday` in `TodoTab` · 카드 '운동일지 확인 요청'):** 오늘 booked 예약 회원 중 미확인 수업 있거나, **예약 없어도 수업 뒤 2일 넘게 미확인**인 내 PT 회원(2026-10-06 · 최근 60일 일지)이면 '할일'에 표시 → 탭 시 회원자료(tab 10) 진입. 리마인더+진입일 뿐(확인은 회원 JWT로만).
 - **이의(dispute) 제거됨** — 확인 전용. route는 confirm만 통과. **클라 죽은 분기 정리 완료**(트레이너 이의 뱃지·`dispute_note` 표시·`PTView` select·회원 pending 필터의 `!=='dispute'`·route의 `disputeNote` 전부 제거). 남은 것은 **DB 뷰의 `confirm_result` case와 테이블 `check(result in ('confirm','dispute'))`뿐**(마이그레이션 계층 · 무해 잔존 — 새 dispute 행은 안 생기고, 정정하려면 별도 마이그레이션 필요). dispute 행은 더는 안 생김.
 
 ## 현장 트러블슈팅

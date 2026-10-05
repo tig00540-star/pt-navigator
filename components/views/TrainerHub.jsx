@@ -61,7 +61,7 @@ const CARDS = {
   numbers: { title: "이번 달 내 숫자", hint: "신규 등록 · 재등록 · 매출" },
   regdue: { title: "재등록 타이밍", hint: "남은 수업 10회 미만 회원" },
   churn: { title: "이탈 위험", hint: "2주 넘게 수업이 없는 회원" },
-  unconfirmed: { title: "운동일지 미확인", hint: "오늘 오는 회원 중 확인 안 한 일지" },
+  unconfirmed: { title: "운동일지 미확인", hint: "오늘 오는 회원 · 2일 넘게 확인 안 한 일지" },
   reapproach: { title: "OT 다시 연락할 회원", hint: "보류한 OT 회원 중 연락할 날이 된 회원" },
   inbody: { title: "인바디 잴 회원", hint: "마지막 측정이 2주 · 4주 넘은 PT 회원" },
 };
