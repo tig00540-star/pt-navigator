@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Play, Receipt, Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchByIds } from "@/lib/fetchByIds";
 import { useMembers } from "@/components/app/MembersProvider";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
@@ -38,29 +39,38 @@ export default function DeckList() {
   const [priceOpen, setPriceOpen] = useState(false);
   const { packages, trainer } = useSalesbookAssets();
 
+  // 목록은 가볍게(2026-10-06): 내 회원(대표는 센터 전체)만 · report 통째가 아니라 날짜 메타만 읽는다.
+  //   예전엔 센터 전체 행의 report(리포트 · 세일즈북 전부)를 한 번에 받아 느리고 1000행에서 잘렸다.
+  //   발표 · 편집에 필요한 report는 누를 때 그 한 행만 읽는다(openDeck).
+  const scopeIds = useMemo(() => {
+    const mine = members.filter((m) => m.trainer_id === myUid);
+    return (mine.length ? mine : members).map((m) => m.id).sort().join(",");
+  }, [members, myUid]);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setRows([]); return; }
+      const ids = scopeIds ? scopeIds.split(",") : [];
+      if (!ids.length) { if (!cancelled) setRows([]); return; }
       const [ot, reg] = await Promise.all([
-        supabase.from("ot_log").select("id, user_id, ot_round, created_at, report").not("report->salesbook", "is", null),
-        supabase.from("session_log").select("id, user_id, created_at, report").not("report->reg_salesbook", "is", null),
+        fetchByIds(supabase, "ot_log", "id, user_id, ot_round, created_at, sbm:report->salesbookMeta", "user_id", ids, (q) => q.not("report->salesbook", "is", null)),
+        fetchByIds(supabase, "session_log", "id, user_id, created_at, rsm:report->regSalesbookMeta", "user_id", ids, (q) => q.not("report->reg_salesbook", "is", null)),
       ]);
       if (ot.error) console.error("세일즈북 목록(OT) 실패", ot.error);
       if (reg.error) console.error("세일즈북 목록(재등록) 실패", reg.error);
       const latest = new Map(); // 회원·종류별 최신 1개
       const put = (k, r) => { const cur = latest.get(k); if (!cur || new Date(r.at) > new Date(cur.at)) latest.set(k, r); };
       for (const r of ot.data || []) {
-        const m = r.report?.salesbookMeta || {};
+        const m = r.sbm || {};
         put(`ot|${r.user_id}`, { kind: "ot", row: r, user_id: r.user_id, at: m.editedAt || m.generatedAt || r.created_at, round: r.ot_round });
       }
       for (const r of reg.data || []) {
-        put(`reg|${r.user_id}`, { kind: "reg", row: r, user_id: r.user_id, at: r.report?.regSalesbookMeta?.generatedAt || r.created_at });
+        put(`reg|${r.user_id}`, { kind: "reg", row: r, user_id: r.user_id, at: r.rsm?.generatedAt || r.created_at });
       }
       if (!cancelled) setRows([...latest.values()]);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [scopeIds]);
 
   const byId = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const list = useMemo(() => {
@@ -77,9 +87,12 @@ export default function DeckList() {
       .sort((a, b) => new Date(b.at) - new Date(a.at));
   }, [rows, byId, members, myUid, kind, q]);
 
-  const openDeck = (r, editable) => {
+  const openDeck = async (r, editable) => {
     if (r.kind === "reg") { router.push(`/pt/${r.user_id}/renewal?sb=1`); return; }
-    setOpen({ kind: r.kind, row: r.row, member: r.member, editable });
+    if (r.kind === "first" || !supabase || r.row?.report) { setOpen({ kind: r.kind, row: r.row, member: r.member, editable }); return; }
+    const { data, error } = await supabase.from("ot_log").select("id, user_id, ot_round, created_at, report").eq("id", r.row.id).maybeSingle();
+    if (error || !data) { console.error("세일즈북 열기 실패", error); showToast("세일즈북을 열지 못했어요. 다시 시도해 주세요."); return; }
+    setOpen({ kind: r.kind, row: data, member: r.member, editable });
   };
 
   return (

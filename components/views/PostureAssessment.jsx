@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Maximize2, PersonStanding, Plus, Sparkles, ImagePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import { compressImage } from "@/lib/image";
 import Eyebrow from "@/components/ui/Eyebrow";
 import Button from "@/components/ui/Button";
@@ -75,7 +76,7 @@ export default function PostureAssessment({ member }) {
   const signPaths = useCallback(async (paths) => {
     const list = paths.filter(Boolean);
     if (!supabase || list.length === 0) { setUrls({}); return; }
-    const { data } = await supabase.storage.from("member-photos").createSignedUrls(list, 3600);
+    const { data } = await supabase.storage.from("member-photos").createSignedUrls(list, PHOTO_URL_TTL);
     const map = {};
     (data || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
     setUrls(map);

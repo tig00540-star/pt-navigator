@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookImage, Check, Dumbbell, ImagePlus, MessageSquareQuote, Plus, Scale } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { compressImage } from "@/lib/image";
 import { useMembers } from "@/components/app/MembersProvider";
@@ -231,7 +232,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
     setPicked([]);
     setLabel("");
     setCategory(guessCategory(g.member.goal));
-    const { data } = await supabase.storage.from("member-photos").createSignedUrls(g.photos.map((p) => p.storage_path), 3600);
+    const { data } = await supabase.storage.from("member-photos").createSignedUrls(g.photos.map((p) => p.storage_path), PHOTO_URL_TTL);
     const map = {};
     (data || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
     setUrls(map);

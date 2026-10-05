@@ -12,7 +12,7 @@
    회원 전환 리셋은 부모가 key로 리마운트.
    ========================================================================= */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BookOpen, Check, Eye, Heart, RefreshCw, Flag } from "lucide-react";
@@ -216,12 +216,14 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   };
 
   // 회원 만족도 — 리포트와 따로 바로 저장.
-  const saveSat = async (level, quote) => {
-    if (!cur || satSaving) return;
+  const satNext = useRef(null);   // 저장 중에 또 바뀐 값 — 끝나면 이어서 저장(예전엔 버려져 앞 값이 남았다 · 2026-10-06)
+  const saveSat = async (level, quote, force = false) => {
+    if (!cur) return;
+    if (satSaving) { satNext.current = [level, quote]; return; }
     const q = (quote || "").trim();
     const val = level || q ? { level: level || null, quote: q || null } : null;
     const saved = cur.report?.reg_satisfaction || null;
-    if ((saved?.level || null) === (val?.level || null) && (saved?.quote || null) === (val?.quote || null)) return;
+    if (!force && (saved?.level || null) === (val?.level || null) && (saved?.quote || null) === (val?.quote || null)) return;
     if (!supabase) {
       setContracts((p) => p.map((c) => (c.id === cur.id ? { ...c, report: { ...(c.report || {}), reg_satisfaction: val } } : c)));
       return;
@@ -236,6 +238,8 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       showToast("인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setSatSaving(false);
+      const n = satNext.current; satNext.current = null;
+      if (n) setTimeout(() => saveSat(n[0], n[1], true), 0);
     }
   };
 

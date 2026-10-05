@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Flame, Trophy, Sparkles } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
+import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import MyPtCard from "@/components/member/MyPtCard";
 import RoutineSection from "@/components/member/RoutineSection";
 import ConsentGate from "@/components/member/ConsentGate";
@@ -316,7 +317,7 @@ function PhotoSection({ me, photos, onReload, mode, readOnly = false }) {
       if (!memberSupabase || photos.length === 0) { if (!cancelled) setUrls({}); return; }
       const { data } = await memberSupabase.storage
         .from("member-photos")
-        .createSignedUrls(photos.map((p) => p.storage_path), 3600);
+        .createSignedUrls(photos.map((p) => p.storage_path), PHOTO_URL_TTL);
       if (cancelled) return;
       const map = {};
       (data || []).forEach((d) => { if (d.signedUrl) map[d.path] = d.signedUrl; });

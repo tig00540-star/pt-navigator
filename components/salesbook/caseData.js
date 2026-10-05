@@ -1,5 +1,6 @@
-/* 사례 데이터 읽기(클라이언트) — 보관함·세일즈북 장 공용. 사진은 비공개 버킷 서명 URL(1시간). */
+/* 사례 데이터 읽기(클라이언트) — 보관함·세일즈북 장 공용. 사진은 비공개 버킷 서명 URL(lib/photoUrl · 6시간). */
 import { supabase } from "@/lib/supabaseClient";
+import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 
 export async function signCaseUrls(cases) {
   if (!supabase) return {};
@@ -11,7 +12,7 @@ export async function signCaseUrls(cases) {
   const map = {};
   const sign = async (bucket, paths) => {
     if (!paths.length) return;
-    const { data } = await supabase.storage.from(bucket).createSignedUrls([...new Set(paths)], 3600);
+    const { data } = await supabase.storage.from(bucket).createSignedUrls([...new Set(paths)], PHOTO_URL_TTL);
     (data || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
   };
   await Promise.all([sign("member-photos", photo), sign("sales-cases", review)]);

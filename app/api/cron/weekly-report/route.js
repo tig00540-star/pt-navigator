@@ -47,8 +47,8 @@ export async function GET(req) {
 
   // 전체 로드(계정 필터 없음 = SaaS 전체 관점). 큰 표는 fetchAllRows로 1000행 잘림 방지.
   const [membersR, otR, contractsR, logsR, accountsR] = await Promise.all([
-    sb.from("user_table").select("*"),
-    sb.from("ot_log").select("*"),
+    fetchAllRows(() => sb.from("user_table").select("*")),
+    fetchAllRows(() => sb.from("ot_log").select("*")),
     fetchAllRows(() => sb.from("session_log").select("*")),
     fetchAllRows(() => sb.from("daily_workout_log").select("*")),
     sb.from("account").select("id, type, subscription_status, current_period_end"),

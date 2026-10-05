@@ -61,7 +61,9 @@ async function saveResult(token, phase, save, brief, model) {
   if (save.kind === "contract" && phase === "reregister" && typeof save.contractId === "string") {
     const { data: row } = await sb.from("session_log").select("id, report").eq("id", save.contractId).maybeSingle();
     if (!row) return null;
-    const sat = save.satisfaction && typeof save.satisfaction === "object" ? { reg_satisfaction: save.satisfaction } : {};
+    // 만족도는 화면이 누를 때 바로 저장한다 — 여기서는 저장된 게 없을 때만 채운다(2026-10-06 · 리포트를 만드는 동안
+    //   트레이너가 만족도를 바꾸면, 다 만든 뒤 시작할 때 값으로 덮어써지던 버그).
+    const sat = !row.report?.reg_satisfaction && save.satisfaction && typeof save.satisfaction === "object" ? { reg_satisfaction: save.satisfaction } : {};
     const { data, error } = await sb.from("session_log").update({ report: { ...(row.report || {}), reg_brief: brief, regBriefMeta: meta, ...sat } })
       .eq("id", row.id).select("id");
     if (error || !data?.length) console.error("[ot-brief] 저장 실패(재등록):", error?.message || "0행(권한)");

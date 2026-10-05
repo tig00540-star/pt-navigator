@@ -78,11 +78,29 @@ export async function GET(req) {
 
   const nowMs = Date.now();
   const apiKey = process.env.ANTHROPIC_API_KEY || null;
-  const done = [], failed = [];
-  // 센터마다 차례로(동시에 돌리면 DB · AI 한도를 한꺼번에 쓴다). 한 곳이 실패해도 다음 센터는 계속.
-  for (const a of accounts || []) {
-    try { done.push(await buildFor(sb, a, nowMs, apiKey)); }
-    catch (e) { console.error("[owner-daily-report] 실패", a.id, e?.message || e); failed.push(a.id); }
+  const ymd = new Date(nowMs + 9 * 3600 * 1000).toISOString().slice(0, 10);
+
+  // 센터가 늘어도 시간 안에 끝나게(2026-10-06): ① 오늘 이미 다 만든 센터는 건너뜀(수동 재실행 · 이어 하기)
+  //   ② 4곳씩 동시에(AI 한 번 수십 초 · 한 줄로 돌리면 센터 10곳만 넘어도 5분 한도에 걸린다)
+  //   ③ 남은 시간이 40초 아래면 새 센터는 시작하지 않음 — 못 만든 센터는 대표가 열 때 화면이 지금 데이터로 만든다(기존 대체 경로).
+  let list = accounts || [];
+  if (!only && list.length) {
+    const { data: have } = await sb.from("owner_daily_report").select("account_id, ai").eq("ymd", ymd).in("account_id", list.map((a) => a.id));
+    const ready = new Set((have || []).filter((r) => r.ai?.state && r.ai.state !== "failed").map((r) => r.account_id));
+    list = list.filter((a) => !ready.has(a.id));
   }
-  return Response.json({ ok: true, done, failed });
+  const deadline = nowMs + (maxDuration - 40) * 1000;
+  const done = [], failed = [], skipped = [];
+  let i = 0;
+  const worker = async () => {
+    while (i < list.length) {
+      const a = list[i++];
+      if (Date.now() > deadline) { skipped.push(a.id); continue; }
+      try { done.push(await buildFor(sb, a, nowMs, apiKey)); }
+      catch (e) { console.error("[owner-daily-report] 실패", a.id, e?.message || e); failed.push(a.id); }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(4, list.length) }, worker));
+  if (skipped.length) console.warn("[owner-daily-report] 시간 부족으로 건너뜀", skipped.length);
+  return Response.json({ ok: true, done, failed, skipped });
 }

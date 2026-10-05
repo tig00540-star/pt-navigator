@@ -134,7 +134,8 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
     const ptMemberIds = new Set(
       members.filter((m) => m.trainer_id === uid && viewFor(m) === "pt").map((m) => m.id)
     );
-    const ptContracts = contracts.filter((c) => ptMemberIds.has(c.user_id));
+    // 내 계약만(2026-10-06) — 인계받은 회원은 앞 트레이너 계약(인계로 닫힘 · 남은 0)까지 더하면 '진행'이 부풀었다.
+    const ptContracts = contracts.filter((c) => ptMemberIds.has(c.user_id) && c.trainer_id === uid && !c.handed_over);
     const sessTotalAll = ptContracts.reduce(
       (s, c) => s + (c.sessions_total ?? 0) + (c.service_sessions ?? 0), 0
     );

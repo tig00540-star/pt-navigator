@@ -17,15 +17,21 @@ export function useSalesbookAssets() {
     let cancelled = false;
     (async () => {
       if (!supabase) { if (!cancelled) setAssets((a) => ({ ...a, ready: true })); return; }
-      const { data: au } = await supabase.auth.getUser();
-      const uid = au?.user?.id ?? null;
-      if (!uid) { if (!cancelled) setAssets((a) => ({ ...a, ready: true })); return; }
-      const [{ data: pkgs }, { data: prof }] = await Promise.all([
-        supabase.from("pt_package").select("*").eq("trainer_id", uid).eq("active", true)
-          .order("sort", { ascending: true }).order("created_at", { ascending: true }),
-        supabase.from("trainer_profile").select("*").eq("trainer_id", uid).maybeSingle(),
-      ]);
-      if (!cancelled) setAssets({ packages: pkgs || [], trainer: prof || null, ready: true });
+      // 실패해도 ready=true(패키지 · 프로필 없이라도 화면은 연다 · '불러오는 중' 멈춤 방지 2026-10-06).
+      try {
+        const { data: au } = await supabase.auth.getUser();
+        const uid = au?.user?.id ?? null;
+        if (!uid) { if (!cancelled) setAssets((a) => ({ ...a, ready: true })); return; }
+        const [{ data: pkgs }, { data: prof }] = await Promise.all([
+          supabase.from("pt_package").select("*").eq("trainer_id", uid).eq("active", true)
+            .order("sort", { ascending: true }).order("created_at", { ascending: true }),
+          supabase.from("trainer_profile").select("*").eq("trainer_id", uid).maybeSingle(),
+        ]);
+        if (!cancelled) setAssets({ packages: pkgs || [], trainer: prof || null, ready: true });
+      } catch (e) {
+        console.error("세일즈북 패키지 · 프로필 읽기 실패", e);
+        if (!cancelled) setAssets((a) => ({ ...a, ready: true }));
+      }
     })();
     return () => { cancelled = true; };
   }, []);

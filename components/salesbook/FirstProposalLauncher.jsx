@@ -65,13 +65,20 @@ export default function FirstProposalLauncher({ member, editable = false, startP
     let cancelled = false;
     (async () => {
       if (!supabase || !member?.id) { if (!cancelled) { setRow1(null); setCases([]); } return; }
-      const { data: au } = await supabase.auth.getUser();
-      const [{ data: rows }, { data: mine }] = await Promise.all([
-        supabase.from("ot_log").select("id, report").eq("user_id", member.id).eq("ot_round", 1)
-          .order("created_at", { ascending: false }).limit(1),
-        loadMyCases(au?.user?.id),
-      ]);
-      if (!cancelled) { setRow1(rows?.[0] || null); setCases(mine || []); }
+      // 읽기가 실패해도(네트워크 · 권한) '불러오는 중'에 멈추지 않게 — 1차 기록 없음 · 사례 없음으로 이어 간다(2026-10-06).
+      try {
+        const { data: au } = await supabase.auth.getUser();
+        const [{ data: rows, error: e1 }, { data: mine }] = await Promise.all([
+          supabase.from("ot_log").select("id, report").eq("user_id", member.id).eq("ot_round", 1)
+            .order("created_at", { ascending: false }).limit(1),
+          loadMyCases(au?.user?.id).catch(() => ({ data: [] })),
+        ]);
+        if (e1) console.error("1차 기록 읽기 실패", e1);
+        if (!cancelled) { setRow1(rows?.[0] || null); setCases(mine || []); }
+      } catch (e) {
+        console.error("1차 세일즈북 불러오기 실패", e);
+        if (!cancelled) { setRow1(null); setCases([]); }
+      }
     })();
     return () => { cancelled = true; };
   }, [member?.id]);
@@ -85,8 +92,12 @@ export default function FirstProposalLauncher({ member, editable = false, startP
     started.current = true;
     (async () => {
       setGen("running");
+      // 2분 넘게 답이 없으면 끊고 짧은 판으로(서버는 끝까지 만들어 저장 · 다음에 열면 AI 판이 뜬다).
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 120000);
       try {
         const res = await fetch("/api/ot-brief", {
+          signal: ctl.signal,
           method: "POST",
           headers: { "Content-Type": "application/json", ...(await authHeader()) },
           body: JSON.stringify({
@@ -102,6 +113,8 @@ export default function FirstProposalLauncher({ member, editable = false, startP
       } catch (e) {
         console.error("1차 세일즈북 생성 실패", e);
         if (alive.current) setGen("failed");
+      } finally {
+        clearTimeout(timer);
       }
     })();
   }, [row1, ready, fsb, member, fa, packages]);

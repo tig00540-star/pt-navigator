@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Maximize, Minimize, Presentation, Receipt } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import { won, wonApprox } from "@/lib/format";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
@@ -132,7 +133,7 @@ export default function RegSalesbookView({ regSalesbook, member, trainer, packag
         if (list.length) {
           const { data: signed } = await supabase.storage
             .from("member-photos")
-            .createSignedUrls(list.map((p) => p.storage_path), 3600);
+            .createSignedUrls(list.map((p) => p.storage_path), PHOTO_URL_TTL);
           (signed || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
         }
         if (!cancelled) { setRows(list); setUrls(map); }

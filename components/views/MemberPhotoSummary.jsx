@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import { compressImage } from "@/lib/image";
 import SectionTitle from "@/components/ui/SectionTitle";
 import ImageLightbox from "@/components/ui/ImageLightbox";
@@ -54,7 +55,7 @@ export default function MemberPhotoSummary({ member, mode }) {
     if (list.length) {
       const { data: signed } = await supabase.storage
         .from("member-photos")
-        .createSignedUrls(list.map((p) => p.storage_path), 3600);
+        .createSignedUrls(list.map((p) => p.storage_path), PHOTO_URL_TTL);
       const map = {};
       (signed || []).forEach((s) => { if (s.signedUrl) map[s.path] = s.signedUrl; });
       setUrls(map);
