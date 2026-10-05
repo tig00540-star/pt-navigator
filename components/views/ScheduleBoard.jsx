@@ -358,9 +358,17 @@ export default function ScheduleBoard({ members = [], onSelect }) {
 
   const hours = [];
   for (let h = startHour; h < endHour; h++) hours.push(h);
-  const filtered = q.trim()
+  // 고른 칸이 회원이 OT 신청서에 남긴 요일 · 시간과 맞는가(2026-10-06) — 맞는 회원을 위로 · '원하는 시간' 표시.
+  const wantsPick = (m) => {
+    const sl = m.preferred_slots;
+    if (!pick || !sl) return false;
+    const dayOk = !(sl.days || []).length || sl.days.includes(pick.dayIdx + 1);
+    const hourOk = !(sl.hours || []).length || sl.hours.includes(pick.hour);
+    return dayOk && hourOk && ((sl.days || []).length > 0 || (sl.hours || []).length > 0);
+  };
+  const filtered = (q.trim()
     ? members.filter((m) => `${m.name} ${m.job}`.toLowerCase().includes(q.trim().toLowerCase()))
-    : members;
+    : members).slice().sort((a, b) => Number(wantsPick(b)) - Number(wantsPick(a)));
 
   const rangeLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()} ~ ${addDays(weekStart, 6).getMonth() + 1}/${addDays(weekStart, 6).getDate()}`;
 
@@ -606,6 +614,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
                   <MemberBadge view={viewFor(m)} />
                   <span className="text-sm font-medium text-ink">{m.name}</span>
                   <span className="text-xs text-muted">{m.job}</span>
+                  {wantsPick(m) && <span className="ml-auto shrink-0 rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-semibold text-primary-strong">원하는 시간</span>}
                 </button>
               ))}
             </div>

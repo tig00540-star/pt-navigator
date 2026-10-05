@@ -124,7 +124,8 @@ export default function AuthGate({ children }) {
   // 공개 마케팅 랜딩(/lp 트레이너용 · /center 센터 대표용)·설치안내(/download)도 게이트를 완전 우회 — 누구나 본다.
   // 광고·공유·토스 심사 도착지라 세션 조회를 기다리지 않고 즉시 그린다(스피너 없이 빠른 페인트).
   const isPublicMarketing =
-    pathname === "/lp" || pathname === "/center" || pathname === "/download" || pathname.startsWith("/legal");
+    pathname === "/lp" || pathname === "/center" || pathname === "/download" || pathname.startsWith("/legal")
+    || pathname.startsWith("/join/");   // OT 신청서(QR · 링크 · 로그인 없음 · 2026-10-06)
   if (isPublicMarketing) return <>{children}</>;
 
   // 초기 세션 조회 전 — 깜빡임 방지용 최소 화면

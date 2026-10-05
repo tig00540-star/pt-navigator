@@ -40,6 +40,8 @@ import AdminEmptyOnboarding from "@/components/admin/AdminEmptyOnboarding";
 import TrainerScorecard from "@/components/admin/TrainerScorecard";
 import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import MemberFlow from "@/components/admin/MemberFlow";
+import OtIntakePanel from "@/components/admin/OtIntakePanel";
+import OtPendingCard from "@/components/admin/OtPendingCard";
 import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
 import CenterMonthSummary from "@/components/admin/CenterMonthSummary";
 import TrainerQualityReport from "@/components/admin/TrainerQualityReport";
@@ -398,6 +400,9 @@ export default function AdminDashboard() {
         {/* 빈상태 온보딩 — 회원 0명일 때만 · 모든 탭 위 · 탭별 안내 + 현재 트레이너/회원 수 */}
         <AdminEmptyOnboarding members={rows} trainers={trainers} atab={atab} />
 
+        {/* OT 신청 배정 대기(센터 QR · 2026-10-06) — 홈 맨 위 · 있을 때만 */}
+        {atab === "hub" && <OtPendingCard onGo={() => goTab("flow")} />}
+
         {/* ===== 홈(허브) — 9개 탭을 5묶음으로 고르는 첫 화면 ===== */}
         {atab === "hub" && wide && (
         <section className="mb-8">
@@ -670,6 +675,7 @@ export default function AdminDashboard() {
         {/* ===== 등록·이탈 (구 OT 전환 + PT 유지 · MemberFlow) ===== */}
         {atab === "flow" && (
         <section className="mb-8">
+          <OtIntakePanel members={rows} otRows={otRows} appts={appts} trainers={trainers} onChanged={handleMemberCreated} />
           <MemberFlow
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
             trainers={trainers} ym={ym} onGoTab={goTab} />

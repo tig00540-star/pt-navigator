@@ -14,6 +14,7 @@ import NumberInput from "@/components/ui/NumberInput";
 import Button from "@/components/ui/Button";
 import HealthConsentBlock, { recordHealthConsent } from "@/components/views/HealthConsentBlock";
 import { CONSENT_VERSION } from "@/lib/consent";
+import { MEMBER_OPTS } from "@/lib/memberOptions";
 import { UserPlus, X, ChevronDown, ChevronRight } from "lucide-react";
 
 // 입력 칸 하나 — opts 있으면 datalist(드롭다운 제안 + 자유 입력=기타). 모듈 레벨(렌더 내 정의 금지 · lint).
@@ -176,15 +177,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
   };
 
   // 드롭다운 제안(datalist) — 목록에서 고르거나, 없으면 그냥 직접 타이핑(=기타). 자유 입력 유지.
-  const OPTS = {
-    goal: ["체중감량", "바디프로필", "체형교정", "근력·벌크업", "건강·체력", "재활·통증개선"],
-    training_pace: ["가볍게", "제대로", "집중해서"],
-    exercise_level: ["처음", "가끔씩", "꾸준히"],
-    activity_level: ["주로 앉아서", "보통", "활동적"],
-    quit_reason: ["시간 부족", "동기 저하", "효과 의문", "부상", "혼자 막막"],
-    past_exercise: ["없음", "PT", "필라테스", "요가", "크로스핏"],
-    injury_history: ["없음"],
-  };
+  const OPTS = MEMBER_OPTS;
   // 기본(항상 표시) — 필수·핵심만. 나머지는 아래 '사전 문진' 접기.
   const BASIC = [
     { k: "name", label: "이름", ph: "김철수" },

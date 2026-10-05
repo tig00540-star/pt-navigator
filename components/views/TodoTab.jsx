@@ -14,6 +14,7 @@ import PastDueAppointments from "@/components/views/PastDueAppointments";
 import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
+import OtApplicationToday from "@/components/views/OtApplicationToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
@@ -31,7 +32,9 @@ export default function TodoTab({ members, uid, onSelect }) {
         <p className="mt-0.5 text-[13px] text-sub">다시 연락할 회원 · 재등록 타이밍 · 직접 적은 메모를 한 곳에서 봐요.</p>
       </div>
 
-      {/* 대표 피드백(아침 보고서에서 대표가 남긴 것) — 맨 위 */}
+      {/* 새 OT 회원(OT 신청서) — 맨 위 */}
+      <OtApplicationToday uid={uid} />
+      {/* 대표 피드백(아침 보고서에서 대표가 남긴 것) */}
       <OwnerFeedbackToday members={members} uid={uid} />
       <PayrollConfirmedToday uid={uid} />
       <RoutineRequestToday members={scoped} onSelect={(id) => onSelect(id, 10)} />

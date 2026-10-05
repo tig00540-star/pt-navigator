@@ -15,6 +15,7 @@ import { useAppUi } from "@/components/app/AppChrome";
 import { supabase } from "@/lib/supabaseClient";
 import { otStepPath, otStepLabel } from "@/lib/otRounds";
 import { hasVal } from "@/lib/format";
+import { formatSlots } from "@/lib/slots";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 
@@ -136,6 +137,10 @@ export default function OtDashboard({ member, info }) {
               목표 {goalSet ? <span className="font-medium text-ink">{member.goal}</span> : <span className="text-muted">미설정</span>}
               {hasVal(member.pain) && <> · 불편 부위 <span className="font-medium text-ink">{member.pain}</span></>}
             </p>
+            {/* 원하는 요일 · 시간(OT 신청서 · 2026-10-06) — 없으면 예전 '가능 빈도 · 시간대' 글 */}
+            {(formatSlots(member.preferred_slots) || hasVal(member.availability)) && (
+              <p className="mt-1 text-[13px] text-sub">원하는 시간 <span className="font-medium text-ink">{formatSlots(member.preferred_slots) || member.availability}</span></p>
+            )}
           </div>
         </div>
 

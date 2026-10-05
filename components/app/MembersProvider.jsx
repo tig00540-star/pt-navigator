@@ -57,6 +57,7 @@ export function mapMemberRow(r) {
     quit_reason: r.quit_reason ?? null,
     past_exercise: r.past_exercise ?? null,
     availability: r.availability ?? null,
+    preferred_slots: r.preferred_slots ?? null,   // OT 신청서의 원하는 요일 · 시간(2026-10-06)
     activity_level: r.activity_level ?? null,
     member_note: r.member_note ?? null,
     machines: r.machines ?? [],

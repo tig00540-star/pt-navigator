@@ -28,6 +28,7 @@ import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import PastDueAppointments from "@/components/views/PastDueAppointments";
 import TodoManual from "@/components/views/TodoManual";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
+import OtApplicationToday from "@/components/views/OtApplicationToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
@@ -183,6 +184,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
 
         {/* ② 오늘 챙길 회원 — '오늘' 화면과 같은 위젯 */}
         <Column title="오늘 챙길 회원" icon={Users}>
+          <OtApplicationToday uid={uid} />
           <OwnerFeedbackToday members={members} uid={uid} />
           <PayrollConfirmedToday uid={uid} />
           <RoutineRequestToday members={scoped} onSelect={(id) => go(id, 10)} />

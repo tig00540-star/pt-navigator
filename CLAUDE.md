@@ -159,6 +159,13 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - PT 자료남기기 맨 위 '수업권 · 재등록' 카드(운동일지 카드에서 분리) · PT 대시보드 '등록 이력'(`RegistrationHistory`). 회원 목록 '보관' → **'종료 회원'**(PT 종료 = 계약 있던 회원 · OT 종료 = 등록 안 하고 끝남).
 - 대표: 정산 첫 화면 = 오늘이 든 기간 · 장부는 13개월 · 급여 확정은 지난달/이번 달 · 보고서는 데이터 로드 뒤에만 만든다. 스케줄 '완료'는 같은 날 일지가 있으면 연결(두 번 차감 방지).
 
+### OT 신청서 QR · 배정 · 알림 (2026-10-06 · SQL `docs/migrations/2026-10-06-ot-intake.sql`)
+
+- **공개 신청서 `/join/[code]`**(로그인 없음 · AuthGate 우회 · 검색 제외): 기본 정보 · **원하는 요일 · 시간(각각 여러 개 · 1시간 칸 5~23시 · 메모)** · 목표 · 운동/생활(선택지 = `lib/memberOptions` · 트레이너 MemberForm과 공용) · 동의 3종(개인정보 · 운동일지 확인 방법 필수 · 건강정보 선택 → 동의해야 불편 부위 칸). 저장은 **`/api/ot-intake`(service_role) → DB 함수 `submit_ot_application`만** — anon 정책 없음 · 봇 칸 · 링크당 1시간 30건 · 같은 번호 10분 재제출은 한 번만.
+- **QR 두 종류(`intake_link` · 코드 16자 · `intake_link_get(trainer, rotate)` 본인/대표만):** 트레이너 QR = 제출 즉시 그 트레이너의 OT 회원(`_ot_member_from_app` · origin ot_funnel · member_consent method `intake`) / 센터 QR = `ot_application` status pending → 대표가 **배정**(`assign_ot_application`) 또는 **넘기기**(dismiss). 같은 번호 기존 회원 = 새로 안 만들고 연결(원하는 시간만 갱신 · '다시 신청').
+- **화면:** 트레이너 설정 '내 OT 신청 QR'(`MyIntakeCard` · QR 보기 · 링크 복사(카톡 문구) · 이미지 저장 · 새 링크로 바꾸기 = `components/intake/IntakeQr`) · **'새 OT 회원' 알림**(`OtApplicationToday` · 폰 홈 · 오늘 탭 맨 위 · 넓은 홈 · 확인 = rpc `mark_ot_application_seen`) · 대표 등록·이탈 탭 맨 위 **'OT 신청 · 배정'**(`OtIntakePanel` · 배정 대기 · 센터 QR + 트레이너별 링크 복사 · 최근 30일 진행 신청→배정→첫 OT 예약→1차 OT→등록 · 트레이너별 숫자) · 대표 홈 맨 위 **'배정 대기 N건'**(`OtPendingCard`).
+- **원하는 시간 = `user_table.preferred_slots`**({days 월=1, hours, note, text}) + `availability` 글(AI가 그대로 읽음) · 표시 `lib/slots` `formatSlots`(이어진 시각 묶음 "19~22시") · OT 대시보드 회원 카드 · 스케줄 예약 창(고른 칸과 맞는 회원 위로 + '원하는 시간').
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.
