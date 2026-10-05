@@ -19,7 +19,13 @@ import { INBODY_FIELDS } from "@/lib/labels";
 import { holidayName } from "@/lib/holidays";
 import { buildExerciseSeries } from "@/lib/workout";
 import { compressImage } from "@/lib/image";
-import { confirmDue } from "@/lib/workoutHash";
+import { confirmDue, autoConfirmAt, AUTO_CONFIRM_FROM_VERSION } from "@/lib/workoutHash";
+
+// 회원이 '내용이 달라요'를 눌렀고 트레이너가 아직 안 고친 일지(뷰의 dispute_at · edited_at · 2026-10-06).
+const disputeOpenM = (l) => !l.confirmed_at && l.dispute_at && Date.parse(l.dispute_at) > (Date.parse(l.edited_at ?? l.created_at ?? "") || 0);
+// 확인 창 · 배너 · 탭 숫자 대상 = 미확인 + 수업 1시간 지남 + 열린 '내용이 달라요' 아님.
+const pendingM = (l, nowMs) => !l.confirmed_at && confirmDue(l, nowMs) && !disputeOpenM(l);
+const fmtWhen = (ms) => new Date(ms).toLocaleString("ko-KR", { month: "long", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" });
 import Wordmark from "@/components/ui/Wordmark";
 import Eyebrow from "@/components/ui/Eyebrow";
 import EmptyState from "@/components/ui/EmptyState";
@@ -800,16 +806,17 @@ function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
    ⚠️ fail-open: member-confirm이 503(데모/키부재)이면 큐를 통째로 끈다(아래 disabledByServer).
    ⚠️ pending 계산은 뷰가 주는 confirmed_at에 의존 — confirm 확정분은 제외되고(확인 전용 · dispute 제거),
       수업 시작 1시간 뒤부터 뜬다(confirmDue · 2026-10-06 · 옛: 다음 날부터). */
-function ConfirmFlow({ logs, onReload }) {
+function ConfirmFlow({ logs, onReload, consentAt = null }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [serverOff, setServerOff] = useState(false);  // member-confirm 503 → 유도 전체 끔(fail-open)
 
   const [nowMs] = useState(() => Date.now());   // 페이지를 연 시각 기준(수업 1시간 뒤부터)
+  const [sentIds, setSentIds] = useState(() => new Set());   // 방금 '내용이 달라요' 보낸 일지(뷰가 늦게 반영돼도 다시 안 뜨게)
   const pending = useMemo(
-    () => (logs || []).filter((l) => !l.confirmed_at && confirmDue(l, nowMs)),
-    [logs, nowMs]
+    () => (logs || []).filter((l) => pendingM(l, nowMs) && !sentIds.has(l.id)),
+    [logs, nowMs, sentIds]
   );
 
   // 미확인이 있으면 페이지를 열 때마다 확인 창이 먼저 뜬다(2026-10-06 · 옛: 3건 이상 · '나중에' 누르면 그날 안 뜸).
@@ -831,7 +838,9 @@ function ConfirmFlow({ logs, onReload }) {
 
   // 확인 전용 — result는 "confirm" 고정(이의 제거). 큐 커서를 쓰지 않는다:
   // onReload로 pending이 줄면 cur=pending[0]이 자연히 다음 건이 된다(idx 이중 전진 버그 방지).
-  const confirmLog = useCallback(async (log_id) => {
+  const [disputing, setDisputing] = useState(false);   // '내용이 달라요' 메모 칸 열림
+  const [note, setNote] = useState("");
+  const confirmLog = useCallback(async (log_id, result = "confirm", memo = "") => {
     setBusy(true); setErr("");
     try {
       const { data: sess } = await memberSupabase.auth.getSession();
@@ -840,12 +849,14 @@ function ConfirmFlow({ logs, onReload }) {
       const res = await fetch("/api/member-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ log_id, result: "confirm" }),
+        body: JSON.stringify({ log_id, result, note: memo }),
       });
       if (res.status === 503) { setServerOff(true); setModalOpen(false); return; } // fail-open: 유도 끔
       if (res.status === 409) { await onReload?.(); return; } // 이미 확인됨 → 재조회로 정리, 성공 취급
       if (!res.ok) { console.error("운동일지 확인 실패", res.status, await res.text().catch(() => "")); setErr("확인하지 못했어요. 다시 시도해 주세요."); return; }
-      await onReload?.(); // 뷰 재조회 → confirmed_at 채워져 pending에서 빠짐
+      if (result === "dispute") setSentIds((p) => new Set(p).add(log_id));
+      setDisputing(false); setNote("");
+      await onReload?.(); // 뷰 재조회 → confirmed_at · dispute_at 채워져 pending에서 빠짐
     } catch {
       setErr("인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
@@ -897,19 +908,46 @@ function ConfirmFlow({ logs, onReload }) {
             )}
             {!cur.ai_summary && setLines(cur).length === 0 && <p className="mt-2 text-sm text-muted">수업 기록만 있고 내용은 비어 있어요.</p>}
           </Card>
-          <p className="mt-3 text-[13px] leading-relaxed text-sub">이 날 수업을 받은 게 맞으면 확인해 주세요. 다르면 &lsquo;나중에 할게요&rsquo;를 누르고 트레이너에게 말해 주세요.</p>
+          {cur.dispute_at && !disputeOpenM(cur) && (
+            <p className="mt-3 rounded-lg bg-primary-soft px-3 py-2 text-[13px] font-semibold text-primary-strong">트레이너가 내용을 고쳤어요. 다시 확인해 주세요.</p>
+          )}
+          <p className="mt-3 text-[13px] leading-relaxed text-sub">
+            이 날 수업을 받은 게 맞으면 확인해 주세요. 다르면 &lsquo;내용이 달라요&rsquo;를 눌러 주세요.
+            {autoConfirmAt(cur, consentAt) && <> <b className="font-semibold text-ink">{fmtWhen(autoConfirmAt(cur, consentAt))}</b>이 지나면 자동으로 확인돼요.</>}
+          </p>
 
           {err && <p className="mt-3 text-[12px] text-danger-text">{err}</p>}
 
+          {disputing ? (
+            <div className="mt-4 space-y-2">
+              <label className="block">
+                <span className="mb-1 block text-[13px] font-semibold text-sub">어떤 점이 다른가요? <span className="font-normal text-muted">(선택 · 트레이너에게 전해져요)</span></span>
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} rows={3}
+                  placeholder="예: 그날은 수업을 안 받았어요 / 레그프레스는 안 했어요"
+                  className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-[14px] text-ink placeholder-muted outline-none focus:border-primary" />
+              </label>
+              <Button variant="primary" size="md" fullWidth disabled={busy} onClick={() => confirmLog(cur.id, "dispute", note)}>
+                {busy ? "보내는 중…" : "트레이너에게 알리기"}
+              </Button>
+              <button type="button" onClick={() => { setDisputing(false); setNote(""); }} disabled={busy} className="min-h-[44px] w-full text-center text-[14px] font-semibold text-sub">
+                돌아가기
+              </button>
+            </div>
+          ) : (
           <div className="mt-4 space-y-2">
             <Button variant="primary" size="md" fullWidth disabled={busy}
               onClick={() => confirmLog(cur.id)}>
               확인했어요
             </Button>
+            <button type="button" onClick={() => setDisputing(true)} disabled={busy}
+              className="min-h-[44px] w-full rounded-xl border border-line bg-card text-center text-[14px] font-semibold text-ink">
+              내용이 달라요
+            </button>
             <button type="button" onClick={snooze} disabled={busy} className="min-h-[44px] w-full text-center text-[14px] font-semibold text-sub">
               나중에 할게요
             </button>
           </div>
+          )}
         </Modal>
       )}
     </>
@@ -939,7 +977,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
   // 필수 동의(이번 문구 버전) 전엔 기록을 안 보여 준다.
   if (consent && !(consent.general?.agreed && consent.general.version === CONSENT_VERSION)) {
-    return <ConsentGate supabase={memberSupabase} me={me} onSignOut={onSignOut} onDone={(rows) => onConsentRows?.(rows)} />;
+    return <ConsentGate supabase={memberSupabase} me={me} prev={consent} onSignOut={onSignOut} onDone={(rows) => onConsentRows?.(rows)} />;
   }
   // 동의 기록을 못 읽었으면(조회 실패) 건강정보는 '동의 안 함'으로 본다 — 모르면 민감정보를 받지 않는다(2026-10-06).
   const healthOk = consent ? Boolean(consent.health?.agreed) : false;
@@ -953,7 +991,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
   const tab = readOnly && subTab === "write" ? "home" : subTab;
   const goTab = (t) => { setSubTab(t); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } };
   // 운동일지 탭 숫자 = 확인 알림과 같은 기준(수업 1시간 뒤 · confirmDue).
-  const pendingCount = ended ? 0 : logs.filter((l) => !l.confirmed_at && confirmDue(l, nowMs)).length;
+  const pendingCount = ended ? 0 : logs.filter((l) => pendingM(l, nowMs)).length;
+  // 자동 확인 문구(2026-10-06 버전 이상)에 동의한 시각 — 이 뒤 수업만 48시간 자동 확인.
+  const autoFrom = consent?.general?.agreed && (consent.general.version || "") >= AUTO_CONFIRM_FROM_VERSION ? consent.general.created_at : null;
   const TABS = [["home", "홈"], ["logs", "운동일지"], ["change", "변화"], ...(readOnly ? [] : [["write", "기록하기"]])];
 
   const latest = inbody.length ? inbody[inbody.length - 1] : null;
@@ -1045,7 +1085,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {/* 운동일지 확인 유도 — 배너 + pending≥3 소프트 모달. 홈 · 운동일지 탭에서 보이고, 한 번만 그려 두어 탭을 바꿔도 창이 다시 안 뜬다. */}
         {!ended && (
           <div hidden={tab !== "home" && tab !== "logs"}>
-            <ConfirmFlow logs={logs} onReload={onReloadLogs} />
+            <ConfirmFlow logs={logs} onReload={onReloadLogs} consentAt={autoFrom} />
           </div>
         )}
 
@@ -1092,9 +1132,13 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                           <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.session_at ?? l.created_at)}</span>
                           <span className="rounded-full bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub">{round}회차</span>
                           {/* 확인 상태 뱃지 — 뷰의 confirmed_at 파생. 확정=숨김(깔끔), 미확인=neutral(이의 제거). */}
-                          {!l.confirmed_at ? (
+                          {l.confirmed_at ? (
+                            l.confirm_method === "auto" ? <Badge tone="neutral">자동 확인</Badge> : null
+                          ) : disputeOpenM(l) ? (
+                            <Badge tone="neutral">트레이너 확인 중</Badge>
+                          ) : (
                             <Badge tone="neutral">미확인</Badge>
-                          ) : null}
+                          )}
                           {hasMore && (
                             <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
                           )}

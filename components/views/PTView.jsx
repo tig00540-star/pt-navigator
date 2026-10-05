@@ -43,7 +43,7 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
           supabase.from("session_log").select("*").eq("user_id", member.id),
           supabase.from("daily_workout_log").select("*").eq("user_id", member.id),
           // 이 회원 일지들의 확인 — 트레이너 SELECT 정책(account 스코프)로 이 회원 것만 온다. 확인 전용(dispute 제거).
-          supabase.from("workout_log_confirmation").select("log_id, result, content_hash, confirmed_at").eq("member_id", member.id),
+          supabase.from("workout_log_confirmation").select("log_id, result, method, content_hash, dispute_note, confirmed_at").eq("member_id", member.id),
         ]);
         if (cancelled) return;
         setContracts(cs || []);

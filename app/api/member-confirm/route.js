@@ -1,4 +1,6 @@
-// app/api/member-confirm/route.js — 회원이 자기 수업일지(daily_workout_log)를 확인. 서버전용(확인 전용 · dispute 제거).
+// app/api/member-confirm/route.js — 회원이 자기 운동일지(daily_workout_log)를 '확인' 또는 '내용이 달라요'. 서버전용.
+//   2026-10-06: 48시간 자동 확인을 넣으며 '내용이 달라요'(dispute + 메모)를 되살렸다 — 가만히 있으면 확인으로 보려면
+//   아니라고 말할 길이 있어야 한다. 열린 이의가 있으면 자동 확인이 멈추고, 트레이너가 고치면 닫힌다.
 //   증거력의 무결성·본인확인을 클라에 안 맡긴다:
 //   ① 회원 JWT 검증 → auth uid → member_auth_id로 user_table.id(member_id) 매핑
 //   ② service_role로 일지를 다시 읽어 소유·상태 검증(남의 일지·voided·noshow 차단)
@@ -34,9 +36,8 @@ export async function POST(req) {
   const logId = String(body.log_id || "").trim();
   const result = String(body.result || "").trim();
   if (!UUID_RE.test(logId)) return Response.json({ error: "잘못된 요청" }, { status: 400 });
-  if (result !== "confirm") {   // 확인 전용 — 그 외 값(과거 dispute 포함)은 구조적 차단
-    return Response.json({ error: "잘못된 요청" }, { status: 400 });
-  }
+  if (result !== "confirm" && result !== "dispute") return Response.json({ error: "잘못된 요청" }, { status: 400 });
+  const note = result === "dispute" ? String(body.note || "").trim().slice(0, 200) || null : null;
 
   const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 
@@ -62,7 +63,7 @@ export async function POST(req) {
   // ② 대상 일지 재조회(RLS 우회 · 소유·상태 검증). 남의 일지/존재X → 403, voided/noshow → 400.
   const { data: log } = await sb
     .from("daily_workout_log")
-    .select("id, ai_summary, session_at, sets_structured, voided, source")
+    .select("*")   // edited_at(2026-10-06 SQL)이 아직 없어도 깨지지 않게
     .eq("id", logId)
     .eq("user_id", memberId)
     .maybeSingle();
@@ -79,6 +80,16 @@ export async function POST(req) {
   //    ★lib/workoutHash 공용 — 트레이너 뱃지(contentHashBrowser)와 반드시 같은 입력을 써야 오탐이 안 난다.
   const contentHash = contentHashNode(log, crypto);
 
+  // '내용이 달라요' — 이미 확인된 일지엔 못 함 · 트레이너가 안 고친 채 열린 이의가 있으면 또 안 받음.
+  if (result === "dispute") {
+    const { data: prev } = await sb.from("workout_log_confirmation").select("result, confirmed_at").eq("log_id", logId);
+    if ((prev || []).some((c) => c.result === "confirm")) return Response.json({ error: "이미 확인한 일지예요." }, { status: 409 });
+    const base = Date.parse(log.edited_at ?? log.created_at ?? "") || 0;
+    if ((prev || []).some((c) => c.result === "dispute" && Date.parse(c.confirmed_at) > base)) {
+      return Response.json({ ok: true, already: true });
+    }
+  }
+
   // ④ insert(교훈1: .select() 후 0행이면 실패). confirm 중복은 unique 위반 → 409.
   const { data, error } = await sb
     .from("workout_log_confirmation")
@@ -86,8 +97,9 @@ export async function POST(req) {
       log_id: logId,
       member_id: memberId,
       result,
-      method: "tap",                 // 손서명(drawn)은 후속 — 서버가 tap 고정
+      method: "tap",                 // 손서명(drawn)은 후속 — 서버가 tap 고정 · 자동 확인(auto)은 DB cron만
       content_hash: contentHash,
+      dispute_note: note,
     })
     .select("confirmed_at")
     .maybeSingle();

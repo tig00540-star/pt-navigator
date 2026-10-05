@@ -15,7 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
 import { buildExerciseSeries } from "@/lib/workout";
 import { hasVal } from "@/lib/format";
-import { confirmDue } from "@/lib/workoutHash";
+import { confirmDue, openDispute } from "@/lib/workoutHash";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import RoadmapCard from "@/components/pt/RoadmapCard";
@@ -110,7 +110,9 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
     const month = done.filter((l) => (kstDay(l.session_at ?? l.created_at) || "").startsWith(ym)).length;
     const wroteToday = logs.some((l) => !l.voided && kstDay(l.session_at ?? l.created_at) === KST_TODAY());
     const confirmed = new Set((confirms || []).filter((c) => c.result === "confirm").map((c) => c.log_id));
-    const unconfirmed = done.filter((l) => !confirmed.has(l.id) && confirmDue(l, nowMs)).length;
+    const confOf = (l) => (confirms || []).filter((c) => c.log_id === l.id);
+    const disputes = done.filter((l) => openDispute(l, confOf(l))).length;   // 회원이 '내용이 달라요'(2026-10-06)
+    const unconfirmed = done.filter((l) => !confirmed.has(l.id) && confirmDue(l, nowMs) && !openDispute(l, confOf(l))).length;
     // 몇 번째 계약 — 시작일 순서(인계로 닫힌 계약 포함 · 회원 입장에선 이어진 등록).
     const ordered = [...contracts].sort((a, b) => String(a.started_at ?? "").localeCompare(String(b.started_at ?? "")));
     const nth = active ? ordered.findIndex((c) => c.id === active.id) + 1 : ordered.length;
@@ -122,7 +124,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
       .filter((x) => x && x.b !== x.a)
       .sort((x, y) => (y.b - y.a) - (x.b - x.a))
       .slice(0, 2);
-    return { active, rem, due, last, month, wroteToday, unconfirmed, nth, total, used, lifts };
+    return { active, rem, due, last, month, wroteToday, unconfirmed, disputes, nth, total, used, lifts };
   }, [contracts, logs, confirms, nowMs]);
 
   // 인바디 — 목표가 근력·벌크면 골격근·체중, 아니면 체중·체지방률.
@@ -149,8 +151,9 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
   // 지금 할 일 — 가장 급한 하나만.
   const todo = !d.active && !contracts.length ? null
     : todayAppt && !d.wroteToday ? { href: `/pt/${member.id}/write`, title: "오늘 운동일지 쓰기", sub: "오늘 수업이 있어요" }
+    : d.disputes > 0 ? { href: null, title: `회원이 '내용이 달라요' ${d.disputes}건`, sub: "아래 지난 수업에서 운동일지를 고치거나, 받지 않은 수업이면 삭제해 주세요" }
     : d.due || !d.active ? { href: `/pt/${member.id}/renewal`, title: "재등록 준비하기", sub: d.active ? `남은 수업 ${d.rem.total}회` : "진행 중인 계약이 없어요" }
-    : d.unconfirmed > 0 ? { href: null, title: `회원 확인 대기 ${d.unconfirmed}건`, sub: "회원 전용 페이지에서 확인해 달라고 알려 주세요" }
+    : d.unconfirmed > 0 ? { href: null, title: `회원 확인 대기 ${d.unconfirmed}개`, sub: "회원 전용 페이지에서 확인해 달라고 알려 주세요" }
     : null;
 
   const facts = [hasVal(member.age) && `${member.age}세`, hasVal(member.job) && member.job, hasVal(member.residence) && member.residence].filter(Boolean);

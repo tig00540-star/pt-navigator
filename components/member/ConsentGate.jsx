@@ -7,7 +7,7 @@
 import { useState } from "react";
 import Wordmark from "@/components/ui/Wordmark";
 import Button from "@/components/ui/Button";
-import { CONSENT_VERSION, GENERAL_CONSENT, HEALTH_CONSENT } from "@/lib/consent";
+import { CONSENT_VERSION, GENERAL_CONSENT, HEALTH_CONSENT, LOG_CONFIRM_NOTICE } from "@/lib/consent";
 
 function Block({ c, checked, onChange }) {
   return (
@@ -31,14 +31,19 @@ function Block({ c, checked, onChange }) {
   );
 }
 
-export default function ConsentGate({ supabase, me, onDone, onSignOut }) {
+// prev = 지난 동의(latestConsent 결과 · 없으면 null) — 문구가 바뀌어 다시 묻는 경우 '바뀐 것'을 먼저 알리고,
+//   건강정보에 이미 동의했으면 그 칸은 다시 안 묻는다(동의는 그대로 유지).
+export default function ConsentGate({ supabase, me, onDone, onSignOut, prev = null }) {
+  const again = Boolean(prev?.general?.agreed);
+  const healthKept = Boolean(prev?.health?.agreed);
   const [general, setGeneral] = useState(false);
+  const [logRule, setLogRule] = useState(false);
   const [health, setHealth] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
   const submit = async () => {
-    if (!general || busy) return;
+    if (!general || !logRule || busy) return;
     setBusy(true); setErr("");
     try {
       // 건강정보는 체크했을 때만 남긴다 — 안 체크한 건 '아직 동의 안 함'(기록 없음)이지 '철회'가 아니다(2026-10-06).
@@ -67,14 +72,17 @@ export default function ConsentGate({ supabase, me, onDone, onSignOut }) {
           <img src="/icons/icon-192.png" alt="오직 트레이너" className="h-7 w-7 rounded-lg" />
           <Wordmark className="text-[13px] font-extrabold tracking-[-0.05em]" />
         </div>
-        <h1 className="mt-4 text-[24px] font-extrabold leading-tight tracking-[-0.03em]">시작하기 전에<br />확인해 주세요</h1>
+        <h1 className="mt-4 text-[24px] font-extrabold leading-tight tracking-[-0.03em]">{again ? <>바뀐 내용이 있어요<br />확인해 주세요</> : <>시작하기 전에<br />확인해 주세요</>}</h1>
         <p className="mt-2 text-[14.5px] leading-relaxed text-sub">
-          {me.center_name ? `${me.center_name}에서` : "센터에서"} {me.name} 회원님의 운동 기록을 이 페이지로 보여 드려요. 아래 내용을 읽고 동의해 주세요.
+          {again
+            ? "운동일지 확인 방법이 생겼어요. 48시간 안에 확인하지 않으면 확인한 것으로 봐요. 아래 내용을 읽고 다시 동의해 주세요."
+            : `${me.center_name ? `${me.center_name}에서` : "센터에서"} ${me.name} 회원님의 운동 기록을 이 페이지로 보여 드려요. 아래 내용을 읽고 동의해 주세요.`}
         </p>
 
         <div className="mt-5 space-y-3">
+          <Block c={LOG_CONFIRM_NOTICE} checked={logRule} onChange={setLogRule} />
           <Block c={GENERAL_CONSENT} checked={general} onChange={setGeneral} />
-          <Block c={HEALTH_CONSENT} checked={health} onChange={setHealth} />
+          {!healthKept && <Block c={HEALTH_CONSENT} checked={health} onChange={setHealth} />}
         </div>
 
         <p className="mt-4 text-[13px] leading-relaxed text-muted">
@@ -85,8 +93,8 @@ export default function ConsentGate({ supabase, me, onDone, onSignOut }) {
 
         {err && <p className="mt-3 text-[14px] text-danger-text">{err}</p>}
         <div className="mt-5">
-          <Button variant="primary" size="md" fullWidth onClick={submit} disabled={!general || busy}>
-            {busy ? "저장 중…" : general ? "동의하고 시작하기" : "필수 항목에 동의해 주세요"}
+          <Button variant="primary" size="md" fullWidth onClick={submit} disabled={!general || !logRule || busy}>
+            {busy ? "저장 중…" : general && logRule ? "동의하고 시작하기" : "필수 항목에 동의해 주세요"}
           </Button>
         </div>
         <div className="mt-3 text-center">

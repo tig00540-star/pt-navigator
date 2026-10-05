@@ -48,7 +48,7 @@ export default function TodoTab({ members, uid, onSelect }) {
       <PastDueAppointments members={scoped} uid={uid} onSelect={(id) => onSelect(id, 9)} />
       <NoNextBookingToday members={scoped} uid={uid} onSelect={(id) => onSelect(id, 9)} />
 
-      {/* 자동 6 — 운동일지 확인 요청(오늘 오는 회원 + 2일 넘게 미확인 · 회원자료 열어 확인 요청/void) */}
+      {/* 자동 6 — 운동일지 확인 요청(회원의 내용이 달라요 + 오늘 오는 회원 미확인 · 회원자료 열어 고치기/void) */}
       <UnconfirmedConfirmToday members={scoped} uid={uid} onSelect={(id) => onSelect(id, 10)} />
 
       {/* 수동 메모 — 자동 아래. */}

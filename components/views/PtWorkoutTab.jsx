@@ -29,7 +29,7 @@ import MemberPhotoSummary from "@/components/views/MemberPhotoSummary";
 import MemberScheduleSummary from "@/components/views/MemberScheduleSummary";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { contentHashBrowser } from "@/lib/workoutHash";
+import { contentHashBrowser, openDispute } from "@/lib/workoutHash";
 
 // 음성일지는 '자료남기기'(record)의 접이식 서브 UI라 지연로드(무게 위생). ssr:false — MediaRecorder 브라우저 전용.
 const VoiceLogTab = dynamic(() => import("@/components/tabs/VoiceLogTab"), {
@@ -112,12 +112,12 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   );
 
   // log_id → 확인 상태(확정). confirm 레코드가 있으면 확정 · content_hash 보관(아래 해시 대조).
-  //   ※ 확인 전용 — dispute(이의)는 제거됨. 레거시 dispute 행이 있어도 무시(미확인으로 표시).
+  //   2026-10-06: method 'auto' = 48시간 자동 확인(DB cron) · '내용이 달라요'(dispute)는 아래 openDispute로 따로.
   const confirmByLog = useMemo(() => {
     const m = new Map();
     for (const c of confirms || []) {
       if (c.result === "confirm") {
-        m.set(c.log_id, { result: "confirm", confirmed_at: c.confirmed_at, content_hash: c.content_hash });
+        m.set(c.log_id, { result: "confirm", method: c.method, confirmed_at: c.confirmed_at, content_hash: c.content_hash });
       }
     }
     return m;
@@ -133,7 +133,10 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       const changed = new Set();
       for (const log of logs || []) {
         const c = confirmByLog.get(log.id);
-        if (c?.result !== "confirm" || !c.content_hash) continue;
+        if (c?.result !== "confirm") continue;
+        // 자동 확인은 DB가 다른 방식으로 해시를 만들어 비교 못 함 → 확인 뒤 고친 시각(edited_at)으로 본다.
+        if (c.method === "auto") { if (log.edited_at && log.edited_at > c.confirmed_at) changed.add(log.id); continue; }
+        if (!c.content_hash) continue;
         try {
           const now = await contentHashBrowser(log);
           if (now !== c.content_hash) changed.add(log.id);
@@ -520,16 +523,26 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                           if (c?.result === "confirm") {
                             return (
                               <>
-                                <Badge tone="primary"><CheckCircle2 className="h-3 w-3" />확인됨 {c.confirmed_at ? new Date(c.confirmed_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : ""}</Badge>
+                                <Badge tone="primary"><CheckCircle2 className="h-3 w-3" />{c.method === "auto" ? "자동 확인" : "확인됨"} {c.confirmed_at ? new Date(c.confirmed_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : ""}</Badge>
                                 {changedIds.has(log.id) && (
                                   <Badge tone="danger"><AlertTriangle className="h-3 w-3" />확인 후 변경됨</Badge>
                                 )}
                               </>
                             );
                           }
+                          if (openDispute(log, (confirms || []).filter((x) => x.log_id === log.id))) return <Badge tone="danger"><AlertTriangle className="h-3 w-3" />회원: 내용이 달라요</Badge>;
                           return <Badge tone="neutral">미확인</Badge>;
                         })()}
                       </div>
+                      {!log.voided && (() => {
+                        const d = openDispute(log, (confirms || []).filter((x) => x.log_id === log.id));
+                        return d ? (
+                          <p className="mt-1.5 rounded-md bg-rose-50 px-2.5 py-2 text-[13px] leading-relaxed text-danger-text">
+                            {d.dispute_note ? <>회원 메모: &ldquo;{d.dispute_note}&rdquo;<br /></> : null}
+                            내용을 고치면 회원에게 다시 확인을 받아요. 받지 않은 수업이면 삭제해 주세요.
+                          </p>
+                        ) : null;
+                      })()}
                       {editLogId === log.id ? (
                         /* §1 인라인 편집 — ai_summary만. */
                         <div className="mt-2">
