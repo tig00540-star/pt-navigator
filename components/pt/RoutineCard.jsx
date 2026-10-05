@@ -27,6 +27,7 @@ const readLayout = () => { try { const v = localStorage.getItem(LAYOUT_KEY); ret
 const writeLayout = (v) => { try { localStorage.setItem(LAYOUT_KEY, v); } catch { /* 이번만 */ } };
 const daysAgo = (iso) => { const t = Date.parse(iso || ""); if (Number.isNaN(t)) return ""; const d = Math.floor((Date.now() - t) / 86400000); return d <= 0 ? "오늘" : `${d}일째`; };
 // 은/는 — 마지막 글자 받침으로('레그프레스는' · '레그컬은').
+const eulReul = (w) => { const c = String(w || "").trim().slice(-1).charCodeAt(0); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? "을" : "를"; };
 const eunNeun = (w) => { const c = String(w || "").trim().slice(-1).charCodeAt(0); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? "은" : "는"; };
 const kg = (w) => `${r2(w)}kg`;
 const mdKo = (iso) => { const t = Date.parse(iso || ""); if (Number.isNaN(t)) return ""; const k = new Date(t + 9 * 3600000); return `${k.getUTCMonth() + 1}/${k.getUTCDate()}`; };
@@ -103,6 +104,7 @@ export default function RoutineCard({ member, logs = [] }) {
         confirmed_by: next.keepConfirmed ? row?.confirmed_by ?? null : uid,
         ...(visible && !row?.visible ? { visible_at: now, visible_by: uid } : {}),
         ...(next.painChecked ? { pain_checked_at: now } : {}),
+        ...(next.message !== undefined ? { message: String(next.message || "").trim().slice(0, 200) || null } : {}),
         updated_at: now,
       };
       const { data, error } = await supabase.from("member_routine").upsert(payload, { onConflict: "member_id" }).select();
@@ -150,6 +152,13 @@ export default function RoutineCard({ member, logs = [] }) {
     return (
       <Card as="section">
         <SectionTitle icon={Dumbbell}>개인운동 루틴 {row ? "고치기" : "만들기"}</SectionTitle>
+        <label className="mb-3 block">
+          <span className="mb-1 block text-[13px] font-semibold text-sub">회원에게 한마디 <span className="font-normal text-muted">(선택 · 비우면 회원 화면에 안 나와요)</span></span>
+          <textarea value={edit.message ?? ""} onChange={(e) => setEdit((x) => ({ ...x, message: e.target.value }))} maxLength={200} rows={2}
+            placeholder="예: 이번 주는 하체 위주로 가요. 운동 전에 물 꼭 드세요."
+            className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-[14px] text-ink placeholder-muted outline-none focus:border-primary" />
+          <span className="block text-right text-[12px] text-muted">{(edit.message || "").length}/200</span>
+        </label>
         <div className="mb-3 flex gap-1 overflow-x-auto rounded-full bg-elevate p-[3px]">
           {edit.days.map((d, i) => (
             <button key={d.key} type="button" onClick={() => setDayIdx(i)}
@@ -193,7 +202,7 @@ export default function RoutineCard({ member, logs = [] }) {
                   {it.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />} {it.locked ? "무게 고정" : "무게 고정 안 함"}
                 </button>
               </div>
-              <input value={it.note || ""} onChange={(e) => setItem(k, { note: e.target.value })} maxLength={60}
+              <input value={it.note || ""} onChange={(e) => setItem(k, { note: e.target.value })} maxLength={100}
                 className="mt-1.5 w-full rounded-lg border border-line bg-card px-3 py-1.5 text-[13px] text-ink outline-none focus:border-primary" placeholder="이것만 지키세요 한 줄 (회원이 읽어요)" />
             </li>
           ))}
@@ -287,6 +296,18 @@ export default function RoutineCard({ member, logs = [] }) {
   const painItems = allItems.filter((it) => nvOf(it).painStop);
   const raisedItems = allItems.filter((it) => nvOf(it).ptRaised);
   const locked = allItems.filter((i) => i.locked).map((i) => i.name);
+  // 2026-10-06 — 회원이 남긴 것: 상한보다 무겁게 · 루틴 밖 운동(2번 이상) · 같은 종목 3번 연속 '자리 없음'
+  const capOverItems = allItems.filter((it) => nvOf(it).capOver);
+  const extraCount = new Map();
+  for (const l of after) for (const x of Array.isArray(l.items) ? l.items : []) if (x?.extra && x.name) extraCount.set(x.name, (extraCount.get(x.name) || 0) + 1);
+  const extraOften = [...extraCount.entries()].filter(([, n]) => n >= 2);
+  const noSpace = allItems.filter((it) => {
+    const marks = after.map((l) => (Array.isArray(l.items) ? l.items : []).find((x) => x?.name === it.name)).filter(Boolean).slice(-3);
+    return marks.length === 3 && marks.every((x) => x.done === false && x.skip === "no_space");
+  });
+  const logLine = (x) => x.done === false
+    ? `${x.name} 못 함(${({ no_space: "자리 없음", no_time: "시간 없음", broken: "기구 고장" })[x.skip] || "기타"})`
+    : `${x.extra ? "+ " : ""}${x.name} ${Array.isArray(x.setRows) && x.setRows.length ? x.setRows.map((r) => `${r.weight ? kg(r.weight) : "맨몸"}×${r.reps}`).join("·") : `${x.weight ? kg(x.weight) : "맨몸"}×${x.reps}×${x.sets}`}${x.pain ? " (아파서 멈춤)" : ""}`;
   // 설명 대사 — 법무 점검 수정안(안전 보장 표현 빼기 · 회원 전용 페이지 · 회원이 한 말을 근거로)
   const script = `${String(member?.name || "회원").slice(-2)}님, 혼자 오시는 날 할 루틴을 회원 페이지에 넣어 드렸어요. 오늘 저랑 한 무게보다 가볍게, 70% 정도로 잡았어요. 혼자 하실 때 무리 없게 시작하려고요. 하시다가 가벼우면 플러스, 무거우면 마이너스 누르고 실제로 하신 만큼만 체크해 주세요. 오실 때마다 가장 오래 안 한 부위가 먼저 나와요. 그 기록을 보고 다음 루틴이 조금씩 올라가요. 혼자서는 여기까지만 올라가게 정해 뒀어요. 더 무거운 건 다음 수업 때 저랑 같이 올려요. 컨디션 안 좋은 날은 숫자 다 못 채워도 괜찮아요. 아프거나 찌릿하면 바로 멈추고, 화면의 '아파서 멈췄어요'를 눌러 저한테 알려 주세요.${locked.length ? ` ${locked.join(", ")}${eunNeun(locked.at(-1))} ${hasPain ? "불편하다고 하셔서 " : ""}무게가 안 올라가게 묶어 뒀어요.` : ""}`;
   const recalc = (it) => { const sr = ptSeries.find((x) => x.exercise === it.name); const nx = sr ? itemFromSeries(sr, machines) : null; return nx ? { ...nx, locked: it.locked, note: it.note || nx.note } : it; };
@@ -312,9 +333,27 @@ export default function RoutineCard({ member, logs = [] }) {
       )}
       {raisedItems.length > 0 && (
         <div className="mb-3 rounded-xl bg-pt-soft px-3.5 py-3 text-[13px] leading-relaxed text-ink">
-          PT에서 <b className="font-semibold">{raisedItems.map((i) => i.name).join(", ")}</b>을 더 무겁게 했어요. 혼자 하는 무게 · 상한은 자동으로 안 올라가요.
+          PT에서 <b className="font-semibold">{raisedItems.map((i) => i.name).join(", ")}</b>{eulReul(raisedItems.at(-1)?.name)} 더 무겁게 했어요. 혼자 하는 무게 · 상한은 자동으로 안 올라가요.
           <button type="button" disabled={busy} onClick={() => save({ layout: row.layout, days: days.map((d) => ({ ...d, items: d.items.map((it) => (raisedItems.some((r) => r.name === it.name) ? recalc(it) : it)) })) }, "최신 PT 기록으로 다시 맞췄어요")}
             className="ml-1 font-semibold text-pt-text underline underline-offset-2 disabled:opacity-60">최신 PT 기록으로 다시 맞추기</button>
+        </div>
+      )}
+      {row.message && (
+        <p className="mb-3 rounded-xl bg-pt-soft px-3.5 py-2.5 text-[13px] leading-relaxed text-ink"><b className="font-semibold text-pt-text">회원에게 한마디</b> · {row.message}</p>
+      )}
+      {capOverItems.length > 0 && (
+        <div className="mb-3 rounded-xl bg-ot-soft px-3.5 py-3 text-[13px] leading-relaxed text-ink">
+          회원이 <b className="font-semibold">{capOverItems.map((i) => i.name).join(", ")}</b>{eulReul(capOverItems.at(-1)?.name)} 혼자 상한보다 무겁게 했어요. 다음 처방은 상한 안에서 나가요. 괜찮다면 &lsquo;고치기&rsquo;에서 그 종목 무게를 올려 주세요(상한도 같이 올라가요).
+        </div>
+      )}
+      {extraOften.length > 0 && (
+        <div className="mb-3 rounded-xl bg-elevate px-3.5 py-3 text-[13px] leading-relaxed text-ink">
+          회원이 루틴 밖에서 자주 한 운동: <b className="font-semibold">{extraOften.map(([n, c]) => `${n} ${c}번`).join(", ")}</b>. 루틴에 넣으려면 &lsquo;고치기 → 종목 추가&rsquo;로 넣어 주세요.
+        </div>
+      )}
+      {noSpace.length > 0 && (
+        <div className="mb-3 rounded-xl bg-elevate px-3.5 py-3 text-[13px] leading-relaxed text-ink">
+          <b className="font-semibold">{noSpace.map((i) => i.name).join(", ")}</b>: 3번 연속 &lsquo;자리 없음&rsquo;으로 못 했어요. 대체 운동으로 바꿀까요? (&lsquo;고치기&rsquo;에서 종목을 빼고 다른 종목 추가)
         </div>
       )}
       <div className="space-y-3">
@@ -347,7 +386,7 @@ export default function RoutineCard({ member, logs = [] }) {
               <li key={l.id} className="rounded-lg bg-elevate px-3 py-2">
                 <span className="font-semibold text-ink">{mdKo(l.performed_on || l.created_at)} {nameDay(l.day_key)}</span>
                 {" · "}
-                {(l.items || []).map((x) => `${x.name} ${kg(x.weight)}×${x.reps}×${x.sets}${x.pain ? " (아파서 멈춤)" : ""}`).join(" · ")}
+                {(l.items || []).map(logLine).join(" · ")}
               </li>
             ))}
           </ul>
@@ -366,7 +405,7 @@ export default function RoutineCard({ member, logs = [] }) {
           className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-4 text-[14px] font-semibold disabled:opacity-50 ${row.visible ? "border border-line bg-card text-sub" : "bg-primary text-white"}`}>
           {row.visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} {row.visible ? "회원에게 안 보이기" : "회원에게 보이기"}
         </button>
-        <button type="button" onClick={() => { setEdit({ layout: row.layout || "full", days: JSON.parse(JSON.stringify(days)).map((d, i) => ({ ...d, groups: d.groups || (LAYOUTS[row.layout || "full"]?.units[i]?.groups ?? GROUP_KEYS) })) }); setDayIdx(0); }}
+        <button type="button" onClick={() => { setEdit({ layout: row.layout || "full", message: row.message || "", days: JSON.parse(JSON.stringify(days)).map((d, i) => ({ ...d, groups: d.groups || (LAYOUTS[row.layout || "full"]?.units[i]?.groups ?? GROUP_KEYS) })) }); setDayIdx(0); }}
           className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-line bg-card px-4 text-[14px] font-semibold text-ink"><Pencil className="h-4 w-4" /> 고치기</button>
         <button type="button" onClick={() => setShowScript((v) => !v)} className="inline-flex min-h-[40px] items-center gap-1 px-2 text-[13px] text-sub">
           회원에게 하는 설명 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showScript ? "rotate-180" : ""}`} />
