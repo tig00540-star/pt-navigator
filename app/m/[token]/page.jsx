@@ -913,7 +913,10 @@ function ConfirmFlow({ logs, onReload }) {
 }
 
 function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, rewards, onReloadLogs, consentRows, onConsentRows }) {
-  const [subTab, setSubTab] = useState("read"); // read=내 기록(첫 화면) · write=기록 남기기
+  // 탭(2026-10-06 대표: '내 기록'에 정보가 너무 많다) — 홈 · 운동일지 · 변화 · 기록하기. 첫 화면 = 홈.
+  //   전부 그려 두고 안 보이는 탭만 숨긴다 — 탭을 오가도 펼친 것 · 쓰던 글 · 확인 창 상태가 남는다.
+  const [subTab, setSubTab] = useState("home");
+  const [nowMs] = useState(() => Date.now());
   // 동의(2026-10-05) — consentRows가 null이면 표 없음 · 조회 실패 → 묻지 않는다(잠금 금지).
   const consent = useMemo(() => (consentRows ? latestConsent(consentRows) : null), [consentRows]);
   if (!me) {
@@ -943,7 +946,11 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
   const noSessions = !ended && me.writable === false;
   const readOnly = ended || noSessions;
   const viewUntil = ended && me.status_changed_at ? (() => { const d = new Date(me.status_changed_at); d.setMonth(d.getMonth() + 6); return d; })() : null;
-  const tab = readOnly ? "read" : subTab;
+  const tab = readOnly && subTab === "write" ? "home" : subTab;
+  const goTab = (t) => { setSubTab(t); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } };
+  // 운동일지 탭 숫자 = 확인 알림과 같은 기준(수업 1시간 뒤 · confirmDue).
+  const pendingCount = ended ? 0 : logs.filter((l) => !l.confirmed_at && confirmDue(l, nowMs)).length;
+  const TABS = [["home", "홈"], ["logs", "운동일지"], ["change", "변화"], ...(readOnly ? [] : [["write", "기록하기"]])];
 
   const latest = inbody.length ? inbody[inbody.length - 1] : null;
   const prev = inbody.length > 1 ? inbody[inbody.length - 2] : null;
@@ -1016,18 +1023,30 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           </div>
         )}
 
-        {/* 서브 탭 — 내 기록(열람) / 기록 남기기(입력). 내 기록이 첫 화면. 지난 회원은 탭 없이 내 기록만. */}
-        {!readOnly && (
-        <div className="mb-6 flex gap-1.5">
-          <button onClick={() => setSubTab("read")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${subTab === "read" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted"}`}>내 기록</button>
-          <button onClick={() => setSubTab("write")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${subTab === "write" ? "bg-primary-soft text-primary-strong ring-1 ring-primary/30" : "bg-elevate text-muted"}`}>기록 남기기</button>
-        </div>
+        {/* 탭 — 위에 붙어 있어 스크롤해도 바로 바꿀 수 있다. */}
+        <nav className="sticky top-0 z-20 -mx-4 mb-5 bg-bg/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6" aria-label="회원 페이지">
+          <div className="flex gap-1 rounded-full bg-elevate p-[3px]" role="tablist">
+            {TABS.map(([k, label]) => (
+              <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => goTab(k)}
+                className={`inline-flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-full px-1 text-[14px] transition ${tab === k ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}>
+                {label}
+                {k === "logs" && pendingCount > 0 && (
+                  <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[12px] font-bold leading-none text-white" aria-label={`확인 안 한 운동일지 ${pendingCount}건`}>{pendingCount}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* 운동일지 확인 유도 — 배너 + pending≥3 소프트 모달. 홈 · 운동일지 탭에서 보이고, 한 번만 그려 두어 탭을 바꿔도 창이 다시 안 뜬다. */}
+        {!ended && (
+          <div hidden={tab !== "home" && tab !== "logs"}>
+            <ConfirmFlow logs={logs} onReload={onReloadLogs} />
+          </div>
         )}
 
-        {tab === "read" && (
-          <>
-        {/* 수업일지 확인 유도 — 배너(항상) + pending≥3 소프트 모달. onReload=loadHome(logs 재조회). */}
-        {!ended && <ConfirmFlow logs={logs} onReload={onReloadLogs} />}
+        {/* ── 홈: 내 PT · 오운완 · 달력 ── */}
+        <div hidden={tab !== "home"}>
 
         {/* 내 PT — 남은 수업 · 다음 수업 · 목표 로드맵(2026-10-03 · 자기완결 · 표 없으면 숨김) */}
         <MyPtCard supabase={memberSupabase} />
@@ -1038,11 +1057,15 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           stats={ounwan}
           rewards={rewards}
           todayDone={Boolean(buildActivityMap(logs, cardio, schedule)[todayStr()])}
-          onGoWrite={readOnly ? null : () => setSubTab("write")}
+          onGoWrite={readOnly ? null : () => goTab("write")}
         />
 
         {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음). 한눈 개요 먼저. */}
         <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
+        </div>
+
+        {/* ── 운동일지: PT 운동일지 · 내가 한 개인운동 · 유산소 ── */}
+        <div hidden={tab !== "logs"}>
 
         {/* 수업일지 타임라인 */}
         <section className="mb-8">
@@ -1101,6 +1124,12 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           )}
         </section>
 
+        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="list" readOnly={readOnly} />
+        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} mode="list" readOnly={readOnly} />
+        </div>
+
+        {/* ── 변화: 인바디 · 종목별 무게 · 사진 ── */}
+        <div hidden={tab !== "change"}>
         {/* 인바디 추이 */}
         <section className="mb-8">
           <Eyebrow icon={Scale}>인바디 변화</Eyebrow>
@@ -1160,15 +1189,12 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           </section>
         )}
 
-        {/* 회원 입력 기록 열람 — 기록 남기기에 저장한 것도 여기 모아 보기(목록만). */}
-        <ScheduleSection me={me} schedule={schedule} onReload={onReloadSchedule} mode="list" readOnly={readOnly} />
-        <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} mode="list" readOnly={readOnly} />
         <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="list" readOnly={readOnly} />
-          </>
-        )}
+        </div>
 
-        {tab === "write" && (
-          <>
+        {/* ── 기록하기(지난 회원 · 남은 수업 0회는 없음) ── */}
+        {!readOnly && (
+          <div hidden={tab !== "write"}>
         {/* 오늘 할 개인운동(트레이너가 확정 · 보이기 켠 루틴 · 2026-10-04) — 맨 위 */}
         <RoutineSection supabase={memberSupabase} me={me} ptLogs={logs} healthOk={healthOk} onSaved={() => { onReloadSchedule?.(); onReloadLogs?.(); }} />
 
@@ -1180,7 +1206,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {/* 비포애프터 사진(M2) — 폼만. */}
         <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="form" />
-          </>
+          </div>
         )}
 
         <MemberFooter supabase={memberSupabase} me={me} consent={consent} onChanged={(rows) => onConsentRows?.(rows)} />

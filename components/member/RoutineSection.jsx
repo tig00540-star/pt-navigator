@@ -213,7 +213,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
         ? `${x.name} · 오늘 못 함(${skipLabel(x.skip)})`
         : `${x.extra ? "+ " : ""}${x.name} ${x.setRows?.length ? rowsTxt(x.setRows) : `${wTxt(x.weight)} × ${x.reps}회 × ${x.sets}세트`}${x.pain ? " (아파서 멈춤)" : ""}`).join("\n");
       const sc = await supabase.from("schedule_check").insert({ user_id: me.id, on_date: today, kind: "personal", note: `개인운동 루틴 · ${day.label}\n${detail}`.slice(0, 1000) }).select("id");
-      if (sc.error || !sc.data?.length) { console.error("오운완 체크 실패", sc.error); setMsg("운동은 기록했어요. 오운완 체크는 '기록 남기기'의 개인운동에서 한 번 더 눌러 주세요."); }
+      if (sc.error || !sc.data?.length) { console.error("오운완 체크 실패", sc.error); setMsg("운동은 기록했어요. 오운완 체크는 '기록하기' 탭의 개인운동에서 한 번 더 눌러 주세요."); }
       setSavedToday(true); setVals({}); setPick(null); setExtras([]);
       await load();
       onSaved?.();
