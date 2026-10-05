@@ -33,9 +33,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 
 // 수업일지 확인 소프트 모달을 띄우는 미확인 건수 임계값(이 이상이면 로그인 직후 1회 모달 유도).
-const CONFIRM_MODAL_THRESHOLD = 3;
-// "나중에 할게요" 소프트 모달을 하루 1회로 제한하는 로컬 키(회원별 · 날짜 stamp).
-const CONFIRM_SNOOZE_KEY = "pt-member-confirm-snooze";
+const CONFIRM_MODAL_THRESHOLD = 1;   // 2026-10-06 대표: 1건만 있어도 들어오자마자 확인 창
 
 // purge-safe delta 색 맵(PtInbodyTab 재사용 패턴 · 동적 조립 금지).
 const DELTA_TONE = { good: "text-primary-strong", bad: "text-rose-600", flat: "text-muted" };
@@ -808,14 +806,15 @@ function ConfirmFlow({ logs, onReload }) {
   const [err, setErr] = useState("");
   const [serverOff, setServerOff] = useState(false);  // member-confirm 503 → 유도 전체 끔(fail-open)
 
-  const today = todayStr();
   const [nowMs] = useState(() => Date.now());   // 페이지를 연 시각 기준(수업 1시간 뒤부터)
   const pending = useMemo(
     () => (logs || []).filter((l) => !l.confirmed_at && confirmDue(l, nowMs)),
     [logs, nowMs]
   );
 
-  // pending≥THRESHOLD면 로그인 직후 1회 소프트 모달(단, 오늘 이미 '나중에' 눌렀으면 스킵).
+  // 미확인이 있으면 페이지를 열 때마다 확인 창이 먼저 뜬다(2026-10-06 · 옛: 3건 이상 · '나중에' 누르면 그날 안 뜸).
+  //   닫기는 '확인했어요' · '나중에 할게요' 두 버튼만(✕ · 바깥 누르기 · ESC 없음 = blocking) — 한 번은 읽고 고르게.
+  //   '나중에'가 있어 강제는 아니다(스스로 고른 확인이어야 서명 대신으로 힘이 있다).
   // ⚠️ setState는 async IIFE 안에서(레포 규율: react-hooks/set-state-in-effect 회피 · AuthGate 패턴).
   const [autoShown, setAutoShown] = useState(false); // 진입 시 1회만 자동으로 뜨게(수동 배너 재열기와 별개)
   useEffect(() => {
@@ -823,14 +822,12 @@ function ConfirmFlow({ logs, onReload }) {
     if (pending.length < CONFIRM_MODAL_THRESHOLD) return;
     let alive = true;
     (async () => {
-      let snoozed = false;
-      try { snoozed = localStorage.getItem(CONFIRM_SNOOZE_KEY) === today; } catch { /* 접근 불가 무시 */ }
       if (!alive) return;
       setAutoShown(true);
-      if (!snoozed) setModalOpen(true);
+      setModalOpen(true);
     })();
     return () => { alive = false; };
-  }, [serverOff, autoShown, pending.length, today]);
+  }, [serverOff, autoShown, pending.length]);
 
   // 확인 전용 — result는 "confirm" 고정(이의 제거). 큐 커서를 쓰지 않는다:
   // onReload로 pending이 줄면 cur=pending[0]이 자연히 다음 건이 된다(idx 이중 전진 버그 방지).
@@ -847,19 +844,16 @@ function ConfirmFlow({ logs, onReload }) {
       });
       if (res.status === 503) { setServerOff(true); setModalOpen(false); return; } // fail-open: 유도 끔
       if (res.status === 409) { await onReload?.(); return; } // 이미 확인됨 → 재조회로 정리, 성공 취급
-      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || "처리에 실패했어요."); return; }
+      if (!res.ok) { console.error("운동일지 확인 실패", res.status, await res.text().catch(() => "")); setErr("확인하지 못했어요. 다시 시도해 주세요."); return; }
       await onReload?.(); // 뷰 재조회 → confirmed_at 채워져 pending에서 빠짐
     } catch {
-      setErr("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
+      setErr("인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setBusy(false);
     }
   }, [onReload]);
 
-  const snooze = () => {
-    try { localStorage.setItem(CONFIRM_SNOOZE_KEY, today); } catch { /* 무시 */ }
-    setModalOpen(false);
-  };
+  const snooze = () => setModalOpen(false);   // 이번만 닫기 — 다음에 페이지를 열면 다시 뜬다
 
   if (serverOff || pending.length === 0) return null;
 
@@ -883,15 +877,27 @@ function ConfirmFlow({ logs, onReload }) {
     <>
       {banner}
       {modalOpen && cur && (
-        <Modal variant="sheet" onClose={() => setModalOpen(false)} title="운동일지 확인" subtitle={`남은 ${pending.length}건`}>
+        <Modal variant="sheet" blocking onClose={() => setModalOpen(false)} title="운동일지 확인" subtitle={`남은 ${pending.length}건`}>
           <Card padding="md" className="bg-elevate">
             <div className="text-xs font-semibold text-muted">
               {cur.session_at ? new Date(cur.session_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }) : "날짜 미상"}
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">
-              {cur.ai_summary || "기록 내용이 없어요."}
-            </p>
+            {cur.ai_summary && (
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{cur.ai_summary}</p>
+            )}
+            {setLines(cur).length > 0 && (
+              <ul className="mt-2 space-y-1 border-t border-line pt-2">
+                {setLines(cur).map((x, k) => (
+                  <li key={k} className="text-[14px] leading-relaxed">
+                    <span className="font-semibold text-ink">{x.name}</span>
+                    {x.body && <span className="ml-2 font-mono text-[13px] text-sub">{x.body}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!cur.ai_summary && setLines(cur).length === 0 && <p className="mt-2 text-sm text-muted">수업 기록만 있고 내용은 비어 있어요.</p>}
           </Card>
+          <p className="mt-3 text-[13px] leading-relaxed text-sub">이 날 수업을 받은 게 맞으면 확인해 주세요. 다르면 &lsquo;나중에 할게요&rsquo;를 누르고 트레이너에게 말해 주세요.</p>
 
           {err && <p className="mt-3 text-[12px] text-danger-text">{err}</p>}
 
@@ -900,11 +906,9 @@ function ConfirmFlow({ logs, onReload }) {
               onClick={() => confirmLog(cur.id)}>
               확인했어요
             </Button>
-            {pending.length >= CONFIRM_MODAL_THRESHOLD && (
-              <button onClick={snooze} disabled={busy} className="w-full py-1 text-center text-[12px] text-muted">
-                나중에 할게요
-              </button>
-            )}
+            <button type="button" onClick={snooze} disabled={busy} className="min-h-[44px] w-full text-center text-[14px] font-semibold text-sub">
+              나중에 할게요
+            </button>
           </div>
         </Modal>
       )}
