@@ -105,6 +105,16 @@ function dayStr(offset = 0) {
 }
 const EARLIEST_DAYS = -2;
 
+// 운동일지의 종목 · 세트(sets_structured) → 사람이 읽는 줄들. 글 요약이 없을 때도 수업 내용을 보여 주려고(2026-10-06).
+function setLines(l) {
+  const list = Array.isArray(l?.sets_structured) ? l.sets_structured : [];
+  return list.filter((e) => e && e.exercise).map((e) => {
+    const sets = (Array.isArray(e.sets) ? e.sets : []).filter((s) => s && (s.weight != null || s.reps != null));
+    const body = sets.map((s) => `${s.weight != null && s.weight !== "" ? `${s.weight}kg` : "맨몸"}×${s.reps ?? "–"}`).join(" · ");
+    return { name: e.exercise, body };
+  });
+}
+
 function todayStr() {
   const d = new Date();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -1050,6 +1060,8 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
             <ul className="space-y-2">
               {logs.map((l, i) => {
                 const round = logs.length - i; // 최신순 배열 → 오래된 게 1회차(누적)
+                const lines = setLines(l);
+                const hasMore = Boolean(l.ai_summary) || lines.length > 0;
                 return (
                   <li key={l.id}>
                     <details className="group rounded-2xl border border-line bg-card p-4 shadow-sm">
@@ -1061,18 +1073,30 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                           {!l.confirmed_at ? (
                             <Badge tone="neutral">미확인</Badge>
                           ) : null}
-                          {l.ai_summary && (
+                          {hasMore && (
                             <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
                           )}
                         </div>
                         {l.ai_summary ? (
                           <p className="mt-1.5 text-sm text-sub line-clamp-1 group-open:hidden">{l.ai_summary}</p>
+                        ) : lines.length ? (
+                          <p className="mt-1.5 text-sm text-sub line-clamp-1 group-open:hidden">{lines.map((x) => x.name).join(" · ")}</p>
                         ) : (
                           <p className="mt-1.5 text-sm text-muted">상세 내용이 없어요.</p>
                         )}
                       </summary>
                       {l.ai_summary && (
                         <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">{l.ai_summary}</p>
+                      )}
+                      {lines.length > 0 && (
+                        <ul className="mt-3 space-y-1.5 border-t border-line pt-3">
+                          {lines.map((x, k) => (
+                            <li key={k} className="text-[14px] leading-relaxed">
+                              <span className="font-semibold text-ink">{x.name}</span>
+                              {x.body && <span className="ml-2 font-mono text-[13px] text-sub">{x.body}</span>}
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </details>
                   </li>

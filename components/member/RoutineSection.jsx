@@ -138,7 +138,9 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
       const { data, error } = await supabase.from("member_routine_log").insert({ user_id: me.id, performed_on: today, day_key: day.key, items }).select("id");
       if (error || !data?.length) { console.error("개인운동 기록 실패", error); setMsg("기록하지 못했어요. 다시 시도해 주세요."); return; }
       // 오운완 하루 체크 — 실패하면 알려 준다(루틴 기록은 이미 남음 · 다시 누르면 기록이 두 번 생기니 저장 버튼은 닫는다)
-      const sc = await supabase.from("schedule_check").insert({ user_id: me.id, on_date: today, kind: "personal", note: `개인운동 루틴 · ${day.label}` }).select("id");
+      // 개인운동 기록에도 실제로 한 내용(종목 · 무게 · 횟수 · 세트)을 채워 남긴다(2026-10-06) — '기록 남기기'에 따로 적지 않아도 되게.
+      const detail = items.map((x) => `${x.name} ${x.weight ? `${x.weight}kg` : "맨몸"} × ${x.reps}회 × ${x.sets}세트${x.pain ? " (아파서 멈춤)" : ""}`).join("\n");
+      const sc = await supabase.from("schedule_check").insert({ user_id: me.id, on_date: today, kind: "personal", note: `개인운동 루틴 · ${day.label}\n${detail}`.slice(0, 1000) }).select("id");
       if (sc.error || !sc.data?.length) { console.error("오운완 체크 실패", sc.error); setMsg("운동은 기록했어요. 오운완 체크는 '기록 남기기'의 개인운동에서 한 번 더 눌러 주세요."); }
       setSavedToday(true); setVals({}); setPick(null);
       await load();
