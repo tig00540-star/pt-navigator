@@ -200,8 +200,11 @@ begin
   end if;
   select code into c from intake_link where account_id = acct and active and trainer_id is not distinct from p_trainer;
   if c is null then
-    c := substr(replace(gen_random_uuid()::text, '-', ''), 1, 16);
-    insert into intake_link (account_id, trainer_id, code) values (acct, p_trainer, c);
+    -- 동시에 두 번 불려도(화면 두 개 · 개발 모드) 하나만 만들어지게: 겹치면 넘기고 다시 읽는다.
+    insert into intake_link (account_id, trainer_id, code)
+      values (acct, p_trainer, substr(replace(gen_random_uuid()::text, '-', ''), 1, 16))
+      on conflict do nothing;
+    select code into c from intake_link where account_id = acct and active and trainer_id is not distinct from p_trainer;
   end if;
   return c;
 end $$;

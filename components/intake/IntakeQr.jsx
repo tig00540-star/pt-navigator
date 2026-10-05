@@ -30,7 +30,8 @@ export default function IntakeQr({ trainerId = null, label = "", compact = false
     let alive = true;
     (async () => {
       if (!supabase) { if (alive) setCode(""); return; }
-      const { data, error } = await supabase.rpc("intake_link_get", { p_trainer: trainerId, p_rotate: false });
+      let { data, error } = await supabase.rpc("intake_link_get", { p_trainer: trainerId, p_rotate: false });
+      if (error) ({ data, error } = await supabase.rpc("intake_link_get", { p_trainer: trainerId, p_rotate: false }));   // 동시에 만들다 겹친 경우 한 번 더
       if (error) console.error("OT 신청 링크 받기 실패", error);
       if (alive) setCode(error ? "" : data || "");
     })();

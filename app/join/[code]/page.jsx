@@ -19,10 +19,11 @@ import { DAY_LABELS, SLOT_HOURS } from "@/lib/slots";
 
 const inputCls = "w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[16px] text-ink placeholder-muted outline-none focus:border-primary";
 
-function Chip({ on, onClick, children, wide }) {
+// tight = 칸 그리드(요일 · 시간) — 칸 폭에 맞춰 여백 없이(360px 폰에서도 한 줄 7칸).
+function Chip({ on, onClick, children, wide, tight }) {
   return (
     <button type="button" onClick={onClick} aria-pressed={on}
-      className={`min-h-[44px] rounded-full border px-3.5 text-[15px] transition ${wide ? "" : "min-w-[44px]"} ${on ? "border-primary bg-primary-soft font-semibold text-primary-strong" : "border-line bg-card text-ink"}`}>
+      className={`min-h-[44px] rounded-full border text-[15px] transition ${tight ? "min-w-0 px-0" : wide ? "px-3.5" : "min-w-[44px] px-3.5"} ${on ? "border-primary bg-primary-soft font-semibold text-primary-strong" : "border-line bg-card text-ink"}`}>
       {children}
     </button>
   );
@@ -200,12 +201,12 @@ export default function JoinPage() {
 
         <Section title="원하는 요일 · 시간" hint="OT를 받을 수 있는 요일과 시간을 모두 눌러 주세요. 여러 개 골라도 돼요.">
           <div><Label>요일</Label>
-            <div className="grid grid-cols-7 gap-1.5">
-              {DAY_LABELS.map((d, i) => <Chip key={d} on={days.includes(i + 1)} onClick={() => toggle(days, setDays, i + 1)}>{d}</Chip>)}
+            <div className="grid grid-cols-7 gap-1">
+              {DAY_LABELS.map((d, i) => <Chip key={d} tight on={days.includes(i + 1)} onClick={() => toggle(days, setDays, i + 1)}>{d}</Chip>)}
             </div></div>
           <div><Label>시간 <span className="font-normal text-muted">(그 시각부터 1시간)</span></Label>
             <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-7">
-              {SLOT_HOURS.map((h) => <Chip key={h} on={hours.includes(h)} onClick={() => toggle(hours, setHours, h)}>{h}시</Chip>)}
+              {SLOT_HOURS.map((h) => <Chip key={h} tight on={hours.includes(h)} onClick={() => toggle(hours, setHours, h)}>{h}시</Chip>)}
             </div></div>
           <label className="block"><Label optional>덧붙일 말</Label>
             <input value={slotNote} onChange={(e) => setSlotNote(e.target.value)} maxLength={100} placeholder="예: 화요일은 8시 이후만 돼요" className={inputCls} /></label>
