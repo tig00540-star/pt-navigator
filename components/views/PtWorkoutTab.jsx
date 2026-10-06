@@ -31,6 +31,7 @@ import MemberScheduleSummary from "@/components/views/MemberScheduleSummary";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { contentHashBrowser, openDispute } from "@/lib/workoutHash";
+import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 
 // 음성일지는 '자료남기기'(record)의 접이식 서브 UI라 지연로드(무게 위생). ssr:false — MediaRecorder 브라우저 전용.
 const VoiceLogTab = dynamic(() => import("@/components/tabs/VoiceLogTab"), {
@@ -123,6 +124,24 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     }
     return m;
   }, [confirms]);
+
+  // 회원 서명(2026-10-06) — 일지마다 가장 최근 서명 그림(비공개 저장소 · 서명 링크) + 시각 · 자동 확인 뒤 서명 여부.
+  const [sigs, setSigs] = useState(() => new Map());   // log_id → { url, signed_at, after_auto }
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!supabase || !member?.id) return;
+      const { data, error } = await supabase.from("workout_log_signature").select("log_id, path, signed_at, after_auto").eq("member_id", member.id).order("signed_at", { ascending: false });
+      if (error || !data?.length) { if (error) console.error("서명 읽기 실패", error); return; }
+      const latest = new Map();
+      for (const r of data) if (!latest.has(r.log_id)) latest.set(r.log_id, r);
+      const paths = [...new Set([...latest.values()].map((r) => r.path))];
+      const { data: urls } = await supabase.storage.from("log-signatures").createSignedUrls(paths, PHOTO_URL_TTL);
+      const byPath = new Map((urls || []).map((u) => [u.path, u.signedUrl]));
+      if (alive) setSigs(new Map([...latest.entries()].map(([k, r]) => [k, { url: byPath.get(r.path) || null, signed_at: r.signed_at, after_auto: r.after_auto }])));
+    })();
+    return () => { alive = false; };
+  }, [member?.id, confirms]);
 
   // 해시 대조(비동기) — 확정된 일지의 '현재 내용' 해시를 다시 계산해 저장 해시와 비교.
   //   다르면 트레이너가 확인 후 내용을 고친 것 → "확인 후 변경됨" 표시. 라우트와 같은 lib(contentHashBrowser).
@@ -536,6 +555,18 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                           return <Badge tone="neutral">미확인</Badge>;
                         })()}
                       </div>
+                      {sigs.get(log.id) && (
+                        <div className="mt-1.5 flex items-center gap-2">
+                          {sigs.get(log.id).url && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={sigs.get(log.id).url} alt="회원 서명" className="h-10 w-auto rounded border border-line bg-white" />
+                          )}
+                          <span className="text-[12.5px] text-sub">
+                            회원 서명 · {new Date(sigs.get(log.id).signed_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            {sigs.get(log.id).after_auto ? " (자동 확인 뒤)" : ""}
+                          </span>
+                        </div>
+                      )}
                       {!log.voided && (() => {
                         const d = openDispute(log, (confirms || []).filter((x) => x.log_id === log.id));
                         return d ? (

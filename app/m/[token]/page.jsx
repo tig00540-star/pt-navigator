@@ -16,6 +16,7 @@ import MemberPushCard from "@/components/member/MemberPushCard";
 import BookingCard from "@/components/member/BookingCard";
 import MemberEvents from "@/components/member/MemberEvents";
 import WorkoutLogBody, { gainsByLog, exercisesOf } from "@/components/member/WorkoutLogBody";
+import SignaturePad from "@/components/member/SignaturePad";
 import RoutineSection from "@/components/member/RoutineSection";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
@@ -811,7 +812,10 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
   // onReload로 pending이 줄면 cur=pending[0]이 자연히 다음 건이 된다(idx 이중 전진 버그 방지).
   const [disputing, setDisputing] = useState(false);   // '내용이 달라요' 메모 칸 열림
   const [note, setNote] = useState("");
-  const confirmLog = useCallback(async (log_id, result = "confirm", memo = "") => {
+  const [sig, setSig] = useState(null);          // 손가락 서명(PNG data URL · 2026-10-06)
+  const [sigKey, setSigKey] = useState(0);       // 확인 뒤 서명 칸 새로
+  const [withOthers, setWithOthers] = useState(false);   // 밀린 다른 수업도 같은 서명으로
+  const confirmLog = useCallback(async (log_id, result = "confirm", memo = "", signature = null, others = []) => {
     setBusy(true); setErr("");
     try {
       const { data: sess } = await memberSupabase.auth.getSession();
@@ -820,13 +824,13 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
       const res = await fetch("/api/member-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ log_id, result, note: memo }),
+        body: JSON.stringify({ log_ids: [log_id, ...others], result, note: memo, signature }),
       });
       if (res.status === 503) { setServerOff(true); setModalOpen(false); return; } // fail-open: 유도 끔
       if (res.status === 409) { await onReload?.(); return; } // 이미 확인됨 → 재조회로 정리, 성공 취급
       if (!res.ok) { console.error("운동일지 확인 실패", res.status, await res.text().catch(() => "")); setErr("확인하지 못했어요. 다시 시도해 주세요."); return; }
       if (result === "dispute") setSentIds((p) => new Set(p).add(log_id));
-      setDisputing(false); setNote("");
+      setDisputing(false); setNote(""); setSig(null); setSigKey((k) => k + 1); setWithOthers(false);
       await onReload?.(); // 뷰 재조회 → confirmed_at · dispute_at 채워져 pending에서 빠짐
     } catch {
       setErr("인터넷 연결을 확인하고 다시 시도해 주세요.");
@@ -854,6 +858,7 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
   );
 
   const cur = pending[0]; // 항상 맨 앞 1건만. onReload로 처리분이 빠지면 다음 건이 자동으로 앞으로 온다.
+  const others = pending.slice(1, 10);   // 같은 서명으로 같이 확인할 수 있는 밀린 수업(최대 9개 더)
 
   return (
     <>
@@ -869,10 +874,33 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
           {cur.dispute_at && !disputeOpenM(cur) && (
             <p className="mt-3 rounded-lg bg-primary-soft px-3 py-2 text-[13px] font-semibold text-primary-strong">트레이너가 내용을 고쳤어요. 다시 확인해 주세요.</p>
           )}
-          <p className="mt-3 text-[13px] leading-relaxed text-sub">
-            이 날 수업을 받은 게 맞으면 확인해 주세요. 다르면 &lsquo;내용이 달라요&rsquo;를 눌러 주세요.
-            {autoConfirmAt(cur, consentAt, consentVersion) && <> <b className="font-semibold text-ink">{fmtWhen(autoConfirmAt(cur, consentAt, consentVersion))}</b>이 지나면 자동으로 확인돼요.</>}
-          </p>
+          {!disputing && (
+            <>
+              {/* 무엇에 서명하는지 크게 — 날짜는 서버가 기록(손으로 쓰지 않음 · 대표 결정 2026-10-06) */}
+              <p className="mt-4 text-[17px] font-bold leading-snug text-ink">
+                {cur.session_at ? fmtDay(cur.session_at) : "이"} 수업을 확인합니다{withOthers && others.length ? ` (외 ${others.length}개)` : ""}
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed text-sub">
+                받은 수업이 맞으면 서명해 주세요. 다르면 &lsquo;내용이 달라요&rsquo;를 눌러 주세요.
+                {autoConfirmAt(cur, consentAt, consentVersion) && <> <b className="font-semibold text-ink">{fmtWhen(autoConfirmAt(cur, consentAt, consentVersion))}</b>이 지나면 서명 없이 자동으로 확인돼요.</>}
+              </p>
+              {others.length > 0 && (
+                <div className="mt-3 rounded-xl border border-line p-3">
+                  <label className="flex cursor-pointer items-start gap-2.5 text-[15px] text-ink">
+                    <input type="checkbox" checked={withOthers} onChange={(e) => setWithOthers(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary" />
+                    <span>밀린 수업 {others.length}개도 같은 서명으로 확인할게요 <span className="text-[13px] text-sub">({others.map((o) => fmtDay(o.session_at ?? o.created_at)).join(" · ")})</span></span>
+                  </label>
+                  {withOthers && others.map((o) => (
+                    <details key={o.id} className="mt-2 rounded-lg bg-elevate px-3 py-2">
+                      <summary className="cursor-pointer text-[14px] font-semibold text-ink">{fmtDay(o.session_at ?? o.created_at)} 내용 보기</summary>
+                      <div className="mt-2"><WorkoutLogBody log={o} /></div>
+                    </details>
+                  ))}
+                </div>
+              )}
+              <div className="mt-3"><SignaturePad key={`${cur.id}-${sigKey}`} onChange={setSig} /></div>
+            </>
+          )}
 
           {err && <p className="mt-3 text-[12px] text-danger-text">{err}</p>}
 
@@ -893,9 +921,9 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
             </div>
           ) : (
           <div className="mt-4 space-y-2">
-            <Button variant="primary" size="md" fullWidth disabled={busy}
-              onClick={() => confirmLog(cur.id)}>
-              확인했어요
+            <Button variant="primary" size="md" fullWidth disabled={busy || !sig}
+              onClick={() => confirmLog(cur.id, "confirm", "", sig, withOthers ? others.map((o) => o.id) : [])}>
+              {busy ? "저장하는 중…" : sig ? "서명하고 확인" : "서명하면 확인할 수 있어요"}
             </Button>
             <button type="button" onClick={() => setDisputing(true)} disabled={busy}
               className="min-h-[44px] w-full rounded-xl border border-line bg-card text-center text-[14px] font-semibold text-ink">
@@ -906,6 +934,61 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
             </button>
           </div>
           )}
+        </Modal>
+      )}
+    </>
+  );
+}
+
+/* 자동 확인된 운동일지에 나중에 서명(2026-10-06) — 24시간이 지나 자동 확인된 수업도 회원이 서명하면 '자동 확인 · 서명'이 된다.
+   강요하지 않는다(확인은 이미 끝남) · 운동일지 탭 맨 위 띠 → 시트(내용 보기 + 서명 한 번에 최대 10개). */
+function AutoSignFlow({ logs, onReload }) {
+  const [open, setOpen] = useState(false);
+  const [sig, setSig] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const list = (logs || []).filter((l) => l.confirm_method === "auto" && !l.signed_at).slice(0, 10);
+  if (!list.length) return null;
+  const sign = async () => {
+    setBusy(true); setErr("");
+    try {
+      const { data: sess } = await memberSupabase.auth.getSession();
+      const token = sess?.session?.access_token;
+      if (!token) { setErr("세션이 만료됐어요. 다시 로그인해 주세요."); return; }
+      const res = await fetch("/api/member-confirm", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ log_ids: list.map((l) => l.id), result: "sign", signature: sig }),
+      });
+      if (!res.ok) { console.error("서명 실패", res.status, await res.text().catch(() => "")); setErr("서명을 저장하지 못했어요. 다시 시도해 주세요."); return; }
+      setOpen(false); setSig(null);
+      await onReload?.();
+    } catch { setErr("인터넷 연결을 확인하고 다시 시도해 주세요."); }
+    finally { setBusy(false); }
+  };
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}
+        className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3 text-left shadow-sm transition active:scale-[0.99]">
+        <CalendarCheck className="h-5 w-5 shrink-0 text-primary-strong" aria-hidden="true" />
+        <span className="min-w-0 flex-1 text-[15px] font-semibold text-ink">자동 확인된 수업 {list.length}건 · 서명해 주세요</span>
+        <span className="shrink-0 text-[13px] font-bold text-primary-strong">서명하기 ›</span>
+      </button>
+      {open && (
+        <Modal variant="sheet" onClose={() => setOpen(false)} title="자동 확인된 수업에 서명" subtitle="확인은 이미 끝났어요. 서명하면 기록이 더 분명해져요">
+          <div className="space-y-2">
+            {list.map((l) => (
+              <details key={l.id} className="rounded-xl bg-elevate px-3 py-2.5">
+                <summary className="cursor-pointer text-[15px] font-semibold text-ink">{fmtDay(l.session_at ?? l.created_at)} 수업 내용 보기</summary>
+                <div className="mt-2"><WorkoutLogBody log={l} /></div>
+              </details>
+            ))}
+          </div>
+          <p className="mt-4 text-[17px] font-bold text-ink">위 {list.length}개 수업을 확인합니다</p>
+          <div className="mt-2"><SignaturePad onChange={setSig} /></div>
+          {err && <p className="mt-2 text-[13px] text-danger-text">{err}</p>}
+          <Button variant="primary" size="md" fullWidth disabled={busy || !sig} onClick={sign}>
+            {busy ? "저장하는 중…" : sig ? "서명하기" : "서명 칸에 서명해 주세요"}
+          </Button>
         </Modal>
       )}
     </>
@@ -1074,6 +1157,8 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {/* ── 운동일지: 운동 달력 · PT 운동일지 · 내가 한 개인운동 · 유산소 ── */}
         <div hidden={tab !== "logs"}>
 
+        {!ended && <AutoSignFlow logs={logs} onReload={onReloadLogs} />}
+
         {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음 · 2026-10-06 홈에서 옮김) */}
         <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
 
@@ -1107,7 +1192,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                           <span className="rounded-full bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub">{round}회차</span>
                           {/* 확인 상태 뱃지 — 뷰의 confirmed_at 파생. 확정=숨김(깔끔), 미확인=neutral(이의 제거). */}
                           {l.confirmed_at ? (
-                            l.confirm_method === "auto" ? <Badge tone="neutral">자동 확인</Badge> : null
+                            l.confirm_method === "auto" ? <Badge tone="neutral">{l.signed_at ? "자동 확인 · 서명" : "자동 확인 · 서명 전"}</Badge> : null
                           ) : disputeOpenM(l) ? (
                             <Badge tone="neutral">트레이너 확인 중</Badge>
                           ) : (
