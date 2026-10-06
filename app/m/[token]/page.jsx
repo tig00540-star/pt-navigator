@@ -15,6 +15,7 @@ import MyPtCard from "@/components/member/MyPtCard";
 import MemberPushCard from "@/components/member/MemberPushCard";
 import BookingCard from "@/components/member/BookingCard";
 import MemberEvents from "@/components/member/MemberEvents";
+import TransferAsk from "@/components/member/TransferAsk";
 import WorkoutLogBody, { gainsByLog, exercisesOf } from "@/components/member/WorkoutLogBody";
 import SignaturePad from "@/components/member/SignaturePad";
 import RoutineSection from "@/components/member/RoutineSection";
@@ -1140,6 +1141,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {/* ── 홈(2026-10-06 정리): 이벤트 띠 → 알림 켜기 한 줄(꺼져 있을 때만) → 내 PT(남은 수업 + 수업 일정 · 예약 · 변경 · 로드맵 접힘) → 오운완 ── */}
         <div hidden={tab !== "home"}>
+
+        {/* 트레이너가 센터로 옮기면 '기록을 함께 옮길까요?'(2026-10-07 · 요청이 있을 때만) */}
+        <TransferAsk supabase={memberSupabase} onMoved={() => window.location.reload()} />
 
         {/* 이벤트(옛 '트레이너 포상' 대신 · 열린 게 있을 때만) */}
         {!ended && <MemberEvents supabase={memberSupabase} />}

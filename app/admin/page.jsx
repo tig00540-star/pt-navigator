@@ -25,6 +25,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { closingApproachStats, reregisterReasonStats, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
+import JoinInviteCard from "@/components/admin/JoinInviteCard";
 import { trainerSeatLimit } from "@/lib/plans";
 import MemberForm from "@/components/MemberForm";
 import MemberReassign from "@/components/admin/MemberReassign";
@@ -508,6 +509,11 @@ export default function AdminDashboard() {
             seatLimit={trainerSeatLimit(planKey)}
             seatUsed={trainers.filter((t) => t.role === "trainer" && t.active !== false).length}
             onCreated={(row) => setTrainers((p) => [...p, row])} />
+          {planKey === "center" && (
+            <div className="mt-4">
+              <JoinInviteCard seatFull={trainers.filter((t) => t.role === "trainer" && t.active !== false).length >= trainerSeatLimit(planKey)} />
+            </div>
+          )}
         </section>
         )}
 
