@@ -1030,8 +1030,10 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
   // 지난 회원(PT 종료) = 볼 수만 있음 · 6개월(DB가 쓰기를 막고, 6개월 뒤엔 아무것도 안 읽힌다 · 2026-10-05).
   const ended = me.status === "inactive";
   // 남은 수업 0회 = 입력 잠금(대표 결정 2026-10-05 · DB auth_member_writable과 같은 조건). 운동일지 '확인'은 그대로 된다.
-  const noSessions = !ended && me.writable === false;
-  const readOnly = ended || noSessions;
+  // 센터 이용 기간이 끝나 '볼 수만' 30일(2026-10-07) — member_me.center_open(SQL 전엔 칸이 없어 undefined = 이용 중으로 봄)
+  const centerClosed = !ended && me.center_open === false;
+  const noSessions = !ended && !centerClosed && me.writable === false;
+  const readOnly = ended || noSessions || centerClosed;
   const viewUntil = ended && me.status_changed_at ? (() => { const d = new Date(me.status_changed_at); d.setMonth(d.getMonth() + 6); return d; })() : null;
   const tab = readOnly && subTab === "write" ? "home" : subTab;
   const goTab = (t) => { setSubTab(t); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } };
@@ -1103,9 +1105,11 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {readOnly && (
           <div className="mb-6 rounded-2xl border border-line bg-card px-4 py-3.5 shadow-sm">
-            <p className="text-[15px] font-bold text-ink">{noSessions ? "남은 수업이 없어서 기록을 남길 수 없어요" : "PT가 끝나서 기록을 볼 수만 있어요"}</p>
+            <p className="text-[15px] font-bold text-ink">{centerClosed ? "지금은 기록을 볼 수만 있어요" : noSessions ? "남은 수업이 없어서 기록을 남길 수 없어요" : "PT가 끝나서 기록을 볼 수만 있어요"}</p>
             <p className="mt-0.5 text-[13.5px] leading-relaxed text-sub">
-              {noSessions
+              {centerClosed
+                ? "센터의 이용 기간이 끝나 새 기록은 남길 수 없어요. 자세한 건 트레이너에게 물어봐 주세요."
+                : noSessions
                 ? "재등록하면 개인운동 · 유산소 · 사진 기록이 다시 열려요. 지금까지 기록은 그대로 볼 수 있어요."
                 : `${viewUntil ? `${viewUntil.getFullYear()}년 ${viewUntil.getMonth() + 1}월 ${viewUntil.getDate()}일까지 볼 수 있어요. ` : ""}다시 시작하려면 트레이너에게 말해 주세요. 기록은 그대로 이어져요.`}
             </p>

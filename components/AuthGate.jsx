@@ -18,6 +18,8 @@ export default function AuthGate({ children }) {
   const [acctReady, setAcctReady] = useState(false);
   // 초기 세션 조회가 오래 걸릴 때(응답 없음) 표시 — 무한 스피너 방지용.
   const [stalled, setStalled] = useState(false);
+  // 읽기 전용 기간에 '카드 등록하고 다시 쓰기'를 누르면 결제벽을 연다(돌아가기로 닫힘)
+  const [payOpen, setPayOpen] = useState(false);
 
   // 로그인 폼 로컬 상태
   const [email, setEmail] = useState("");
@@ -173,8 +175,11 @@ export default function AuthGate({ children }) {
           불러오는 중…
         </div>
       );
+    } else if (gating && acct && acct.access === false && acct.mode === "read_only" && !payOpen) {
+      // 기간이 끝난 뒤 30일 — 볼 수만(2026-10-07 · 쓰기는 DB가 막음) · 위에 띠 · 내려받기 · 카드 다시 등록
+      inner = <ReadOnlyShell status={acct} uid={session.user?.id} onPay={() => setPayOpen(true)}>{children}</ReadOnlyShell>;
     } else if (gating && acct && acct.access === false) {
-      inner = <Paywall status={acct} onSignOut={signOut} uid={session.user?.id} />;
+      inner = <Paywall status={acct} onSignOut={signOut} uid={session.user?.id} onBack={acct.mode === "read_only" ? () => setPayOpen(false) : null} />;
     } else {
       inner = children;
     }
@@ -239,7 +244,7 @@ export default function AuthGate({ children }) {
 
 // 층1 결제벽 — 미활성/만료 계정. 토스 카드등록(빌링) → 7일 무료체험(B4-A). 원장만 결제 가능.
 // ⚠️ 실제 활성화는 /billing/success 착지 → /api/billing/confirm(service_role)에서 일어남.
-function Paywall({ status, onSignOut, uid }) {
+function Paywall({ status, onSignOut, uid, onBack = null }) {
   const noAccount = status?.has_account === false;
   const expired = status?.is_expired === true;
   const title = noAccount ? "계정을 준비 중이에요" : expired ? "이용 기간이 끝났어요" : "구독하고 시작하세요";
@@ -332,9 +337,65 @@ function Paywall({ status, onSignOut, uid }) {
         )}
 
         <div className="mt-4">
-          <Button variant="ghost" size="sm" fullWidth onClick={onSignOut}>다시 로그인</Button>
+          {onBack
+            ? <Button variant="ghost" size="sm" fullWidth onClick={onBack}>돌아가기(볼 수만 있는 화면)</Button>
+            : <Button variant="ghost" size="sm" fullWidth onClick={onSignOut}>다시 로그인</Button>}
         </div>
       </div>
     </div>
+  );
+}
+
+// 읽기 전용(기간 끝 ~ +30일 · 2026-10-07) — 앱은 그대로 열되 맨 위에 띠. 쓰기는 DB가 막아서 저장하면 '권한이 없거나 구독이 만료됐을 수 있어요'.
+//   대표 = [내 데이터 내려받기] [카드 등록하고 다시 쓰기] · 센터 트레이너 = 대표에게 알려 주세요.
+function ReadOnlyShell({ status, uid, onPay, children }) {
+  const [owner, setOwner] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!supabase || !uid) return;
+      const { data } = await supabase.from("trainer").select("role").eq("id", uid).maybeSingle();
+      if (alive) setOwner(data?.role === "owner");
+    })();
+    return () => { alive = false; };
+  }, [uid]);
+  const until = status?.read_only_until ? (() => { const d = new Date(Date.parse(status.read_only_until) + 9 * 3600000); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`; })() : "";
+  const download = async () => {
+    setBusy(true); setMsg("");
+    try {
+      const { downloadMyData } = await import("@/components/views/SubscriptionCard");
+      await downloadMyData();
+    } catch (e) {
+      console.error("내려받기 실패", e);
+      setMsg(e.message || "내려받지 못했어요. 다시 시도해 주세요.");
+    } finally { setBusy(false); }
+  };
+  return (
+    <>
+      <div role="status" className="sticky top-0 z-[60] border-b border-rose-200 bg-rose-50 px-4 py-2.5 text-[13.5px] leading-snug text-danger-text">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span className="min-w-0 flex-1">
+            <b>이용 기간이 끝났어요.</b> {until ? `${until}까지 ` : ""}볼 수만 있고, 새 기록은 저장되지 않아요.
+            {owner === false ? " 센터 대표에게 알려 주세요." : " 그 뒤엔 기록이 지워져요."}
+          </span>
+          {owner && (
+            <span className="flex shrink-0 gap-1.5">
+              <button type="button" onClick={download} disabled={busy}
+                className="min-h-[36px] rounded-lg border border-rose-300 bg-card px-3 text-[13px] font-bold text-danger-text disabled:opacity-50">
+                {busy ? "준비하는 중…" : "내 데이터 내려받기"}
+              </button>
+              <button type="button" onClick={onPay}
+                className="min-h-[36px] rounded-lg bg-primary px-3 text-[13px] font-bold text-white">
+                카드 등록하고 다시 쓰기
+              </button>
+            </span>
+          )}
+          {msg && <span className="w-full text-[12.5px]">{msg}</span>}
+        </div>
+      </div>
+      {children}
+    </>
   );
 }
