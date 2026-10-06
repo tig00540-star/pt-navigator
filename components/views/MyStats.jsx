@@ -119,7 +119,8 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         // trainer RLS(id = auth.uid())로 본인 행 select 허용 · maybeSingle은 행 없어도 에러 아님.
         myId ? supabase.from("trainer").select("name").eq("id", myId).maybeSingle()
              : Promise.resolve({ data: null }),
-        supabase.from("trainer_goal").select("*"),       // 월별 목표(본인 것 · RLS)
+        // 월별 목표 — 내 것만(대표 겸 트레이너는 RLS로 센터 전체 목표를 읽어 남의 목표가 잡혔다 · 2026-10-07)
+        myId ? supabase.from("trainer_goal").select("*").eq("trainer_id", myId) : supabase.from("trainer_goal").select("*"),
       ]);
       // hidden(소프트삭제) 회원 이름 폴백 — 계약에 등장하는 회원 id를 user_table에서 직접 조회.
       // members(활성 목록)엔 hidden이 빠져 있어 이름을 못 찾음. RLS 7c2a는 hidden 무관 본인 회원 조회 허용.

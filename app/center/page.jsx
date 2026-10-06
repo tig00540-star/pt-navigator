@@ -17,7 +17,7 @@ import { PLANS } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_GHOST_DARK, Header, Footer, useReveal, stagger,
-  Checks, GroupLabel, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, Pill, StepShots, Bundle, Devices, H3,
+  Checks, GroupLabel, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, Pill, StepShots, Bundle, H3, FeatureGallery,
 } from "../lp/parts";
 
 const SIGNUP_CENTER = "/signup?type=center";
@@ -70,7 +70,7 @@ const SPECIAL = [
   },
 ];
 
-// 대표 화면 묶음 — 크게는 PC 화면, 넘겨 보기는 폰 화면(2026-10-06)
+// 대표 화면 묶음 — 크게 1장 + 넘겨 보기(폰 화면 · PC 화면은 맨 끝 '태블릿 · PC 버전'에 모음)
 const BUNDLES = [
   {
     id: "b-money", nav: "매출 · 정산",
@@ -78,9 +78,8 @@ const BUNDLES = [
     title: ["월말까지 기다리지", "마세요."],
     checks: ["이달 매출 현황: 목표 · 현재 · 달성률, 트레이너별 목표", "다음 달 예상 매출과 이번 주 들어올 매출 후보", "정산: PT · FC · 기타 매출과 지출, 순이익을 센터 정산일 기준으로"],
     note: "정산 기준일을 센터에 맞게 정할 수 있어요",
-    hero: { img: "/lp/shots/2026-10/P04.webp", alt: "PC 대표 화면 매출 탭: 이달 매출 현황 · 다음 달 예상 매출 · 매출 구성 · 6개월 추이", wide: true },
+    hero: { img: "/lp/shots/2026-10/C06.webp", alt: "대표 화면의 이달 매출 현황(목표 · 현재 · 달성률, 트레이너별 목표)" },
     items: [
-      { name: "이달 매출 현황", desc: "목표 · 현재 · 달성률 · 트레이너별", img: "/lp/shots/2026-10/C06.webp", alt: "대표 화면의 이달 매출 현황(목표 · 현재 · 달성률, 트레이너별 목표)" },
       { name: "다음 달 예상 매출", desc: "등록률 · 재등록률 · 평균 금액으로 계산", img: "/lp/shots/2026-10/C06b.webp", alt: "다음 달 예상 매출: 신규 유입 · 재등록에서 들어올 금액 추정" },
       { name: "들어올 매출", desc: "이번 주 등록 · 재등록 후보를 트레이너별로", img: "/lp/shots/2026-10/C03.webp", alt: "아침 보고서의 이달 · 앞으로 들어올 매출: 트레이너별 등록 · 재등록 후보(추정)" },
       { name: "정산", desc: "PT · FC · 기타 매출에서 지출 빼고 순이익", img: "/lp/shots/2026-10/C09.webp", alt: "정산 합계표: PT 매출 · FC 매출 · 기타 매출 · 지출 · 순이익" },
@@ -92,9 +91,8 @@ const BUNDLES = [
     title: ["어디서 새는지,", "숫자로 보입니다."],
     checks: ["신규 OT → 1차 → 2차 → 등록, 단계별로 몇 명이 빠지는지", "달마다 등록률이 나아지고 있는지", "만료 임박 · 이탈 위험 명단을 바로 펼쳐 보기"],
     note: "트레이너별 등록률 · 재등록률은 트레이너 화면에서",
-    hero: { img: "/lp/shots/2026-10/P06.webp", alt: "PC 대표 화면 등록 · 이탈 탭: 신규 OT에서 PT 등록까지 깔때기 · 달마다 등록률 · 재등록과 이탈", wide: true },
+    hero: { img: "/lp/shots/2026-10/C08b.webp", alt: "대표 화면의 신규 OT에서 PT 등록까지 깔때기" },
     items: [
-      { name: "깔때기", desc: "OT 회원 → 1차 → 2차 → 등록", img: "/lp/shots/2026-10/C08b.webp", alt: "대표 화면의 신규 OT에서 PT 등록까지 깔때기" },
       { name: "달마다 등록률", desc: "그 달에 들어온 회원 중 몇 %가 등록했는지", img: "/lp/shots/2026-10/C10.webp", alt: "달마다 등록률 막대 그래프" },
       { name: "오늘 예정", desc: "오늘 오는 OT · 재등록 기회 회원", img: "/lp/shots/2026-10/C02.webp", alt: "아침 보고서의 오늘 예정: 오늘 오는 OT 회원 · 만료 임박 회원 · 보류 회원" },
     ],
@@ -105,9 +103,8 @@ const BUNDLES = [
     title: ["트레이너 평가,", "감이 아니라 숫자로."],
     checks: ["매출 · 1차/2차 등록률 · 재등록률 · 출석 · 이탈 위험으로 줄 세우기", "급여 방식대로 예상 급여를 계산하고 대표가 확정", "오늘 진행된 OT · 수업에서 놓친 것만 '오늘 코칭할 것'으로"],
     note: "트레이너 3인 + 대표 1인 · 트레이너는 자기 숫자만 봐요",
-    hero: { img: "/lp/shots/2026-10/P05.webp", alt: "PC 대표 화면 트레이너 탭: 센터 요약과 트레이너 리더보드", wide: true },
+    hero: { img: "/lp/shots/2026-10/C07.webp", alt: "트레이너 리더보드: 이달 매출 · 담당 회원 · 등록률 · 재등록률" },
     items: [
-      { name: "트레이너 리더보드", desc: "'…순' 칩으로 줄 세우기", img: "/lp/shots/2026-10/C07.webp", alt: "트레이너 리더보드: 이달 매출 · 담당 회원 · 등록률 · 재등록률" },
       { name: "급여 확정", desc: "예상 급여 → 최종 금액 확정", img: "/lp/shots/2026-10/C14.webp", alt: "트레이너별 예상 급여와 최종 금액 확정" },
       { name: "'내용이 달라요'", desc: "회원이 일지를 고쳐 달라고 하면 기록으로", img: "/lp/shots/2026-10/T25.webp", alt: "회원이 '내용이 달라요'를 누른 운동일지와 회원 메모" },
     ],
@@ -118,20 +115,23 @@ const BUNDLES = [
     title: ["운영도", "손이 덜 가게."],
     checks: ["요일 · 시간대 예약 밀도와 완료 · 노쇼", "센터 전체 회원 이벤트 · 필수 공지", "회원 등록 · 배정 · 트레이너 인계(남은 수업 이월)"],
     note: "트레이너 초대 · 급여 방식 설정도 여기서",
-    hero: { img: "/lp/shots/2026-10/P07.webp", alt: "PC 대표 화면 스케줄: 최근 90일 예약 · 완료율 · 노쇼율 · 트레이너별 진행 수업 · 요일 · 시간대 밀도", wide: true },
-    items: [
-      { name: "센터 이벤트", desc: "출석 챌린지 · 참여 명단 · 상품", img: "/lp/shots/2026-10/C13.webp", alt: "대표 운영 탭의 회원 이벤트: 이벤트 만들기와 진행 중 이벤트" },
-    ],
+    hero: { img: "/lp/shots/2026-10/C13.webp", alt: "대표 운영 탭의 회원 이벤트: 이벤트 만들기와 진행 중 이벤트" },
+    items: [],
   },
 ];
 
 const OPS = ["트레이너 초대", "회원 등록 · 배정", "회원 인계(남은 수업 이월)", "급여 자동계산 · 확정", "필수 공지", "스케줄 · 노쇼"];
 
-// 폰 · 태블릿 · PC — 같은 대표 계정(2026-10-06)
-const DEVICES = [
-  { kind: "phone", label: "폰", img: "/lp/shots/2026-10/C01.webp", alt: "폰 대표 화면: 아침 보고서 총평과 어제 결과", caption: "출근길엔 폰으로 아침 보고서를. 폰 알림이 오면 바로 열어요." },
-  { kind: "tablet", label: "태블릿", img: "/lp/shots/2026-10/P08.webp", alt: "태블릿 대표 홈: 배정 대기 · 오늘 챙길 것 · 이달 매출 · 등록 · 이탈 · 순이익", caption: "태블릿에선 대표 홈 한 장에 오늘 챙길 것 · 이달 매출 · 등록과 이탈 · 순이익까지." },
-  { kind: "pc", label: "PC", img: "/lp/shots/2026-10/P03.webp", alt: "PC 대표 화면: 아침 보고서 전체", caption: "사무실에선 PC로 보고서 · 매출 · 정산을 크게. 같은 계정이라 따로 설정할 것 없어요." },
+// 태블릿 · PC 버전 — 대표 화면은 넓은 화면에서 더 많이 쓴다(2026-10-06 · 데모 센터 실제 화면)
+const WIDE = [
+  { device: "pc", name: "아침 보고서", desc: "총평 · 어제 결과 · 오늘 예정", img: "/lp/shots/2026-10/P03.webp", alt: "PC 아침 보고서: AI 총평과 어제 결과(건별)" },
+  { device: "pc", name: "월간 결산", desc: "센터 숫자 · 트레이너별 면담 자료", img: "/lp/shots/2026-10/P09.webp", alt: "PC 월간 결산: 9월 센터 숫자와 트레이너별 잘한 점 · 보완할 점" },
+  { device: "pc", name: "매출", desc: "이달 매출 · 다음 달 예상 · 6개월 추이", img: "/lp/shots/2026-10/P04.webp", alt: "PC 매출: 이달 매출 현황 · 다음 달 예상 매출 · 매출 구성 · 6개월 추이" },
+  { device: "pc", name: "정산", desc: "PT · FC · 기타 매출 − 지출 = 순이익", img: "/lp/shots/2026-10/P10.webp", alt: "PC 정산: 기간별 PT 매출 · FC 매출 · 기타 매출 · 지출 · 순이익" },
+  { device: "pc", name: "트레이너", desc: "센터 요약 · 리더보드 한 표", img: "/lp/shots/2026-10/P05.webp", alt: "PC 트레이너: 센터 요약과 트레이너 리더보드 표" },
+  { device: "pc", name: "등록 · 이탈", desc: "깔때기 · 달마다 등록률 · 재등록과 이탈", img: "/lp/shots/2026-10/P06.webp", alt: "PC 등록 · 이탈: 깔때기 · 달마다 등록률 · 재등록률 · 만료 임박 · 이탈 위험" },
+  { device: "pc", name: "스케줄", desc: "완료율 · 노쇼율 · 요일 · 시간대 밀도", img: "/lp/shots/2026-10/P07.webp", alt: "PC 스케줄: 최근 90일 예약 · 완료율 · 노쇼율 · 트레이너별 진행 수업 · 예약 밀도" },
+  { device: "tablet", name: "대표 홈", desc: "오늘 챙길 것 · 이달 매출 · 등록과 이탈", img: "/lp/shots/2026-10/P08.webp", alt: "태블릿 대표 홈: 배정 대기 · 오늘 챙길 것 · 이달 매출 · 등록 · 이탈 · 순이익" },
 ];
 
 const STEPS = [
@@ -159,7 +159,7 @@ export default function CenterLandingPage() {
       <style>{LP_CSS}</style>
       <Header
         page="center"
-        nav={[["#special", "다른 점"], ["#features", "대표 화면"], ["#devices", "PC · 태블릿"], ["#pricing", "가격"], ["#faq", "자주 묻는 질문"]]}
+        nav={[["#special", "다른 점"], ["#features", "대표 화면"], ["#devices", "태블릿 · PC"], ["#pricing", "가격"], ["#faq", "자주 묻는 질문"]]}
         cta={{ label: "도입 문의", href: contact }}
       />
 
@@ -296,21 +296,6 @@ export default function CenterLandingPage() {
           </div>
         </section>
 
-        {/* ⑤-1 폰 · 태블릿 · PC — 같은 대표 계정(2026-10-06) */}
-        <section id="devices" className="scroll-mt-28 border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
-          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-6 text-center">
-            <Pill>폰 · 태블릿 · PC</Pill>
-            <h2 className={`rv m-0 ${H2} ${H2_LG}`}>
-              <span className="block">아침엔 폰으로,</span>
-              <span className="block text-primary">사무실에선 PC로 크게.</span>
-            </h2>
-            <p className="rv m-0 max-w-[520px] text-[clamp(16px,2.4vw,19px)] leading-[1.6] text-sub" style={stagger(1)}>
-              설치 없이 브라우저로, 같은 계정이 어디서나 열려요. 화면이 넓어지면 대표 화면이 넓은 배치로 바뀌어요.
-            </p>
-            <div className="rv w-full" style={stagger(2)}><Devices items={DEVICES} /></div>
-          </div>
-        </section>
-
         {/* ⑥ 도입은 이렇게 — 순서 자체가 정보라 여기서만 번호 */}
         <section id="process" className="scroll-mt-28 bg-card px-5 py-[clamp(56px,10vw,104px)]">
           <div className="mx-auto flex max-w-[760px] flex-col items-center gap-6 text-center">
@@ -326,6 +311,21 @@ export default function CenterLandingPage() {
                 </li>
               ))}
             </ol>
+          </div>
+        </section>
+
+        {/* 태블릿 · PC 버전 제공 — 넓은 화면 모음(2026-10-06 대표) */}
+        <section id="devices" className="scroll-mt-28 border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
+          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-6 text-center">
+            <Pill>태블릿 · PC 버전 제공</Pill>
+            <h2 className={`rv m-0 ${H2} ${H2_LG}`}>
+              <span className="block">대표 화면은</span>
+              <span className="block text-primary">PC에서 더 크게.</span>
+            </h2>
+            <p className="rv m-0 max-w-[540px] text-[clamp(16px,2.4vw,19px)] leading-[1.6] text-sub" style={stagger(1)}>
+              폰과 같은 계정으로 태블릿 · PC에서도 열려요. 화면이 넓어지면 보고서 · 매출 · 정산을 넓은 배치로 한눈에 봐요. 설치 없이 브라우저로.
+            </p>
+            <div className="rv w-full" style={stagger(2)}><FeatureGallery items={WIDE} label="태블릿 · PC 대표 화면" /></div>
           </div>
         </section>
 
