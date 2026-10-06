@@ -15,6 +15,7 @@ import MyPtCard from "@/components/member/MyPtCard";
 import MemberPushCard from "@/components/member/MemberPushCard";
 import BookingCard from "@/components/member/BookingCard";
 import MemberEvents from "@/components/member/MemberEvents";
+import WorkoutLogBody, { gainsByLog, exercisesOf } from "@/components/member/WorkoutLogBody";
 import RoutineSection from "@/components/member/RoutineSection";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
@@ -113,16 +114,6 @@ function dayStr(offset = 0) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 const EARLIEST_DAYS = -2;
-
-// 운동일지의 종목 · 세트(sets_structured) → 사람이 읽는 줄들. 글 요약이 없을 때도 수업 내용을 보여 주려고(2026-10-06).
-function setLines(l) {
-  const list = Array.isArray(l?.sets_structured) ? l.sets_structured : [];
-  return list.filter((e) => e && e.exercise).map((e) => {
-    const sets = (Array.isArray(e.sets) ? e.sets : []).filter((s) => s && (s.weight != null || s.reps != null));
-    const body = sets.map((s) => `${s.weight != null && s.weight !== "" ? `${s.weight}kg` : "맨몸"}×${s.reps ?? "–"}`).join(" · ");
-    return { name: e.exercise, body };
-  });
-}
 
 function todayStr() {
   const d = new Date();
@@ -873,20 +864,7 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
             <div className="text-xs font-semibold text-muted">
               {cur.session_at ? new Date(cur.session_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }) : "날짜 미상"}
             </div>
-            {cur.ai_summary && (
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{cur.ai_summary}</p>
-            )}
-            {setLines(cur).length > 0 && (
-              <ul className="mt-2 space-y-1 border-t border-line pt-2">
-                {setLines(cur).map((x, k) => (
-                  <li key={k} className="text-[14px] leading-relaxed">
-                    <span className="font-semibold text-ink">{x.name}</span>
-                    {x.body && <span className="ml-2 font-mono text-[13px] text-sub">{x.body}</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {!cur.ai_summary && setLines(cur).length === 0 && <p className="mt-2 text-sm text-muted">수업 기록만 있고 내용은 비어 있어요.</p>}
+            <div className="mt-2"><WorkoutLogBody log={cur} /></div>
           </Card>
           {cur.dispute_at && !disputeOpenM(cur) && (
             <p className="mt-3 rounded-lg bg-primary-soft px-3 py-2 text-[13px] font-semibold text-primary-strong">트레이너가 내용을 고쳤어요. 다시 확인해 주세요.</p>
@@ -938,6 +916,8 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
   // 탭(2026-10-06 대표: '내 기록'에 정보가 너무 많다) — 홈 · 운동일지 · 변화 · 기록하기. 첫 화면 = 홈.
   //   전부 그려 두고 안 보이는 탭만 숨긴다 — 탭을 오가도 펼친 것 · 쓰던 글 · 확인 창 상태가 남는다.
   const [subTab, setSubTab] = useState("home");
+  const [bigText, setBigText] = useState(() => { try { return localStorage.getItem("pt-member-bigtext") === "1"; } catch { return false; } });
+  const gains = useMemo(() => gainsByLog(logs), [logs]);   // 종목별 지난번보다 늘어난 무게
   const [nowMs] = useState(() => Date.now());
   // 동의(2026-10-05) — consentRows가 null이면 표 없음 · 조회 실패 → 묻지 않는다(잠금 금지).
   const consent = useMemo(() => (consentRows ? latestConsent(consentRows) : null), [consentRows]);
@@ -1099,7 +1079,14 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {/* 수업일지 타임라인 */}
         <section className="mb-8">
-          <Eyebrow icon={NotebookPen}>내 운동일지</Eyebrow>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <Eyebrow icon={NotebookPen}>내 운동일지</Eyebrow>
+            {/* 글씨 크게(2026-10-06 · 어르신 · 이 기기만 기억) */}
+            <button type="button" onClick={() => setBigText((v) => { try { localStorage.setItem("pt-member-bigtext", v ? "0" : "1"); } catch { /* 무시 */ } return !v; })}
+              aria-pressed={bigText} className={`min-h-[36px] shrink-0 rounded-full border px-3 text-[14px] font-semibold ${bigText ? "border-primary bg-primary-soft text-primary-strong" : "border-line bg-card text-sub"}`}>
+              가<span className="text-[17px]">가</span> 글씨 크게
+            </button>
+          </div>
           {logs.length === 0 ? (
             <EmptyState className="rounded-2xl border border-dashed border-line bg-card px-4 py-8 text-center text-sm">
               아직 기록된 운동일지가 없어요.
@@ -1108,11 +1095,12 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
             <ul className="space-y-2">
               {logs.map((l, i) => {
                 const round = logs.length - i; // 최신순 배열 → 오래된 게 1회차(누적)
-                const lines = setLines(l);
-                const hasMore = Boolean(l.ai_summary) || lines.length > 0;
+                const exs = exercisesOf(l);
+                const hasMore = Boolean(l.ai_summary) || exs.length > 0;
                 return (
                   <li key={l.id}>
-                    <details className="group rounded-2xl border border-line bg-card p-4 shadow-sm">
+                    {/* 가장 최근 일지는 펼친 채로(2026-10-06) */}
+                    <details open={i === 0 || undefined} className="group rounded-2xl border border-line bg-card p-4 shadow-sm">
                       <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.session_at ?? l.created_at)}</span>
@@ -1129,27 +1117,15 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                             <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
                           )}
                         </div>
-                        {l.ai_summary ? (
-                          <p className="mt-1.5 text-sm text-sub line-clamp-1 group-open:hidden">{l.ai_summary}</p>
-                        ) : lines.length ? (
-                          <p className="mt-1.5 text-sm text-sub line-clamp-1 group-open:hidden">{lines.map((x) => x.name).join(" · ")}</p>
+                        {exs.length ? (
+                          <p className={`mt-1.5 line-clamp-1 text-sub group-open:hidden ${bigText ? "text-[16px]" : "text-sm"}`}>{exs.map((x) => x.name).join(" · ")} · {exs.length}종목</p>
+                        ) : l.ai_summary ? (
+                          <p className={`mt-1.5 line-clamp-1 text-sub group-open:hidden ${bigText ? "text-[16px]" : "text-sm"}`}>{l.ai_summary}</p>
                         ) : (
                           <p className="mt-1.5 text-sm text-muted">상세 내용이 없어요.</p>
                         )}
                       </summary>
-                      {l.ai_summary && (
-                        <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">{l.ai_summary}</p>
-                      )}
-                      {lines.length > 0 && (
-                        <ul className="mt-3 space-y-1.5 border-t border-line pt-3">
-                          {lines.map((x, k) => (
-                            <li key={k} className="text-[14px] leading-relaxed">
-                              <span className="font-semibold text-ink">{x.name}</span>
-                              {x.body && <span className="ml-2 font-mono text-[13px] text-sub">{x.body}</span>}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                      {hasMore && <div className="mt-3"><WorkoutLogBody log={l} gains={gains.get(l.id) || {}} big={bigText} /></div>}
                     </details>
                   </li>
                 );

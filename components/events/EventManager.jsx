@@ -61,7 +61,7 @@ function Participants({ event, showToast }) {
             <span className="min-w-0 flex-1">
               <b className="font-semibold text-ink">{r.name}</b>
               <span className="ml-1.5 text-[12.5px] text-sub">
-                {new Date(r.joined_at).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })} 참여
+                {(() => { const d = new Date(r.joined_at); return `${d.getMonth() + 1}/${d.getDate()}`; })()} 참여
                 {event.kind === "challenge" && <> · {r.progress}/{event.goal_count}회{hit && <b className="ml-1 text-primary-strong">달성</b>}</>}
               </span>
             </span>

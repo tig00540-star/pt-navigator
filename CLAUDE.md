@@ -186,6 +186,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **이벤트 `member_event`**(트레이너 = 내 회원 · 대표 = 센터 전체/특정 트레이너 회원): 종류 **출석 챌린지**(기간 안 오운완 N회 · 진행은 DB `_event_progress` = `ounwan_days` 기간 카운트 · 상시면 전체) / **일반 이벤트**(참여 신청만) · 제목 · 설명 · 상품/혜택 · **이벤트 기간**(starts_on~ends_on · 비우면 상시) · **신청 기간**(join_from~join_until · 비우면 이벤트 기간) · 정원(선착순) · 만들 때 회원 폰 알림(`event_new`). 관리 = `components/events/EventManager`(트레이너 설정 '이벤트' 탭 = 옛 '포상' · 주소 `/settings/reward` 그대로 · 대표 운영 탭) · 참여 명단 rpc `event_participants`(센터 이벤트는 트레이너에게 자기 회원만) · **지급 완료** `set_event_reward`.
 - **회원** `components/member/MemberEvents`(홈 맨 위 띠 · 자세히 시트 · **[참여하기] = rpc `join_member_event` · 참여 취소 없음(대표 결정 · 화면에 미리 알림)** · 챌린지 진행 막대 · 달성 → "트레이너에게 받으세요"). 읽기 `member_events_view`(끝난 지 7일까지). 참여 → 만든 사람 + 담당 트레이너 알림 `event_join`.
 - **옛 포상 `trainer_reward`** → SQL이 '상시 출석 챌린지'(legacy_reward_id)로 옮김 · 표는 남김 · 앱은 더 안 읽음(오운완 카드의 포상 칸 · `OunwanRewardSettings` 사용 중단).
+- **회원 운동일지 표(2026-10-06 · 어르신도 한눈에):** `components/member/WorkoutLogBody`(회원 운동일지 목록 · 확인 창 공용) = 맨 위 'N종목 · M세트' → 종목마다 표(세트 | 무게 | 횟수 · 숫자 크게 · 0kg = 맨몸) + **'지난번보다 ▲ N kg'**(그 종목 가장 무거운 세트가 늘었을 때만 · cyan · `gainsByLog`) → **트레이너 설명 = 저장된 글 그대로 전부 펼침**(대표 결정). 최근 일지는 펼친 채로 · 운동일지 탭 **'가가 글씨 크게'**(이 기기 `pt-member-bigtext`). 저장 데이터는 그대로(보여 주기만).
 - **회원 홈 정리:** 이벤트 띠 → 알림 켜기 한 줄(꺼져 있을 때만 · 켜지면 맨 아래 '폰 알림 받는 중 · 끄기' = `MemberPushCard place`) → **'내 PT' 하나**(남은 수업 + 수업 일정(`BookingCard embedded` · 트레이너가 요청 안 받으면 잡힌 수업만) + 목표 로드맵 접힘) → 오운완. **운동 달력은 운동일지 탭으로.** 지난 회원은 '내 PT'에 '다음 수업' 한 줄.
 
 ### 대표 화면 스타일 통일 (2026-10-05)
