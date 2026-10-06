@@ -214,6 +214,13 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **파기:** 결제 작업(`charge-subscriptions`)이 파기 하루 전 대표 폰 알림(type `account` · `purge_notified_at` 한 번). ⚠️ **자동 파기는 아직 안 함**(대상 수 `purgeDue`만 보고 · 대표 확인 뒤 별도 작업).
 - 약관 제11조 · 환불 정책 3장 문구 = 설정에서 해지 예약 · 만료 뒤 30일 열람 · 내려받기(`COMPANY.termsDate`).
 
+### 개인 → 센터 합류 · 회원 이동 동의 (2026-10-07 · SQL `docs/migrations/2026-10-07-join-center.sql` · 계획서 2단계)
+
+- **초대:** 대표 운영 탭 `JoinInviteCard` → rpc `create_join_invite`(센터 대표만 · 16자 · 7일 · 한 번) → `/join-center/{code}`(AuthGate가 잠긴 계정도 통과). 미리 보기 · 합류 = `/api/move/join`(GET · POST · service_role · 개인 계정 주인만 · 좌석 3).
+- **합류 = DB `_join_center`(service_role만):** 트레이너 → 센터 소속 role trainer(같은 로그인) · 트레이너 것(pt_package · sales_case · intake_link · trainer_event · trainer_booking_pref · trainer_profile · library_item · notify_pref) 이동 · 회원마다 `member_transfer`(14일) · 개인 계정 닫기(inactive · 기간 = 지금 → 30일 볼 수만 · billing_key 지움 · `merged_into` · `closed_reason` join). **남은 개인 구독 = 토스 부분 취소 일할 환불**(`lib/refund` `proratedRefund` · `lib/toss` `cancelPayment` · 실패면 payment REFUND_FAILED + 로그 → 수동). 개인 장부(income · expense)는 안 옮김.
+- **회원 동의:** 회원 전용 페이지 `TransferAsk`(rpc `my_member_transfer` · `answer_member_transfer`) → 동의하면 `_move_member`: **account_id가 있는 모든 표**(information_schema로 찾음 · user_table · member_transfer · member_event_join · owner_feedback · 보고서 표 제외)를 회원 기준으로 바꿈 · 계약은 `imported_from` · `imported_at` · **counts_as_revenue=false**(센터 매출 · 급여 · 등록률 계산에 안 섞임 · 남은 수업 · 재등록 흐름엔 그대로) · 이벤트 참여 끊음 · `member_consent` kind `transfer`. 답 없으면 안 옮김(14일 · 옛 계정과 함께 30일 뒤 지워짐).
+- ⚠️ 새 표에 회원 기록을 담으면 `account_id` + `user_id`/`member_id` 칸을 두면 이동에 자동 포함된다(이름이 다르면 `_move_member`가 놓침).
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.

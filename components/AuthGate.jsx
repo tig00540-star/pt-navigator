@@ -157,6 +157,8 @@ export default function AuthGate({ children }) {
   // 결제 리다이렉트 착지(/billing/*) — 로그인 상태면 Paywall 대신 결제 처리 화면을 렌더
   // (착지 후 confirm이 계정을 활성화하므로, 잠긴 상태에서도 이 경로는 통과시켜야 함).
   if (pathname.startsWith("/billing") && session) return <>{children}</>;
+  // 센터 합류 초대(/join-center/*) — 개인 구독이 끝나 잠겼어도 합류는 할 수 있어야 한다(2026-10-07)
+  if (pathname.startsWith("/join-center/") && session) return <>{children}</>;
 
   // 데모 모드(supabase null) or 로그인됨 → 앱 렌더
   if (!supabase || session) {
