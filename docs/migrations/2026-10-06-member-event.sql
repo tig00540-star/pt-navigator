@@ -78,13 +78,22 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function _event_progress(member_event, uuid) from public, anon, authenticated;   -- ⛔ ounwan_days 우회 · 래퍼로만
 
+-- 회원용 래퍼 — 뷰 안의 함수는 '보는 사람' 권한으로 돌아서(뷰 주인 권한이 아님) 위 함수를 직접 못 부른다.
+--   이건 호출한 회원 본인(auth_member_id)의 진행만 센다 → 남의 기록을 볼 수 없다.
+create or replace function _my_event_progress(e member_event) returns int
+language sql stable security definer set search_path = public as $$
+  select case when auth_member_id() is null then null else _event_progress(e, auth_member_id()) end
+$$;
+revoke all on function _my_event_progress(member_event) from public, anon;
+grant execute on function _my_event_progress(member_event) to authenticated;
+
 -- ── 회원: 나에게 열린 이벤트(끝난 지 7일 지나면 안 보임) ──────────────────────────
 create or replace view member_events_view
   with (security_invoker = false) as
   select e.id, e.kind, e.title, e.body, e.goal_count, e.reward_text, e.starts_on, e.ends_on, e.join_from, e.join_until, e.capacity,
          (select count(*) from member_event_join j where j.event_id = e.id)::int as joined_count,
          (j.member_id is not null) as joined, j.joined_at, j.rewarded_at,
-         case when j.member_id is not null and e.kind = 'challenge' then _event_progress(e, u.id) end as progress
+         case when j.member_id is not null and e.kind = 'challenge' then _my_event_progress(e) end as progress
   from member_event e
   join user_table u on u.id = auth_member_id()
   left join member_event_join j on j.event_id = e.id and j.member_id = u.id
