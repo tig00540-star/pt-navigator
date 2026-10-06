@@ -27,7 +27,7 @@ export const SETTINGS_SUBTABS = [
   { id: "notify",  label: "알림" },   // 폰 푸시 알림 켜기 · 종류별 on/off(2026-10-06)
 ];
 
-// isFreelance = 개인 계정 중 프리랜서(급여 없음 → '가격 · 급여' 대신 '가격표' · 급여 방식 숨김 · 2026-10-06)
+// isFreelance = 개인 계정 중 프리랜서 — 급여 방식은 선택(센터 · 짐과 매출을 나누면 정함 · 안 정하면 PT 매출 전부가 내 몫 · 2026-10-06)
 export default function SettingsView({ isSolo = false, isFreelance = false, sub = "me" }) {
   return (
     <div className="space-y-6 break-keep text-pretty">
@@ -38,7 +38,7 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
             return (
               <Link key={t.id} href={`/settings/${t.id}`} aria-current={on ? "page" : undefined}
                 className={`inline-flex min-h-[40px] shrink-0 items-center rounded-full px-3.5 text-[14px] transition ${on ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}>
-                {isSolo && !isFreelance && t.id === "money" ? "가격 · 급여" : t.label}
+                {isSolo && t.id === "money" ? "가격 · 급여" : t.label}
               </Link>
             );
           })}
@@ -71,7 +71,7 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
         /* 입력 폼이라 너무 넓으면 읽기 어렵다 — 넓은 화면에선 폭을 묶는다. */
         <div className="space-y-6 lg:max-w-3xl">
           <PtPricingSettings />
-          {isSolo && !isFreelance && <AdminPayrollSettings trainers={[]} solo />}
+          {isSolo && <AdminPayrollSettings trainers={[]} solo freelance={isFreelance} />}
         </div>
       )}
       {sub === "gear" && <CenterMachineSettings />}

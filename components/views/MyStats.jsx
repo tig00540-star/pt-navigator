@@ -206,7 +206,11 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     };
   }, [members, contracts, logs, otRows, schemes, runs, uid, goals, contractNames]);
 
-  const manualPay = isSolo && !isFreelance && pay.computed == null && scheme?.type === "manual";
+  const manualPay = isSolo && pay.computed == null && scheme?.type === "manual";
+  // 프리랜서 PT 몫: 적은 금액 > 급여 방식 계산 > (방식 없음) PT 매출 전부. 수동인데 아직 안 적었으면 0(입력 안내).
+  const hasScheme = scheme != null;
+  const ptShare = confirmed ? myRun.final_total : hasScheme ? (pay.computed ?? 0) : rev.total;
+  const ptShareLabel = confirmed ? "내 몫(적은 금액)" : hasScheme ? (manualPay ? "내 몫(아직 안 적음)" : "내 몫(급여 방식)") : "PT 매출";
   const saveManual = async () => {
     const amt = Math.round(Number(String(manualAmt).replace(/[^0-9]/g, "")));
     if (!Number.isFinite(amt) || amt <= 0) { setManualNote("금액을 입력해 주세요."); return; }
@@ -221,10 +225,25 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     setRuns((rs) => [...rs.filter((r) => !(r.trainer_id === uid && r.ym === ym)), data[0]]);
     setManualAmt("");
   };
+  // 개인 계정 + 수동 급여 — 대표 확정 화면이 없으니 받은 금액(내 몫)을 직접 적는다
+  const manualCard = (
+    <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
+      <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
+        <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 받은 금액{isFreelance ? "(내 몫)" : ""}
+      </div>
+      <p className="m-0 mt-1 text-[13px] text-sub">{isFreelance ? "센터 · 짐과 나눈 뒤 이달 내 몫을 적어 두면 남은 돈에 반영돼요." : "센터에서 받은 이달 급여 · 수수료를 적어 두면 지난달과 비교할 수 있어요."}</p>
+      <div className="mt-2.5 flex gap-2">
+        <input type="text" inputMode="numeric" value={manualAmt} onChange={(e) => setManualAmt(e.target.value.replace(/[^0-9,]/g, ""))}
+          placeholder="예: 2,800,000" aria-label="이달 받은 금액" className={`${inputCls} min-w-0 flex-1`} />
+        <Button variant="primary" size="md" onClick={saveManual} disabled={manualBusy}>{manualBusy ? "저장 중…" : "저장"}</Button>
+      </div>
+      {manualNote && <p className="m-0 mt-1.5 text-[13px] text-danger-text">{manualNote}</p>}
+    </div>
+  );
   // 프리랜서 이달(달력 월) — PT 매출(내 계약) + PT 외 매출 − 지출. 자세한 기간 정산은 아래 장부 · 정산.
   const monthIncome = incomes.filter((r) => String(r.earned_on || "").startsWith(ym)).reduce((a, r) => a + (r.amount || 0), 0);
   const monthExpense = expenses.filter((e) => String(e.spent_on || "").startsWith(ym)).reduce((a, e) => a + (e.amount || 0), 0);
-  const monthNet = rev.total + monthIncome - monthExpense;
+  const monthNet = ptShare + monthIncome - monthExpense;
 
   return (
     /* 넓은 화면(lg~): 왼쪽 급여·매출·수업 | 오른쪽 오운완 랭킹. 폰은 위아래 한 줄. */
@@ -248,29 +267,20 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
       </div>
 
       {isFreelance ? (
-        /* 프리랜서 헤드라인 — 이달 남은 돈(매출 − 지출) · 누르면 장부 · 정산 */
+        <>
+        {/* 프리랜서 헤드라인 — 이달 남은 돈(내 몫 + PT 외 − 지출) · 누르면 장부 · 정산 */}
         <button type="button" onClick={() => openDetails(ledgerRef.current)} className="block w-full rounded-2xl border border-primary/30 bg-primary-soft p-5 text-left shadow-sm transition hover:border-primary/60 active:scale-[0.99]">
           <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
             <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 남은 돈(매출 − 지출)
             <ChevronRight className="ml-auto h-4 w-4 text-primary-strong/70" aria-hidden="true" />
           </div>
           <div className={`mt-1.5 tabular-nums text-[30px] font-bold tracking-[-0.03em] ${monthNet < 0 ? "text-danger-text" : "text-ink"}`}>{won(monthNet)}</div>
-          <div className="mt-0.5 text-[13px] text-sub">PT 매출 {won(rev.total)}{monthIncome ? ` + PT 외 ${won(monthIncome)}` : ""} − 지출 {won(monthExpense)}</div>
+          <div className="mt-0.5 text-[13px] text-sub">{ptShareLabel} {won(ptShare)}{hasScheme ? ` (PT 매출 ${won(rev.total)} 중)` : ""}{monthIncome ? ` + PT 외 ${won(monthIncome)}` : ""} − 지출 {won(monthExpense)}</div>
         </button>
+        {manualPay && !confirmed && <div className="mt-3">{manualCard}</div>}
+        </>
       ) : manualPay && !confirmed ? (
-        /* 개인 · 센터 소속 + 수동 급여 — 대표 확정 화면이 없으니 받은 금액을 직접 적는다 */
-        <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
-          <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
-            <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 받은 금액
-          </div>
-          <p className="m-0 mt-1 text-[13px] text-sub">센터에서 받은 이달 급여 · 수수료를 적어 두면 지난달과 비교할 수 있어요.</p>
-          <div className="mt-2.5 flex gap-2">
-            <input type="text" inputMode="numeric" value={manualAmt} onChange={(e) => setManualAmt(e.target.value.replace(/[^0-9,]/g, ""))}
-              placeholder="예: 2,800,000" aria-label="이달 받은 금액" className={`${inputCls} min-w-0 flex-1`} />
-            <Button variant="primary" size="md" onClick={saveManual} disabled={manualBusy}>{manualBusy ? "저장 중…" : "저장"}</Button>
-          </div>
-          {manualNote && <p className="m-0 mt-1.5 text-[13px] text-danger-text">{manualNote}</p>}
-        </div>
+        manualCard
       ) : (
       <button type="button" onClick={openPay} className="block w-full rounded-2xl border border-primary/30 bg-primary-soft p-5 text-left shadow-sm transition hover:border-primary/60 active:scale-[0.99]">
         <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
@@ -323,7 +333,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         <StatTile icon={Target} label="등록률" value={rate}>
           <div className="mt-1.5 text-[12.5px] text-sub">등록 제안 {closing.attempted}명 중 {closing.success}명</div>
         </StatTile>
-        <StatTile icon={Dumbbell} label="이번 달 수업" value={`${sessionCount}회`} onClick={isFreelance ? undefined : openPay}>
+        <StatTile icon={Dumbbell} label="이번 달 수업" value={`${sessionCount}회`} onClick={isFreelance && !hasScheme ? undefined : openPay}>
           <div className="mt-1.5 text-[12.5px] text-sub">
             회원 {new Set(payLines.map((l) => l.user_id)).size}명{payLines.some((l) => l.noshow) ? ` · 노쇼 ${payLines.reduce((s, l) => s + l.noshow, 0)}회 포함` : ""}
           </div>
@@ -420,8 +430,8 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         </details>
       )}
 
-      {/* 급여 내역 — 회원 · 수업 횟수 · 회당 단가 · 받는 수업료(2026-10-03) · 프리랜서는 급여가 없어 숨김 */}
-      {!isFreelance && (<>
+      {/* 급여 내역 — 회원 · 수업 횟수 · 회당 단가 · 받는 수업료(2026-10-03) · 프리랜서는 급여 방식을 정했을 때만 */}
+      {(!isFreelance || hasScheme) && (<>
       <details ref={payRef} className="group scroll-mt-20 rounded-2xl border border-line bg-card px-5 shadow-sm">
         <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">

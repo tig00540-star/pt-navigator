@@ -41,7 +41,8 @@ const bandsFromRow = (row) => (Array.isArray(row?.bands) ? row.bands.map((b) => 
   incentive_value: b.incentive_value == null ? "" : String(b.incentive_value),
 })) : []);
 
-export default function AdminPayrollSettings({ trainers = [], solo = false }) {
+// freelance = 개인 · 프리랜서: 급여 방식은 선택 — 센터 · 짐과 매출을 나누면 정하고, 회원비를 전부 받으면 안 정한다(2026-10-06).
+export default function AdminPayrollSettings({ trainers = [], solo = false, freelance = false }) {
   const [schemes, setSchemes] = useState([]);        // 전체 pay_scheme 행(계정 기본 + override)
   const [scope, setScope] = useState(null);          // null=계정 기본 · trainerId=그 트레이너 override
   const [loading, setLoading] = useState(true);
@@ -155,6 +156,22 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
     }
   };
 
+  // 프리랜서: 내 급여 방식 지우기 → PT 매출 전부가 내 몫
+  const clearMine = async () => {
+    const row = schemes.find((s) => (s.trainer_id ?? null) === null);
+    if (saving || !row || !supabase) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.from("pay_scheme").delete().eq("id", row.id).select();
+      if (error || !data || data.length === 0) { console.error("급여 방식 지우기 실패", error); showToast("지우지 못했어요. 다시 시도해 주세요."); return; }
+      setSchemes((p) => p.filter((s) => s.id !== row.id));
+      loadForm(null);
+      showToast("지웠어요. 이제 PT 매출 전부가 내 몫이에요");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // override 삭제 — 이 트레이너 전용 정책을 지워 계정 기본을 따르게. 계정 기본(null)엔 없음.
   const removeOverride = async () => {
     if (saving || scope == null) return;
@@ -187,6 +204,17 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
       <SectionTitle icon={Wallet}>{solo ? "내 급여 방식" : `급여 정책 설정 · ${scope == null ? "계정 기본" : (trainers.find((t) => t.id === scope)?.name || "트레이너")}`}</SectionTitle>
 
       <Card as="section">
+        {freelance && (
+          <div className="mb-4 rounded-lg border border-line bg-elevate px-3.5 py-3 text-[13px] leading-relaxed text-sub">
+            <b className="text-ink">센터 · 짐과 매출을 나누면</b>(예: 매출의 60%가 내 몫) 여기서 정해 두세요. 내 실적의 &lsquo;남은 돈&rsquo;이 내 몫으로 계산돼요.
+            {" "}회원비를 전부 직접 받으면 정하지 않아도 돼요.
+            {!loading && currentRow && (
+              <button type="button" onClick={clearMine} disabled={saving} className="mt-2 block font-semibold text-primary-strong underline underline-offset-2 disabled:opacity-50">
+                정한 급여 방식 지우기(PT 매출 전부 내 몫)
+              </button>
+            )}
+          </div>
+        )}
         {/* 스코프 선택 — 계정 기본 + 트레이너별 override. solo면 대상이 본인 1명뿐이라 숨김(scope=null 유지). */}
         {!solo && (
         <div className="mb-4">
@@ -237,7 +265,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false }) {
 
             {type === "manual" ? (
               <p className="rounded-lg border border-line bg-elevate px-3 py-2.5 text-[12px] leading-relaxed text-sub">
-                {solo ? "매달 센터에서 받은 금액을 내 실적에서 직접 적어요. (자동 계산 없음)" : "매월 확정 화면에서 대표가 최종 급여액을 직접 입력해요. (자동 계산 없음)"}
+                {solo ? "매달 받은 금액(내 몫)을 내 실적에서 직접 적어요. (자동 계산 없음)" : "매월 확정 화면에서 대표가 최종 급여액을 직접 입력해요. (자동 계산 없음)"}
               </p>
             ) : (
               <>
