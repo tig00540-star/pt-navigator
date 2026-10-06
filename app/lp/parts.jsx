@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, X, ZoomIn } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, Monitor, Smartphone, Tablet, X, ZoomIn } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
 import ImageLightbox from "@/components/ui/ImageLightbox";
@@ -430,6 +430,36 @@ export function Bundle({ id, pill, title, checks, note, hero, items, label, href
           {href && <TryLink href={href} dark={dark} />}
         </div>
       </FeatureRow>
+    </div>
+  );
+}
+
+/* 폰 · 태블릿 · PC(2026-10-06) — 같은 계정이 화면 크기에 맞춰 배치를 바꾼다. 칩으로 고르고, 사진을 누르면 크게.
+   items: { kind: "phone"|"tablet"|"pc", label, caption, img, alt } · 처음엔 PC(가장 달라 보이는 화면)부터. */
+const DEVICE_ICON = { phone: Smartphone, tablet: Tablet, pc: Monitor };
+export function Devices({ items, start = items.length - 1 }) {
+  const [i, setI] = useState(start);
+  const it = items[i];
+  return (
+    <div className="flex w-full flex-col items-center gap-4">
+      <div className="grid w-full max-w-[420px] grid-cols-3 gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="화면 크기">
+        {items.map((d, k) => {
+          const Icon = DEVICE_ICON[d.kind] || Monitor;
+          return (
+            <button key={d.kind} type="button" role="tab" aria-selected={k === i} onClick={() => setI(k)}
+              className={`inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-2 text-[14px] font-extrabold transition-colors ${FOCUS} ${
+                k === i ? "bg-card text-ink shadow-sm" : "text-sub hover:text-ink"}`}>
+              <Icon size={16} strokeWidth={2.4} aria-hidden="true" className={k === i ? "text-primary" : "text-muted"} /> {d.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className={`mx-auto w-full ${it.kind === "phone" ? "max-w-[380px]" : "max-w-[760px]"}`}>
+        <div className="rounded-[24px] border border-line bg-bg p-1.5 sm:p-3">
+          <Shot key={it.img} src={it.img} alt={it.alt} wide={it.kind !== "phone"} />
+        </div>
+      </div>
+      <p className="m-0 max-w-[520px] text-[15px] leading-[1.6] text-sub">{it.caption}</p>
     </div>
   );
 }

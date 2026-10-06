@@ -43,7 +43,7 @@ function GoLink({ tab, onGoTab, children }) {
 }
 
 // inHome = 넓은 홈 안에 붙을 때 — 위 칸(이달 매출)과 겹치는 매출 KPI를 뺀다.
-export default function OwnerOverview({ members = [], otRows = [], contracts = [], logs = [], trainers = [], appts = [], expenses = [], ym, onGoTab, inHome = false }) {
+export default function OwnerOverview({ members = [], otRows = [], contracts = [], logs = [], trainers = [], appts = [], expenses = [], incomes = [], ym, onGoTab, inHome = false }) {
   // hidden 제외 · 회원→담당 트레이너 맵(TrainerScorecard와 동일 규율)
   const visible = useMemo(() => members.filter((m) => !m?.hidden), [members]);
   const memberTrainer = useMemo(() => {
@@ -54,7 +54,9 @@ export default function OwnerOverview({ members = [], otRows = [], contracts = [
 
   const monthRev = useMemo(() => revenueInMonth(contracts, ym), [contracts, ym]);
   const monthExpense = useMemo(() => expenseInMonth(expenses, ym), [expenses, ym]);
-  const netProfit = monthRev - monthExpense;
+  // 순이익 = PT 매출 + 장부 매출(FC · 기타) − 지출 — 정산 화면 합계표와 같은 식(2026-10-06 · 예전엔 FC를 빼고 계산해 정산과 숫자가 달랐다)
+  const monthIncome = useMemo(() => (Array.isArray(incomes) ? incomes : []).reduce((s, r) => (r && typeof r.earned_on === "string" && r.earned_on.slice(0, 7) === ym ? s + (r.amount || 0) : s), 0), [incomes, ym]);
+  const netProfit = monthRev + monthIncome - monthExpense;
   const revMap = useMemo(() => new Map(revenueByTrainer(contracts, ym).map((r) => [r.trainer_id, r])), [contracts, ym]);
   const sessMap = useMemo(() => sessionsThisMonthByTrainer(logs, memberTrainer, ym), [logs, memberTrainer, ym]);
   // 이번달 수업 = 트레이너 탭 '센터 요약'과 같은 정의(OT 1·2차 + PT · 노쇼·void 제외).
@@ -106,7 +108,7 @@ export default function OwnerOverview({ members = [], otRows = [], contracts = [
       <div className={inHome ? "grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5" : "grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6"}>
         {!inHome && <KPI icon={Wallet} label="이번 달 매출" value={won(monthRev)} sub="등록일 기준" />}
         <KPI icon={Receipt} label="이번 달 지출" value={won(monthExpense)} sub="장부 기준" />
-        <KPI icon={PiggyBank} label="순이익" value={won(netProfit)} sub="매출−지출" />
+        <KPI icon={PiggyBank} label="순이익" value={won(netProfit)} sub={monthIncome ? "PT + FC · 기타 매출 − 지출" : "매출 − 지출"} />
         <KPI icon={CalendarDays} label="이번 달 수업" value={`${monthSess.toLocaleString("ko-KR")}회`} sub={`OT ${monthOt} · PT ${monthPt}`} />
         <KPI icon={Users} label="회원" value={`${visible.length.toLocaleString("ko-KR")}명`} />
         <KPI icon={UserCircle} label="트레이너" value={`${trainers.length}명`} />

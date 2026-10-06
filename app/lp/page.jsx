@@ -21,7 +21,7 @@ import { PLANS } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, Bundle, H3,
+  Pill, Checks, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, Bundle, H3, Devices,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -174,6 +174,13 @@ const BUNDLES = [
 // 회원 전용 페이지에 실제로 뜨는 문구 — 후기가 아니라 제품 화면이다(실제 폰 알림 사진이 오면 바꾼다).
 const MEMBER_NOTICES = ["오늘 운동일지가 도착했어요", "이번 달 출석 8회, 오운완 챌린지 진행 중"];
 
+// 폰 · 태블릿 · PC — 같은 계정(2026-10-06 · 데모 센터 실제 화면 · 넓은 홈은 1024px부터)
+const DEVICES = [
+  { kind: "phone", label: "폰", img: "/lp/shots/2026-10/T04.webp", alt: "폰 홈: 새 OT 회원 카드와 회원 수업 요청", caption: "수업 사이 이동하면서는 폰으로. 새 OT 회원 · 수업 요청 · 할 일이 홈에 먼저 떠요." },
+  { kind: "tablet", label: "태블릿", img: "/lp/shots/2026-10/P02.webp", alt: "태블릿 가로 화면: 주간 스케줄과 오늘 할 일을 나란히", caption: "태블릿에선 주간 스케줄과 오늘 할 일을 나란히. 센터 데스크에 두고 써도 좋아요." },
+  { kind: "pc", label: "PC", img: "/lp/shots/2026-10/P01.webp", alt: "PC 넓은 홈: 오늘 일정 · 챙길 회원 · 회원 쪽 소식을 한 화면에", caption: "PC에선 오늘 일정 · 챙길 회원 · 회원 쪽 소식을 한 화면에. 같은 계정이라 따로 설정할 것 없어요." },
+];
+
 // 사진 없이 이름만 — 묶음 아래 한 줄
 const MORE = ["월간 성적표", "인바디 분석", "사례 보관함", "폰 알림", "급여 자동계산", "프리랜서 장부"];
 
@@ -196,7 +203,7 @@ const TIERS = [
 
 const FAQ = [
   { q: "설치해야 하나요?", a: "아니요. 브라우저로 바로 쓰고, 홈 화면에 추가하면 앱처럼 열립니다." },
-  { q: "어떤 기기에서 되나요?", a: "폰에 맞춰 만들었고, 태블릿·PC에서도 그대로 열립니다." },
+  { q: "어떤 기기에서 되나요?", a: "폰에 맞춰 만들었고, 태블릿 · PC에서는 넓은 화면에 맞춘 배치로 열려요. 같은 계정이라 어디서 열어도 기록이 그대로예요." },
   { q: "AI가 대신 팔아주나요?", a: "아니요. 관찰은 트레이너가, 근거 정리는 AI가 맡습니다." },
   { q: "회원 정보는 안전한가요?", a: "계정별로 데이터가 분리되고, 회원은 본인 것만 봅니다." },
   { q: "센터에 소속돼 있는데 혼자 써도 되나요?", a: "네. 개인 트레이너로 가입하고 '센터 소속'을 고르면 돼요. 회원 페이지와 OT 신청서엔 '○○짐 · 내 이름 트레이너'로 나와요." },
@@ -361,6 +368,21 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* 폰 · 태블릿 · PC — 같은 계정(2026-10-06) */}
+        <section id="devices" className="scroll-mt-28 border-t border-line bg-bg px-5 py-[clamp(56px,10vw,104px)]">
+          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-6 text-center">
+            <Pill>폰 · 태블릿 · PC</Pill>
+            <h2 className={`rv m-0 ${H2} ${H2_LG}`}>
+              <span className="block">폰으로 다니면서,</span>
+              <span className="block text-primary">태블릿 · PC로 크게.</span>
+            </h2>
+            <p className="rv m-0 max-w-[520px] text-[clamp(16px,2.4vw,19px)] leading-[1.6] text-sub" style={stagger(1)}>
+              설치 없이 브라우저로, 같은 계정이 어디서나 열려요. 화면이 넓어지면 배치가 알아서 바뀌어요.
+            </p>
+            <div className="rv w-full" style={stagger(2)}><Devices items={DEVICES} /></div>
           </div>
         </section>
 

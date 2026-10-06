@@ -63,25 +63,26 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
   return (
     <div className="mt-3 rounded-xl border border-primary/30 bg-primary-soft p-3">
       <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">
+        <div className="text-[13px] font-semibold tracking-label-ko text-primary-strong">
           {isManual ? "자동계산 없음 · 최종액 입력" : "예상 급여"}
         </div>
         {!isManual && <div className="font-mono text-lg font-bold text-primary-strong">{won(pay.computed)}</div>}
       </div>
       {!isManual && (
-        <div className="mt-0.5 text-[10px] text-muted">
+        <div className="mt-0.5 text-[12px] text-muted">
           기본 {won(pay.base)}{pay.incentive > 0 ? ` + 인센 ${won(pay.incentive)}` : ""}
         </div>
       )}
+      {/* 폰 폭에서 '최종' · '확정'이 한 글자씩 꺾이던 것(2026-10-06) — 글자 칸은 줄지 않게, 입력칸만 줄어든다 */}
       <div className="mt-2 flex items-center justify-end gap-2">
-        <span className="text-[11px] text-sub">최종</span>
-        <NumberInput value={final} onValueChange={setFinal} disabled={saving} />
-        <span className="text-[11px] text-sub">원</span>
-        <Button variant="primary" size="sm" onClick={confirm} disabled={saving}>
+        <span className="shrink-0 whitespace-nowrap text-[13px] text-sub">최종</span>
+        <div className="min-w-0 flex-1"><NumberInput value={final} onValueChange={setFinal} disabled={saving} /></div>
+        <span className="shrink-0 text-[13px] text-sub">원</span>
+        <Button variant="primary" size="sm" onClick={confirm} disabled={saving} className="shrink-0 whitespace-nowrap">
           {confirmed ? "재확정" : "확정"}
         </Button>
       </div>
-      {confirmed && <div className="mt-1 text-right text-[10px] text-primary-strong">확정됨 · {won(run.final_total)}</div>}
+      {confirmed && <div className="mt-1 text-right text-[12px] text-primary-strong">확정됨 · {won(run.final_total)}</div>}
       <Toast message={toast} />
     </div>
   );

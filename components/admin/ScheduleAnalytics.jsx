@@ -122,7 +122,7 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
             </table>
           </div>
         )}
-        <p className="mt-2 text-[12px] leading-relaxed text-muted">OT = ot_log(1·2차 관찰) · PT = 완료 수업(노쇼 제외) · 이번 달({ym}) 기준. 실제 진행 기록이라 예약과 별개예요.</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-muted">OT = 결과나 피드백을 남긴 OT 수업 · PT = 진행한 수업(노쇼 제외) · 이번 달({ym}) 기준. 실제 진행 기록이라 예약과 별개예요.</p>
       </Card>
 
       {/* 예약 밀도 · 트레이너 스케줄 — 상시 노출 */}
