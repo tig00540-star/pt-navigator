@@ -28,6 +28,10 @@ const creds = JSON.parse(fs.readFileSync(path.join(HERE, SOLO ? ".solo-credentia
 const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
 async function main() {
+  // 이번 달(진행 중) 결산을 저장해 두면 다음 달 1일 실제 작업이 '이미 만듦'으로 건너뛴다 → 지난달까지만
+  if (!DRY && ym >= lastMonthYm(Date.now() + 40 * 86400000).slice(0, 7) && !argv.includes("--force")) {
+    throw new Error(`${ym}은 아직 끝나지 않은 달이에요. 저장하면 1일 실제 결산이 건너뛰어져요(정말이면 --force · 확인 뒤 지우기).`);
+  }
   const { data: account, error } = await sb.from("account").select("id, type, plan, subscription_status, current_period_end").eq("id", creds.accountId).single();
   if (error) throw new Error(error.message);
   console.log(`▶ ${SOLO ? "개인 시험 계정" : creds.centerName} · ${ym} 결산 ${DRY ? "(미리보기 · 저장 안 함)" : ""}`);

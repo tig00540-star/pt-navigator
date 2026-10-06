@@ -50,7 +50,7 @@ export default function MonthlySelfReport({ goals = [] }) {
           <Num label="매출" value={won(t.revenue.total)} sub={`신규 ${t.revenue.cntNew} · 재등록 ${t.revenue.cntRe}`}><Delta cur={t.revenue.total} prev={t.revenue.prev} /></Num>
           <Num label="OT 진행" value={`${t.ot.held}건`} sub={`등록 ${t.ot.success}/${t.ot.attempted}`}><Delta cur={t.ot.held} prev={t.ot.heldPrev} unit="건" /></Num>
           <Num label="PT 수업" value={`${t.sessions}회`} sub={`재등록 ${t.rereg.success}/${t.rereg.attempted}`} />
-          {solo && c?.ledger ? <Num label="남은 돈" value={won(c.ledger.net)} sub={`${c.ledger.ptLabel || "PT 매출"} ${won(c.ledger.ptPart ?? 0)} − 지출 ${won(c.ledger.expense)}`} />
+          {solo && c?.ledger ? <Num label="남은 돈" value={won(c.ledger.net)} sub={`${c.ledger.ptLabel || "PT 매출"} ${won(c.ledger.ptPart ?? 0)}${c.ledger.income ? ` + PT 외 ${won(c.ledger.income)}` : ""} − 지출 ${won(c.ledger.expense)}`} />
             : solo && c?.received != null ? <Num label="받은 금액" value={won(c.received)} />
             : <Num label="목표 달성" value={t.goal ? pct(t.goalRate) : "—"} sub={t.goal ? `목표 ${won(t.goal)}` : "목표를 안 정했어요"} />}
           <Num label="회원이 운동한 날" value={`${t.ounwanDays}일`} sub={`${t.ounwanMembers}명이 기록했어요`} />
