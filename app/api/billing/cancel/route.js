@@ -22,7 +22,7 @@ export async function POST(req) {
   if (action !== "cancel" && action !== "resume") return Response.json({ error: "잘못된 요청이에요." }, { status: 400 });
 
   const { data: acc, error: ae } = await sb.from("account")
-    .select("id, subscription_status, current_period_end, cancel_at_period_end, billing_key")
+    .select("id, subscription_status, current_period_end, cancel_at_period_end")
     .eq("id", me.account_id).maybeSingle();
   if (ae || !acc) { console.error("[billing/cancel] 계정 조회 실패", ae?.message); return Response.json({ error: "계정을 찾지 못했어요." }, { status: 404 }); }
 
@@ -38,7 +38,7 @@ export async function POST(req) {
     const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 300) : "";
     patch = { cancel_at_period_end: true, cancel_requested_at: new Date(now).toISOString(), cancel_reason: reason || null };
   } else {
-    if (!acc.billing_key) return Response.json({ error: "등록된 카드가 없어요. 기간이 끝난 뒤 카드를 다시 등록해 주세요." }, { status: 409 });
+    // 되돌리기만 — 카드가 없으면(시범 계정 등) 결제 작업이 어차피 청구하지 않으니 막을 이유가 없다
     patch = { cancel_at_period_end: false, cancel_requested_at: null };
   }
 
