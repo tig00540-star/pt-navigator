@@ -117,7 +117,7 @@ async function main() {
       const target = logs.find((l) => !l.voided && l.source !== "noshow" && !confs.some((c) => c.log_id === l.id));
       if (target) await write(`도은비 ${target.session_at.slice(5, 10)} 일지`, sb.from("workout_log_confirmation").insert({
         log_id: target.id, member_id: de.id, result: "dispute", method: "tap", content_hash: contentHashNode(target, crypto),
-        dispute_note: "레그프레스는 안 했고 런지를 했어요. 고쳐 주세요.", confirmed_at: new Date(Date.now() - 3 * 3600000).toISOString(),
+        dispute_note: "마지막 운동 무게가 실제로 한 것과 달라요. 고쳐 주세요.", confirmed_at: new Date(Date.now() - 3 * 3600000).toISOString(),
       }));
       else console.log("  (미확인 일지가 없어 건너뜀)");
     }

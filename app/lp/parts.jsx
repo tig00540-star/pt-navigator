@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, Mic, ZoomIn } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, X, ZoomIn } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
 import ImageLightbox from "@/components/ui/ImageLightbox";
@@ -264,6 +264,138 @@ export function StepShots({ steps }) {
   );
 }
 
+/* 사진 아래 '직접 눌러 보기' 한 줄 — 사진이 있는 칸은 TryCard 대신 이것만(2026-10-06). */
+export function TryLink({ href, dark }) {
+  return (
+    <a href={href} className={`mx-auto mt-3.5 inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[15px] font-bold no-underline transition-colors ${FOCUS} ${
+      dark ? "border border-white/25 text-white hover:bg-white/10" : "border border-line-strong bg-card text-ink hover:bg-elevate"}`}>
+      가입 없이 직접 눌러 보기 <ArrowRight size={16} aria-hidden="true" />
+    </a>
+  );
+}
+
+/* 그 밖의 기능 — 기능 이름 + 실제 화면을 옆으로 넘겨 보고, 누르면 크게(2026-10-06 · 대표 요청).
+   items: { name, desc, img, alt } · 사진은 데모 센터(지어낸 회원)에서 찍은 실제 앱 화면 1080×1350.
+   폰: 손가락으로 넘김(다음 카드가 살짝 보여 넘길 수 있다는 걸 앎) · PC: 양옆 화살표.
+   크게 보기: 화면 전체 · 좌우 넘김(화살표 · 키보드 ← → · 손가락 밀기) · ESC/바깥 눌러 닫기. */
+export function FeatureGallery({ items, dark }) {
+  const trackRef = useRef(null);
+  const [open, setOpen] = useState(-1);
+  const [edge, setEdge] = useState({ start: true, end: false });
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const start = el.scrollLeft < 8, end = el.scrollLeft + el.clientWidth > el.scrollWidth - 8;
+    if (start !== edge.start || end !== edge.end) setEdge({ start, end });
+  };
+  const page = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const card = el.querySelector("li");
+    const step = card ? card.getBoundingClientRect().width + 14 : el.clientWidth;
+    el.scrollBy({ left: dir * Math.max(step, Math.floor(el.clientWidth / step) * step), behavior: "smooth" });
+  };
+  const arrow = `flex h-11 w-11 items-center justify-center rounded-full border transition-colors disabled:opacity-30 ${FOCUS} ${
+    dark ? "border-white/25 text-white hover:bg-white/10" : "border-line-strong bg-card text-ink hover:bg-elevate"}`;
+  return (
+    <div className="w-full">
+      {/* 본문 열(760px)보다 넓게 — 폰은 화면 끝까지, PC는 열 밖으로 조금 더(끝은 흐리게) · 여백은 트랙 안쪽 */}
+      <ul ref={trackRef} onScroll={onScroll} aria-label="그 밖의 기능 화면"
+        className="lp-steps lp-gallery -mx-5 m-0 flex list-none snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-px-5 px-5 pb-2 pt-1 lg:-mx-[100px] lg:scroll-px-[100px] lg:px-[100px] xl:-mx-[170px] xl:scroll-px-[170px] xl:px-[170px]">
+        {items.map((it, i) => (
+          <li key={it.img} className="w-[min(70vw,236px)] flex-none snap-start">
+            <button type="button" onClick={() => setOpen(i)} aria-label={`${it.name} 화면 크게 보기`}
+              className={`group block w-full cursor-zoom-in rounded-2xl p-0 text-left ${FOCUS}`}>
+              <span className={`relative block overflow-hidden rounded-2xl border ${dark ? "border-white/10 bg-white/5" : "border-line bg-card shadow-sm"}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={it.img} alt={it.alt} width={1080} height={1350} loading="lazy" decoding="async"
+                  className="block aspect-[4/5] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none" />
+                <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2 py-1 text-[12px] font-bold text-white">
+                  <ZoomIn size={12} strokeWidth={2.6} aria-hidden="true" /> 크게
+                </span>
+              </span>
+              <span className={`mt-3 block text-[16px] font-extrabold tracking-[-0.01em] ${dark ? "text-white" : "text-ink"}`}>{it.name}</span>
+              <span className={`mt-1 block text-[14px] leading-[1.5] ${dark ? "text-white/65" : "text-sub"}`}>{it.desc}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className={`m-0 text-left text-[13px] ${dark ? "text-white/55" : "text-muted"}`}>옆으로 넘겨 보세요 · 누르면 크게 보여요</p>
+        <div className="flex flex-none gap-2">
+          <button type="button" onClick={() => page(-1)} disabled={edge.start} aria-label="이전 기능" className={arrow}><ChevronLeft size={20} aria-hidden="true" /></button>
+          <button type="button" onClick={() => page(1)} disabled={edge.end} aria-label="다음 기능" className={arrow}><ChevronRight size={20} aria-hidden="true" /></button>
+        </div>
+      </div>
+      {open >= 0 && createPortal(<GalleryViewer items={items} index={open} onIndex={setOpen} onClose={() => setOpen(-1)} />, document.body)}
+    </div>
+  );
+}
+
+function GalleryViewer({ items, index, onIndex, onClose }) {
+  const n = items.length, it = items[index];
+  const closeRef = useRef(null);
+  const swipe = useRef(null);
+  const swiped = useRef(false);   // 밀어서 넘긴 직후의 click은 '바깥 눌러 닫기'로 치지 않는다
+  const go = (d) => onIndex((i) => (i + d + n) % n);
+  useEffect(() => {
+    const prevFocus = document.activeElement;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    return () => { document.body.style.overflow = prevOverflow; prevFocus?.focus?.(); };
+  }, []);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowRight") onIndex((i) => (i + 1) % n);
+      else if (e.key === "ArrowLeft") onIndex((i) => (i - 1 + n) % n);
+    };
+    window.addEventListener("keydown", onKey);
+    // 옆 사진 미리 받아 두기 — 넘길 때 빈 화면 없이
+    [items[(index + 1) % n], items[(index - 1 + n) % n]].forEach((x) => { const im = new Image(); im.src = x.img; });
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, n, items, onIndex, onClose]);
+  const down = (e) => { swipe.current = { x: e.clientX, y: e.clientY }; };
+  const up = (e) => {
+    const s = swipe.current;
+    swipe.current = null;
+    if (!s) return;
+    const dx = e.clientX - s.x, dy = e.clientY - s.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { swiped.current = true; go(dx < 0 ? 1 : -1); }
+  };
+  const nav = `absolute top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:flex ${FOCUS}`;
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`${it.name} 화면`}
+      onClick={() => { if (swiped.current) { swiped.current = false; return; } onClose(); }}
+      onPointerDown={down} onPointerUp={up}
+      className="fixed inset-0 z-[100] flex flex-col bg-[rgb(10_11_15/0.94)] text-white">
+      <div className="flex items-center justify-between px-4 pt-[max(12px,env(safe-area-inset-top))]">
+        <span className="text-[14px] font-bold text-white/70">{index + 1} / {n}</span>
+        <button ref={closeRef} type="button" onClick={onClose} aria-label="닫기"
+          className={`flex h-11 w-11 items-center justify-center rounded-full text-white/85 hover:bg-white/10 hover:text-white ${FOCUS}`}>
+          <X size={24} aria-hidden="true" />
+        </button>
+      </div>
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 py-2 sm:px-20">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img key={it.img} src={it.img} alt={it.alt} onClick={(e) => { e.stopPropagation(); swiped.current = false; }} draggable={false}
+          className="max-h-full max-w-full select-none rounded-2xl object-contain shadow-2xl" />
+        <button type="button" onClick={(e) => { e.stopPropagation(); go(-1); }} aria-label="이전 화면" className={`${nav} left-5`}><ChevronLeft size={26} aria-hidden="true" /></button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); go(1); }} aria-label="다음 화면" className={`${nav} right-5`}><ChevronRight size={26} aria-hidden="true" /></button>
+      </div>
+      <div onClick={(e) => e.stopPropagation()} className="mx-auto flex w-full max-w-[560px] items-center gap-3 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-2">
+        <button type="button" onClick={() => go(-1)} aria-label="이전 화면" className={`flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/12 sm:hidden ${FOCUS}`}><ChevronLeft size={22} aria-hidden="true" /></button>
+        <div className="min-w-0 flex-1 text-center">
+          <p className="m-0 text-[17px] font-extrabold">{it.name}</p>
+          <p className="m-0 mt-0.5 text-[14px] leading-[1.5] text-white/70">{it.desc}</p>
+        </div>
+        <button type="button" onClick={() => go(1)} aria-label="다음 화면" className={`flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/12 sm:hidden ${FOCUS}`}><ChevronRight size={22} aria-hidden="true" /></button>
+      </div>
+    </div>
+  );
+}
+
 /* 기능 한 행 — 라벨 알약 · 제목 두 줄 · (흐름 칩) · 효과 3줄 · 보충 한 줄 · 앱 화면(한 열). */
 export function FeatureRow({ pill, title, flow, checks, note, visual, dark, children }) {
   return (
@@ -383,6 +515,7 @@ export const LP_CSS = `
 .lp-faq[open] .lp-faq-chev{transform:rotate(180deg)}
 .lp-steps{scrollbar-width:none}
 .lp-steps::-webkit-scrollbar{display:none}
+@media(min-width:640px){.lp-gallery{-webkit-mask-image:linear-gradient(to right,transparent,#000 16px,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(to right,transparent,#000 16px,#000 calc(100% - 56px),transparent)}}
 .rv-on .rv{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
 .rv-on .rv.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.lp-faq-chev{transition:none!important}.rv-on .rv{opacity:1!important;transform:none!important;transition:none!important}}

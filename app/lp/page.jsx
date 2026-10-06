@@ -21,7 +21,7 @@ import { PLANS } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, FeatureRow, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, TryCard,
+  Pill, Checks, FeatureRow, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, FeatureGallery,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -51,6 +51,12 @@ const QR_WHY = [
   ["쌓이다 보면 빠지는 OT 회원", "신청하면 바로 내 OT 회원 · 폰 알림"],
 ];
 
+const QR_STEPS = [
+  { step: "회원이 신청", img: "/lp/shots/2026-10/T02.webp", alt: "회원이 보는 OT 신청서: 원하는 요일 · 시간 고르기" },
+  { step: "내 폰에 바로", img: "/lp/shots/2026-10/T04.webp", alt: "트레이너 홈의 새 OT 회원 카드: 내 QR로 신청 · 원하는 시간" },
+  { step: "미리 알고 준비", img: "/lp/shots/2026-10/T06.webp", alt: "OT 회원 대시보드: 목표 · 운동 가능 횟수 · 알게 된 경로 · 원하는 시간 · 아직 모르는 것" },
+];
+
 const ONLY = [
   {
     pill: "수업 예약 요청",
@@ -58,7 +64,8 @@ const ONLY = [
     flow: ["회원이 빈 시간 선택", "트레이너 승인", "스케줄에 반영"],
     checks: ["회원 전용 페이지에서 새 수업 · 시간 변경 · 취소 요청", "트레이너 수업이 있는 시간은 흐리게, 빈 시간만", "변경 · 취소는 수업 N시간 전까지(트레이너가 정함)"],
     note: "승인하면 스케줄에 바로 들어가고 회원 폰에 알림이 가요",
-    try: { href: "/try#booking", steps: ["회원이 이번 주 · 다음 주 빈 시간을 골라 요청", "트레이너 폰에 '수업 요청' 카드와 알림", "승인 한 번 → 양쪽 일정에 바로"] },
+    visual: { img: "/lp/shots/2026-10/T21.webp", alt: "트레이너 홈의 수업 요청 카드: 회원이 보낸 취소 · 시간 변경 · 새 수업 요청과 승인 · 거절 버튼" },
+    href: "/try#booking",
   },
   {
     pill: "회원 이벤트",
@@ -66,16 +73,17 @@ const ONLY = [
     flow: ["이벤트 열기", "회원 참여", "자동 집계"],
     checks: ["출석 챌린지(기간 안 운동한 날 N회) · 일반 이벤트", "신청 기간 · 정원(선착순) · 상품까지", "참여 명단과 달성 여부가 자동으로 모여요"],
     note: "회원 폰에 바로 뜨고, 참여하면 트레이너에게 알림이 와요",
-    try: { href: "/try#event", steps: ["트레이너가 이벤트를 열면 회원 홈에 바로", "회원이 '참여하기'", "운동한 날이 쌓이면 달성 · 상품 지급 대기까지"] },
+    visual: { img: "/lp/shots/2026-10/T22.webp", alt: "트레이너 설정의 이벤트 관리: 출석 챌린지 참여 명단과 달성 여부" },
+    href: "/try#event",
   },
 ];
 
 const TRY_LINKS = [["/try#qr", "QR로 OT 신청"], ["/try#event", "회원 이벤트"], ["/try#booking", "수업 예약 요청"], ["/try#sign", "운동일지 · 서명"]];
 
 const OT_STEPS = [
-  { step: "OT 보고서", img: "/lp/shots/ot-brief.webp", alt: "1차 OT 준비 화면: 3분 각인과 오늘 시킬 운동" },
-  { step: "클로징 멘트", img: "/lp/shots/ot-closing.webp", alt: "OT 화면: 떠보기·근거·플랜 제시·요청 클로징 흐름" },
-  { step: "거절 대응", img: "/lp/shots/ot-objection.webp", alt: "OT 화면: 가격 부담·생각해볼게요 거절 대응 멘트" },
+  { step: "30초 요약", img: "/lp/shots/2026-10/T07.webp", alt: "OT 사전 준비 리포트 맨 위 30초 요약: 이 회원 · 오늘 꼭 · 요청 한 줄씩" },
+  { step: "클로징 멘트", img: "/lp/shots/2026-10/T09.webp", alt: "OT 사전 준비 리포트의 클로징: 왜 PT가 필요한지 · 확인 질문 · 추천 플랜 대사와 가격 한 줄" },
+  { step: "거절 대응", img: "/lp/shots/2026-10/T10.webp", alt: "OT 사전 준비 리포트의 거절 대응 5가지: 생각해볼게요 · 가격 · 효과 의심 · 시간 부족 · 다른 곳 비교" },
 ];
 
 const RENEW = {
@@ -84,13 +92,13 @@ const RENEW = {
   flow: ["만료 임박 알림", "변화 근거", "제안까지"],
   checks: ["잔여가 줄어든 회원을 '오늘 할일'에 먼저", "인바디·운동일지로 그동안의 변화 정리", "재등록 제안 멘트까지 준비"],
   note: "잔여 10회 미만부터 알려줘요",
-  visual: { img: "/lp/shots/renew-card.webp", alt: "오늘 할일 화면: 재등록 타이밍 카드(잔여 10회 미만 회원)" },
+  visual: { img: "/lp/shots/2026-10/T14.webp", alt: "오늘 탭의 재등록 타이밍 카드: 잔여 10회 미만 회원 목록" },
 };
 
 const LOG = {
   pill: "운동일지",
   title: ["쓰지 말고,", "말하세요."],
-  flow: ["말로 복기", "일지 정리", "무게 추이"],
+  flow: ["말로 복기", "일지 · 서명", "수업 확인서"],
   checks: ["운동별 무게·횟수·세트를 알아서 정리", "회원이 일지를 확인하고 손가락으로 서명", "한 달 수업을 서명과 함께 '수업 확인서' 한 장으로"],
   note: "종이 수업 확인 서명을 대신해요 · 세션 차감 · 출석도 자동",
 };
@@ -101,8 +109,8 @@ const LOG_STEPS = [
     step: "말로 30초",
     quote: "오늘 최준호 회원님 하체 했어요. 스쿼트 60킬로 10개씩 2세트, 70킬로 10개씩 2세트, 80킬로 10개씩 2세트 총 6세트 진행했고 다음으로 루마니안 데드리프트 40키로로 시작해서 10kg씩 올려서 12개 1세트로 총 3세트, 마지막으로 레그프레스 120킬로 고정으로 15개 3세트 했어요. …",
   },
-  { step: "일지로 정리", img: "/lp/shots/log-result.webp", alt: "운동일지 화면: 녹음을 운동·무게·세트와 자세 포인트로 정리한 결과" },
-  { step: "무게 추이까지", img: "/lp/shots/log-graph.webp", alt: "회원자료 화면: 종목별 무게 추이 그래프" },
+  { step: "일지 · 서명", img: "/lp/shots/2026-10/T18.webp", alt: "지난 수업 목록: 음성으로 쓴 운동일지와 회원이 손가락으로 한 서명" },
+  { step: "수업 확인서", img: "/lp/shots/2026-10/T19.webp", alt: "한 달 수업을 회원 서명과 함께 모은 수업 확인서" },
 ];
 
 const MEMBER = {
@@ -117,7 +125,21 @@ const MEMBER = {
 // 회원 전용 페이지에 실제로 뜨는 문구 — 후기가 아니라 제품 화면이다.
 const MEMBER_NOTICES = ["오늘 운동일지가 도착했어요", "이번 달 출석 8회, 오운완 챌린지 진행 중"];
 
-const MORE = ["월간 성적표 · 결산", "스케줄 · 개인 일정", "개인운동 루틴", "오운완 랭킹", "인바디 분석", "목표 로드맵", "세일즈북 · 사례 보관함", "폰 알림", "급여 자동계산", "프리랜서 장부"];
+// 그 밖의 기능 — 이름 + 실제 화면(데모 센터 · 지어낸 회원) · 넘겨 보고 누르면 크게(2026-10-06)
+const GALLERY = [
+  { name: "오늘 운동 4개", desc: "몸 상태 → 메인 동작 → 목표 부위 → 처음과 비교, 할 말까지", img: "/lp/shots/2026-10/T08.webp", alt: "1차 OT 사전 준비 리포트의 오늘 운동 4칸과 고른 이유" },
+  { name: "세일즈북 발표", desc: "오늘 함께 확인한 것을 회원 앞에서 한 장씩", img: "/lp/shots/2026-10/T11.webp", alt: "세일즈북 발표 화면: 오늘 함께 확인한 것 · 제가 본 원인 · 바꿔 드릴 방향" },
+  { name: "추천 플랜", desc: "회원에게 맞춘 코스와 이유를 발표 안에서", img: "/lp/shots/2026-10/T11b.webp", alt: "세일즈북 추천 플랜 장: 추천 코스와 다른 코스, 회당 가격" },
+  { name: "PT 가격표", desc: "설정한 패키지를 그대로 · 회당 가격까지", img: "/lp/shots/2026-10/T12.webp", alt: "PT 가격표: 패키지별 회차 · 기간 · 가격 · 회당 가격" },
+  { name: "OT 피드백은 탭으로", desc: "어떻게 끝났는지만 누르면 다음 OT가 열려요", img: "/lp/shots/2026-10/T13.webp", alt: "OT 피드백: 등록했어요 · 다음 OT 이어가요 · 그만하기로 했어요" },
+  { name: "재등록 리포트", desc: "그동안의 변화와 다음 목표를 말할 대사로", img: "/lp/shots/2026-10/T15.webp", alt: "재등록 사전 준비 리포트의 30초 요약" },
+  { name: "스케줄", desc: "주간 표 · 개인 일정 · 회원 요청까지 한 곳에", img: "/lp/shots/2026-10/T20.webp", alt: "트레이너 주간 스케줄" },
+  { name: "개인운동 루틴", desc: "PT 기록으로 만드는 혼자 오는 날 루틴", img: "/lp/shots/2026-10/T23.webp", alt: "회원 개인운동 루틴 카드" },
+  { name: "오운완 랭킹", desc: "이번 달 운동한 날로 내 회원 순위", img: "/lp/shots/2026-10/T24.webp", alt: "트레이너 홈의 오운완 랭킹" },
+  { name: "'내용이 달라요'", desc: "회원이 고쳐 달라고 하면 바로 보여요", img: "/lp/shots/2026-10/T25.webp", alt: "회원이 '내용이 달라요'를 누른 운동일지와 회원 메모" },
+];
+// 사진 없이 이름만 — 갤러리 아래 한 줄
+const MORE = ["월간 성적표", "인바디 분석", "목표 로드맵", "사례 보관함", "폰 알림", "급여 자동계산", "프리랜서 장부"];
 
 const TIERS = [
   {
@@ -247,8 +269,9 @@ export default function LandingPage() {
               회원권을 등록하는 그 자리에서 QR로 OT 신청까지 끝내면, 연락을 주고받을 일 없이 첫 OT로 이어져요. 신청은 바로 내 OT 회원이 되고, 원하는 시간 · 목표 · 몸 상태를 미리 알고 준비해요.
             </p>
             <div className="mt-2 flex w-full justify-center"><BeforeAfter rows={QR_WHY} /></div>
-            <div className="rv mt-3 w-full" style={stagger(2)}>
-              <TryCard href="/try#qr" steps={["회원이 QR을 찍고 요일 · 시간 · 목표를 골라 신청", "트레이너 폰에 '새 OT 회원'과 알림이 바로", "미리 아는 정보로 1차 OT를 잡고 준비 리포트까지"]} />
+            <div className="rv mt-3 flex w-full flex-col items-center" style={stagger(2)}>
+              <StepShots steps={QR_STEPS} />
+              <TryLink href="/try#qr" />
             </div>
             <p className="m-0 text-[13.5px] text-sub">센터 QR로 받으면 대표가 트레이너를 정해 넘겨줘요 · 대표용 페이지</p>
           </div>
@@ -278,7 +301,10 @@ export default function LandingPage() {
             <GroupLabel>오직 트레이너에만 있어요</GroupLabel>
             {ONLY.map((r) => (
               <FeatureRow key={r.pill} pill={r.pill} title={r.title} flow={r.flow} checks={r.checks} note={r.note}>
-                <TryCard href={r.try.href} steps={r.try.steps} />
+                <div className="flex flex-col items-center">
+                  <Visual {...r.visual} />
+                  <TryLink href={r.href} />
+                </div>
               </FeatureRow>
             ))}
 
@@ -296,9 +322,10 @@ export default function LandingPage() {
               ))}
             </div>
 
-            <div className="rv flex flex-col items-center gap-3.5">
-              <p className="m-0 text-[17px] font-extrabold">그리고 수업 밖 나머지도</p>
-              <div className="flex max-w-[520px] flex-wrap justify-center gap-2">
+            <div className="rv flex w-full flex-col items-center gap-5">
+              <GroupLabel>그 밖의 기능</GroupLabel>
+              <FeatureGallery items={GALLERY} />
+              <div className="flex max-w-[560px] flex-wrap justify-center gap-2">
                 {MORE.map((m) => (
                   <span key={m} className="rounded-full bg-bg px-3.5 py-2 text-[14px] font-semibold">{m}</span>
                 ))}
