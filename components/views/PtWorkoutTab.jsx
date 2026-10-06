@@ -32,6 +32,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { contentHashBrowser, openDispute } from "@/lib/workoutHash";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
+import AttestSheet from "@/components/pt/AttestSheet";
 
 // 음성일지는 '자료남기기'(record)의 접이식 서브 UI라 지연로드(무게 위생). ssr:false — MediaRecorder 브라우저 전용.
 const VoiceLogTab = dynamic(() => import("@/components/tabs/VoiceLogTab"), {
@@ -58,6 +59,7 @@ const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 
 export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, confirms = [], loading, mode, children, header = null }) {
   const [showAllLogs, setShowAllLogs] = useState(false); // 지난 수업 — 기본 최근 5개
+  const [attestOpen, setAttestOpen] = useState(false);    // 월별 수업 확인서(2026-10-06)
   const [body, setBody] = useState(""); // 손입력 수업 내용/피드백
   const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
@@ -508,8 +510,14 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <Card as="section">
               <h2 className="mb-3 flex items-center justify-between text-[15px] font-bold text-ink">
                 <span className="flex items-center gap-1.5"><History className="h-4 w-4 text-pt-text" aria-hidden="true" /> 지난 수업</span>
-                {timeline.length > 0 && <span className="text-[12px] font-normal text-muted">{timeline.length}회</span>}
+                {timeline.length > 0 && (
+                  <span className="flex items-center gap-2">
+                    <span className="text-[12px] font-normal text-muted">{timeline.length}회</span>
+                    <button type="button" onClick={() => setAttestOpen(true)} className="min-h-[32px] rounded-lg border border-line bg-card px-2.5 text-[13px] font-semibold text-sub hover:text-ink">수업 확인서</button>
+                  </span>
+                )}
               </h2>
+              {attestOpen && <AttestSheet member={member} logs={logs} confirms={confirms} sigs={sigs} onClose={() => setAttestOpen(false)} />}
               {loading ? (
                 <p className="text-sm text-muted">불러오는 중…</p>
               ) : timeline.length === 0 ? (
@@ -562,7 +570,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                             <img src={sigs.get(log.id).url} alt="회원 서명" className="h-10 w-auto rounded border border-line bg-white" />
                           )}
                           <span className="text-[12.5px] text-sub">
-                            회원 서명 · {new Date(sigs.get(log.id).signed_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            회원 서명 · {(() => { const d = new Date(sigs.get(log.id).signed_at); const h = d.getHours(); return `${d.getMonth() + 1}/${d.getDate()} ${h < 12 ? "오전" : "오후"} ${h % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}`; })()}
                             {sigs.get(log.id).after_auto ? " (자동 확인 뒤)" : ""}
                           </span>
                         </div>

@@ -31,6 +31,8 @@ import { confirmDue, autoConfirmAt, AUTO_CONFIRM_FROM_VERSION } from "@/lib/work
 const disputeOpenM = (l) => !l.confirmed_at && l.dispute_at && Date.parse(l.dispute_at) > (Date.parse(l.edited_at ?? l.created_at ?? "") || 0);
 // 확인 창 · 배너 · 탭 숫자 대상 = 미확인 + 수업 1시간 지남 + 열린 '내용이 달라요' 아님.
 const pendingM = (l, nowMs) => !l.confirmed_at && confirmDue(l, nowMs) && !disputeOpenM(l);
+// "10월 5일(월)" — 서명 문장 · 내용 보기 제목용
+const fmtMdDow = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}월 ${d.getDate()}일(${"일월화수목금토"[d.getDay()]})`; };
 const fmtWhen = (ms) => new Date(ms).toLocaleString("ko-KR", { month: "long", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" });
 import Wordmark from "@/components/ui/Wordmark";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -878,7 +880,7 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
             <>
               {/* 무엇에 서명하는지 크게 — 날짜는 서버가 기록(손으로 쓰지 않음 · 대표 결정 2026-10-06) */}
               <p className="mt-4 text-[17px] font-bold leading-snug text-ink">
-                {cur.session_at ? fmtDay(cur.session_at) : "이"} 수업을 확인합니다{withOthers && others.length ? ` (외 ${others.length}개)` : ""}
+                {fmtMdDow(cur.session_at ?? cur.created_at)} 수업을 확인합니다{withOthers && others.length ? ` (외 ${others.length}개)` : ""}
               </p>
               <p className="mt-1 text-[13px] leading-relaxed text-sub">
                 받은 수업이 맞으면 서명해 주세요. 다르면 &lsquo;내용이 달라요&rsquo;를 눌러 주세요.
@@ -888,11 +890,11 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
                 <div className="mt-3 rounded-xl border border-line p-3">
                   <label className="flex cursor-pointer items-start gap-2.5 text-[15px] text-ink">
                     <input type="checkbox" checked={withOthers} onChange={(e) => setWithOthers(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary" />
-                    <span>밀린 수업 {others.length}개도 같은 서명으로 확인할게요 <span className="text-[13px] text-sub">({others.map((o) => fmtDay(o.session_at ?? o.created_at)).join(" · ")})</span></span>
+                    <span>밀린 수업 {others.length}개도 같은 서명으로 확인할게요 <span className="text-[13px] text-sub">({others.map((o) => fmtMdDow(o.session_at ?? o.created_at)).join(" · ")})</span></span>
                   </label>
                   {withOthers && others.map((o) => (
                     <details key={o.id} className="mt-2 rounded-lg bg-elevate px-3 py-2">
-                      <summary className="cursor-pointer text-[14px] font-semibold text-ink">{fmtDay(o.session_at ?? o.created_at)} 내용 보기</summary>
+                      <summary className="cursor-pointer text-[14px] font-semibold text-ink">{fmtMdDow(o.session_at ?? o.created_at)} 내용 보기</summary>
                       <div className="mt-2"><WorkoutLogBody log={o} /></div>
                     </details>
                   ))}
@@ -978,7 +980,7 @@ function AutoSignFlow({ logs, onReload }) {
           <div className="space-y-2">
             {list.map((l) => (
               <details key={l.id} className="rounded-xl bg-elevate px-3 py-2.5">
-                <summary className="cursor-pointer text-[15px] font-semibold text-ink">{fmtDay(l.session_at ?? l.created_at)} 수업 내용 보기</summary>
+                <summary className="cursor-pointer text-[15px] font-semibold text-ink">{fmtMdDow(l.session_at ?? l.created_at)} 수업 내용 보기</summary>
                 <div className="mt-2"><WorkoutLogBody log={l} /></div>
               </details>
             ))}
