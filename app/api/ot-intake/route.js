@@ -5,7 +5,7 @@
 //   POST { code, name, phone, answers, slots, consent, website(빈칸이어야 함) } → { ok } | { error }
 import { createClient } from "@supabase/supabase-js";
 import { CONSENT_VERSION } from "@/lib/consent";
-import { formatSlots } from "@/lib/slots";
+import { formatSlots, slotDays } from "@/lib/slots";
 import { after } from "next/server";
 import { sendPush, ownerIds } from "@/lib/pushServer";
 
@@ -60,12 +60,15 @@ export async function POST(req) {
   if (age && Number(age) >= 10 && Number(age) <= 99) answers.age = age;
   if (health) for (const k of HEALTH_KEYS) { const v = clip(a[k], 120); if (v) answers[k] = v; }   // 건강정보는 동의했을 때만 받는다
 
+  // 원하는 요일 · 시간 v2 — 요일마다 시간({by_day}) · 옛 {days, hours}도 받는다(lib/slots가 같은 규칙으로 읽음).
   const s = b.slots || {};
-  const days = [...new Set((Array.isArray(s.days) ? s.days : []).map(Number).filter((d) => d >= 1 && d <= 7))].sort((x, y) => x - y);
-  const hours = [...new Set((Array.isArray(s.hours) ? s.hours : []).map(Number).filter((h) => h >= 5 && h <= 23))].sort((x, y) => x - y);
   const note = clip(s.note, 100);
-  const base = { days, hours, ...(note ? { note } : {}) };
-  const slots = days.length || hours.length || note ? { ...base, text: formatSlots(base) } : null;
+  const by_day = {};
+  for (const [d, hs] of slotDays(s)) by_day[d] = hs.filter((h) => h >= 5 && h <= 23);
+  const days = Object.keys(by_day).map(Number);
+  const hours = [...new Set(Object.values(by_day).flat())].sort((x, y) => x - y);   // 옛 형식 읽는 곳(SQL 대체 글)용 합집합
+  const base = { by_day, days, hours, ...(note ? { note } : {}) };
+  const slots = days.length || note ? { ...base, text: formatSlots({ by_day, note }) } : null;
 
   const consent = { general: true, log_rule: true, health, version: CONSENT_VERSION, at: new Date().toISOString() };
   const { data, error } = await sb.rpc("submit_ot_application", {

@@ -29,6 +29,15 @@ function Chip({ on, onClick, children, wide, tight }) {
   );
 }
 
+// 시간 칸(6~23시 · 그 시각부터 1시간) — 360px 폰에서 한 줄 6칸
+function HourGrid({ value, onToggle }) {
+  return (
+    <div className="grid grid-cols-6 gap-1">
+      {SLOT_HOURS.map((h) => <Chip key={h} tight on={value.includes(h)} onClick={() => onToggle(h)}>{h}시</Chip>)}
+    </div>
+  );
+}
+
 function Section({ title, hint, children }) {
   return (
     <section className="rounded-2xl border border-line bg-card p-4 shadow-sm">
@@ -83,8 +92,12 @@ export default function JoinPage() {
   const [f, setF] = useState({ name: "", phone: "", age: "", gender: "", goal: "", goal_deadline: "", job: "",
     exercise_level: "", past_exercise: "", quit_reason: "", activity_level: "", training_pace: "", member_note: "",
     pain: "", injury_history: "" });
+  // 원하는 요일 · 시간(2026-10-06 v2) — 요일을 고르고, 기본은 '고른 요일 모두 같은 시간' 한 줄.
+  //   '요일마다 시간이 달라요'를 켜면 요일마다 시간 줄이 따로 생긴다(트레이너가 '월 7시'인지 '수 7시'인지 헷갈리지 않게).
   const [days, setDays] = useState([]);
-  const [hours, setHours] = useState([]);
+  const [common, setCommon] = useState([]);   // 같은 시간일 때
+  const [perDay, setPerDay] = useState({});   // 요일마다: { 1: [19,20], ... }
+  const [split, setSplit] = useState(false);
   const [slotNote, setSlotNote] = useState("");
   const [agree, setAgree] = useState({ general: false, log_rule: false, health: false });
   const [hp, setHp] = useState("");   // 봇 막기(사람 눈엔 안 보임)
@@ -105,7 +118,15 @@ export default function JoinPage() {
   }, [code]);
 
   const set = (k) => (v) => setF((x) => ({ ...x, [k]: typeof v === "string" ? v : v.target.value }));
-  const toggle = (arr, setArr, v) => setArr(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+  const flip = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+  const toggleDay = (d) => setDays((x) => flip(x, d));
+  // 같은 시간 → 요일마다로 바꿀 때 지금 고른 시간을 요일마다 채워 둔다(처음부터 다시 누르지 않게) · 반대로 돌아오면 첫 요일 시간을 공통으로.
+  const toggleSplit = (on) => {
+    if (on) setPerDay(Object.fromEntries(days.map((d) => [d, [...common]])));
+    else { const first = [...days].sort((a, b) => a - b)[0]; setCommon([...(perDay[first] || common)]); }
+    setSplit(on);
+  };
+  const dayList = [...days].sort((a, b) => a - b).map((d) => DAY_LABELS[d - 1]).join("·");
 
   const submit = async () => {
     setErr("");
@@ -121,7 +142,7 @@ export default function JoinPage() {
         body: JSON.stringify({
           code, name: f.name, phone: f.phone, website: hp,
           answers: { ...rest, ...(agree.health ? { pain, injury_history } : {}) },
-          slots: { days, hours, note: slotNote },
+          slots: { by_day: Object.fromEntries(days.map((d) => [d, split ? perDay[d] || [] : common])), note: slotNote },
           consent: agree,
         }),
       });
@@ -199,17 +220,38 @@ export default function JoinPage() {
           </div>
         </Section>
 
-        <Section title="원하는 요일 · 시간" hint="OT를 받을 수 있는 요일과 시간을 모두 눌러 주세요. 여러 개 골라도 돼요.">
+        <Section title="원하는 요일 · 시간" hint="OT를 받을 수 있는 요일을 고르고, 그 요일에 되는 시간을 눌러 주세요. 여러 개 골라도 돼요.">
           <div><Label>요일</Label>
             <div className="grid grid-cols-7 gap-1">
-              {DAY_LABELS.map((d, i) => <Chip key={d} tight on={days.includes(i + 1)} onClick={() => toggle(days, setDays, i + 1)}>{d}</Chip>)}
+              {DAY_LABELS.map((d, i) => <Chip key={d} tight on={days.includes(i + 1)} onClick={() => toggleDay(i + 1)}>{d}</Chip>)}
             </div></div>
-          <div><Label>시간 <span className="font-normal text-muted">(그 시각부터 1시간)</span></Label>
-            <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-7">
-              {SLOT_HOURS.map((h) => <Chip key={h} tight on={hours.includes(h)} onClick={() => toggle(hours, setHours, h)}>{h}시</Chip>)}
-            </div></div>
+          {days.length > 1 && (
+            <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl bg-elevate px-3.5">
+              <input type="checkbox" checked={split} onChange={(e) => toggleSplit(e.target.checked)} className="h-5 w-5 shrink-0 accent-primary" />
+              <span className="text-[15px] text-ink">요일마다 되는 시간이 달라요</span>
+            </label>
+          )}
+          {days.length === 0 ? (
+            <p className="m-0 text-[14px] text-muted">요일을 먼저 골라 주세요.</p>
+          ) : !split ? (
+            <div><Label>{days.length > 1 ? `시간 (${dayList} 모두)` : `${DAY_LABELS[days[0] - 1]}요일 시간`} <span className="font-normal text-muted">· 그 시각부터 1시간</span></Label>
+              <HourGrid value={common} onToggle={(h) => setCommon((x) => flip(x, h))} /></div>
+          ) : (
+            [...days].sort((a, b) => a - b).map((d, idx, arr) => (
+              <div key={d} className="rounded-xl border border-line p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-[15px] font-bold text-ink">{DAY_LABELS[d - 1]}요일</span>
+                  {idx > 0 && (
+                    <button type="button" onClick={() => setPerDay((p) => ({ ...p, [d]: [...(p[arr[idx - 1]] || [])] }))}
+                      className="min-h-[36px] px-1 text-[13px] font-semibold text-sub">{DAY_LABELS[arr[idx - 1] - 1]}요일과 같게</button>
+                  )}
+                </div>
+                <HourGrid value={perDay[d] || []} onToggle={(h) => setPerDay((p) => ({ ...p, [d]: flip(p[d] || [], h) }))} />
+              </div>
+            ))
+          )}
           <label className="block"><Label optional>덧붙일 말</Label>
-            <input value={slotNote} onChange={(e) => setSlotNote(e.target.value)} maxLength={100} placeholder="예: 화요일은 8시 이후만 돼요" className={inputCls} /></label>
+            <input value={slotNote} onChange={(e) => setSlotNote(e.target.value)} maxLength={100} placeholder="예: 둘째 주 화요일은 안 돼요" className={inputCls} /></label>
         </Section>
 
         <Section title="운동 목표" hint="모두 선택이에요. 알려 주실수록 첫 OT가 잘 맞춰져요.">
