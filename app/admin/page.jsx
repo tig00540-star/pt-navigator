@@ -26,6 +26,8 @@ import { closingApproachStats, reregisterReasonStats, closingReasonStats } from 
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
 import JoinInviteCard from "@/components/admin/JoinInviteCard";
+import LeaveAllowCard from "@/components/admin/LeaveAllowCard";
+import { ledgerAsContracts } from "@/lib/movedOut";
 import { trainerSeatLimit } from "@/lib/plans";
 import MemberForm from "@/components/MemberForm";
 import MemberReassign from "@/components/admin/MemberReassign";
@@ -135,6 +137,8 @@ export default function AdminDashboard() {
   const [dbNote, setDbNote] = useState("");
   const [otRows, setOtRows] = useState([]);
   const [contracts, setContracts] = useState([]);
+  // 독립한 트레이너를 따라 옮겨 간 회원의 계약 사본(2026-10-07 · 금액 · 날짜만 · 이름 없음) — 매출 · 정산 숫자가 줄지 않게
+  const [movedOut, setMovedOut] = useState([]);
   const [logs, setLogs] = useState([]);
   const router = useRouter(); // solo면 /admin 접근 시 통합 화면(/)으로 바운스
   const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
@@ -227,6 +231,9 @@ export default function AdminDashboard() {
         setIncomes(inc.data || []);  // 비차단 — income 테이블 없으면 []로 폴백(FC·기타 매출만 빈값)
         setStartDay(acc.data?.settlement_start_day ?? 1); // 컬럼 없으면 1(달력 월)
         setDataReady(true); // 보고서는 이게 켜진 뒤에만 만든다(빈 숫자로 만든 보고서가 하루 종일 남던 문제)
+        // 비차단 — 표가 없으면(SQL 전) 빈 배열
+        fetchAllRows(() => supabase.from("moved_out_ledger").select("*"))
+          .then(({ data }) => setMovedOut(data || [])).catch(() => {});
       } catch {
         setDbNote("불러오지 못했어요. 새로고침해 주세요.");
         setRole((r) => r ?? "denied"); // role 고착 방지(에러=잠금, 안전측)
@@ -295,6 +302,8 @@ export default function AdminDashboard() {
   // ④ 실데이터 파생 — 기준월(KST 'YYYY-MM'). 클로징/재등록률=누적, 매출=이달.
   // KST(UTC+9) 이달 — memberStatus.kstYm과 경계 통일. Date.now()는 react 룰상 impure라 new Date().getTime() 사용.
   const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
+  // 매출 · 정산용 계약 = 지금 계약 + 옮겨 간 회원의 사본(회원 없음 · 인계 표시 → 남은 수업 계산엔 안 들어감)
+  const revenueContracts = useMemo(() => movedOut.length ? [...contracts, ...ledgerAsContracts(movedOut)] : contracts, [contracts, movedOut]);
   const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
   const closingReasonDist = useMemo(() => closingReasonStats(otRows), [otRows]);
@@ -514,6 +523,9 @@ export default function AdminDashboard() {
               <JoinInviteCard seatFull={trainers.filter((t) => t.role === "trainer" && t.active !== false).length >= trainerSeatLimit(planKey)} />
             </div>
           )}
+          {planKey === "center" && (
+            <div className="mt-4"><LeaveAllowCard trainers={trainers} /></div>
+          )}
         </section>
         )}
 
@@ -691,7 +703,7 @@ export default function AdminDashboard() {
               기간은 패널 안에서 startDay로부터 파생 — 늦게 도착해도 자동으로 맞는다. */}
           <SettlementPanel
             view={atab === "settle_entry" ? "entry" : "view"}
-            contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
+            contracts={revenueContracts} incomes={incomes} expenses={expenses} ym={ym}
             startDay={startDay} onChangeStartDay={saveStartDay}
             onIncomeChanged={reloadIncomes} onExpenseChanged={reloadExpenses} />
         </section>
@@ -700,7 +712,7 @@ export default function AdminDashboard() {
         {/* ===== 매출 파이프라인·예측 (매출 탭 · #3) ===== */}
         {atab === "revenue" && (
         <section className="mb-8">
-          <RevenuePipeline members={rows} contracts={contracts} logs={logs} otRows={otRows} trainers={trainers} goals={goals} ym={ym} />
+          <RevenuePipeline members={rows} contracts={revenueContracts} logs={logs} otRows={otRows} trainers={trainers} goals={goals} ym={ym} />
         </section>
         )}
 

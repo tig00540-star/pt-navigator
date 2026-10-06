@@ -45,5 +45,16 @@ export async function POST(req) {
   const { data: up, error: ue } = await sb.from("account").update(patch).eq("id", acc.id)
     .select("cancel_at_period_end, current_period_end");
   if (ue || !up?.length) { console.error("[billing/cancel] 저장 실패", ue?.message); return Response.json({ error: "저장하지 못했어요. 다시 시도해 주세요." }, { status: 500 }); }
-  return Response.json({ ok: true, cancelAtPeriodEnd: up[0].cancel_at_period_end, periodEnd: up[0].current_period_end });
+
+  // 센터 해지 — '트레이너들이 개인 계정으로 이어 쓸 수 있게'(담당 회원 함께 · 계획서 3단계 · 2026-10-07)
+  let allowed = 0;
+  if (action === "cancel" && body.allowLeave === true) {
+    const { data: ts } = await sb.from("trainer").select("id").eq("account_id", acc.id).eq("role", "trainer").eq("active", true);
+    for (const t of ts || []) {
+      await sb.from("leave_allow").update({ canceled_at: new Date(now).toISOString() }).eq("trainer_id", t.id).eq("account_id", acc.id).is("used_at", null).is("canceled_at", null);
+      const { error: le } = await sb.from("leave_allow").insert({ account_id: acc.id, trainer_id: t.id, with_members: true, created_by: me.id });
+      if (le) console.error("[billing/cancel] 독립 허락 실패", le.message); else allowed++;
+    }
+  }
+  return Response.json({ ok: true, cancelAtPeriodEnd: up[0].cancel_at_period_end, periodEnd: up[0].current_period_end, allowed });
 }

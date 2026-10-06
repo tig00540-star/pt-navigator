@@ -6,6 +6,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { issueBillingKey, chargeBilling, tossReady } from "@/lib/toss";
 import { PLANS, TRIAL_DAYS, planAmount } from "@/lib/plans";
+import { sendPush } from "@/lib/pushServer";
 
 // 달 더하기 — 말일 넘침 보정(크론 charge-subscriptions와 같은 규칙).
 function addOneMonth(d) {
@@ -17,6 +18,20 @@ function addOneMonth(d) {
 }
 
 export const runtime = "nodejs";
+
+// 독립한 트레이너가 결제를 마쳐 계정이 열리면 — 옮길지 기다리던 회원에게 '기록을 함께 옮길까요?' 알림(2026-10-07)
+async function notifyWaitingMembers(sb, accountId) {
+  try {
+    const { data: mt } = await sb.from("member_transfer").select("member_id, to_name").eq("to_account", accountId).eq("status", "pending");
+    if (!mt?.length) return;
+    const { data: ms } = await sb.from("user_table").select("id, member_token").in("id", mt.map((m) => m.member_id));
+    for (const m of ms || []) {
+      if (!m.member_token) continue;
+      await sendPush(sb, { memberIds: [m.id], type: "transfer", url: `/m/${m.member_token}`,
+        title: "기록을 함께 옮길까요?", body: `앞으로 ${mt[0].to_name || "담당 트레이너"}가 직접 기록을 관리해요. 회원 페이지에서 옮길지 골라 주세요.` });
+    }
+  } catch (e) { console.error("[billing/confirm] 회원 알림 실패(비차단)", e); }
+}
 
 export async function POST(req) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -50,7 +65,7 @@ export async function POST(req) {
   const authKey = (body.authKey || "").trim();
   const customerKey = (body.customerKey || "").trim();
   // 요금제 = 계정 종류(서버가 정함). 화면이 보낸 plan은 참고하지 않는다.
-  const { data: acct } = await sb.from("account").select("type, current_period_end").eq("id", me.account_id).maybeSingle();
+  const { data: acct } = await sb.from("account").select("type, current_period_end, no_trial").eq("id", me.account_id).maybeSingle();
   const planKey = acct?.type === "center" ? "center" : "solo";
   const plan = PLANS[planKey];
   if (!authKey || !customerKey || !plan) {
@@ -76,7 +91,8 @@ export async function POST(req) {
 
   // 1.5) 무료체험은 한 번만 — 체험 · 결제 이력이 있거나 기간이 한 번이라도 잡혔던 계정은 바로 첫 달 결제.
   const { data: past } = await sb.from("payment").select("id").eq("account_id", me.account_id).in("status", ["TRIAL", "DONE"]).limit(1);
-  const trialUsed = (past && past.length > 0) || Boolean(acct?.current_period_end);
+  // 센터에서 독립한 계정(no_trial)은 체험 없이 바로 첫 결제(2026-10-07 대표 결정)
+  const trialUsed = (past && past.length > 0) || Boolean(acct?.current_period_end) || Boolean(acct?.no_trial);
   const now = Date.now();
   const nowIso = new Date(now).toISOString();
   if (trialUsed) {
@@ -99,6 +115,7 @@ export async function POST(req) {
       console.error("[billing/confirm] 결제 성공 · 계정 활성 실패(수동 보정 필요):", ue3?.message);
       return Response.json({ error: "결제는 됐지만 이용 시작이 늦어지고 있어요. 고객센터로 알려 주세요." }, { status: 500 });
     }
+    await notifyWaitingMembers(sb, me.account_id);
     return Response.json({ ok: true, paid: true, periodEnd: end, plan: planKey });
   }
 
