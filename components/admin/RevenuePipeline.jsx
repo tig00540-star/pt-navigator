@@ -182,14 +182,16 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
           const anyRev = trend.some((t) => t.rev > 0);
           if (!anyRev) return <p className="text-[12px] text-muted">매출 이력이 없어요.</p>;
           return (
-            <div className="flex items-end justify-between gap-2" style={{ height: 120 }}>
+            /* items-stretch — 칸마다 높이(170)를 다 받아야 막대의 % 높이가 계산된다(items-end면 칸 높이가 글자만큼이라 막대가 0이 됐다 · 2026-10-06) */
+            <div className="flex items-stretch justify-between gap-2" style={{ height: 170 }}>
               {trend.map((t) => (
                 <div key={t.ym} className="flex flex-1 flex-col items-center gap-1">
                   <div className="flex w-full flex-1 items-end">
                     <div className="mx-auto w-5 rounded-t bg-primary" style={{ height: `${Math.max(2, Math.round((t.net / maxNet) * 100))}%` }} title={won(t.net)} />
                   </div>
                   <div className="font-mono text-[12px] text-ink">{manLabel(t.net)}</div>
-                  {t.refund > 0 && <div className="font-mono text-[12px] text-danger-text">−{manLabel(t.refund)}</div>}
+                  {/* 환불 줄은 늘 자리를 잡는다 — 환불 있는 달만 막대 칸이 짧아져 높이를 비교할 수 없던 것 */}
+                  <div className={`font-mono text-[12px] text-danger-text ${t.refund > 0 ? "" : "invisible"}`} aria-hidden={t.refund > 0 ? undefined : true}>−{manLabel(t.refund || 0)}</div>
                   <div className="text-[12px] text-muted">{t.ym.slice(5)}월</div>
                 </div>
               ))}
