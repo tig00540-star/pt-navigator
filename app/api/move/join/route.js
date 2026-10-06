@@ -63,7 +63,12 @@ export async function POST(req) {
   const paid = await lastPaid(sb, from);           // 닫기 전에 읽어 둔다(환불 근거)
   const { data: res, error } = await sb.rpc("_join_center", { p_trainer: me.id, p_code: code });
   if (error) { console.error("[move/join] 합류 실패", error.message); return Response.json({ error: "합류하지 못했어요. 다시 시도해 주세요." }, { status: 500 }); }
-  if (!res?.ok) return Response.json({ error: ERR[res?.error] || ERR.invalid, code: res?.error }, { status: 409 });
+  if (!res?.ok) {
+    // DB 함수는 '이미 씀 · 끔 · 기간 지남'을 하나(expired)로 돌려준다 → 정확한 이유는 링크 정보로
+    let why = res?.error;
+    if (why === "expired") { const { data: info } = await sb.rpc("join_invite_info", { p_code: code }); if (info?.error) why = info.error; }
+    return Response.json({ error: ERR[why] || ERR.invalid, code: why }, { status: 409 });
+  }
 
   // 남은 개인 구독 기간 일할 환불(A안)
   const refund = proratedRefund(paid);
