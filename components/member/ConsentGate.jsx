@@ -8,6 +8,7 @@ import { useState } from "react";
 import Wordmark from "@/components/ui/Wordmark";
 import Button from "@/components/ui/Button";
 import { CONSENT_VERSION, GENERAL_CONSENT, HEALTH_CONSENT, LOG_CONFIRM_NOTICE } from "@/lib/consent";
+import { operatorName } from "@/lib/format";
 
 function Block({ c, checked, onChange }) {
   return (
@@ -76,7 +77,7 @@ export default function ConsentGate({ supabase, me, onDone, onSignOut, prev = nu
         <p className="mt-2 text-[14.5px] leading-relaxed text-sub">
           {again
             ? "운동일지 확인 방법이 바뀌었어요. 확인할 때 손가락으로 서명하고, 수업 뒤 24시간 안에 확인하지 않으면 확인한 것으로 봐요(폰 알림으로 알려 드려요). 아래 내용을 읽고 다시 동의해 주세요."
-            : `${me.center_name ? `${me.center_name}에서` : "센터에서"} ${me.name} 회원님의 운동 기록을 이 페이지로 보여 드려요. 아래 내용을 읽고 동의해 주세요.`}
+            : `${me.is_solo ? `${operatorName(me)}가` : me.center_name ? `${me.center_name}에서` : "센터에서"} ${me.name} 회원님의 운동 기록을 이 페이지로 보여 드려요. 아래 내용을 읽고 동의해 주세요.`}
         </p>
 
         <div className="mt-5 space-y-3">

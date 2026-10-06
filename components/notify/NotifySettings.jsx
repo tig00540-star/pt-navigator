@@ -9,6 +9,8 @@ import { Bell, BellOff, Smartphone } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { NOTIFY_TYPES } from "@/lib/notifyTypes";
+
+const SOLO_HIDDEN = new Set(["owner_feedback", "payroll", "ot_pending", "owner_report"]);
 import { pushState, enablePush, disablePush, notifyPush } from "@/lib/pushClient";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
@@ -35,7 +37,7 @@ export default function NotifySettings() {
   const { toast, showToast } = useToast();
   const [state, setState] = useState(null);   // on | off | denied | unsupported | ios_install | null(확인 중)
   const [busy, setBusy] = useState(false);
-  const [me, setMe] = useState(null);         // { id, owner }
+  const [me, setMe] = useState(null);         // { id, owner, solo }
   const [prefs, setPrefs] = useState({});
 
   useEffect(() => {
@@ -48,10 +50,10 @@ export default function NotifySettings() {
       const uid = au?.user?.id;
       if (!uid) return;
       const [{ data: t }, { data: p }] = await Promise.all([
-        supabase.from("trainer").select("role").eq("id", uid).maybeSingle(),
+        supabase.from("trainer").select("role, account:account_id(type)").eq("id", uid).maybeSingle(),
         supabase.from("notify_pref").select("prefs").eq("trainer_id", uid).maybeSingle(),
       ]);
-      if (alive) { setMe({ id: uid, owner: t?.role === "owner" }); setPrefs(p?.prefs || {}); }
+      if (alive) { setMe({ id: uid, owner: t?.role === "owner", solo: t?.account?.type === "solo" }); setPrefs(p?.prefs || {}); }
     })();
     return () => { alive = false; };
   }, []);
@@ -80,7 +82,10 @@ export default function NotifySettings() {
     if (error || !data?.length) { console.error("알림 설정 저장 실패", error); setPrefs(prefs); showToast("저장하지 못했어요. 다시 시도해 주세요."); }
   };
 
-  const types = NOTIFY_TYPES.filter((t) => t.who === "trainer" || (t.who === "owner" && me?.owner));
+  // 개인 계정엔 대표 · 센터에서만 생기는 알림이 없다(대표 피드백 · 급여 확정 · 배정 대기 · 아침 보고서 · 2026-10-06).
+  const types = NOTIFY_TYPES
+    .filter((t) => (me?.solo ? !SOLO_HIDDEN.has(t.key) : t.who === "trainer" || (t.who === "owner" && me?.owner)))
+    .map((t) => (me?.solo && t.key === "ot_new" ? { ...t, hint: "내 QR로 신청했을 때" } : t));
 
   return (
     <div className="space-y-6 lg:max-w-2xl">

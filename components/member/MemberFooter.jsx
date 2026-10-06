@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { CONSENT_VERSION, SAFETY_NOTE } from "@/lib/consent";
+import { operatorName } from "@/lib/format";
 
 export default function MemberFooter({ supabase, me, consent, onChanged }) {
   const [busy, setBusy] = useState(false);
@@ -45,7 +46,7 @@ export default function MemberFooter({ supabase, me, consent, onChanged }) {
       )}
       {err && <p className="mt-1 text-danger-text">{err}</p>}
       <p className="mt-3">
-        운영: {me?.center_name || "담당 센터"}<span className="mx-1.5">·</span>서비스 제공: 오직 트레이너
+        운영: {operatorName(me) || "담당 센터"}<span className="mx-1.5">·</span>서비스 제공: 오직 트레이너
       </p>
       <p className="mt-1">
         <a href="/legal/privacy" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">개인정보처리방침</a>

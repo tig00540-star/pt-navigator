@@ -57,6 +57,7 @@ function shiftYm(ym, delta) {
 export default function SettlementPanel({
   contracts = [], incomes = [], expenses = [], ym, view = "view",
   startDay = 1, onChangeStartDay, onIncomeChanged, onExpenseChanged,
+  solo = false,   // 개인(프리랜서) 계정 — 센터 FC부서 칸(FC 매출)을 숨긴다(2026-10-06 · 내 실적에 붙임)
 }) {
   // view(보기/적기)는 상단 세그먼트가 준다 — 하위탭이 화면마다 다른 자리에 있으면 안 된다.
   // 보는 정산 기간의 기준월 — 처음엔 '오늘이 들어 있는 기간'(2026-10-06). 시작일이 15일이면 1~14일엔 지난달 15일 기간이다
@@ -120,11 +121,11 @@ export default function SettlementPanel({
           cFrom={cFrom} setCFrom={setCFrom} cTo={cTo} setCTo={setCTo}
           ymBase={ymBase} setYmBase={setYmBase} ym={ym}
           pt={pt} t={t} byCat={byCat}
-          startDay={startDay} onChangeStartDay={onChangeStartDay}
+          startDay={startDay} onChangeStartDay={onChangeStartDay} solo={solo}
         />
       ) : (
         <EntryPane
-          from={from} to={to} ledger={ledger}
+          from={from} to={to} ledger={ledger} solo={solo}
           onIncomeChanged={onIncomeChanged} onExpenseChanged={onExpenseChanged}
         />
       )}
@@ -135,7 +136,7 @@ export default function SettlementPanel({
 /* ── 정산 보기 ───────────────────────────────────────────────────────────── */
 function ViewPane({
   from, to, custom, setCustom, cFrom, setCFrom, cTo, setCTo,
-  ymBase, setYmBase, ym, pt, t, byCat, startDay, onChangeStartDay,
+  ymBase, setYmBase, ym, pt, t, byCat, startDay, onChangeStartDay, solo = false,
 }) {
   const atLatest = ymBase >= ym; // 다음 기간은 아직 안 온 달 — 빈 화면만 보게 된다
   const openCustom = () => { setCFrom(from); setCTo(to); setCustom(true); };
@@ -185,8 +186,8 @@ function ViewPane({
 
         <div className="mt-4 divide-y divide-line rounded-xl border border-line">
           <Row label="PT 매출" value={pt.net} sub={`신규 ${pt.cntNew}건 · 재등록 ${pt.cntRe}건${pt.refund ? ` · 환불 ${won(pt.refund)} 차감` : ""}`} />
-          <Row label="FC 매출" value={t.fc} sub="회원권 등 센터 FC부서" />
-          <Row label="기타 매출" value={t.etc} />
+          {!solo && <Row label="FC 매출" value={t.fc} sub="회원권 등 센터 FC부서" />}
+          <Row label={solo ? "PT 외 매출" : "기타 매출"} value={solo ? t.etc + t.fc : t.etc} sub={solo ? "그룹 수업 · 용품 등" : undefined} />
           <Row label="총 매출" value={t.revenue} strong />
           <Row label="지출" value={-t.expense} />
           <Row label="순이익" value={t.net} strong accent />
@@ -231,9 +232,10 @@ function ViewPane({
 }
 
 /* ── 장부 적기 ───────────────────────────────────────────────────────────── */
-function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
+function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged, solo = false }) {
   const [date, setDate] = useState(kstToday());
-  const [kind, setKind] = useState("fc");
+  const [kind, setKind] = useState(solo ? "etc" : "fc");
+  const kinds = solo ? ENTRY_KINDS.filter((k) => k.key !== "fc").map((k) => (k.key === "etc" ? { ...k, label: "PT 외 매출" } : k)) : ENTRY_KINDS;
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [amount, setAmount] = useState("");
   const [memo, setMemo] = useState("");
@@ -253,13 +255,15 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
         : { table: "income", row: { earned_on: date, kind, amount: amt, memo: memo.trim() || null } };
       const { data, error } = await supabase.from(payload.table).insert(payload.row).select();
       if (error || !data || data.length === 0) {
-        setNote("저장하지 못했어요. 다시 시도해 주세요." + (error ? ` (${error.message})` : ""));
+        if (error) console.error("장부 저장 실패", error);
+        setNote("저장하지 못했어요. 다시 시도해 주세요.");
         return;
       }
       setAmount(""); setMemo("");
       (isExpense ? onExpenseChanged : onIncomeChanged)?.();
     } catch (e) {
-      setNote("저장하지 못했어요: " + (e?.message || "알 수 없는 오류"));
+      console.error("장부 저장 실패", e);
+      setNote("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -277,13 +281,13 @@ function EntryPane({ from, to, ledger, onIncomeChanged, onExpenseChanged }) {
       <Card as="section">
         <SectionTitle icon={Plus} className="mb-1">장부 적기</SectionTitle>
         <p className="mt-1 text-[13px] leading-relaxed text-muted">
-          회원권 상세(기간·락커·운동복)는 메모에 자유롭게 적어 주세요. 예: &quot;김OO 3개월 + 락커&quot;
+          {solo ? <>PT 계약은 회원 등록 때 자동으로 잡혀요. 여기엔 그 밖의 매출과 지출(대관료 · 장비 등)을 적어 주세요.</> : <>회원권 상세(기간·락커·운동복)는 메모에 자유롭게 적어 주세요. 예: &quot;김OO 3개월 + 락커&quot;</>}
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} aria-label="날짜" />
           <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls} aria-label="구분">
-            {ENTRY_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
+            {kinds.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
           </select>
           {isExpense && (
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls} aria-label="지출 분류">

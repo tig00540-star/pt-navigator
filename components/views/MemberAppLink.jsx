@@ -132,7 +132,7 @@ export default function MemberAppLink({ member, onMemberPatch, readOnly = false 
         <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
           {readOnly
             ? "PT가 끝나서 회원은 기록을 볼 수만 있어요. 끄면 회원이 이 링크로 더 이상 들어올 수 없어요."
-            : "끄면 회원이 이 링크로 더 이상 들어올 수 없어요. 기록은 센터에 그대로 남고, 다시 보내면 다시 켜져요."}
+            : "끄면 회원이 이 링크로 더 이상 들어올 수 없어요. 기록은 그대로 남고, 다시 보내면 다시 켜져요."}
         </p>
       ) : readOnly ? (
         <p className="mt-1 text-[11.5px] leading-relaxed text-muted">회원 페이지가 꺼져 있어요. 다시 PT를 시작하면 링크를 새로 만들 수 있어요.</p>

@@ -14,6 +14,9 @@ export default function SignupPage() {
   const [pw, setPw] = useState("");
   const [displayName, setDisplayName] = useState("");   // 내 이름(트레이너/원장 실명)
   const [accountName, setAccountName] = useState("");   // 센터명(center만)
+  // 개인 트레이너: 일하는 방식(센터 소속 = 급여 · 수수료 / 프리랜서 = 회원비 직접) + 소속 센터 또는 상호(선택) · 2026-10-06
+  const [workMode, setWorkMode] = useState("");
+  const [brand, setBrand] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [sent, setSent] = useState(false);              // 이메일 인증 대기 화면
@@ -32,6 +35,7 @@ export default function SignupPage() {
     if (!supabase) { setErr("데모 모드라 가입할 수 없어요. 키를 설정한 뒤 다시 시도해 주세요."); return; }
     if (!email.trim() || !pw || !displayName.trim()) { setErr("이메일·비밀번호·이름은 필수입니다."); return; }
     if (type === "center" && !accountName.trim()) { setErr("센터명을 입력해 주세요."); return; }
+    if (type === "solo" && !workMode) { setErr("어떻게 일하시는지 골라 주세요."); return; }
     setBusy(true); setErr("");
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
@@ -41,6 +45,7 @@ export default function SignupPage() {
           account_type: type,                                  // 트리거가 읽어 account 생성
           display_name: displayName.trim(),
           account_name: type === "center" ? accountName.trim() : displayName.trim(),
+          ...(type === "solo" ? { work_mode: workMode, brand_name: brand.trim().slice(0, 40) } : {}),
         },
       },
     });
@@ -91,6 +96,25 @@ export default function SignupPage() {
           {type === "center" && (
             <input type="text" placeholder="센터명"
               value={accountName} onChange={(e) => setAccountName(e.target.value)} className={inputCls} />
+          )}
+          {type === "solo" && (
+            <>
+              <fieldset className="m-0 border-0 p-0">
+                <legend className="mb-1.5 text-[13px] font-semibold text-ink">어떻게 일하세요?</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {[{ k: "employed", l: "센터 소속", d: "급여 · 수수료를 받아요" }, { k: "freelance", l: "프리랜서", d: "회원비를 직접 받아요" }].map((o) => (
+                    <button key={o.k} type="button" onClick={() => setWorkMode(o.k)} aria-pressed={workMode === o.k}
+                      className={`rounded-lg px-3 py-2 text-left transition ${workMode === o.k ? "border border-primary/40 bg-primary-soft" : "border border-line bg-elevate hover:border-line-strong"}`}>
+                      <span className={`block text-[13px] font-semibold ${workMode === o.k ? "text-primary-strong" : "text-ink"}`}>{o.l}</span>
+                      <span className="block text-[12px] text-sub">{o.d}</span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <input type="text" maxLength={40} placeholder={workMode === "freelance" ? "상호 (선택 · 예: 홍길동 PT 스튜디오)" : "소속 센터 (선택 · 예: 강남 ○○짐)"}
+                value={brand} onChange={(e) => setBrand(e.target.value)} className={inputCls} />
+              <p className="-mt-1 text-[12px] leading-relaxed text-muted">회원 전용 페이지와 OT 신청서에 이 이름이 나와요. 나중에 설정에서 바꿀 수 있어요.</p>
+            </>
           )}
           {err && <div className="text-xs text-red-600">{err}</div>}
           <Button variant="primary" size="md" fullWidth onClick={submit} disabled={busy}>

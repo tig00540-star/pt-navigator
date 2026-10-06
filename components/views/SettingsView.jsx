@@ -12,6 +12,7 @@ import EventManager from "@/components/events/EventManager";
 import MyIntakeCard from "@/components/intake/MyIntakeCard";
 import BookingPrefCard from "@/components/booking/BookingPrefCard";
 import NotifySettings from "@/components/notify/NotifySettings";
+import SoloProfileCard from "@/components/views/SoloProfileCard";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -26,7 +27,8 @@ export const SETTINGS_SUBTABS = [
   { id: "notify",  label: "알림" },   // 폰 푸시 알림 켜기 · 종류별 on/off(2026-10-06)
 ];
 
-export default function SettingsView({ isSolo = false, sub = "me" }) {
+// isFreelance = 개인 계정 중 프리랜서(급여 없음 → '가격 · 급여' 대신 '가격표' · 급여 방식 숨김 · 2026-10-06)
+export default function SettingsView({ isSolo = false, isFreelance = false, sub = "me" }) {
   return (
     <div className="space-y-6 break-keep text-pretty">
       <div className="flex overflow-x-auto">
@@ -36,7 +38,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
             return (
               <Link key={t.id} href={`/settings/${t.id}`} aria-current={on ? "page" : undefined}
                 className={`inline-flex min-h-[40px] shrink-0 items-center rounded-full px-3.5 text-[14px] transition ${on ? "bg-card font-semibold text-ink shadow-sm" : "text-sub hover:text-ink"}`}>
-                {isSolo && t.id === "money" ? "가격 · 급여" : t.label}
+                {isSolo && !isFreelance && t.id === "money" ? "가격 · 급여" : t.label}
               </Link>
             );
           })}
@@ -47,6 +49,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
         <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
           <TrainerProfileSettings />
           <div className="space-y-6">
+          <SoloProfileCard />
           <MyIntakeCard />
           <BookingPrefCard />
           <TrainerGoalSetter />
@@ -68,7 +71,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
         /* 입력 폼이라 너무 넓으면 읽기 어렵다 — 넓은 화면에선 폭을 묶는다. */
         <div className="space-y-6 lg:max-w-3xl">
           <PtPricingSettings />
-          {isSolo && <AdminPayrollSettings trainers={[]} solo />}
+          {isSolo && !isFreelance && <AdminPayrollSettings trainers={[]} solo />}
         </div>
       )}
       {sub === "gear" && <CenterMachineSettings />}

@@ -12,12 +12,13 @@ import { viewFor } from "@/lib/memberStatus";
 export default function StatsPage() {
   const router = useRouter();
   const { members } = useMembers();
-  const { isSolo } = useAccount();
+  const { isSolo, isFreelance } = useAccount();
 
   return (
     <MyStats
       members={members}
       isSolo={isSolo}
+      isFreelance={isFreelance}
       onSelect={(id) => {
         const m = members.find((x) => x.id === id);
         router.push(m ? hrefForMember(id, viewFor(m)) : "/members");

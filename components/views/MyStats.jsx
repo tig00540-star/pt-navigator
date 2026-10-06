@@ -6,7 +6,7 @@
    admin과 동일 함수 재사용(revenueByTrainer·sessionPriceSumByTrainer·closingStats·payForScheme).
    ========================================================================= */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Award, ChevronDown, ChevronRight, Coins, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won } from "@/lib/format";
@@ -18,11 +18,23 @@ import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
 import Card from "@/components/ui/Card";
 import { fetchAllRows } from "@/lib/fetchAllRows";
+import SettlementPanel from "@/components/admin/SettlementPanel";
+import Button from "@/components/ui/Button";
+import { inputCls } from "@/components/ui/Field";
 
 // 'M월 D일'(KST) — 매출 내역 날짜.
 const dayKo = (iso) => { const t = Date.parse(iso || ""); if (Number.isNaN(t)) return ""; const d = new Date(t + 9 * 3600 * 1000); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`; };
 
-export default function MyStats({ members = [], isSolo = false, onSelect }) {
+// 장부 창(13개월) — 대표 정산 화면과 같은 기준.
+function ledgerFrom() {
+  const k = new Date(Date.now() + 9 * 3600 * 1000);
+  const t = k.getUTCFullYear() * 12 + k.getUTCMonth() - 13;
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}-01`;
+}
+
+// isFreelance = 개인 계정 중 프리랜서(2026-10-06): 맨 위 = 매출 · 지출 · 남은 돈 + 장부 · 정산(급여 칸 없음).
+//   개인 · 센터 소속은 지금처럼 급여가 맨 위 · 급여 방식이 '수동'이면 받은 금액을 직접 적는다(대표 확정 화면이 없으므로).
+export default function MyStats({ members = [], isSolo = false, isFreelance = false, onSelect }) {
   const [contracts, setContracts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [otRows, setOtRows] = useState([]);
@@ -45,6 +57,46 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
   const openRevenue = () => openDetails(revRef.current); // 펼친 뒤 높이가 잡히고 나서 내려간다(setTimeout)
   const openPay = () => openDetails(payRef.current);
   const [goals, setGoals] = useState([]);        // trainer_goal(월별 목표) — 달성률·리포트 전달
+  // 프리랜서 장부(income · expense · 정산 시작일) — 대표 정산 화면과 같은 표 · 개인 계정 주인은 DB가 허용(owner)
+  const [incomes, setIncomes] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [startDay, setStartDay] = useState(1);
+  const [ledgerView, setLedgerView] = useState("view");
+  const ledgerRef = useRef(null);
+  // 개인 · 센터 소속 + 수동 급여: 이달 받은 금액 직접 적기
+  const [manualAmt, setManualAmt] = useState("");
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualNote, setManualNote] = useState("");
+
+  const loadIncomes = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await fetchAllRows(() => supabase.from("income").select("*").gte("earned_on", ledgerFrom()));
+    if (error) { console.error("장부(매출) 읽기 실패", error); return; }
+    setIncomes(data || []);
+  }, []);
+  const loadExpenses = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await fetchAllRows(() => supabase.from("expense").select("*").gte("spent_on", ledgerFrom()));
+    if (error) { console.error("장부(지출) 읽기 실패", error); return; }
+    setExpenses(data || []);
+  }, []);
+  useEffect(() => {
+    if (!isFreelance || !supabase) return;
+    let alive = true;
+    (async () => {
+      await Promise.all([loadIncomes(), loadExpenses()]);
+      const { data } = await supabase.from("account").select("settlement_start_day").maybeSingle();
+      if (alive) setStartDay(data?.settlement_start_day ?? 1);
+    })();
+    return () => { alive = false; };
+  }, [isFreelance, loadIncomes, loadExpenses]);
+  const saveStartDay = async (d) => {
+    const prev = startDay;
+    setStartDay(d);
+    if (!supabase) return;
+    const { error } = await supabase.rpc("set_settlement_start_day", { d });
+    if (error) { console.error("정산 기준일 저장 실패", error); setStartDay(prev); }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -154,6 +206,26 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
     };
   }, [members, contracts, logs, otRows, schemes, runs, uid, goals, contractNames]);
 
+  const manualPay = isSolo && !isFreelance && pay.computed == null && scheme?.type === "manual";
+  const saveManual = async () => {
+    const amt = Math.round(Number(String(manualAmt).replace(/[^0-9]/g, "")));
+    if (!Number.isFinite(amt) || amt <= 0) { setManualNote("금액을 입력해 주세요."); return; }
+    if (!supabase || !uid) return;
+    setManualBusy(true); setManualNote("");
+    const now = new Date().toISOString();
+    const { data, error } = await supabase.from("payroll_run")
+      .upsert({ trainer_id: uid, ym, final_total: amt, computed_total: null, note: "본인 입력", seen_at: now, updated_at: now }, { onConflict: "account_id,trainer_id,ym" })
+      .select();
+    setManualBusy(false);
+    if (error || !data?.length) { console.error("받은 금액 저장 실패", error); setManualNote("저장하지 못했어요. 다시 시도해 주세요."); return; }
+    setRuns((rs) => [...rs.filter((r) => !(r.trainer_id === uid && r.ym === ym)), data[0]]);
+    setManualAmt("");
+  };
+  // 프리랜서 이달(달력 월) — PT 매출(내 계약) + PT 외 매출 − 지출. 자세한 기간 정산은 아래 장부 · 정산.
+  const monthIncome = incomes.filter((r) => String(r.earned_on || "").startsWith(ym)).reduce((a, r) => a + (r.amount || 0), 0);
+  const monthExpense = expenses.filter((e) => String(e.spent_on || "").startsWith(ym)).reduce((a, e) => a + (e.amount || 0), 0);
+  const monthNet = rev.total + monthIncome - monthExpense;
+
   return (
     /* 넓은 화면(lg~): 왼쪽 급여·매출·수업 | 오른쪽 오운완 랭킹. 폰은 위아래 한 줄. */
     <div className="space-y-4 break-keep text-pretty lg:max-w-3xl">
@@ -175,16 +247,40 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         </button>
       </div>
 
-      {/* 급여 (헤드라인) — 확정액 우선, 없으면 자동계산 예상, manual이면 확정 대기 */}
+      {isFreelance ? (
+        /* 프리랜서 헤드라인 — 이달 남은 돈(매출 − 지출) · 누르면 장부 · 정산 */
+        <button type="button" onClick={() => openDetails(ledgerRef.current)} className="block w-full rounded-2xl border border-primary/30 bg-primary-soft p-5 text-left shadow-sm transition hover:border-primary/60 active:scale-[0.99]">
+          <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
+            <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 남은 돈(매출 − 지출)
+            <ChevronRight className="ml-auto h-4 w-4 text-primary-strong/70" aria-hidden="true" />
+          </div>
+          <div className={`mt-1.5 tabular-nums text-[30px] font-bold tracking-[-0.03em] ${monthNet < 0 ? "text-danger-text" : "text-ink"}`}>{won(monthNet)}</div>
+          <div className="mt-0.5 text-[13px] text-sub">PT 매출 {won(rev.total)}{monthIncome ? ` + PT 외 ${won(monthIncome)}` : ""} − 지출 {won(monthExpense)}</div>
+        </button>
+      ) : manualPay && !confirmed ? (
+        /* 개인 · 센터 소속 + 수동 급여 — 대표 확정 화면이 없으니 받은 금액을 직접 적는다 */
+        <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
+          <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
+            <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 받은 금액
+          </div>
+          <p className="m-0 mt-1 text-[13px] text-sub">센터에서 받은 이달 급여 · 수수료를 적어 두면 지난달과 비교할 수 있어요.</p>
+          <div className="mt-2.5 flex gap-2">
+            <input type="text" inputMode="numeric" value={manualAmt} onChange={(e) => setManualAmt(e.target.value.replace(/[^0-9,]/g, ""))}
+              placeholder="예: 2,800,000" aria-label="이달 받은 금액" className={`${inputCls} min-w-0 flex-1`} />
+            <Button variant="primary" size="md" onClick={saveManual} disabled={manualBusy}>{manualBusy ? "저장 중…" : "저장"}</Button>
+          </div>
+          {manualNote && <p className="m-0 mt-1.5 text-[13px] text-danger-text">{manualNote}</p>}
+        </div>
+      ) : (
       <button type="button" onClick={openPay} className="block w-full rounded-2xl border border-primary/30 bg-primary-soft p-5 text-left shadow-sm transition hover:border-primary/60 active:scale-[0.99]">
         <div className="flex items-center gap-1.5 text-[13px] font-semibold text-primary-strong">
-          <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 {isSolo ? "급여(자동 계산)" : `${confirmed ? "확정" : "예상"} 급여`}
+          <Wallet className="h-4 w-4" aria-hidden="true" /> 이달 {isSolo ? (confirmed ? "받은 금액" : "급여(자동 계산)") : `${confirmed ? "확정" : "예상"} 급여`}
           <ChevronRight className="ml-auto h-4 w-4 text-primary-strong/70" aria-hidden="true" />
         </div>
         {confirmed ? (
           <>
             <div className="mt-1.5 tabular-nums text-[30px] font-bold tracking-[-0.03em] text-ink">{won(myRun.final_total)}</div>
-            <div className="mt-0.5 text-[13px] text-sub">대표 확정{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동 계산 ${won(pay.computed)}` : ""}</div>
+            <div className="mt-0.5 text-[13px] text-sub">{isSolo ? "내가 적은 금액" : "대표 확정"}{pay.computed != null && pay.computed !== myRun.final_total ? ` · 자동 계산 ${won(pay.computed)}` : ""}</div>
           </>
         ) : pay.computed != null ? (
           <>
@@ -194,10 +290,11 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         ) : (
           <>
             <div className="mt-1.5 text-[22px] font-bold text-muted">{isSolo ? "급여 방식 미설정" : "대표 확정 대기"}</div>
-            <div className="mt-0.5 text-[13px] text-sub">{isSolo ? "급여 방식을 설정하면 자동으로 계산돼요" : "대표가 직접 정하는 급여예요"}</div>
+            <div className="mt-0.5 text-[13px] text-sub">{isSolo ? "설정 › 가격 · 급여에서 급여 방식을 정하면 자동으로 계산돼요" : "대표가 직접 정하는 급여예요"}</div>
           </>
         )}
       </button>
+      )}
 
       {/* 매출 — 목표가 있으면 같은 칸 안에 진행 막대(2026-10-03 · 따로 있던 '목표 달성' 카드를 합침 · 같은 숫자를 두 번 보여주지 않게) */}
       <StatTile label="이달 매출(내 등록)" value={won(rev.total)} onClick={openRevenue}>
@@ -226,7 +323,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         <StatTile icon={Target} label="등록률" value={rate}>
           <div className="mt-1.5 text-[12.5px] text-sub">등록 제안 {closing.attempted}명 중 {closing.success}명</div>
         </StatTile>
-        <StatTile icon={Dumbbell} label="이번 달 수업" value={`${sessionCount}회`} onClick={openPay}>
+        <StatTile icon={Dumbbell} label="이번 달 수업" value={`${sessionCount}회`} onClick={isFreelance ? undefined : openPay}>
           <div className="mt-1.5 text-[12.5px] text-sub">
             회원 {new Set(payLines.map((l) => l.user_id)).size}명{payLines.some((l) => l.noshow) ? ` · 노쇼 ${payLines.reduce((s, l) => s + l.noshow, 0)}회 포함` : ""}
           </div>
@@ -301,7 +398,30 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
         )}
       </details>
 
-      {/* 급여 내역 — 회원 · 수업 횟수 · 회당 단가 · 받는 수업료(2026-10-03) */}
+      {/* 프리랜서 장부 · 정산 — 대표 화면의 정산을 그대로(FC 칸만 숨김) */}
+      {isFreelance && (
+        <details ref={ledgerRef} className="group scroll-mt-20 rounded-2xl border border-line bg-card px-5 shadow-sm">
+          <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
+              <Coins className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 장부 · 정산
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="pb-4">
+            <div className="mb-3 inline-flex gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="장부">
+              {[["view", "정산 보기"], ["entry", "장부 적기"]].map(([k, l]) => (
+                <button key={k} type="button" role="tab" aria-selected={ledgerView === k} onClick={() => setLedgerView(k)}
+                  className={`min-h-[36px] rounded-full px-3.5 text-[14px] ${ledgerView === k ? "bg-card font-semibold text-ink shadow-sm" : "text-sub"}`}>{l}</button>
+              ))}
+            </div>
+            <SettlementPanel solo view={ledgerView} contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
+              startDay={startDay} onChangeStartDay={saveStartDay} onIncomeChanged={loadIncomes} onExpenseChanged={loadExpenses} />
+          </div>
+        </details>
+      )}
+
+      {/* 급여 내역 — 회원 · 수업 횟수 · 회당 단가 · 받는 수업료(2026-10-03) · 프리랜서는 급여가 없어 숨김 */}
+      {!isFreelance && (<>
       <details ref={payRef} className="group scroll-mt-20 rounded-2xl border border-line bg-card px-5 shadow-sm">
         <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
@@ -317,7 +437,8 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
           revenue={rev.total} confirmedTotal={confirmed ? myRun.final_total : null} nameOf={displayName} isSolo={isSolo} />
       </details>
 
-      <p className="text-[12px] leading-relaxed text-muted">{isSolo ? "자동 계산은 이번 달 완료한 수업 기준이에요." : "확정 전 예상 급여는 이번 달 완료한 수업으로 자동 계산한 금액이에요. 실제 지급액은 대표가 확정한 금액이에요."}</p>
+      <p className="text-[12px] leading-relaxed text-muted">{isSolo ? (manualPay ? "받은 금액은 내가 적은 금액이에요. 이번 달 안에 고칠 수 있어요." : "자동 계산은 이번 달 완료한 수업 기준이에요.") : "확정 전 예상 급여는 이번 달 완료한 수업으로 자동 계산한 금액이에요. 실제 지급액은 대표가 확정한 금액이에요."}</p>
+      </>)}
         </>
       )}
       </div>
@@ -335,6 +456,7 @@ export default function MyStats({ members = [], isSolo = false, onSelect }) {
             contractNames,
             goals,            // 월별 목표 배열 — 리포트가 선택 ym으로 조회
             trainerName: trainerName || email, // 실명 우선(trainer.name), 없으면 이메일 폴백(personName이 @앞만)
+            isSolo, isFreelance,  // 개인 계정 문구(받은 금액 · 프리랜서는 급여 칸 없음)
           }}
         />
       )}

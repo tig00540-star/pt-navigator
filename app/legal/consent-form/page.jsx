@@ -45,9 +45,9 @@ export default function ConsentFormPage() {
         <Title>개인정보 · 건강정보 수집 · 이용 동의서</Title>
         <PrintButton />
       </div>
-      <P>센터는 PT 수업과 회원 전용 페이지 운영을 위해 아래와 같이 개인정보를 모으고 써요. 건강정보는 따로 동의를 받아요.</P>
+      <P>센터(또는 담당 트레이너)는 PT 수업과 회원 전용 페이지 운영을 위해 아래와 같이 개인정보를 모으고 써요. 건강정보는 따로 동의를 받아요.</P>
 
-      <div className="mt-5"><Line label="센터명" /></div>
+      <div className="mt-5"><Line label="센터명 · 상호" /></div>
 
       <Box c={GENERAL_CONSENT} />
       <Box c={LOG_CONFIRM_NOTICE} />

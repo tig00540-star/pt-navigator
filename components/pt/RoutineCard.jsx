@@ -219,7 +219,7 @@ export default function RoutineCard({ member, logs = [] }) {
             </div>
             {machines.length > 0 && (
               <>
-                <p className="pt-1 text-[13px] font-semibold text-ink">센터 장비</p>
+                <p className="pt-1 text-[13px] font-semibold text-ink">등록한 장비</p>
                 <div className="flex flex-wrap gap-1.5">
                   {machines.filter((m) => !inRoutine.has(m.name)).slice(0, 30).map((m) => (
                     <button key={m.name} type="button" onClick={() => addItem(newItem(m.name, "machine"))}

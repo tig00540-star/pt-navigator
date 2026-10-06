@@ -140,7 +140,7 @@ export default function JoinPage() {
       const d = await res.json().catch(() => ({}));
       if (res.ok && d.ok) { setDone({ kind: d.kind || info?.kind || "trainer", app: d.app, token: d.token }); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } return; }
       setErr(d.error === "busy" ? "지금 신청이 많아요. 잠시 뒤 다시 시도해 주세요."
-        : d.error === "invalid" || d.error === "closed" ? "이 신청서는 닫혔어요. 센터에 새 링크를 요청해 주세요."
+        : d.error === "invalid" || d.error === "closed" ? "이 신청서는 닫혔어요. 트레이너나 센터에 새 링크를 요청해 주세요."
         : "신청하지 못했어요. 다시 시도해 주세요.");
     } catch {
       setErr("인터넷 연결을 확인하고 다시 시도해 주세요.");
@@ -168,7 +168,7 @@ export default function JoinPage() {
       <div className="mt-10 rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
         <p className="m-0 text-[17px] font-bold">{info.error === "network" ? "신청서를 열지 못했어요" : "이 신청서는 닫혔어요"}</p>
         <p className="m-0 mt-2 text-[14px] leading-relaxed text-sub">
-          {info.error === "network" ? "인터넷 연결을 확인하고 다시 열어 주세요." : "링크가 바뀌었거나 센터가 신청을 받지 않고 있어요. 센터에 새 링크를 요청해 주세요."}
+          {info.error === "network" ? "인터넷 연결을 확인하고 다시 열어 주세요." : "링크가 바뀌었거나 지금은 신청을 받지 않고 있어요. 트레이너나 센터에 새 링크를 요청해 주세요."}
         </p>
       </div>
     );
@@ -195,7 +195,7 @@ export default function JoinPage() {
     <>
       <h1 className="m-0 mt-4 text-[24px] font-extrabold leading-tight tracking-[-0.03em]">OT 신청서</h1>
       <p className="m-0 mt-1.5 text-[15px] leading-relaxed text-sub">
-        {info.center ? `${info.center} · ` : ""}{who ? `${who}가 받아요.` : "센터에서 담당 트레이너를 정해 연락드려요."}
+        {info.center && info.center !== info.trainer ? `${info.center} · ` : ""}{who ? `${who}가 받아요.` : "센터에서 담당 트레이너를 정해 연락드려요."}
         {" "}30초면 신청돼요.
       </p>
 

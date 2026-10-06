@@ -136,10 +136,11 @@ export default function MonthlyReport({ data, onClose }) {
           </div>
         </div>
 
-        {/* 급여 헤드라인(확정/예상) */}
+        {/* 급여 헤드라인(확정/예상) · 프리랜서는 급여가 없어 숨김(매출은 아래 지표) */}
+        {!data?.isFreelance && (
         <ToneCard tone="brand">
           <div className="flex items-center gap-2 text-[13px] text-sub">
-            <Wallet className="h-3.5 w-3.5" /> {confirmed ? "확정" : "예상"} 급여
+            <Wallet className="h-3.5 w-3.5" /> {data?.isSolo ? (confirmed ? "받은 금액" : "예상 급여") : `${confirmed ? "확정" : "예상"} 급여`}
           </div>
           {confirmed ? (
             <div className="mt-2 tabular-nums text-[28px] font-bold tracking-[-0.03em] text-ink">{won(myRun.final_total)}</div>
@@ -157,9 +158,10 @@ export default function MonthlyReport({ data, onClose }) {
               )}
             </>
           ) : (
-            <div className="mt-2 text-[22px] font-bold text-muted">확정 대기(수동 급여)</div>
+            <div className="mt-2 text-[22px] font-bold text-muted">{data?.isSolo ? "받은 금액 미입력" : "확정 대기(수동 급여)"}</div>
           )}
         </ToneCard>
+        )}
 
         {/* 핵심 지표 grid */}
         <div className="grid gap-3 sm:grid-cols-2">
@@ -322,7 +324,7 @@ export default function MonthlyReport({ data, onClose }) {
           )}
         </ToneCard>
 
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">예상 급여는 완료한 수업으로 자동 계산한 금액이고, 실제 지급액은 대표가 확정한 금액이에요. 등록률은 전체 기간 누적이에요. {ym} 기준.</p>
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">{data?.isFreelance ? "" : data?.isSolo ? "예상 급여는 완료한 수업으로 자동 계산한 금액이에요. " : "예상 급여는 완료한 수업으로 자동 계산한 금액이고, 실제 지급액은 대표가 확정한 금액이에요. "}등록률은 전체 기간 누적이에요. {ym} 기준.</p>
       </div>
     </div>
   );

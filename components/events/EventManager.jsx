@@ -97,8 +97,9 @@ export default function EventManager({ trainers = null }) {
       if (!supabase) { setList([]); return; }
       const { data: au } = await supabase.auth.getUser();
       const uid = au?.user?.id;
-      const { data: t } = await supabase.from("trainer").select("role").eq("id", uid).maybeSingle();
-      const owner = t?.role === "owner";
+      const { data: t } = await supabase.from("trainer").select("role, account:account_id(type)").eq("id", uid).maybeSingle();
+      // 센터 대표만 대상(센터 전체 · 트레이너별)을 고른다 — 개인 계정은 늘 '내 회원'(2026-10-06)
+      const owner = t?.role === "owner" && t?.account?.type !== "solo";
       if (owner && !trainers) {
         const { data: ts } = await supabase.from("trainer").select("id, name, role, active");
         if (alive) setTlist((ts || []).filter((x) => x.active !== false));
