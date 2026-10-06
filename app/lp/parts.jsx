@@ -179,11 +179,11 @@ export function GroupLabel({ children, dark }) {
   );
 }
 
-export function Shot({ src, alt, zoom = true }) {
+export function Shot({ src, alt, zoom = true, wide = false }) {
   const [open, setOpen] = useState(false);
   // 이미 1080×1350 WebP ~100KB로 최적화한 정적 캡처 — next/image 변환 없이 그대로 내보낸다.
   // eslint-disable-next-line @next/next/no-img-element
-  const img = <img src={src} alt={alt} width={1080} height={1350} loading="lazy" decoding="async"
+  const img = <img src={src} alt={alt} width={wide ? 1600 : 1080} height={wide ? 900 : 1350} loading="lazy" decoding="async"
     className="block h-auto w-full rounded-2xl border border-line bg-card" />;
   if (!zoom) return img;
   // 탭하면 크게 — 폰에서 글자를 읽을 수 있게.
@@ -203,10 +203,10 @@ export function Shot({ src, alt, zoom = true }) {
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
-export function Visual({ img, demo, alt, dark }) {
+export function Visual({ img, demo, alt, dark, wide }) {
   return (
-    <div className={`mx-auto w-full max-w-[480px] rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
-      {img ? <Shot src={img} alt={alt} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
+    <div className={`mx-auto w-full rounded-[24px] border p-1.5 sm:p-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"} ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
+      {img ? <Shot src={img} alt={alt} wide={wide} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
     </div>
   );
 }
@@ -230,7 +230,7 @@ export function StepShots({ steps }) {
   };
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-3">
-      <div className="grid grid-cols-3 gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="단계">
+      <div className={`grid gap-1 rounded-full bg-elevate p-[3px] ${steps.length === 2 ? "grid-cols-2" : "grid-cols-3"}`} role="tablist" aria-label="단계">
         {steps.map((s, i) => (
           <button key={s.step} type="button" role="tab" aria-selected={i === active} onClick={() => go(i)}
             className={`min-h-[44px] rounded-full px-1 text-[13px] font-extrabold transition-colors sm:text-[14px] ${FOCUS} ${
@@ -267,7 +267,7 @@ export function StepShots({ steps }) {
 /* 사진 아래 '직접 눌러 보기' 한 줄 — 사진이 있는 칸은 TryCard 대신 이것만(2026-10-06). */
 export function TryLink({ href, dark }) {
   return (
-    <a href={href} className={`mx-auto mt-3.5 inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[15px] font-bold no-underline transition-colors ${FOCUS} ${
+    <a href={href} className={`mx-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[15px] font-bold no-underline transition-colors ${FOCUS} ${
       dark ? "border border-white/25 text-white hover:bg-white/10" : "border border-line-strong bg-card text-ink hover:bg-elevate"}`}>
       가입 없이 직접 눌러 보기 <ArrowRight size={16} aria-hidden="true" />
     </a>
@@ -413,6 +413,23 @@ export function FeatureRow({ pill, title, flow, checks, note, visual, dark, chil
       <div className="rv mt-1.5 w-full" style={stagger(flow ? 3 : 2)}>
         {children || <Visual {...visual} dark={dark} />}
       </div>
+    </div>
+  );
+}
+
+/* 기능 묶음(2026-10-06) — 일하는 순서대로 5묶음. 머리(알약 · 제목 · 효과 3줄) → 대표 장면 1장 크게 → 나머지는 옆으로 넘겨 보기 → 직접 눌러 보기.
+   대표 장면을 크게 두는 건 넘기는 칸은 보통 첫 1~2장만 보고 지나가서다. */
+export function Bundle({ id, pill, title, checks, note, hero, items, label, href, dark, children }) {
+  return (
+    <div id={id} className="w-full scroll-mt-28">
+      <FeatureRow pill={pill} title={title} checks={checks} note={note} dark={dark}>
+        <div className="flex w-full flex-col items-center gap-7">
+          {hero && <Visual {...hero} dark={dark} />}
+          {items?.length > 0 && <FeatureGallery items={items} dark={dark} label={label || `${pill} 화면`} />}
+          {children}
+          {href && <TryLink href={href} dark={dark} />}
+        </div>
+      </FeatureRow>
     </div>
   );
 }

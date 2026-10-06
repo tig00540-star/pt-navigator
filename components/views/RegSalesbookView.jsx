@@ -13,7 +13,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Maximize, Minimize, Presentation, Receipt } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
-import { won, wonApprox } from "@/lib/format";
+import { won, wonApprox, personName } from "@/lib/format";
+import { useAccount } from "@/lib/useAccount";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import PriceSheet from "@/components/salesbook/PriceSheet";
@@ -98,6 +99,7 @@ function SlideHead({ eyebrow, aux, className = "", style }) {
 }
 
 export default function RegSalesbookView({ regSalesbook, member, trainer, packages = [], recommendedProgram = null, change = null, onClose, startPresent = false }) {
+  const me = useAccount();
   const [idx, setIdx] = useState(0);
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({});
@@ -148,6 +150,9 @@ export default function RegSalesbookView({ regSalesbook, member, trainer, packag
   const sb = regSalesbook || {};
   const ch = change || {};
   const tr = trainer || {};
+  // 프로필에 '표시 이름'이 없으면 계정 이름으로(SalesbookView와 같은 규칙 · 2026-10-06)
+  const trName = tr.display_name || personName(me.trainerName);
+  const trLabel = tr.display_name || (trName ? `${trName} 트레이너` : "담당 트레이너");
   const j = ch.journey || {};
   const inbody = Array.isArray(ch.inbody) ? ch.inbody : [];
   const exercises = Array.isArray(ch.exercises) ? ch.exercises : [];
@@ -191,7 +196,7 @@ export default function RegSalesbookView({ regSalesbook, member, trainer, packag
       <div className="sb-stg flex items-center gap-3 rounded-2xl border border-line bg-elevate px-4 py-3" style={{ "--sb-i": 2 }}>
         <BrandMark className="h-9 w-9 shrink-0" />
         <div className="min-w-0">
-          <div className="text-[14px] font-bold text-ink">{tr.display_name || "담당 트레이너"}</div>
+          <div className="text-[14px] font-bold text-ink">{trLabel}</div>
           {tr.credentials && <div className="truncate text-[12px] text-muted">{tr.credentials}</div>}
         </div>
       </div>
@@ -389,12 +394,12 @@ export default function RegSalesbookView({ regSalesbook, member, trainer, packag
       <div className="sb-stg mt-3 flex flex-1 flex-col rounded-2xl border border-primary/25 bg-primary-soft p-5" style={{ "--sb-i": 2 }}>
         <p className="sb-handwriting flex flex-1 items-center text-[clamp(22px,3.4vw,34px)] leading-snug text-ink">{sb.closing?.vow}</p>
         <div className="mt-3 flex items-end justify-end gap-3">
-          <span className="text-[12px] text-muted">{tr.display_name || "담당 트레이너"}</span>
+          <span className="text-[12px] text-muted">{trLabel}</span>
           {tr.signature_data_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={tr.signature_data_url} alt="서명" className="h-12 max-w-[160px] object-contain" />
           ) : (
-            <span className="sb-handwriting text-[22px] text-ink/70">{tr.display_name || ""}</span>
+            <span className="sb-handwriting text-[22px] text-ink/70">{trName}</span>
           )}
         </div>
       </div>
@@ -496,7 +501,7 @@ export default function RegSalesbookView({ regSalesbook, member, trainer, packag
         <PriceSheet
           packages={packages}
           recommended={resolvePackage(0, (Array.isArray(sb.plans) ? sb.plans : [])[0], recommendedProgram, packages)}
-          trainerName={trainer?.display_name || ""}
+          trainerName={trName}
           onClose={() => setPriceOpen(false)}
         />
       )}
