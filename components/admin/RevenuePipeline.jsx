@@ -178,27 +178,37 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
       <Card>
         <SectionTitle icon={LineChart}>매출·환불 추이 · 최근 6개월</SectionTitle>
         {(() => {
-          const maxNet = Math.max(1, ...trend.map((t) => t.net));
-          const anyRev = trend.some((t) => t.rev > 0);
-          if (!anyRev) return <p className="text-[12px] text-muted">매출 이력이 없어요.</p>;
+          // 2026-10-06 대표: 신규 · 재등록을 한 막대에 색으로 나눠(아래 신규 빨강 · 위 재등록 하늘 = 위 '이달 구성' 막대와 같은 색).
+          //   막대 = 그 달 등록 매출(환불 빼기 전) · 환불은 아래 빨간 숫자.
+          const maxRev = Math.max(1, ...trend.map((t) => t.rev));
+          if (!trend.some((t) => t.rev > 0)) return <p className="text-[12px] text-muted">매출 이력이 없어요.</p>;
           return (
-            /* items-stretch — 칸마다 높이(170)를 다 받아야 막대의 % 높이가 계산된다(items-end면 칸 높이가 글자만큼이라 막대가 0이 됐다 · 2026-10-06) */
-            <div className="flex items-stretch justify-between gap-2" style={{ height: 170 }}>
-              {trend.map((t) => (
-                <div key={t.ym} className="flex flex-1 flex-col items-center gap-1">
-                  <div className="flex w-full flex-1 items-end">
-                    <div className="mx-auto w-5 rounded-t bg-primary" style={{ height: `${Math.max(2, Math.round((t.net / maxNet) * 100))}%` }} title={won(t.net)} />
+            <>
+              <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-sub">
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" />신규</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-cyan-500" />재등록</span>
+              </div>
+              {/* items-stretch — 칸마다 높이를 다 받아야 막대 % 높이가 계산된다 · 환불 줄은 늘 자리를 잡아 막대 칸 높이를 같게 */}
+              <div className="flex items-stretch justify-between gap-2" style={{ height: 180 }}>
+                {trend.map((t) => (
+                  <div key={t.ym} className="flex flex-1 flex-col items-center gap-1">
+                    <div className="flex w-full flex-1 items-end">
+                      <div className="mx-auto flex w-6 flex-col-reverse overflow-hidden rounded-t" style={{ height: `${t.rev > 0 ? Math.max(2, Math.round((t.rev / maxRev) * 100)) : 0}%` }}
+                        title={`신규 ${won(t.newRev)} · 재등록 ${won(t.reRev)}`}>
+                        <div className="w-full bg-primary" style={{ height: `${t.rev ? (t.newRev / t.rev) * 100 : 0}%` }} />
+                        <div className="w-full bg-cyan-500" style={{ height: `${t.rev ? (t.reRev / t.rev) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                    <div className="font-mono text-[12px] font-semibold text-ink">{manLabel(t.rev)}</div>
+                    <div className={`font-mono text-[12px] text-danger-text ${t.refund > 0 ? "" : "invisible"}`} aria-hidden={t.refund > 0 ? undefined : true}>−{manLabel(t.refund || 0)}</div>
+                    <div className="text-[12px] text-muted">{t.ym.slice(5)}월</div>
                   </div>
-                  <div className="font-mono text-[12px] text-ink">{manLabel(t.net)}</div>
-                  {/* 환불 줄은 늘 자리를 잡는다 — 환불 있는 달만 막대 칸이 짧아져 높이를 비교할 수 없던 것 */}
-                  <div className={`font-mono text-[12px] text-danger-text ${t.refund > 0 ? "" : "invisible"}`} aria-hidden={t.refund > 0 ? undefined : true}>−{manLabel(t.refund || 0)}</div>
-                  <div className="text-[12px] text-muted">{t.ym.slice(5)}월</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           );
         })()}
-        <p className="mt-3 text-[12px] leading-relaxed text-muted">막대는 그 달 매출(환불 뺀 금액), 빨간 숫자는 환불이에요. 단위는 만원이에요.</p>
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">막대는 그 달 등록 매출(신규 + 재등록), 빨간 숫자는 그 달 환불이에요. 막대를 길게 누르거나 올리면 금액이 보여요. 단위는 만원이에요.</p>
       </Card>
       </div>
     </div>
