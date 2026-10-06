@@ -228,8 +228,18 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     setManualAmt("");
     setManualEdit(false);
   };
-  const showManual = manualPay && (!confirmed || manualEdit);
-  const editLink = manualPay && confirmed && !manualEdit ? (
+  const showManual = (manualPay && !confirmed) || (isSolo && manualEdit);
+  // 적은 금액 지우기 → 다시 자동 계산(payroll_run은 삭제 정책이 없어 final_total만 비운다)
+  const clearManual = async () => {
+    if (!supabase || !myRun) return;
+    setManualBusy(true); setManualNote("");
+    const { data, error } = await supabase.from("payroll_run").update({ final_total: null, updated_at: new Date().toISOString() }).eq("id", myRun.id).select();
+    setManualBusy(false);
+    if (error || !data?.length) { console.error("받은 금액 지우기 실패", error); setManualNote("지우지 못했어요. 다시 시도해 주세요."); return; }
+    setRuns((rs) => rs.map((r) => (r.id === myRun.id ? data[0] : r)));
+    setManualEdit(false); setManualAmt("");
+  };
+  const editLink = isSolo && confirmed && !manualEdit ? (
     <button type="button" onClick={() => { setManualAmt(String(myRun.final_total ?? "")); setManualEdit(true); }}
       className="mt-2 min-h-[36px] text-[13px] font-semibold text-sub underline underline-offset-2 hover:text-ink">받은 금액 고치기</button>
   ) : null;
@@ -246,6 +256,12 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         <Button variant="primary" size="md" onClick={saveManual} disabled={manualBusy}>{manualBusy ? "저장 중…" : "저장"}</Button>
       </div>
       {manualNote && <p className="m-0 mt-1.5 text-[13px] text-danger-text">{manualNote}</p>}
+      {manualEdit && confirmed && (
+        <div className="mt-2 flex gap-3">
+          <button type="button" onClick={() => { setManualEdit(false); setManualNote(""); }} className="min-h-[36px] text-[13px] font-semibold text-sub underline underline-offset-2">그대로 두기</button>
+          {!manualPay && <button type="button" onClick={clearManual} disabled={manualBusy} className="min-h-[36px] text-[13px] font-semibold text-sub underline underline-offset-2 disabled:opacity-50">적은 금액 지우고 자동 계산으로</button>}
+        </div>
+      )}
     </div>
   );
   // 프리랜서 이달(달력 월) — PT 매출(내 계약) + PT 외 매출 − 지출. 자세한 기간 정산은 아래 장부 · 정산.
@@ -310,8 +326,8 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
           </>
         ) : (
           <>
-            <div className="mt-1.5 text-[22px] font-bold text-muted">{isSolo ? "급여 방식 미설정" : "대표 확정 대기"}</div>
-            <div className="mt-0.5 text-[13px] text-sub">{isSolo ? "설정 › 가격 · 급여에서 급여 방식을 정하면 자동으로 계산돼요" : "대표가 직접 정하는 급여예요"}</div>
+            <div className="mt-1.5 text-[22px] font-bold text-muted">{isSolo ? "급여 방식 미설정" : scheme == null ? "급여 방식 미정" : "대표 확정 대기"}</div>
+            <div className="mt-0.5 text-[13px] text-sub">{isSolo ? "설정 › 가격 · 급여에서 급여 방식을 정하면 자동으로 계산돼요" : scheme == null ? "대표가 급여 방식을 정하면 자동으로 계산돼요" : "대표가 직접 정하는 급여예요"}</div>
           </>
         )}
       </button>
@@ -436,7 +452,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
                   className={`min-h-[36px] rounded-full px-3.5 text-[14px] ${ledgerView === k ? "bg-card font-semibold text-ink shadow-sm" : "text-sub"}`}>{l}</button>
               ))}
             </div>
-            <SettlementPanel solo view={ledgerView} contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
+            <SettlementPanel solo soloShare={hasScheme} view={ledgerView} contracts={contracts} incomes={incomes} expenses={expenses} ym={ym}
               startDay={startDay} onChangeStartDay={saveStartDay} onIncomeChanged={loadIncomes} onExpenseChanged={loadExpenses} />
           </div>
         </details>
@@ -511,7 +527,7 @@ function PayBreakdown({ lines, pay, scheme, sessionCount, priceSum, revenue, con
     <div className="space-y-3 pb-4">
       {kind === "manual" && (
         <p className="rounded-xl bg-elevate px-3.5 py-2.5 text-[13px] leading-relaxed text-sub">
-          {isSolo ? "급여 방식을 설정하면 회원별로 받는 돈까지 계산돼요." : "대표가 직접 정하는 급여라, 회원별 받는 돈은 나누지 않고 수업 기록만 보여요."}
+          {isSolo ? "급여 방식을 설정하면 회원별로 받는 돈까지 계산돼요." : !scheme ? "대표가 급여 방식을 정하면 회원별로 받는 돈까지 계산돼요." : "대표가 직접 정하는 급여라, 회원별 받는 돈은 나누지 않고 수업 기록만 보여요."}
         </p>
       )}
       {kind === "none" && firstBand && (
@@ -550,7 +566,7 @@ function PayBreakdown({ lines, pay, scheme, sessionCount, priceSum, revenue, con
           )}
           <div className="flex justify-between gap-3 pt-1 text-[15px] font-bold text-ink"><span>예상 급여</span><span className="tabular-nums">{won(pay.computed ?? 0)}</span></div>
           {confirmedTotal != null && (
-            <div className="flex justify-between gap-3 text-[15px] font-bold text-primary-strong"><span>대표 확정</span><span className="tabular-nums">{won(confirmedTotal)}</span></div>
+            <div className="flex justify-between gap-3 text-[15px] font-bold text-primary-strong"><span>{isSolo ? "내가 적은 금액" : "대표 확정"}</span><span className="tabular-nums">{won(confirmedTotal)}</span></div>
           )}
           {band && <p className="pt-1 text-[12px] text-muted">적용 구간: {(band.min ?? 0) > 0 ? basisText(band.min) : "기본 구간"}</p>}
           {nextBand && (

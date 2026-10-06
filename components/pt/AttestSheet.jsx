@@ -42,9 +42,10 @@ export default function AttestSheet({ member, logs = [], confirms = [], sigs = n
       if (!supabase) return;
       const [{ data: t }, { data: a }] = await Promise.all([
         member?.trainer_id ? supabase.from("trainer").select("name").eq("id", member.trainer_id).maybeSingle() : Promise.resolve({ data: null }),
-        supabase.from("account").select("name").maybeSingle(),
+        supabase.from("account").select("name, type, brand_name").maybeSingle(),
       ]);
-      if (alive) setHead({ center: a?.name || "", trainer: personName(t?.name) || "" });
+      // 개인 계정은 계정 이름이 본인 이름이라 상호(없으면 비움)를 쓴다(2026-10-06)
+      if (alive) setHead({ center: a?.type === "solo" ? a?.brand_name || "" : a?.name || "", trainer: personName(t?.name) || "" });
     })();
     return () => { alive = false; };
   }, [member?.trainer_id]);

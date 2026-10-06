@@ -111,7 +111,7 @@ export default function PriceSheet({ packages = [], recommended = null, trainerN
               </tbody>
             </table>
           ) : list.length === 0 ? (
-            <p className="py-10 text-center text-[14px] text-sub">등록된 패키지가 없어요. 설정 › 정산 › PT 가격에서 패키지를 등록하면 가격표가 만들어져요.</p>
+            <p className="py-10 text-center text-[14px] text-sub">등록된 패키지가 없어요. 설정 › 가격표에서 패키지를 등록하면 가격표가 만들어져요.</p>
           ) : (
             <ul className={`m-0 grid list-none gap-3 p-0 ${list.length === 1 ? "mx-auto max-w-md" : list.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
               {list.map((p, i) => {

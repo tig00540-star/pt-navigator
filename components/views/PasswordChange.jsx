@@ -31,7 +31,12 @@ export default function PasswordChange({ forced = false, onDone }) {
     // 비번 교체 + 강제 플래그 해제를 한 번에(자율 변경 때도 무해 — 이미 false면 그대로).
     try {
       const { error } = await supabase.auth.updateUser({ password: pw, data: { must_change_pw: false } });
-      if (error) { showToast("변경하지 못했어요: " + (error.message || "다시 시도")); setSaving(false); return; }
+      if (error) {
+        console.error("비밀번호 변경 실패", error);
+        const m = String(error.message || "");
+        showToast(/least|short|characters/i.test(m) ? "비밀번호를 더 길게 입력해 주세요." : /same|different/i.test(m) ? "지금과 다른 비밀번호를 입력해 주세요." : "변경하지 못했어요. 다시 시도해 주세요.");
+        setSaving(false); return;
+      }
       setPw(""); setPw2("");
       showToast("비밀번호가 변경되었어요");
       setSaving(false);

@@ -250,12 +250,16 @@ function Paywall({ status, onSignOut, uid }) {
 
   // 요금제는 계정 종류로 정해진다(서버도 같은 규칙 · 2026-10-06) — 센터 계정이 솔로 가격으로 결제되던 구멍을 막는다.
   const [plan, setPlan] = useState(null);
+  // 센터 소속 트레이너는 결제할 수 없다(서버가 거절) → 카드 등록 대신 '대표에게 알려 주세요'(2026-10-06 점검)
+  const [staff, setStaff] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
       if (!supabase || !uid) return;
-      const { data } = await supabase.from("trainer").select("account:account_id(type)").eq("id", uid).maybeSingle();
-      if (alive) setPlan(data?.account?.type === "center" ? "center" : "solo");
+      const { data } = await supabase.from("trainer").select("role, account:account_id(type)").eq("id", uid).maybeSingle();
+      if (!alive) return;
+      setPlan(data?.account?.type === "center" ? "center" : "solo");
+      setStaff(Boolean(data) && data.role !== "owner");
     })();
     return () => { alive = false; };
   }, [uid]);
@@ -291,11 +295,11 @@ function Paywall({ status, onSignOut, uid }) {
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
         <div className="mb-4 flex flex-col items-center text-center">
           <Image src="/icons/icon-192.png" alt="오직 트레이너" width={56} height={56} priority className="mb-3 h-14 w-14 rounded-2xl shadow-sm" />
-          <div className="text-lg font-semibold text-ink">{title}</div>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{desc}</p>
+          <div className="text-lg font-semibold text-ink">{staff ? "센터 이용 기간이 끝났어요" : title}</div>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{staff ? "센터의 오직 트레이너 구독이 끝나서 지금은 쓸 수 없어요. 대표에게 알려 주세요. 기록은 그대로 남아 있어요." : desc}</p>
         </div>
 
-        {!noAccount && (
+        {!noAccount && !staff && (
           <>
             <div className="mb-4 grid gap-2">
               {Object.values(PLANS).filter((p) => !plan || p.key === plan).map((p) => (

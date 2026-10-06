@@ -37,9 +37,9 @@ export default function MemberAppLink({ member, onMemberPatch, readOnly = false 
     if (error || !newToken) {
       setBusy(false);
       if (error?.message === "premium_required") {
-        showToast("회원 전용 페이지는 프리미엄 플랜에서 쓸 수 있어요. 업그레이드가 필요해요.");
+        showToast("회원 전용 페이지는 프리미엄 플랜에서 쓸 수 있어요. 센터 소속이면 대표에게 플랜 확인을 부탁해 주세요.");
       } else {
-        showToast("발급하지 못했어요. 다시 시도해 주세요." + (error ? ": " + error.message : ""));
+        if (error) console.error("회원 링크 발급 실패", error); showToast("발급하지 못했어요. 다시 시도해 주세요.");
       }
       return;
     }

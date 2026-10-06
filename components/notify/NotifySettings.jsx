@@ -83,7 +83,7 @@ export default function NotifySettings() {
   };
 
   // 개인 계정엔 대표 · 센터에서만 생기는 알림이 없다(대표 피드백 · 급여 확정 · 배정 대기 · 아침 보고서 · 2026-10-06).
-  const types = NOTIFY_TYPES
+  const types = !me ? [] : NOTIFY_TYPES
     .filter((t) => (me?.solo ? !SOLO_HIDDEN.has(t.key) : t.who === "trainer" || (t.who === "owner" && me?.owner)))
     .map((t) => (me?.solo && t.key === "ot_new" ? { ...t, hint: "내 QR로 신청했을 때" } : t));
 

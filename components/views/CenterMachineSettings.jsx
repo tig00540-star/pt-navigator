@@ -182,7 +182,7 @@ export default function CenterMachineSettings() {
         /* 비owner도 카드로 — 제목이 카드 안이라는 규칙을 두 분기 모두 지키게. */
         <Card as="section">
           <SectionTitle icon={Dumbbell}>보유 장비</SectionTitle>
-          <p className="mt-2 text-[12.5px] text-muted">장비는 대표가 관리합니다. (열람 전용)</p>
+          <p className="mt-2 text-[12.5px] text-muted">장비는 대표가 등록해요. 필요한 장비가 있으면 대표에게 말해 주세요.</p>
         </Card>
       )}
 
@@ -191,7 +191,7 @@ export default function CenterMachineSettings() {
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">아직 등록된 장비가 없어요.{isOwner ? " 위에서 보유 머신·덤벨을 등록하면 AI 루틴에 반영됩니다." : ""}</p>
+          <p className="mt-2 text-sm text-muted">아직 등록된 장비가 없어요.{isOwner ? " 위에서 보유 머신·덤벨을 등록하면 AI 루틴에 반영돼요." : ""}</p>
         ) : (
           <div className="mt-3 space-y-3">
             {cats.map((cat) => (

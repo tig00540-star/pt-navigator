@@ -12,7 +12,7 @@ import { NAV_ITEMS, sectionOf } from "@/components/ui/BottomNav";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 
-export default function SideNav({ tab, onTab, trainerName, unreadCount = 0, onBell, showAdmin }) {
+export default function SideNav({ tab, onTab, trainerName, unreadCount = 0, onBell, showAdmin, showBell = true }) {
   const active = sectionOf(tab);
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[84px] flex-col border-r border-line bg-card md:flex xl:w-56" aria-label="주요 메뉴">
@@ -44,7 +44,7 @@ export default function SideNav({ tab, onTab, trainerName, unreadCount = 0, onBe
       </nav>
 
       <div className="flex flex-col gap-1 border-t border-line px-2 py-3 xl:px-3">
-        <button onClick={onBell} className="relative flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[11px] text-sub transition hover:bg-elevate hover:text-ink xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
+        {showBell && <button onClick={onBell} className="relative flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[11px] text-sub transition hover:bg-elevate hover:text-ink xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
           <Bell className="h-5 w-5 shrink-0" />
           공지
           {unreadCount > 0 && (
@@ -52,7 +52,7 @@ export default function SideNav({ tab, onTab, trainerName, unreadCount = 0, onBe
               {unreadCount}
             </span>
           )}
-        </button>
+        </button>}
         {showAdmin && (
           <a href="/admin" className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[11px] text-fuchsia-700 transition hover:bg-fuchsia-500/10 xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
             <ShieldCheck className="h-5 w-5 shrink-0" />

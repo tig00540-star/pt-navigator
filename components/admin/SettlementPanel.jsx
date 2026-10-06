@@ -58,6 +58,7 @@ export default function SettlementPanel({
   contracts = [], incomes = [], expenses = [], ym, view = "view",
   startDay = 1, onChangeStartDay, onIncomeChanged, onExpenseChanged,
   solo = false,   // 개인(프리랜서) 계정 — 센터 FC부서 칸(FC 매출)을 숨긴다(2026-10-06 · 내 실적에 붙임)
+  soloShare = false, // 프리랜서가 매출을 나누는 급여 방식을 정함 — 여기 PT 매출은 나누기 전 전체(내 몫은 내 실적 맨 위)
 }) {
   // view(보기/적기)는 상단 세그먼트가 준다 — 하위탭이 화면마다 다른 자리에 있으면 안 된다.
   // 보는 정산 기간의 기준월 — 처음엔 '오늘이 들어 있는 기간'(2026-10-06). 시작일이 15일이면 1~14일엔 지난달 15일 기간이다
@@ -121,7 +122,7 @@ export default function SettlementPanel({
           cFrom={cFrom} setCFrom={setCFrom} cTo={cTo} setCTo={setCTo}
           ymBase={ymBase} setYmBase={setYmBase} ym={ym}
           pt={pt} t={t} byCat={byCat}
-          startDay={startDay} onChangeStartDay={onChangeStartDay} solo={solo}
+          startDay={startDay} onChangeStartDay={onChangeStartDay} solo={solo} soloShare={soloShare}
         />
       ) : (
         <EntryPane
@@ -136,7 +137,7 @@ export default function SettlementPanel({
 /* ── 정산 보기 ───────────────────────────────────────────────────────────── */
 function ViewPane({
   from, to, custom, setCustom, cFrom, setCFrom, cTo, setCTo,
-  ymBase, setYmBase, ym, pt, t, byCat, startDay, onChangeStartDay, solo = false,
+  ymBase, setYmBase, ym, pt, t, byCat, startDay, onChangeStartDay, solo = false, soloShare = false,
 }) {
   const atLatest = ymBase >= ym; // 다음 기간은 아직 안 온 달 — 빈 화면만 보게 된다
   const openCustom = () => { setCFrom(from); setCTo(to); setCustom(true); };
@@ -185,7 +186,7 @@ function ViewPane({
         </div>
 
         <div className="mt-4 divide-y divide-line rounded-xl border border-line">
-          <Row label="PT 매출" value={pt.net} sub={`신규 ${pt.cntNew}건 · 재등록 ${pt.cntRe}건${pt.refund ? ` · 환불 ${won(pt.refund)} 차감` : ""}`} />
+          <Row label={soloShare ? "PT 매출(나누기 전)" : "PT 매출"} value={pt.net} sub={`신규 ${pt.cntNew}건 · 재등록 ${pt.cntRe}건${pt.refund ? ` · 환불 ${won(pt.refund)} 차감` : ""}${soloShare ? " · 내 몫 기준 남은 돈은 맨 위" : ""}`} />
           {!solo && <Row label="FC 매출" value={t.fc} sub="회원권 등 센터 FC부서" />}
           <Row label={solo ? "PT 외 매출" : "기타 매출"} value={solo ? t.etc + t.fc : t.etc} sub={solo ? "그룹 수업 · 용품 등" : undefined} />
           <Row label="총 매출" value={t.revenue} strong />

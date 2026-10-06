@@ -92,7 +92,7 @@ export default function AppChrome({ children }) {
   const router = useRouter();
   const { members, myUid, dbNote, loadMembers } = useMembers();
   // 넓은 화면(lg 1024px~)에선 회원 화면을 2단으로 — 왼쪽 회원 목록, 오른쪽 고른 회원(2026-10-02 미리보기).
-  const { isCenter, isOwner, trainerName } = useAccount();
+  const { isCenter, isOwner, isSolo, trainerName } = useAccount();
   const [bellOpen, setBellOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -142,6 +142,7 @@ export default function AppChrome({ children }) {
             </Link>
 
             <div className="flex min-w-0 items-center gap-2">
+              {!isSolo && (
               <button
                 onClick={() => setBellOpen(true)}
                 className="relative flex items-center gap-1.5 rounded-lg border border-line bg-elevate px-2.5 py-1.5 text-xs font-medium text-sub transition hover:border-primary hover:text-primary-strong active:scale-95"
@@ -154,6 +155,7 @@ export default function AppChrome({ children }) {
                   </span>
                 )}
               </button>
+              )}
 
               {isCenter && isOwner && (
                 <a
@@ -233,6 +235,7 @@ export default function AppChrome({ children }) {
 
       <BottomNav tab={tabForPath(pathname)} onTab={(tab) => router.push(hrefFor(tab, info.memberId))} />
       <SideNav
+        showBell={!isSolo}
         tab={tabForPath(pathname)}
         onTab={(tab) => router.push(hrefFor(tab, info.memberId))}
         trainerName={trainerName}

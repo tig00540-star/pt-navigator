@@ -108,7 +108,7 @@ export default function MembersProvider({ children }) {
         .eq("hidden", false) // 소프트 삭제(환불) 회원 제외
         .order("created_at", { ascending: false });
       if (error) {
-        setDbNote("불러오지 못했어요: " + error.message);
+        console.error("회원 불러오기 실패", error); setDbNote("불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
         setReady(true);
         return;
       }
@@ -166,7 +166,7 @@ export default function MembersProvider({ children }) {
           .insert(payload)
           .select();
         if (insErr || !ins || ins.length === 0) {
-          setDbNote("계약을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요." + (insErr ? ": " + insErr.message : ""));
+          if (insErr) console.error("계약 저장 실패", insErr); setDbNote("계약을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
           return false; // status 안 건드림(clean)
         }
       }
@@ -177,7 +177,7 @@ export default function MembersProvider({ children }) {
         .eq("id", member.id)
         .select();
       if (error || !data || data.length === 0) {
-        setDbNote("PT 등록을 확정하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요." + (error ? ": " + error.message : ""));
+        if (error) console.error("PT 등록 확정 실패", error); setDbNote("PT 등록을 확정하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
         return false;
       }
       setMemberStatus(member.id, "pt_active"); // 확정 성공 후에만 뷰 전환(깜빡임 방지)
