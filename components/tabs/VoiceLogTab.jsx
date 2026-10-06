@@ -24,6 +24,8 @@ import { authHeader } from "@/lib/authHeader";
 import { machinesToStructured } from "@/lib/workout";
 import { loadCenterMachines } from "@/lib/centerMachines";
 import Card from "@/components/ui/Card";
+import { AiQuotaNote, AiLockCard, useAiLocked } from "@/components/ui/AiQuota";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 const MAX_RECORD_SEC = 10 * 60; // 10분 상한
 const AUDIO_BPS = 48000; // 48kbps opus/aac — 음성 STT 충분 · 10분≈3.6MB (Vercel 함수 body 4.5MB 한도 방어)
@@ -128,6 +130,7 @@ function closingMessage() {
 }
 
 export default function VoiceLogTab({ member, onResult }) {
+  const voiceLocked = useAiLocked("voice");   // 이번 달 음성일지를 다 썼으면 녹음 대신 안내(직접 입력은 그대로 · 2026-10-07)
   const [phase, setPhase] = useState("idle"); // idle | recording | processing | done
   const [sec, setSec] = useState(0);
   const [report, setReport] = useState(null);
@@ -290,6 +293,7 @@ export default function VoiceLogTab({ member, onResult }) {
     const fd = new FormData();
     fd.append("audio", blob, `recording.${extForMime(type)}`);
     fd.append("machines", (member.machines || []).join(", "));
+    if (member.id) fd.append("member_id", member.id);   // 같은 회원 · 같은 날 다시 녹음은 한도에서 새로 안 센다
     if (machineCues.length) fd.append("machine_cues", JSON.stringify(machineCues));
 
     try {
@@ -298,6 +302,8 @@ export default function VoiceLogTab({ member, onResult }) {
         // 503 = AI 키 미설정(데모 환경) → 미리보기용 데모 유지. 그 외 실패는 가짜 리포트 안 채움.
         if (res.status === 503) { setNotice("AI가 설정되지 않아 데모 리포트로 보여 드려요."); runDemo(); return; }
         const data = await res.json().catch(() => ({}));
+        // 402 = 이번 달 한도를 다 씀 → 서버 문구 그대로(재시도 문구 없이)
+        if (res.status === 402) { failReal(data.error || "이번 달 음성일지를 다 썼어요."); refreshAiQuota(); return; }
         // 413 = 용량 초과: 같은 녹음 재전송은 무의미 → 재시도 문구 없이 크기 안내만.
         if (res.status === 413) { failReal(data.error || "녹음 파일이 너무 큽니다. 더 짧게 나눠 다시 녹음해 주세요."); return; }
         failReal((data.error || "AI 처리에 실패했습니다.") + " 잠시 후 다시 시도해 주세요.");
@@ -308,6 +314,7 @@ export default function VoiceLogTab({ member, onResult }) {
       setReport(data.report);
       setIsDemo(false);
       setPhase("done");
+      refreshAiQuota();
     } catch {
       failReal("네트워크 오류로 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
@@ -370,7 +377,9 @@ export default function VoiceLogTab({ member, onResult }) {
 
         {/* 버튼 */}
         <div className="mt-5">
-          {phase === "idle" || phase === "done" ? (
+          {phase === "idle" && voiceLocked ? (
+            <AiLockCard kind="voice" className="text-left"><p className="m-0 mt-1.5 text-[13px] text-sub">운동일지는 아래 칸에 직접 적을 수 있어요.</p></AiLockCard>
+          ) : phase === "idle" || phase === "done" ? (
             <button
               onClick={start}
               className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-br from-red-500 to-red-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition active:scale-95"
@@ -393,6 +402,7 @@ export default function VoiceLogTab({ member, onResult }) {
           )}
         </div>
 
+        {phase === "idle" && !voiceLocked && <AiQuotaNote kind="voice" className="mt-3" />}
         {phase === "recording" && (
           <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-red-400">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> 녹음 중

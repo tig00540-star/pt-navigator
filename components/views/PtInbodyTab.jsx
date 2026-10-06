@@ -20,6 +20,8 @@ import { inputCls } from "@/components/ui/Field";
 import { authHeader } from "@/lib/authHeader";
 import { loadOtRound1, saveOtRound1Key, cacheFor } from "@/lib/otCache";
 import InbodyAnalysis from "@/components/views/InbodyAnalysis";
+import { AiQuotaNote, AiLockCard, useAiLocked } from "@/components/ui/AiQuota";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 // 입력 상태 초기값 — INBODY_FIELDS.key별 빈 문자열.
 function emptyVals() {
@@ -74,6 +76,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
   // 화면을 다시 열 때마다 AI를 새로 부르면 느리고 비용도 든다(1차·2차 브리핑과 같은 방식).
   const [analysis, setAnalysis] = useState(null);
   const [anaLoading, setAnaLoading] = useState(false);
+  const anaLocked = useAiLocked("inbody");   // 이번 달 인바디 분석을 다 썼으면(같은 측정 '다시 분석'은 안 셈)
   const [anaNotice, setAnaNotice] = useState("");
   const [otRow, setOtRow] = useState(null); // 1차 행 { id, report } — 캐시 자리(없으면 세션 전용)
 
@@ -200,7 +203,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setAnaNotice((d.error || "분석 생성에 실패했습니다.") + " (구독 상태를 확인해 주세요)");
+        setAnaNotice(res.status === 402 ? d.error : (d.error || "분석을 만들지 못했어요.") + " 다시 시도해 주세요.");
         return;
       }
       const result = await res.json();
@@ -213,9 +216,11 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       if (merged) setOtRow((r) => ({ ...r, report: merged }));
       else if (otRow) setAnaNotice("분석은 나왔지만 저장하지 못했어요. 이 화면에서만 보여요. 권한이 없거나 구독이 만료됐을 수 있어요.");
     } catch (e) {
-      setAnaNotice("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
+      console.error("인바디 분석 실패", e);
+      setAnaNotice("인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setAnaLoading(false);
+      refreshAiQuota();
     }
   };
 
@@ -296,10 +301,14 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
         <Card as="section">
           <div className="flex items-center justify-between gap-2">
             <SectionTitle icon={Sparkles}>인바디 분석 · 회원에게 보여주기</SectionTitle>
-            <Button variant="primary" size="sm" onClick={analyze} disabled={anaLoading}>
-              {anaLoading ? "분석 중…" : shownAnalysis ? "다시 분석" : "AI 분석"}
-            </Button>
+            {!(anaLocked && !shownAnalysis) && (
+              <Button variant="primary" size="sm" onClick={analyze} disabled={anaLoading}>
+                {anaLoading ? "분석 중…" : shownAnalysis ? "다시 분석" : "AI 분석"}
+              </Button>
+            )}
           </div>
+          {!shownAnalysis && <AiLockCard kind="inbody" className="mt-3" />}
+          {!shownAnalysis && <AiQuotaNote kind="inbody" className="mt-2" />}
           <p className="mt-1 text-[11px] leading-relaxed text-muted">
             최근 측정({latest.measured_at}) 기준. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
           </p>

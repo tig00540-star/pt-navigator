@@ -33,6 +33,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { otObsHash } from "@/lib/otHash";
 import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
 const RAW_FEEDBACK =
@@ -249,6 +250,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       setAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
     } finally {
       setGenerating(false);
+      refreshAiQuota();
     }
   };
 
@@ -527,6 +529,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       bare
       status="idle"
       title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
+      quotaKind="ot"
       generateLabel={`${round}차 OT 준비 리포트 만들기`}
       idleDescription={`${member.name} 회원의 ${round > 2 ? `1~${round - 1}차` : "1차"} OT 기록·피드백을 모두 근거로 ${round}차 OT를 준비해요. 수업 전에 한 번 만들면, 다음부터는 저장된 걸 바로 보여드려요.`}
       onGenerate={() => generateBrief(obs)}

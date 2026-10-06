@@ -228,6 +228,15 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **회원:** `my_member_transfer` · `answer_member_transfer`는 **받는 계정이 이용 중일 때만**(독립 트레이너가 결제를 마친 뒤 · billing/confirm이 회원 알림). 동의 = `moved_out_ledger`(떠나는 센터 · 계약 금액 · 날짜 · 이름 없음 · 대표 SELECT) + `_move_member`.
 - **센터 숫자:** `lib/movedOut` `ledgerAsContracts` — 대표 화면 정산(`SettlementPanel`) · 매출(`RevenuePipeline`) · 월간 결산(`monthlyReportBuild`)이 계약에 더해 읽음(user_id null · handed_over → 회원 · 남은 수업 계산엔 안 들어감). 그 밖의 화면(홈 · 리더보드)은 지금 계약만.
 
+### 요금제 · AI 월 한도 · 추가 팩 (2026-10-07 · SQL `docs/migrations/2026-10-07-pricing.sql` · 계획서 `docs/v2-계획-요금제-개편.md`)
+
+- **요금제 3개(금액 = 부가세 포함 실제 결제 · `lib/plans` 한 곳):** 베이직 19,900(AI 기능마다 매달 3번) · 프로 59,000(키 `solo` · 음성일지 120 · 준비 25) · 센터 149,000(3인 + 대표 · 센터 공용 음성일지 300 · 준비 60) · 트레이너 추가 39,900(+100 · +20) · 팩 준비 10번 12,900 · 음성일지 50건 6,900. 요금 등급 = **`account.billing_plan`**(basic | solo | center) · ⚠️ **`account.plan='premium'`은 회원 전용 페이지 관문이라 세 등급 모두 그대로**(베이직도 회원 페이지 씀).
+- **세는 규칙(DB가 관문):** `ai_usage`(호출마다 한 행 · 토큰 · 원가 · `unit_key`가 (계정, 달)마다 한 번만 counted) · `ai_reserve`(부르기 전 자리 · 남은 수 0이면 거절 · 같은 단위 다시 만들기는 안 셈) · `ai_finish`(실패 = 안 셈 · 원가는 남김) · `ai_quota_for` / 화면 `my_ai_quota`. 단위: OT `ot:{회원}:r{차수}` · 재등록 `rereg:{계약}` · 음성일지 `voice:{회원}:{KST 날짜}` · 인바디 `inbody:{회원}:{측정}` · 로드맵 `roadmap:{회원}`. 베이직은 기능마다 따로, 프로 · 센터는 OT + 재등록 = '준비' 하나. 세일즈북 · 대표 보고서 · 월간 결산 · 장비 큐 = 원가만 기록(안 셈). 체험 중 = 프로 한도. 매달 1일(KST) 리셋. ⚠️ `ai_usage`의 회원 칸은 `target_member`(일부러 — `_move_member`가 user_id · member_id를 찾아 옮기는데 사용량은 돈 낸 계정 것).
+- **서버:** `lib/aiQuota`(`reserveAi` · `finishAi` · `quotaResponse` 402 `{code:'quota'}` · `logUsage`) — `ot-brief` · `voice-log` · `machine-cues` · `owner-report` · 아침 보고서 · 월간 결산. 서비스 키 없거나 SQL 전이면 막지 않고 기록만 건너뜀. 베이직 세일즈북 AI = 그달 그 회원을 준비로 만든 경우만(아니면 화면이 짧은 판).
+- **화면:** `lib/useAiQuota`(한 번 읽어 공유 · `refreshAiQuota`) · `components/ui/AiQuota`(`AiQuotaNote` 남은 수 · `AiLockCard` 다 썼을 때 · `useAiLocked`) · `AIBriefBlock quotaKind`(1차 · 2차+ · 재등록) · VoiceLogTab · PtInbodyTab · RoadmapCard. 결제벽 = 개인은 베이직/프로 고르기 · 센터는 센터.
+- **바꾸기(`/api/billing/plan`):** 올리기(베이직 → 프로) = 남은 기간 차액만 빌링키로 바로 결제 → 바로 프로(`lib/plans` `proratedDiff`) · 내리기 = 다음 결제일(`next_billing_plan`) · 센터 자리 더하기 = 일할 금액 결제해야 열림(`extra_seats`) · 줄이기 = 다음 결제일(`next_extra_seats` · 쓰는 트레이너보다 적게는 못 줄임) · 체험 중은 결제 없이. 결제 작업이 다음 결제일에 next_* 적용. 좌석 관문 = `create-trainer` · `_join_center` 둘 다 3 + extra_seats.
+- **추가 팩(`/api/billing/pack` · `/billing/pack`):** 프로 · 센터 대표만(베이직 불가) · **일반결제 결제창**(자동결제는 정기 구독에만 쓰는 게 토스 정책) · `ai_credit`(그달 말 소멸) · 기본 한도 먼저 쓰고 넘친 만큼 팩(산 순서) · **7일 안 미사용이면 전액 환불 · 그 뒤나 한 번이라도 쓰면 불가**(구매 전 확인 창에 미리 알림 · 체크해야 결제). 결제 기록 `payment.plan` = basic | solo | center(월 구독) · upgrade · seat · pack_prep · pack_voice — 합류 일할 환불은 월 구독 결제만 본다.
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.

@@ -11,6 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { ownerReportData } from "@/lib/memberStatus";
 import { buildOwnerAIInput, generateOwnerAI } from "@/lib/ownerReportAI";
+import { logUsage } from "@/lib/aiQuota";
 import { personName } from "@/lib/format";
 import { sendPush, ownerIds } from "@/lib/pushServer";
 
@@ -53,7 +54,8 @@ async function buildFor(sb, account, nowMs, apiKey) {
   if (premium && apiKey) {
     const names = new Map((tR.data || []).map((t) => [t.id, personName(t.name) || "트레이너"]));
     try {
-      ai = await generateOwnerAI(buildOwnerAIInput(d, (id) => names.get(id) || "담당 미정"), apiKey);
+      ai = await generateOwnerAI(buildOwnerAIInput(d, (id) => names.get(id) || "담당 미정"), apiKey,
+        (model, usage) => logUsage(sb, { accountId: aid, kind: "owner", model, usage }));
     } catch (e) {
       console.error("[owner-daily-report] AI 실패", aid, e?.message || e);
     }

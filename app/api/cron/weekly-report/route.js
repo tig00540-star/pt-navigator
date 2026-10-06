@@ -8,7 +8,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { createNotionPage } from "@/lib/notion";
-import { PLANS } from "@/lib/plans";
+import { planAmount } from "@/lib/plans";
 import { isDemoAccount } from "@/lib/demo";
 import {
   otFunnel,
@@ -51,7 +51,7 @@ export async function GET(req) {
     fetchAllRows(() => sb.from("ot_log").select("*")),
     fetchAllRows(() => sb.from("session_log").select("*")),
     fetchAllRows(() => sb.from("daily_workout_log").select("*")),
-    sb.from("account").select("id, type, subscription_status, current_period_end"),
+    sb.from("account").select("id, type, billing_plan, extra_seats, subscription_status, current_period_end"),
   ]);
   const firstErr = membersR.error || otR.error || contractsR.error || logsR.error || accountsR.error;
   if (firstErr) return Response.json({ error: `조회 실패: ${firstErr.message}` }, { status: 500 });
@@ -113,7 +113,7 @@ export async function GET(req) {
     const active = a.subscription_status === "active" && (end === null || end > now);
     if (active) {
       activeSub += 1;
-      mrr += PLANS[a.type]?.amount ?? 0;
+      mrr += planAmount(a.billing_plan || (a.type === "center" ? "center" : "solo"), a.extra_seats) ?? 0;
       if (end !== null && end - now < 3 * 86400000) convTarget += 1;
       else trial += 1;
     } else if (a.subscription_status && a.subscription_status !== "inactive") {

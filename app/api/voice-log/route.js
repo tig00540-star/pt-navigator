@@ -11,6 +11,7 @@ import OpenAI from "openai";
 import { tidyDeep } from "@/lib/tidyText";
 import Anthropic from "@anthropic-ai/sdk";
 import { requireTrainer } from "@/lib/requireTrainer";
+import { adminClient, reserveAi, finishAi, quotaResponse } from "@/lib/aiQuota";
 
 export const runtime = "nodejs"; // SDK는 Node 런타임 필요 (Edge 불가)
 export const maxDuration = 180;  // STT+Sonnet 2연속(최장 라우트). Hobby+fluid compute 300s 내 여유 + 폭주 상한.
@@ -110,11 +111,13 @@ export async function POST(request) {
 
   let audio;
   let machines = "";
+  let memberId = "";
   let machineCues = [];
   try {
     const form = await request.formData();
     audio = form.get("audio");
     machines = (form.get("machines") || "").toString().trim();
+    memberId = (form.get("member_id") || "").toString().trim();
     try {
       const rawCues = form.get("machine_cues");
       if (rawCues) {
@@ -138,6 +141,13 @@ export async function POST(request) {
     );
   }
 
+  // AI 월 한도(2026-10-07 요금제) — 같은 회원 · 같은 날 다시 녹음은 새로 안 센다.
+  const kstDay = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+  const admin = adminClient();
+  const slot = await reserveAi(admin, { userId: auth.user?.id, kind: "voice", unitKey: `voice:${memberId || crypto.randomUUID()}:${kstDay}`, memberId });
+  if (!slot.ok) return quotaResponse(slot);
+  let sttUsd = 0;
+
   // 1) STT — 오디오 파일을 그대로 multipart 전달 (포맷/확장자는 클라이언트가 맞춤).
   let rawText;
   try {
@@ -150,12 +160,21 @@ export async function POST(request) {
       prompt: sttPrompt,
     });
     rawText = (tr.text || "").trim();
+    // STT 원가(추정) — gpt-4o-mini-transcribe 토큰 단가: 오디오 입력 $3 · 글 입력 $1.25 · 출력 $5 / 100만 토큰
+    const u = tr.usage;
+    if (u && typeof u === "object") {
+      const audioIn = u.input_token_details?.audio_tokens ?? u.input_tokens ?? 0;
+      const textIn = u.input_token_details?.text_tokens ?? 0;
+      sttUsd = (audioIn * 3 + textIn * 1.25 + (u.output_tokens || 0) * 5) / 1e6;
+    } else if (typeof u?.seconds === "number") sttUsd = (u.seconds / 60) * 0.003;
   } catch (e) {
+    await finishAi(admin, slot.id, { ok: false });
     console.error("[voice-log] STT 실패:", e?.message || e);
     return Response.json({ error: "음성 인식에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }
 
   if (!rawText) {
+    await finishAi(admin, slot.id, { ok: false, extraUsd: sttUsd });
     return Response.json(
       { error: "녹음에서 텍스트를 추출하지 못했습니다. 더 또렷하게 다시 녹음해 주세요." },
       { status: 422 }
@@ -187,7 +206,9 @@ export async function POST(request) {
       .map((b) => b.text)
       .join("");
     report = tidyDeep(parseReport(textOut));
+    await finishAi(admin, slot.id, { ok: true, model: SUMMARY_MODEL, usage: msg.usage, extraUsd: sttUsd });
   } catch (e) {
+    await finishAi(admin, slot.id, { ok: false, model: SUMMARY_MODEL, extraUsd: sttUsd });
     console.error("[voice-log] 요약 실패:", e?.message || e);
     return Response.json({ error: "AI 요약에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }

@@ -12,6 +12,7 @@ import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
 import { tidyDeep, NO_DASH_RULE } from "@/lib/tidyText";
 import { attachPkgSnapshots } from "@/lib/pkgRef";
+import { adminClient, reserveAi, finishAi, quotaResponse, tierOf, preparedThisMonth } from "@/lib/aiQuota";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // Hobby+fluid compute 기본 300s. 실측 ~45s의 4배 마진 + 업스트림 무응답 폭주 상한(선언제거=300s는 비권장).
@@ -1540,6 +1541,25 @@ export async function POST(request) {
   const boundedHistory = Array.isArray(history) ? history.slice(0, 10) : [];
   const otRound = Number.isInteger(round) ? Math.min(Math.max(round, 2), 20) : 2;
 
+  // AI 월 한도(2026-10-07 요금제) — 부르기 전에 자리를 잡는다. 같은 회원 · 같은 차수 다시 만들기는 새로 안 센다.
+  const mid = typeof member?.id === "string" ? member.id : "";
+  const once = mid || crypto.randomUUID();
+  const usageKind = phase === "first" || phase === "second" ? "ot" : phase === "reregister" ? "rereg"
+    : phase === "inbody" || phase === "posture" ? "inbody" : phase === "roadmap" ? "roadmap" : "salesbook";
+  const unitKey = phase === "first" ? `ot:${once}:r1` : phase === "second" ? `ot:${once}:r${otRound}`
+    : phase === "reregister" ? `rereg:${typeof save?.contractId === "string" ? save.contractId : once}`
+    : usageKind === "inbody" ? `inbody:${once}:${inbody?.latest?.id || inbody?.latest?.measured_at || phase}`
+    : phase === "roadmap" ? `roadmap:${once}` : `sb:${phase}:${once}`;
+  const admin = adminClient();
+  const slot = await reserveAi(admin, { userId: auth.user?.id, kind: usageKind, unitKey, memberId: mid });
+  if (!slot.ok) return quotaResponse(slot);
+  // 베이직: 세일즈북은 이번 달 그 회원을 '준비'로 만든 경우에만(아니면 화면이 회원 정보로 만든 짧은 판을 쓴다)
+  if (usageKind === "salesbook" && slot.accountId && (await tierOf(admin, slot.accountId)) === "basic"
+      && !(await preparedThisMonth(admin, slot.accountId, mid))) {
+    await finishAi(admin, slot.id, { ok: false });
+    return Response.json({ error: "AI 세일즈북은 이번 달 이 회원의 OT · 재등록 준비를 만든 뒤 쓸 수 있어요.", code: "quota", group: "salesbook", tier: "basic" }, { status: 402 });
+  }
+
   const model = REPORT_PHASES.has(phase) ? MODEL_REPORT : MODEL_FAST;
   const basePrompt =
     phase === "first" ? firstPrompt(member, packages, favorites)
@@ -1593,7 +1613,9 @@ export async function POST(request) {
     };
     req.thinking = thinkingFor(model);
 
-    const msg = await anthropic.messages.create(req);
+    let msg;
+    try { msg = await anthropic.messages.create(req); }
+    catch (e) { await finishAi(admin, slot.id, { ok: false, model }); throw e; }
     const textOut = msg.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
@@ -1610,7 +1632,10 @@ export async function POST(request) {
     const REQUIRED_ROADMAP = ["title", "stages"];
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "first_salesbook" ? REQUIRED_FIRST_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : phase === "roadmap" ? REQUIRED_ROADMAP : [];
-    const brief = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase)), packages);
+    let brief;
+    try { brief = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase)), packages); }
+    catch (e) { await finishAi(admin, slot.id, { ok: false, model, usage: msg.usage }); throw e; }   // 결과가 깨지면 안 셈(원가는 기록)
+    await finishAi(admin, slot.id, { ok: true, model, usage: msg.usage });
     console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);
     let savedId = null;
     try { savedId = await saveResult(token, phase, save, brief, model); }
@@ -1626,12 +1651,14 @@ export async function POST(request) {
     const t1 = Date.now();
     const anthropic = new Anthropic({ apiKey });
     const isFirst = phase === "first";
+    const sbSlot = await reserveAi(admin, { userId: auth.user?.id, kind: "salesbook", unitKey: `sb:follow:${once}`, memberId: mid });
     const msg = await anthropic.messages.create({
       model: MODEL_FAST, max_tokens: 4096, system: SALESBOOK_PREAMBLE, thinking: thinkingFor(MODEL_FAST),
       messages: [{ role: "user", content: isFirst
         ? firstSalesbookPrompt(member, brief, brief?.recommended_program, packages)
         : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels) }],
     });
+    await finishAi(admin, sbSlot.id, { ok: true, model: MODEL_FAST, usage: msg.usage });
     const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
     const keys = isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
     const sbOut = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), packages);

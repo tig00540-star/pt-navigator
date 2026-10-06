@@ -15,8 +15,8 @@ export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreat
   const [result, setResult] = useState(null);
   const full = seatLimit != null && seatUsed >= seatLimit;
   const fullMsg = seatLimit === 0
-    ? "솔로 플랜은 트레이너를 추가할 수 없어요. 센터 플랜으로 바꾸면 트레이너 3명까지 함께 쓸 수 있어요."
-    : `트레이너 좌석 ${seatLimit}개를 모두 쓰고 있어요. 더 추가하려면 문의해 주세요.`;
+    ? "개인 요금제는 트레이너를 추가할 수 없어요. 센터 요금제로 바꾸면 트레이너 3명까지 함께 쓸 수 있어요."
+    : `트레이너 자리 ${seatLimit}개를 모두 쓰고 있어요. 설정 › 구독 관리에서 1명 더할 수 있어요.`;
   const submit = async () => {
     if (!supabase || busy) return;
     if (!email.trim() || !name.trim()) { setErr("이메일과 이름을 입력해 주세요."); return; }

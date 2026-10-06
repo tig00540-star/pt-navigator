@@ -19,6 +19,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { firstInputHash } from "@/lib/otHash";
 import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 
 export default function FirstOTAssist({ member, onSaved }) {
@@ -133,6 +134,7 @@ export default function FirstOTAssist({ member, onSaved }) {
       setNotice("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
     } finally {
       setLoading(false);
+      refreshAiQuota();
     }
   };
 
@@ -167,6 +169,7 @@ export default function FirstOTAssist({ member, onSaved }) {
       bare
       status={briefStatus}
       title="오늘의 OT 사전 준비 리포트"
+      quotaKind="ot"
       generateLabel="OT 준비 리포트 만들기"
       idleDescription="1차 OT도 목표는 오늘 PT 등록이에요. 회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 리포트를 만들어요. 맨 위 30초 요약, 그다음 입장 · 운동 · 클로징 · 거절 대응 순서예요."
       waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."

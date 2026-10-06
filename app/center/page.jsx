@@ -13,7 +13,7 @@
 
 import { useRef } from "react";
 import { contactHref } from "@/lib/company";
-import { PLANS } from "@/lib/plans";
+import { PLANS, PACKS, SEAT_PRICE } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_GHOST_DARK, Header, Footer, useReveal, stagger,
@@ -141,7 +141,8 @@ const STEPS = [
 ];
 
 const FAQ = [
-  { q: "트레이너가 4명 이상이면요?", a: "문의해 주세요. 센터 규모에 맞춰 안내드립니다." },
+  { q: "트레이너가 4명 이상이면요?", a: `트레이너 1명당 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원으로 자리를 더할 수 있어요. 구독 관리에서 결제하면 바로 열려요.` },
+  { q: "AI를 다 쓰면 어떻게 되나요?", a: `센터 전체가 함께 쓰는 한도예요(음성일지 월 ${PLANS.center.ai.voice}건 · OT · 재등록 준비 월 ${PLANS.center.ai.prep}번 · 자리 1개 추가마다 +100건 · +20번). 다 쓰면 그달만 추가 팩(준비 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 음성일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)을 살 수 있고, 7일 안에 안 썼으면 전액 환불돼요.` },
   { q: "트레이너들이 싫어하지 않을까요?", a: "트레이너의 일지·OT 준비·재등록 챙기기를 덜어주는 앱이라, 트레이너가 먼저 편해집니다." },
   { q: "다른 센터와 데이터가 섞이지 않나요?", a: "센터별로 완전히 분리되고, 매출·정산 화면은 대표만 봅니다." },
   { q: "기존 PT 회원은 어떻게 옮기나요?", a: "회원을 등록할 때 '인계받은 PT'로 남은 세션을 이어서 등록할 수 있습니다." },
@@ -335,7 +336,7 @@ export default function CenterLandingPage() {
             <div className="rv flex w-full max-w-[520px] flex-col gap-[18px] rounded-2xl border border-line bg-card px-[clamp(22px,5vw,36px)] py-[clamp(28px,6vw,40px)] shadow-sm">
               <div className="flex flex-col gap-1">
                 <span className="text-[22px] font-black">센터 플랜</span>
-                <span className="text-[15px] text-sub">트레이너 3인 + 대표 1인</span>
+                <span className="text-[15px] text-sub">트레이너 3인 + 대표 1인 · 부가세 포함</span>
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-baseline gap-1.5">
@@ -346,7 +347,7 @@ export default function CenterLandingPage() {
                 <div className="text-[17px] font-extrabold text-primary-strong">하루 약 {wonApprox(plan.amount / 30)}</div>
               </div>
               <div className="border-t border-line pt-[18px]">
-                <Checks items={["트레이너 앱 전체(OT · 운동일지 · 재등록 · 회원 전용 페이지)", "대표 대시보드(아침 보고서 · 매출 · 정산 · 등록 · 이탈)", "센터 QR OT 신청 · 배정 · 월간 결산", "트레이너 3인 좌석 + 대표 1인"]} />
+                <Checks items={["트레이너 앱 전체(OT · 운동일지 · 재등록 · 회원 전용 페이지)", "대표 대시보드(아침 보고서 · 매출 · 정산 · 등록 · 이탈)", "센터 QR OT 신청 · 배정 · 월간 결산", `센터 공용 AI 음성일지 월 ${PLANS.center.ai.voice}건 · 준비 월 ${PLANS.center.ai.prep}번`, `트레이너 3인 + 대표 1인 · 추가 1인 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원`]} />
               </div>
               <div className="flex flex-col gap-2">
                 <a href={contact} className={`w-full ${BTN_PRIMARY}`}>센터 도입 문의</a>
@@ -354,7 +355,7 @@ export default function CenterLandingPage() {
               </div>
             </div>
             <p className="m-0 text-center text-[13px] leading-[1.6] text-sub">
-              부가세 별도 · 7일 무료 후 자동결제 · 언제든 해지<br />트레이너가 더 필요하면 문의해 주세요.
+              부가세 포함 · 7일 무료 후 자동결제 · 언제든 해지<br />트레이너가 더 필요하면 1명당 월 {SEAT_PRICE.toLocaleString("ko-KR")}원으로 자리를 더해요.
             </p>
           </div>
         </section>

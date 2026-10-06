@@ -144,6 +144,7 @@ export default function AdminDashboard() {
   const [role, setRole] = useState(null); // null=조회중 · "owner" · "denied"
   const [centerName, setCenterName] = useState(""); // 소속 account 이름(헤더 표기)
   const [planKey, setPlanKey] = useState("center");   // 좌석 등급(billing_plan || type) — 트레이너 추가 안내용
+  const [extraSeats, setExtraSeats] = useState(0);     // 결제한 추가 트레이너 자리(2026-10-07)
   const [trainers, setTrainers] = useState([]);
   const [schemes, setSchemes] = useState([]); // pay_scheme(계정 기본 + override)
   const [runs, setRuns] = useState([]);        // payroll_run(확정 기록)
@@ -181,10 +182,11 @@ export default function AdminDashboard() {
         let myRole = "denied";
         if (uid) {
           const { data: t } = await supabase
-            .from("trainer").select("role, account:account_id(type, name, billing_plan)").eq("id", uid).maybeSingle();
+            .from("trainer").select("role, account:account_id(type, name, billing_plan, extra_seats)").eq("id", uid).maybeSingle();
           if (t?.account?.type === "solo") { router.replace("/"); return; } // solo는 통합 화면만(admin 누수 차단)
           setCenterName(t?.account?.name || "");
           setPlanKey(t?.account?.billing_plan || t?.account?.type || "solo"); // 좌석 등급(결제 전엔 type)
+          setExtraSeats(t?.account?.extra_seats || 0);
           if (t?.role === "owner") myRole = "owner";
         }
         setRole(myRole);
@@ -515,12 +517,12 @@ export default function AdminDashboard() {
         {atab === "ops" && (
         <section className="mb-8">
           <AddTrainerForm
-            seatLimit={trainerSeatLimit(planKey)}
+            seatLimit={trainerSeatLimit(planKey, extraSeats)}
             seatUsed={trainers.filter((t) => t.role === "trainer" && t.active !== false).length}
             onCreated={(row) => setTrainers((p) => [...p, row])} />
           {planKey === "center" && (
             <div className="mt-4">
-              <JoinInviteCard seatFull={trainers.filter((t) => t.role === "trainer" && t.active !== false).length >= trainerSeatLimit(planKey)} />
+              <JoinInviteCard seatFull={trainers.filter((t) => t.role === "trainer" && t.active !== false).length >= trainerSeatLimit(planKey, extraSeats)} />
             </div>
           )}
           {planKey === "center" && (

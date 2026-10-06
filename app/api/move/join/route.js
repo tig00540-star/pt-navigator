@@ -26,7 +26,8 @@ const ERR = {
 
 async function lastPaid(sb, accountId) {
   const { data } = await sb.from("payment").select("id, order_id, toss_payment_key, amount, status, period_start, period_end, paid_at")
-    .eq("account_id", accountId).eq("status", "DONE").order("paid_at", { ascending: false }).limit(1);
+    .eq("account_id", accountId).eq("status", "DONE").in("plan", ["basic", "solo", "center"])   // 월 구독 결제만(차액 · 팩 결제 제외 · 2026-10-07)
+    .order("paid_at", { ascending: false }).limit(1);
   return data?.[0] || null;
 }
 

@@ -17,7 +17,7 @@
 import { useRef } from "react";
 import InstallAppButton from "@/components/InstallAppButton";
 import { contactHref } from "@/lib/company";
-import { PLANS } from "@/lib/plans";
+import { PLANS, PACKS, SEAT_PRICE } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
@@ -188,18 +188,26 @@ const WIDE = [
 // 사진 없이 이름만 — 묶음 아래 한 줄
 const MORE = ["월간 성적표", "인바디 분석", "사례 보관함", "폰 알림", "급여 자동계산", "프리랜서 장부"];
 
+// 요금제 3장(2026-10-07 개편 · 금액 = 부가세 포함 실제 결제 · lib/plans 한 곳)
 const TIERS = [
   {
+    key: "basic",
+    tagline: "AI 없이 트레이너 1인",
+    feats: ["회원 관리 · 스케줄 · 운동일지 직접 입력", "회원 전용 페이지 · 운동일지 확인 서명", "QR OT 신청서 · 수업 예약 요청 · 이벤트", "실적 · 급여 · 장부 계산", "AI 기능마다 매달 3번 써 보기"],
+    highlight: false,
+    cta: { label: "7일 무료 체험", href: "/signup" },
+  },
+  {
     key: "solo",
-    tagline: "개인 트레이너 1인",
-    feats: ["1·2차 OT · 재등록 서포트 · 세일즈북", "QR OT 신청서 · 수업 예약 요청 · 회원 이벤트", "음성 운동일지 · 회원 확인 서명", "회원 전용 페이지 · 월간 결산 · 급여/장부"],
+    tagline: "AI까지 트레이너 1인",
+    feats: ["베이직 전부", `음성 운동일지 AI 월 ${PLANS.solo.ai.voice}건`, `OT · 재등록 준비 리포트 월 ${PLANS.solo.ai.prep}번`, "세일즈북 · 인바디 분석 · 로드맵 초안"],
     highlight: true,
     cta: { label: "7일 무료 체험", href: "/signup" },
   },
   {
     key: "center",
     tagline: "트레이너 3인 + 대표 1인",
-    feats: ["솔로 전체 포함", "대표 대시보드 (매출·정산·등록·이탈)", "트레이너 3인 좌석 + 대표 1인", "트레이너 코칭 · 팀 관리"],
+    feats: ["프로 전부(센터가 함께 쓰는 한도)", `음성일지 월 ${PLANS.center.ai.voice}건 · 준비 월 ${PLANS.center.ai.prep}번`, "대표 화면 · 아침 보고서 · 월간 결산", `트레이너 추가 1인 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원`],
     highlight: false,
     cta: { label: "센터 자세히 보기", href: "/center" },
   },
@@ -213,6 +221,10 @@ const FAQ = [
   { q: "센터에 소속돼 있는데 혼자 써도 되나요?", a: "네. 개인 트레이너로 가입하고 '센터 소속'을 고르면 돼요. 회원 페이지와 OT 신청서엔 '○○짐 · 내 이름 트레이너'로 나와요." },
   { q: "프리랜서도 되나요?", a: "네. '프리랜서'를 고르면 PT 매출 · 그 밖의 매출 · 지출 · 남은 돈을 장부로 함께 봐요. 센터와 매출을 나누면 그 방식도 정할 수 있어요." },
   { q: "가입 전에 써 볼 수 있나요?", a: "네. '직접 눌러 보기'에서 트레이너 폰과 회원 폰을 나란히 두고 QR 신청 · 이벤트 · 수업 요청 · 서명을 해 볼 수 있어요." },
+  { q: "AI를 다 쓰면 어떻게 되나요?", a: `기록 · 회원 관리는 그대로예요. AI만 그달 말까지 멈추고, 프로 · 센터는 추가 팩(준비 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 음성일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)을 사서 바로 이어 쓸 수 있어요. 매달 1일에 다시 채워져요.` },
+  { q: "'준비 1번'은 어떻게 세나요?", a: "회원 1명의 OT 한 차수, 또는 재등록 한 번이 1번이에요. 같이 만들어지는 세일즈북과 '다시 만들기'는 세지 않아요." },
+  { q: "베이직에서 프로로 바꿀 수 있나요?", a: "네. 설정에서 언제든 바로 바뀌어요. 남은 기간 차액만 결제되고, 다음 결제일부터 프로 금액이 나가요." },
+  { q: "추가 팩은 환불되나요?", a: "산 뒤 7일 안에 하나도 안 썼으면 전액 환불돼요. 7일이 지났거나 한 번이라도 쓰면 환불할 수 없어요." },
   { q: "의료·재활 목적인가요?", a: "아니요. 운동 지도·세일즈·회원관리 도구입니다." },
 ];
 
@@ -223,7 +235,7 @@ const perDay = (amount) => `하루 약 ${wonApprox(amount / 30)}`;
 export default function LandingPage() {
   const rootRef = useRef(null);
   useReveal(rootRef);
-  const solo = PLANS.solo;
+  const basic = PLANS.basic;
 
   return (
     <div ref={rootRef} className="min-h-dvh bg-card text-ink antialiased [word-break:keep-all]">
@@ -416,9 +428,9 @@ export default function LandingPage() {
 
         {/* ⑥ 가격 + ⑦ 센터 상자 */}
         <section id="pricing" className="scroll-mt-28 bg-bg px-5 py-[clamp(56px,10vw,104px)]">
-          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-7 text-center">
+          <div className="mx-auto flex max-w-[1040px] flex-col items-center gap-7 text-center">
             <h2 className={`rv ${H2} ${H2_MD}`}>7일 무료로 먼저 써보세요.</h2>
-            <div className="grid w-full gap-3.5 text-left sm:grid-cols-2">
+            <div className="grid w-full max-w-[420px] gap-3.5 text-left md:max-w-none md:grid-cols-3">
               {TIERS.map((tier, i) => {
                 const plan = PLANS[tier.key];
                 return (
@@ -433,7 +445,7 @@ export default function LandingPage() {
                         <span className="text-[15px] text-sub">월</span>
                         <span className="text-[38px] font-black tracking-[-0.04em] tabular-nums">{plan.amount.toLocaleString("ko-KR")}원</span>
                       </div>
-                      <div className="text-[14px] text-sub"><s>{plan.regular.toLocaleString("ko-KR")}원</s> · 얼리버드</div>
+                      {plan.regular ? <div className="text-[14px] text-sub"><s>{plan.regular.toLocaleString("ko-KR")}원</s> · 얼리버드</div> : <div className="text-[14px] text-sub">AI 없이 가볍게</div>}
                       <div className="text-[16px] font-extrabold text-primary-strong">{perDay(plan.amount)}</div>
                     </div>
                     <div className="flex-1 border-t border-line pt-4">
@@ -444,7 +456,10 @@ export default function LandingPage() {
                 );
               })}
             </div>
-            <p className="m-0 text-[13px] text-sub">부가세 별도 · 7일 무료 후 자동결제 · 언제든 해지</p>
+            <p className="m-0 max-w-[620px] text-[13px] leading-[1.6] text-sub">
+              부가세 포함 · 7일 무료(체험 중엔 AI를 프로처럼) 후 매달 자동결제 · 언제든 해지<br />
+              AI를 다 쓰면 그달만 추가로 살 수 있어요(프로 · 센터 · 준비 10번 {PACKS.prep10.price.toLocaleString("ko-KR")}원 · 음성일지 50건 {PACKS.voice50.price.toLocaleString("ko-KR")}원)
+            </p>
 
             <div className="rv mt-3 flex w-full flex-col items-center gap-3.5 rounded-3xl bg-ink px-6 py-[clamp(28px,6vw,44px)] text-white">
               <Pill dark>센터 대표님께</Pill>
@@ -482,7 +497,7 @@ export default function LandingPage() {
             </h2>
             <div className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
               <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <Arrow /></a>
-              <span className="text-[14px] text-sub">월 {solo.amount.toLocaleString("ko-KR")}원부터</span>
+              <span className="text-[14px] text-sub">월 {basic.amount.toLocaleString("ko-KR")}원부터</span>
             </div>
           </div>
         </section>

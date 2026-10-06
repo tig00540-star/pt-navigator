@@ -5,7 +5,8 @@
 // 출력: { headline, sections:{yesterday,month,watch,today}, closing }. 실패/키부재 → 상태코드+fallback:"rule".
 // -----------------------------------------------------------------------------
 import { requireTrainer } from "@/lib/requireTrainer";
-import { generateOwnerAI } from "@/lib/ownerReportAI"; // 프롬프트 · 파싱은 lib(9시 예약 작업과 공유 · 2026-10-03)
+import { generateOwnerAI } from "@/lib/ownerReportAI";
+import { adminClient, reserveAi, finishAi } from "@/lib/aiQuota"; // 프롬프트 · 파싱은 lib(9시 예약 작업과 공유 · 2026-10-03)
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -54,7 +55,9 @@ export async function POST(request) {
   }
 
   try {
-    const parsed = await generateOwnerAI(d, apiKey);
+    const admin = adminClient();
+    const slot = await reserveAi(admin, { userId: auth.user?.id, kind: "owner", unitKey: `owner:${crypto.randomUUID()}` });
+    const parsed = await generateOwnerAI(d, apiKey, (model, usage) => finishAi(admin, slot.id, { ok: true, model, usage }));
     if (!parsed) return Response.json({ error: "AI 응답 파싱 실패.", fallback: "rule" }, { status: 502 });
     return Response.json(parsed);
   } catch (e) {
