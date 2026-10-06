@@ -24,7 +24,7 @@ export async function POST(req) {
     let url = "/settings/notify";
     if (who.kind === "member") { const { data: m } = await sb.from("user_table").select("member_token").eq("id", who.id).maybeSingle(); url = m?.member_token ? `/m/${m.member_token}` : "/"; }
     const r = await sendPush(sb, { ...(who.kind === "trainer" ? { trainerIds: [who.id] } : { memberIds: [who.id] }),
-      title: "오직 트레이너 알림이 켜졌어요", body: "앞으로 오직 트레이너 알림을 받아요.", url, tag: "test" });
+      title: "알림이 켜졌어요", body: "이제 이 폰으로 오직 트레이너 알림을 받아요.", url, tag: "test" });
     return Response.json({ ok: true, ...r });
   }
   if (!UUID_RE.test(id)) return Response.json({ error: "bad" }, { status: 400 });
