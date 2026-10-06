@@ -159,6 +159,8 @@ export default function AuthGate({ children }) {
   if (pathname.startsWith("/billing") && session) return <>{children}</>;
   // 센터 합류 초대(/join-center/*) — 개인 구독이 끝나 잠겼어도 합류는 할 수 있어야 한다(2026-10-07)
   if (pathname.startsWith("/join-center/") && session) return <>{children}</>;
+  // 개인 계정으로 이어 쓰기(/leave-center) — 센터 구독이 끝나 잠긴 트레이너도 열 수 있어야 한다(2026-10-07)
+  if (pathname === "/leave-center" && session) return <>{children}</>;
 
   // 데모 모드(supabase null) or 로그인됨 → 앱 렌더
   if (!supabase || session) {
@@ -260,18 +262,20 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
   const [plan, setPlan] = useState(null);
   // 센터 소속 트레이너는 결제할 수 없다(서버가 거절) → 카드 등록 대신 '대표에게 알려 주세요'(2026-10-06 점검)
   const [staff, setStaff] = useState(false);
+  const [noTrial, setNoTrial] = useState(false);   // 센터에서 독립한 개인 계정 = 체험 없이 바로 첫 결제(2026-10-07)
   useEffect(() => {
     let alive = true;
     (async () => {
       if (!supabase || !uid) return;
-      const { data } = await supabase.from("trainer").select("role, account:account_id(type)").eq("id", uid).maybeSingle();
+      const { data } = await supabase.from("trainer").select("role, account:account_id(type, no_trial)").eq("id", uid).maybeSingle();
       if (!alive) return;
       setPlan(data?.account?.type === "center" ? "center" : "solo");
       setStaff(Boolean(data) && data.role !== "owner");
+      setNoTrial(Boolean(data?.account?.no_trial));
     })();
     return () => { alive = false; };
   }, [uid]);
-  const trialUsed = expired; // 기간이 끝난 계정 = 체험(또는 결제)을 이미 썼다 → 등록 즉시 결제
+  const trialUsed = expired || noTrial; // 기간이 끝난 계정 · 독립 계정 = 등록 즉시 결제
   const [busy, setBusy] = useState(false);
   const [payErr, setPayErr] = useState("");
   const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
@@ -303,8 +307,9 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
         <div className="mb-4 flex flex-col items-center text-center">
           <Image src="/icons/icon-192.png" alt="오직 트레이너" width={56} height={56} priority className="mb-3 h-14 w-14 rounded-2xl shadow-sm" />
-          <div className="text-lg font-semibold text-ink">{staff ? "센터 이용 기간이 끝났어요" : title}</div>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{staff ? "센터의 오직 트레이너 구독이 끝나서 지금은 쓸 수 없어요. 대표에게 알려 주세요. 기록은 그대로 남아 있어요." : desc}</p>
+          <div className="text-lg font-semibold text-ink">{staff ? "센터 이용 기간이 끝났어요" : noTrial && !expired ? "개인 계정 카드 등록" : title}</div>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{staff ? "센터의 오직 트레이너 구독이 끝나서 지금은 쓸 수 없어요. 대표에게 알려 주세요. 같은 로그인으로 개인 계정을 이어 쓸 수도 있어요." : noTrial && !expired ? "센터에서 독립한 개인 계정이에요. 카드를 등록하면 바로 쓸 수 있어요." : desc}</p>
+          {staff && <a href="/leave-center" className="mt-3 inline-flex min-h-[40px] items-center text-[14px] font-bold text-primary-strong underline-offset-2 hover:underline">개인 계정으로 이어 쓰기 →</a>}
         </div>
 
         {!noAccount && !staff && (
@@ -382,6 +387,9 @@ function ReadOnlyShell({ status, uid, onPay, children }) {
             <b>이용 기간이 끝났어요.</b> {until ? `${until}까지 ` : ""}볼 수만 있고, 새 기록은 저장되지 않아요.
             {owner === false ? " 센터 대표에게 알려 주세요." : " 그 뒤엔 기록이 지워져요."}
           </span>
+          {owner === false && (
+            <a href="/leave-center" className="inline-flex min-h-[36px] shrink-0 items-center rounded-lg border border-rose-300 bg-card px-3 text-[13px] font-bold text-danger-text no-underline">개인 계정으로 이어 쓰기</a>
+          )}
           {owner && (
             <span className="flex shrink-0 gap-1.5">
               <button type="button" onClick={download} disabled={busy}

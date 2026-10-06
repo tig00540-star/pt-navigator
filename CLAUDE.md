@@ -221,6 +221,13 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **회원 동의:** 회원 전용 페이지 `TransferAsk`(rpc `my_member_transfer` · `answer_member_transfer`) → 동의하면 `_move_member`: **account_id가 있는 모든 표**(information_schema로 찾음 · user_table · member_transfer · member_event_join · owner_feedback · 보고서 표 제외)를 회원 기준으로 바꿈 · 계약은 `imported_from` · `imported_at` · **counts_as_revenue=false**(센터 매출 · 급여 · 등록률 계산에 안 섞임 · 남은 수업 · 재등록 흐름엔 그대로) · 이벤트 참여 끊음 · `member_consent` kind `transfer`. 답 없으면 안 옮김(14일 · 옛 계정과 함께 30일 뒤 지워짐).
 - ⚠️ 새 표에 회원 기록을 담으면 `account_id` + `user_id`/`member_id` 칸을 두면 이동에 자동 포함된다(이름이 다르면 `_move_member`가 놓침).
 
+### 센터 → 개인 독립 (2026-10-07 · SQL `docs/migrations/2026-10-07-leave-center.sql` · 계획서 3단계)
+
+- **허락:** 대표 운영 탭 `LeaveAllowCard`(rpc `allow_trainer_leave(트레이너, 회원 함께?)` · `cancel_leave_allow` · 60일) · 센터 해지 창 체크(`/api/billing/cancel` `allowLeave` → 모든 트레이너 회원과 함께). 허락 없이도 트레이너 스스로 독립 가능(회원 없이 · 대표 결정).
+- **독립:** `/leave-center`(AuthGate 통과 · 설정 `LeaveCenterCard` · 결제벽 · 읽기 전용 띠에서 들어옴) → `/api/move/leave` → DB `_leave_center`(service_role): 새 solo 계정(`no_trial`=체험 없이 바로 첫 결제 · billing/confirm이 읽음) · trainer → owner · 본인 것 이동(사례 보관함은 회원과 함께일 때만) · 회원마다 `member_transfer` kind `leave`.
+- **회원:** `my_member_transfer` · `answer_member_transfer`는 **받는 계정이 이용 중일 때만**(독립 트레이너가 결제를 마친 뒤 · billing/confirm이 회원 알림). 동의 = `moved_out_ledger`(떠나는 센터 · 계약 금액 · 날짜 · 이름 없음 · 대표 SELECT) + `_move_member`.
+- **센터 숫자:** `lib/movedOut` `ledgerAsContracts` — 대표 화면 정산(`SettlementPanel`) · 매출(`RevenuePipeline`) · 월간 결산(`monthlyReportBuild`)이 계약에 더해 읽음(user_id null · handed_over → 회원 · 남은 수업 계산엔 안 들어감). 그 밖의 화면(홈 · 리더보드)은 지금 계약만.
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.

@@ -14,6 +14,7 @@ import BookingPrefCard from "@/components/booking/BookingPrefCard";
 import NotifySettings from "@/components/notify/NotifySettings";
 import SoloProfileCard from "@/components/views/SoloProfileCard";
 import SubscriptionCard from "@/components/views/SubscriptionCard";
+import LeaveCenterCard from "@/components/views/LeaveCenterCard";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -56,6 +57,7 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
           <TrainerGoalSetter />
           <PasswordChange />
           <SubscriptionCard />
+          <LeaveCenterCard />
           {/* 로그아웃 — AuthGate의 전 화면 플로팅에서 이관(콘텐츠 가림 제거). signOut 시 onAuthStateChange가
               session=null로 만들어 로그인 폼으로 자동 전환(기존 흐름 재사용). supabase?는 데모모드 가드. */}
           {/* 로그아웃 — 카드 · 제목 없이 버튼 하나('계정' 제목이 비밀번호 카드와 겹쳐 보였다 · 2026-10-03). */}
