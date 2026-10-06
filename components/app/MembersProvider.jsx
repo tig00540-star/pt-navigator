@@ -58,6 +58,9 @@ export function mapMemberRow(r) {
     past_exercise: r.past_exercise ?? null,
     availability: r.availability ?? null,
     preferred_slots: r.preferred_slots ?? null,   // OT 신청서의 원하는 요일 · 시간(2026-10-06)
+    weekly_freq: r.weekly_freq ?? null,           // OT 신청서: 일주일에 몇 번('1'|'2'|'3'|'4+')
+    health_screen: r.health_screen ?? null,       // OT 신청서: 건강 체크({none}|{items, note} · 건강정보 동의했을 때만)
+    lead_source: r.lead_source ?? null,           // OT 신청서: 알게 된 경로
     activity_level: r.activity_level ?? null,
     member_note: r.member_note ?? null,
     machines: r.machines ?? [],

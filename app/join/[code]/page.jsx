@@ -2,7 +2,9 @@
 
 /* =========================================================================
    OT 신청서(공개 · 로그인 없음 · 2026-10-06) — 트레이너 QR · 센터 QR · 카톡 링크로 연다.
-   회원이 사전 문진 · 원하는 요일/시간 · 동의를 남기면:
+   2단계(회원이 중간에 접지 않게): ① 꼭 필요한 것(이름 · 번호 · 요일/시간 · 동의)만 받고 바로 신청 저장
+   ② '1분만 더' 질문을 한 화면에 하나씩(components/intake/IntakeMore · 누를 때마다 저장 · 건너뛰기).
+   신청이 저장되면:
      트레이너 QR → 그 트레이너의 OT 회원으로 바로 등록 · 센터 QR → 대표에게 '배정 대기'.
    저장은 /api/ot-intake(서버 · service_role · DB 함수) — 이 페이지는 DB에 직접 닿지 않는다.
    선택지는 트레이너 '신규 회원 등록'과 같은 lib/memberOptions · 동의 문구는 lib/consent.
@@ -13,8 +15,8 @@ import { useParams } from "next/navigation";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import Wordmark from "@/components/ui/Wordmark";
 import Button from "@/components/ui/Button";
-import { GENERAL_CONSENT, HEALTH_CONSENT, LOG_CONFIRM_NOTICE } from "@/lib/consent";
-import { MEMBER_OPTS, GENDER_OPTS } from "@/lib/memberOptions";
+import { GENERAL_CONSENT, LOG_CONFIRM_NOTICE } from "@/lib/consent";
+import IntakeMore from "@/components/intake/IntakeMore";
 import { DAY_LABELS, SLOT_HOURS } from "@/lib/slots";
 
 const inputCls = "w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[16px] text-ink placeholder-muted outline-none focus:border-primary";
@@ -52,15 +54,6 @@ function Label({ children, optional }) {
   return <span className="mb-1.5 block text-[14px] font-semibold text-sub">{children}{optional && <span className="font-normal text-muted"> (선택)</span>}</span>;
 }
 
-// 하나만 고르는 칩(다시 누르면 해제) · 목록에 없으면 직접 쓰기
-function OneOf({ opts, value, onChange }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {opts.map((o) => <Chip key={o} wide on={value === o} onClick={() => onChange(value === o ? "" : o)}>{o}</Chip>)}
-    </div>
-  );
-}
-
 function ConsentBox({ c, checked, onChange }) {
   return (
     <div className="rounded-xl border border-line bg-elevate p-3.5">
@@ -89,9 +82,7 @@ function ConsentBox({ c, checked, onChange }) {
 export default function JoinPage() {
   const { code } = useParams();
   const [info, setInfo] = useState(null);   // null=불러오는 중 · {ok,...} · {error}
-  const [f, setF] = useState({ name: "", phone: "", age: "", gender: "", goal: "", goal_deadline: "", job: "",
-    exercise_level: "", past_exercise: "", quit_reason: "", activity_level: "", training_pace: "", member_note: "",
-    pain: "", injury_history: "" });
+  const [f, setF] = useState({ name: "", phone: "" });
   // 원하는 요일 · 시간(2026-10-06 v2) — 요일을 고르고, 기본은 '고른 요일 모두 같은 시간' 한 줄.
   //   '요일마다 시간이 달라요'를 켜면 요일마다 시간 줄이 따로 생긴다(트레이너가 '월 7시'인지 '수 7시'인지 헷갈리지 않게).
   const [days, setDays] = useState([]);
@@ -99,11 +90,12 @@ export default function JoinPage() {
   const [perDay, setPerDay] = useState({});   // 요일마다: { 1: [19,20], ... }
   const [split, setSplit] = useState(false);
   const [slotNote, setSlotNote] = useState("");
-  const [agree, setAgree] = useState({ general: false, log_rule: false, health: false });
+  const [agree, setAgree] = useState({ general: false, log_rule: false });
   const [hp, setHp] = useState("");   // 봇 막기(사람 눈엔 안 보임)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [done, setDone] = useState(null);
+  const [done, setDone] = useState(null);      // 1단계 저장 결과 { kind, app, token }
+  const [finished, setFinished] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -135,19 +127,18 @@ export default function JoinPage() {
     if (!agree.general || !agree.log_rule) { setErr("필수 항목에 동의해 주세요."); return; }
     setBusy(true);
     try {
-      const { pain, injury_history, ...rest } = f;
       const res = await fetch("/api/ot-intake", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code, name: f.name, phone: f.phone, website: hp,
-          answers: { ...rest, ...(agree.health ? { pain, injury_history } : {}) },
+          answers: {},
           slots: { by_day: Object.fromEntries(days.map((d) => [d, split ? perDay[d] || [] : common])), note: slotNote },
           consent: agree,
         }),
       });
       const d = await res.json().catch(() => ({}));
-      if (res.ok && d.ok) { setDone(d.kind || info?.kind || "trainer"); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } return; }
+      if (res.ok && d.ok) { setDone({ kind: d.kind || info?.kind || "trainer", app: d.app, token: d.token }); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } return; }
       setErr(d.error === "busy" ? "지금 신청이 많아요. 잠시 뒤 다시 시도해 주세요."
         : d.error === "invalid" || d.error === "closed" ? "이 신청서는 닫혔어요. 센터에 새 링크를 요청해 주세요."
         : "신청하지 못했어요. 다시 시도해 주세요.");
@@ -184,13 +175,16 @@ export default function JoinPage() {
   }
 
   const who = info.kind === "trainer" && info.trainer ? `${info.trainer} 트레이너` : null;
+  if (done && !finished && done.app && done.token) {
+    return shell(<IntakeMore app={done.app} token={done.token} kind={done.kind} onDone={() => { setFinished(true); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } }} />);
+  }
   if (done) {
     return shell(
       <div className="mt-10 rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
         <CheckCircle2 className="mx-auto h-10 w-10 text-primary" aria-hidden="true" />
         <p className="m-0 mt-3 text-[20px] font-extrabold tracking-[-0.02em]">신청했어요</p>
         <p className="m-0 mt-2 text-[15px] leading-relaxed text-sub">
-          {done === "center" ? "센터에서 담당 트레이너를 정해 곧 연락드려요." : `${who || "담당 트레이너"}가 곧 연락드려요.`}
+          {done.kind === "center" ? "센터에서 담당 트레이너를 정해 곧 연락드려요." : `${who || "담당 트레이너"}가 곧 연락드려요.`}
           <br />남겨 주신 시간에 맞춰 첫 OT를 잡아 드릴게요.
         </p>
       </div>
@@ -202,7 +196,7 @@ export default function JoinPage() {
       <h1 className="m-0 mt-4 text-[24px] font-extrabold leading-tight tracking-[-0.03em]">OT 신청서</h1>
       <p className="m-0 mt-1.5 text-[15px] leading-relaxed text-sub">
         {info.center ? `${info.center} · ` : ""}{who ? `${who}가 받아요.` : "센터에서 담당 트레이너를 정해 연락드려요."}
-        {" "}미리 알려 주시면 첫 OT를 회원님께 맞춰 준비해요.
+        {" "}30초면 신청돼요.
       </p>
 
       <div className="mt-5 space-y-4">
@@ -212,12 +206,6 @@ export default function JoinPage() {
           <label className="block"><Label>휴대폰 번호</Label>
             <input value={f.phone} onChange={set("phone")} inputMode="tel" autoComplete="tel" placeholder="010-1234-5678" className={inputCls} />
             <span className="mt-1 block text-[13px] text-muted">트레이너가 OT 일정을 잡을 때 연락드리는 번호예요.</span></label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block"><Label optional>나이</Label>
-              <input value={f.age} onChange={(e) => set("age")(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} inputMode="numeric" placeholder="34" className={inputCls} /></label>
-            <div><Label optional>성별</Label>
-              <div className="flex gap-2">{GENDER_OPTS.map(([v, l]) => <Chip key={v} wide on={f.gender === v} onClick={() => set("gender")(f.gender === v ? "" : v)}>{l}</Chip>)}</div></div>
-          </div>
         </Section>
 
         <Section title="원하는 요일 · 시간" hint="OT를 받을 수 있는 요일을 고르고, 그 요일에 되는 시간을 눌러 주세요. 여러 개 골라도 돼요.">
@@ -254,36 +242,9 @@ export default function JoinPage() {
             <input value={slotNote} onChange={(e) => setSlotNote(e.target.value)} maxLength={100} placeholder="예: 둘째 주 화요일은 안 돼요" className={inputCls} /></label>
         </Section>
 
-        <Section title="운동 목표" hint="모두 선택이에요. 알려 주실수록 첫 OT가 잘 맞춰져요.">
-          <div><Label optional>목표</Label><OneOf opts={MEMBER_OPTS.goal} value={f.goal} onChange={set("goal")} /></div>
-          <label className="block"><Label optional>언제까지 · 계기</Label>
-            <input value={f.goal_deadline} onChange={set("goal_deadline")} maxLength={60} placeholder="예: 8월 결혼식" className={inputCls} /></label>
-          <div><Label optional>원하는 페이스</Label><OneOf opts={MEMBER_OPTS.training_pace} value={f.training_pace} onChange={set("training_pace")} /></div>
-        </Section>
-
-        <Section title="운동 · 생활" hint="모두 선택이에요.">
-          <div><Label optional>운동 경험</Label><OneOf opts={MEMBER_OPTS.exercise_level} value={f.exercise_level} onChange={set("exercise_level")} /></div>
-          <div><Label optional>받아 본 유료 운동</Label><OneOf opts={MEMBER_OPTS.past_exercise} value={f.past_exercise} onChange={set("past_exercise")} /></div>
-          <div><Label optional>예전에 그만둔 이유</Label><OneOf opts={MEMBER_OPTS.quit_reason} value={f.quit_reason} onChange={set("quit_reason")} /></div>
-          <div><Label optional>하루 활동량</Label><OneOf opts={MEMBER_OPTS.activity_level} value={f.activity_level} onChange={set("activity_level")} /></div>
-          <label className="block"><Label optional>직업</Label>
-            <input value={f.job} onChange={set("job")} maxLength={60} placeholder="예: 사무직" className={inputCls} /></label>
-          <label className="block"><Label optional>트레이너에게 바라는 점</Label>
-            <textarea value={f.member_note} onChange={set("member_note")} maxLength={300} rows={3} placeholder="예: 허리가 자주 뻐근해요. 천천히 배우고 싶어요." className={inputCls} /></label>
-        </Section>
-
         <Section title="동의">
           <ConsentBox c={GENERAL_CONSENT} checked={agree.general} onChange={(v) => setAgree((a) => ({ ...a, general: v }))} />
           <ConsentBox c={LOG_CONFIRM_NOTICE} checked={agree.log_rule} onChange={(v) => setAgree((a) => ({ ...a, log_rule: v }))} />
-          <ConsentBox c={HEALTH_CONSENT} checked={agree.health} onChange={(v) => setAgree((a) => ({ ...a, health: v }))} />
-          {agree.health && (
-            <div className="space-y-3 rounded-xl border border-line p-3.5">
-              <label className="block"><Label optional>불편한 부위</Label>
-                <input value={f.pain} onChange={set("pain")} maxLength={120} placeholder="예: 오른쪽 무릎" className={inputCls} /></label>
-              <label className="block"><Label optional>부상 · 수술 이력</Label>
-                <input value={f.injury_history} onChange={set("injury_history")} maxLength={120} placeholder="예: 없음 / 2년 전 무릎 수술" className={inputCls} /></label>
-            </div>
-          )}
           <p className="m-0 text-[13px] leading-relaxed text-muted">
             자세한 내용은 <a href="/legal/privacy" target="_blank" rel="noreferrer" className="font-semibold text-sub underline underline-offset-2">개인정보처리방침</a>에서 볼 수 있어요.
           </p>

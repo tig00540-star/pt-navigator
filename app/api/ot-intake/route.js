@@ -2,9 +2,11 @@
 //   로그인 없는 회원이 쓰는 페이지라 DB를 직접 열지 않는다(anon 정책 없음). 여기서 입력을 다듬고
 //   service_role로 함수(intake_link_info · submit_ot_application)만 부른다 — 코드 확인 · 장난 신청 제한 · 저장은 DB 함수 안.
 //   GET  ?code=…  → { ok, center, trainer, kind } | { error: 'invalid' | 'closed' }
-//   POST { code, name, phone, answers, slots, consent, website(빈칸이어야 함) } → { ok } | { error }
+//   POST  { code, name, phone, answers, slots, consent, website(빈칸이어야 함) } → { ok, kind, app, token } | { error }   (1단계)
+//   PATCH { app, token, answers, health } → { ok, health } | { error }   (2단계 이어 적기 · 질문 하나 누를 때마다 · 24시간)
 import { createClient } from "@supabase/supabase-js";
 import { CONSENT_VERSION } from "@/lib/consent";
+import { WEEKLY_OPTS, LEAD_SOURCES, HEALTH_SCREEN_ITEMS, TRAINER_GENDER_OPTS } from "@/lib/memberOptions";
 import { formatSlots, slotDays } from "@/lib/slots";
 import { after } from "next/server";
 import { sendPush, ownerIds } from "@/lib/pushServer";
@@ -25,6 +27,27 @@ function client() {
 }
 
 const clip = (v, n) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// 회원이 보낸 답 → 받는 칸만 · 정해진 값만 · 글자 수 제한(1단계 · 2단계 공용). 건강정보는 health일 때만.
+function cleanAnswers(a = {}, health = false) {
+  const out = {};
+  for (const k of TEXT_KEYS) { if (!(k in a)) continue; const v = clip(a[k], k === "member_note" ? 300 : 60); out[k] = v; }
+  if (out.gender && !["female", "male"].includes(out.gender)) delete out.gender;
+  if ("age" in a) { const age = String(a.age ?? "").replace(/[^0-9]/g, ""); if (age && Number(age) >= 10 && Number(age) <= 99) out.age = age; }
+  if ("weekly_freq" in a && WEEKLY_OPTS.some(([v]) => v === a.weekly_freq)) out.weekly_freq = a.weekly_freq;
+  if ("lead_source" in a && LEAD_SOURCES.includes(a.lead_source)) out.lead_source = a.lead_source;
+  if ("pref_trainer_gender" in a && TRAINER_GENDER_OPTS.some(([v]) => v === a.pref_trainer_gender)) out.pref_trainer_gender = a.pref_trainer_gender;
+  if (health) {
+    for (const k of HEALTH_KEYS) if (k in a) out[k] = clip(a[k], 120);
+    const h = a.health_screen;
+    if (h && typeof h === "object") {
+      out.health_screen = h.none ? { none: true }
+        : { items: (Array.isArray(h.items) ? h.items : []).filter((x) => HEALTH_SCREEN_ITEMS.includes(x)), ...(clip(h.note, 120) ? { note: clip(h.note, 120) } : {}) };
+    }
+  }
+  return out;
+}
 
 export async function GET(req) {
   const sb = client();
@@ -52,13 +75,7 @@ export async function POST(req) {
   if (!c.general || !c.log_rule) return Response.json({ error: "consent" }, { status: 400 });
   const health = Boolean(c.health);
 
-  const a = b.answers || {};
-  const answers = {};
-  for (const k of TEXT_KEYS) { const v = clip(a[k], k === "member_note" ? 300 : 60); if (v) answers[k] = v; }
-  if (answers.gender && !["female", "male"].includes(answers.gender)) delete answers.gender;
-  const age = String(a.age ?? "").replace(/[^0-9]/g, "");
-  if (age && Number(age) >= 10 && Number(age) <= 99) answers.age = age;
-  if (health) for (const k of HEALTH_KEYS) { const v = clip(a[k], 120); if (v) answers[k] = v; }   // 건강정보는 동의했을 때만 받는다
+  const answers = cleanAnswers(b.answers || {}, health);
 
   // 원하는 요일 · 시간 v2 — 요일마다 시간({by_day}) · 옛 {days, hours}도 받는다(lib/slots가 같은 규칙으로 읽음).
   const s = b.slots || {};
@@ -90,5 +107,21 @@ export async function POST(req) {
       }
     } catch (e) { console.error("[ot-intake] 알림 실패", e?.message || e); }
   });
-  return Response.json({ ok: true, kind: data?.kind || null });
+  return Response.json({ ok: true, kind: data?.kind || null, app: data?.app || null, token: data?.token || null });
+}
+
+// 2단계 이어 적기 — 질문 하나 누를 때마다 부른다(열쇠 · 24시간은 DB 함수가 확인).
+export async function PATCH(req) {
+  const sb = client();
+  if (!sb) return Response.json({ error: "closed" }, { status: 503 });
+  const b = await req.json().catch(() => ({}));
+  const app = String(b.app || ""), token = String(b.token || "");
+  if (!UUID_RE.test(app) || !/^[0-9a-f]{32}$/.test(token)) return Response.json({ error: "invalid" }, { status: 404 });
+  const health = Boolean(b.health);
+  const { data, error } = await sb.rpc("update_ot_application", {
+    p_app: app, p_token: token, p_answers: cleanAnswers(b.answers || {}, health || Boolean(b.healthKnown)), p_health: health,
+  });
+  if (error) { console.error("[ot-intake] 이어 적기 실패", error.message); return Response.json({ error: "server" }, { status: 500 }); }
+  if (data?.error) return Response.json(data, { status: 404 });
+  return Response.json({ ok: true, health: Boolean(data?.health) });
 }

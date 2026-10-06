@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { personName } from "@/lib/format";
 import { formatSlots } from "@/lib/slots";
 import { otHeld } from "@/lib/memberStatus";
+import { WEEKLY_OPTS, TRAINER_GENDER_OPTS } from "@/lib/memberOptions";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
 import Card from "@/components/ui/Card";
@@ -89,6 +90,13 @@ export default function OtIntakePanel({ members = [], otRows = [], appts = [], t
     return [...m.entries()].sort((a, b) => b[1].n - a[1].n);
   }, [recent, stepOf]);
 
+  // 알게 된 경로(최근 30일 · 대기 포함) — 광고를 어디에 쓸지 보는 숫자.
+  const leadCounts = useMemo(() => {
+    const m = new Map();
+    for (const a of [...pending, ...recent]) { const k = a.answers?.lead_source; if (k) m.set(k, (m.get(k) || 0) + 1); }
+    return [...m.entries()].sort((x, y) => y[1] - x[1]);
+  }, [pending, recent]);
+
   const assign = async (app, tid) => {
     if (!tid) { showToast("담당 트레이너를 골라 주세요"); return; }
     setBusyId(app.id);
@@ -124,7 +132,9 @@ export default function OtIntakePanel({ members = [], otRows = [], appts = [], t
             const ans = a.answers || {};
             const dup = a.duplicate_of ? memberById.get(a.duplicate_of) : null;
             const chosen = pick[a.id] ?? (dup?.trainer_id || "");   // 기존 회원이면 그 담당이 기본
-            const facts = [ans.age && `${ans.age}세`, GENDER[ans.gender], ans.goal, ans.exercise_level && `운동 ${ans.exercise_level}`].filter(Boolean);
+            const facts = [ans.age && `${ans.age}세`, GENDER[ans.gender], ans.goal, ans.exercise_level && `운동 ${ans.exercise_level}`,
+              ans.weekly_freq && WEEKLY_OPTS.find(([v]) => v === ans.weekly_freq)?.[1], ans.lead_source && `${ans.lead_source}로 알게 됨`].filter(Boolean);
+            const prefT = ans.pref_trainer_gender && ans.pref_trainer_gender !== "any" ? TRAINER_GENDER_OPTS.find(([v]) => v === ans.pref_trainer_gender)?.[1] : null;
             return (
               <div key={a.id} className="rounded-xl border border-line bg-elevate p-3.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
@@ -133,6 +143,7 @@ export default function OtIntakePanel({ members = [], otRows = [], appts = [], t
                 </div>
                 <div className="mt-0.5 text-[13.5px] text-sub"><a href={`tel:${a.phone}`} className="font-mono text-ink underline-offset-2 hover:underline">{phoneFmt(a.phone)}</a>{facts.length ? ` · ${facts.join(" · ")}` : ""}</div>
                 <div className="mt-0.5 text-[13.5px] text-ink">원하는 시간 · {formatSlots(a.slots) || "안 남김"}</div>
+                {prefT && <div className="mt-0.5 text-[13.5px] font-semibold text-ink">원하는 트레이너 · {prefT}</div>}
                 {ans.member_note && <div className="mt-0.5 text-[13px] text-sub">&ldquo;{ans.member_note}&rdquo;</div>}
                 {dup && <div className="mt-1 text-[13px] font-semibold text-ot-text">이미 등록된 회원이에요(담당 {tName(dup.trainer_id)}). 배정하면 새로 만들지 않고 그 회원에 연결돼요.</div>}
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -187,6 +198,9 @@ export default function OtIntakePanel({ members = [], otRows = [], appts = [], t
             최근 30일 진행 <span className="text-[13px] font-normal text-sub">신청 {recent.length}건</span>
             <ChevronDown className="ml-auto h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
           </summary>
+          {leadCounts.length > 0 && (
+            <p className="m-0 mt-2 text-[13.5px] text-sub"><b className="font-semibold text-ink">알게 된 경로</b> · {leadCounts.map(([k, n]) => `${k} ${n}`).join(" · ")}</p>
+          )}
           {byTrainer.length > 0 && (
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               {byTrainer.map(([tid, v]) => (

@@ -130,6 +130,8 @@ const SALESBOOK_PREAMBLE = `너는 트레이너가 회원에게 '직접 보여�
 [출력] 지정 JSON만. 설명·마크다운·코드펜스 금지. 모든 값은 한국어 문장.`;
 
 const g = (v) => (v == null || v === "" ? "없음" : v);
+// 건강 체크(OT 신청서 · 건강정보 동의 회원만) — 항목이 있으면 안전 우선(강도 낮게 · 의료 확인 권유 · 진단 금지).
+const healthLine = (h) => !h ? "없음" : h.none ? "해당 없음" : `${[...(h.items || []), h.note].filter(Boolean).join(", ")} → ★운동 강도는 보수적으로, 해당 부위 · 상태에 부담 주는 동작은 빼고, 필요하면 '담당 의사와 먼저 확인해 보시면 좋아요' 한마디(진단 · 처방 금지)`;
 
 // ── 클로징 시퀀스 공용 재료(클로징 재설계) — first/second/reregister 공유해 표현 흔들림 방지. ──
 // ① stakes 손실·가치 축 taxonomy(goal 유형별 · '원점' 일변도 금지 · 3케이스 검증).
@@ -258,6 +260,14 @@ function firstPrompt(member, packages, favorites) {
  - 비유는 [비유 재료 찾는 순서]의 ⑤ 누구나 겪어본 일상 하나만, 어색하면 생략. fill_in: true를 JSON에 넣어라.
  - cheat ①은 "아직 목표를 모르는 분 · 첫마디에서 목표부터 듣기" 결로.
 ` : "";
+  // OT 신청서에서 회원이 안 적은 것(2026-10-06) — 첫 5분에 자연스럽게 물을 질문으로 메운다(목표는 위 sparse 규칙이 따로 다룸).
+  const unknown = [!has(m.weekly_freq) && "일주일에 몇 번 운동할 수 있는지", !has(m.exercise_level) && "운동 경험",
+    !has(m.quit_reason) && "예전에 그만둔 이유", !m.health_screen && !has(m.pain) && "운동 전 알아야 할 건강 상태(불편한 곳 · 질환)"].filter(Boolean);
+  const unknownBlock = unknown.length ? `[아직 모르는 것 — 회원이 신청서에 안 적음] ${unknown.join(" · ")}
+ - opening.line의 ⓑ(가볍게 묻는 한마디)를 이 중 가장 중요한 것 하나로 써라(질문 나열 금지 · 최대 1개).
+ - 나머지는 ② 운동 4칸의 '몸 상태 체크' 칸 how·feel에 대화로 묻는 한마디로 녹여라(설문처럼 묻지 말 것).
+ - 모르는 칸을 짐작해서 사실처럼 쓰지 마라(예: 주 3회 가능하다고 단정 금지 → 추천 빈도는 '권하는' 말투로).
+` : "";
   const machines = Array.isArray(m.machines) ? m.machines.join(", ") : g(m.machines);
   const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
   const pkgBlock = pkgs.length
@@ -290,8 +300,9 @@ ${sparseBlock}
 [OT 사전 문진 — 회원이 등록 때 작성(있는 것만 활용, 없으면 무시)]
  목표시점/계기=${g(m.goal_deadline)}, 원하는페이스=${g(m.training_pace)}, 부상·수술=${g(m.injury_history)},
  운동경험=${g(m.exercise_level)}, 예전중단이유=${g(m.quit_reason)}, 받아본유료운동=${g(m.past_exercise)},
- 가능빈도·시간=${g(m.availability)}, 하루활동량=${g(m.activity_level)}, 바라는점=${g(m.member_note)}
-아직 관찰 전이다 — 신체 판단은 '~일 가능성' 가설 톤. 없는 관찰·수치·에피소드 창작 금지. 단 오프닝·
+ 가능빈도·시간=${g(m.availability)}, 하루활동량=${g(m.activity_level)}, 바라는점=${g(m.member_note)},
+ 일주일에가능=${m.weekly_freq ? `주 ${m.weekly_freq}번` : "없음"}, 건강체크=${healthLine(m.health_screen)}, 알게된경로=${g(m.lead_source)}
+${unknownBlock}아직 관찰 전이다 — 신체 판단은 '~일 가능성' 가설 톤. 없는 관찰·수치·에피소드 창작 금지. 단 오프닝·
 비유·거절 대사는 세일즈 기술이라 확신 있게 완성해도 된다(사실 왜곡이 아니므로).
 
 [내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
@@ -1521,7 +1532,7 @@ export async function POST(request) {
   }
   // 건강정보 동의를 철회한 회원 = 불편 부위 · 부상 이력을 빼고 보낸다(프롬프트엔 '-'로 보임).
   const member = rawMember && typeof rawMember === "object" && (await fetchHealthWithdrawn(request, rawMember.id))
-    ? { ...rawMember, pain: null, injury_history: null }
+    ? { ...rawMember, pain: null, injury_history: null, health_screen: null }
     : rawMember;
   // 케이스 배열은 상한 개수만 통과시킨다(초과분은 조용히 버림 — 앞쪽이 우선순위 높은 케이스).
   const boundedCases = Array.isArray(closingCases) ? closingCases.slice(0, MAX_CLOSING_CASES) : closingCases;
