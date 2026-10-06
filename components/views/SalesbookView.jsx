@@ -15,7 +15,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { ChevronLeft, ChevronRight, Printer, X, Check, Camera, Search, ArrowRight, Target, Maximize, Minimize, Presentation, LayoutList, Receipt } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
-import { won, wonApprox } from "@/lib/format";
+import { won, wonApprox, personName } from "@/lib/format";
+import { useAccount } from "@/lib/useAccount";
 import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import PriceSheet from "@/components/salesbook/PriceSheet";
@@ -134,6 +135,7 @@ export default function SalesbookView({
 }) {
   // 신규 등록 혜택 장(선택) — 있으면 플랜 다음에 한 장 추가.
   const hasBenefits = Array.isArray(benefits) && benefits.filter(Boolean).length > 0;
+  const me = useAccount();
   const [idx, setIdx] = useState(0);
   const [rows, setRows] = useState([]);
   const [urls, setUrls] = useState({});
@@ -245,6 +247,9 @@ export default function SalesbookView({
   const photos = pickPhotos(sb.photo_slide?.mode, rows, urls); // 가벼운 계산이라 메모 없이(장 구성 계산과 React Compiler 충돌 회피)
 
   const tr = trainer || {};
+  // 프로필에 '표시 이름'을 안 적었으면 계정 이름으로(표지 · 약속 장이 '담당 트레이너'만 남던 것 · 2026-10-06)
+  const trName = tr.display_name || personName(me.trainerName);
+  const trLabel = tr.display_name || (trName ? `${trName} 트레이너` : "담당 트레이너");
   const plans = Array.isArray(sb.plans) ? sb.plans.slice(0, 2) : [];
 
   return (
@@ -333,7 +338,7 @@ export default function SalesbookView({
                 <div className="sb-stg flex items-center gap-3 rounded-2xl border border-line bg-elevate px-4 py-3" style={{ "--sb-i": 2 }}>
                   <BrandMark className="h-9 w-9 shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-[14px] font-bold text-ink">{tr.display_name || "담당 트레이너"}</div>
+                    <div className="text-[14px] font-bold text-ink">{trLabel}</div>
                     {tr.credentials && <div className="truncate text-[12px] text-muted">{tr.credentials}</div>}
                   </div>
                 </div>
@@ -599,12 +604,12 @@ export default function SalesbookView({
                     <p className="sb-handwriting flex flex-1 items-center text-[clamp(22px,3.4vw,34px)] leading-snug text-ink">{sb.closing?.vow}</p>
                   )}
                   <div className="mt-3 flex items-end justify-end gap-3">
-                    <span className="text-[12px] text-muted">{tr.display_name || "담당 트레이너"}</span>
+                    <span className="text-[12px] text-muted">{trLabel}</span>
                     {tr.signature_data_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={tr.signature_data_url} alt="서명" className="h-12 max-w-[160px] object-contain" />
                     ) : (
-                      <span className="sb-handwriting text-[22px] text-ink/70">{tr.display_name || ""}</span>
+                      <span className="sb-handwriting text-[22px] text-ink/70">{trName}</span>
                     )}
                   </div>
                 </div>
@@ -640,7 +645,7 @@ export default function SalesbookView({
         <PriceSheet
           packages={packages}
           recommended={resolvePackage(0, (Array.isArray(sb.plans) ? sb.plans : [])[0], recommendedProgram, packages)}
-          trainerName={trainer?.display_name || ""}
+          trainerName={trName}
           onClose={() => setPriceOpen(false)}
         />
       )}

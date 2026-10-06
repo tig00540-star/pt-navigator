@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Dumbbell, Hand, Lock, MessageCircle, Minus, Plus, X } from "lucide-react";
-import { nextValues, latestPtTop, pickDayIndex, recentPtGroups, effectiveSet } from "@/lib/routine";
+import { nextValues, latestPtTop, pickDayIndex, recentPtGroups, effectiveSet, warmupFor } from "@/lib/routine";
 import { notifyPush } from "@/lib/pushClient";
 
 const r2 = (x) => Math.round(x * 100) / 100;
@@ -235,6 +235,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
           const x = v(it, nv);
           const step = it.step || 5;
           const ptRecent = days.length === 1 && recentPt.has(it.group);
+          const wu = warmupFor(it, nv?.weight);
           return (
             <li key={it.name} className={`rounded-xl px-3 py-3 ${x.done ? "bg-primary-soft" : x.skip ? "bg-elevate opacity-60" : "bg-elevate"}`}>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -242,7 +243,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
                 {it.locked && <span className="inline-flex items-center gap-0.5 text-[12px] text-sub"><Lock className="h-3 w-3" /> 트레이너가 고정한 무게</span>}
                 {ptRecent && <span className="text-[12px] font-semibold text-ot-text">최근 PT에서 한 부위 · 빼거나 가볍게</span>}
               </div>
-              {it.warmup && <p className="mt-0.5 text-[12.5px] text-sub">워밍업 {r2(it.warmup.weight)}kg × {it.warmup.reps}회 × 1세트 먼저</p>}
+              {wu && <p className="mt-0.5 text-[12.5px] text-sub">워밍업 {r2(wu.weight)}kg × {wu.reps}회 × 1세트 먼저</p>}
               {it.note && <p className="mt-0.5 text-[12.5px] text-sub">&ldquo;{it.note}&rdquo;</p>}
               {x.skip ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2">

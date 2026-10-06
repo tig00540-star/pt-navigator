@@ -89,7 +89,8 @@ export default function AttestSheet({ member, logs = [], confirms = [], sigs = n
         </div>
 
         {rows.length === 0 ? <p className="mt-6 text-center text-[14px] text-muted">이 달에는 수업 기록이 없어요.</p> : (
-          <table className="mt-5 w-full border-collapse text-[13.5px]">
+          <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[520px] border-collapse text-[13.5px]">
             <thead>
               <tr className="border-y-2 border-ink text-left">
                 <th className="py-2 pr-2 font-bold">수업 날짜</th>
@@ -105,7 +106,7 @@ export default function AttestSheet({ member, logs = [], confirms = [], sigs = n
                   <tr key={l.id} className="border-b border-line align-middle [break-inside:avoid]">
                     <td className="whitespace-nowrap py-2 pr-2 tabular-nums">{when(l.session_at ?? l.created_at)}</td>
                     <td className="py-2 pr-2">{summary(l)}</td>
-                    <td className="py-2 pr-2"><span className="font-semibold">{st.t}</span>{st.sub && <span className="block text-[12px] text-sub tabular-nums">{st.sub}</span>}</td>
+                    <td className="py-2 pr-2"><span className="font-semibold [word-break:keep-all]">{st.t}</span>{st.sub && <span className="block text-[12px] text-sub tabular-nums">{st.sub}</span>}</td>
                     <td className="py-1.5">
                       {s?.url ? (
                         <>
@@ -120,6 +121,7 @@ export default function AttestSheet({ member, logs = [], confirms = [], sigs = n
               })}
             </tbody>
           </table>
+          </div>
         )}
         <p className="m-0 mt-5 text-[12px] leading-relaxed text-muted">
           확인 시각 · 서명 시각은 서버 기록이에요. &lsquo;자동 확인&rsquo;은 회원이 안내받은 기한 안에 이의가 없어 확인으로 처리된 수업이에요.

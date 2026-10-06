@@ -133,7 +133,7 @@ export default function OtIntakePanel({ members = [], otRows = [], appts = [], t
             const dup = a.duplicate_of ? memberById.get(a.duplicate_of) : null;
             const chosen = pick[a.id] ?? (dup?.trainer_id || "");   // 기존 회원이면 그 담당이 기본
             const facts = [ans.age && `${ans.age}세`, GENDER[ans.gender], ans.goal, ans.exercise_level && `운동 ${ans.exercise_level}`,
-              ans.weekly_freq && WEEKLY_OPTS.find(([v]) => v === ans.weekly_freq)?.[1], ans.lead_source && `${ans.lead_source}로 알게 됨`].filter(Boolean);
+              ans.weekly_freq && WEEKLY_OPTS.find(([v]) => v === ans.weekly_freq)?.[1], ans.lead_source && `알게 된 경로: ${ans.lead_source}`].filter(Boolean);
             const prefT = ans.pref_trainer_gender && ans.pref_trainer_gender !== "any" ? TRAINER_GENDER_OPTS.find(([v]) => v === ans.pref_trainer_gender)?.[1] : null;
             return (
               <div key={a.id} className="rounded-xl border border-line bg-elevate p-3.5">
@@ -149,7 +149,7 @@ export default function OtIntakePanel({ members = [], otRows = [], appts = [], t
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <select value={chosen} onChange={(e) => setPick((p) => ({ ...p, [a.id]: e.target.value }))}
                     aria-label="담당 트레이너" className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-line bg-card px-3 text-[14px] text-ink outline-none focus:border-primary">
-                    <option value="">담당 트레이너 고르기</option>
+                    <option value="">트레이너 고르기</option>
                     {active.map((t) => <option key={t.id} value={t.id}>{personName(t.name)}{t.role === "owner" ? " (대표)" : ""}</option>)}
                   </select>
                   <button type="button" disabled={busyId === a.id} onClick={() => assign(a, chosen)}

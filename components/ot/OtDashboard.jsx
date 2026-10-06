@@ -139,26 +139,29 @@ export default function OtDashboard({ member, info }) {
               </Badge>
             </div>
             {facts.length > 0 && <p className="mt-0.5 text-[13px] text-sub">{facts.join(" · ")}</p>}
-            <p className="mt-1 text-[13px] text-sub">
-              목표 {goalSet ? <span className="font-medium text-ink">{member.goal}</span> : <span className="text-muted">미설정</span>}
-              {hasVal(member.pain) && <> · 불편 부위 <span className="font-medium text-ink">{member.pain}</span></>}
-            </p>
-            {/* 건강 체크(OT 신청서) — 해당 항목이 있으면 맨 먼저 · 빨강(운동 강도 · 종목을 조심) */}
-            {member.health_screen?.items?.length > 0 && (
-              <p className="mt-1 rounded-lg bg-rose-50 px-2.5 py-1.5 text-[13px] font-semibold text-danger-text">건강 체크 · {healthScreenText(member.health_screen)}</p>
-            )}
-            {(member.weekly_freq || member.lead_source) && (
-              <p className="mt-1 text-[13px] text-sub">
-                {member.weekly_freq && <>운동 가능 <span className="font-medium text-ink">{WEEKLY_OPTS.find(([v]) => v === member.weekly_freq)?.[1]}</span></>}
-                {member.weekly_freq && member.lead_source && " · "}
-                {member.lead_source && <>알게 된 경로 <span className="font-medium text-ink">{member.lead_source}</span></>}
-              </p>
-            )}
-            {/* 원하는 요일 · 시간(OT 신청서 · 2026-10-06) — 없으면 예전 '가능 빈도 · 시간대' 글 */}
-            {(formatSlots(member.preferred_slots) || hasVal(member.availability)) && (
-              <p className="mt-1 text-[13px] text-sub">원하는 시간 <span className="font-medium text-ink">{formatSlots(member.preferred_slots) || member.availability}</span></p>
-            )}
           </div>
+        </div>
+        {/* 목표 · 건강 · 주 몇 번 · 원하는 시간 — 머리(이름 · 정보 수정) 아래 전체 폭으로(폰에서 좁게 꺾이지 않게 · 2026-10-06) */}
+        <div className="mt-2.5">
+        <p className="mt-1 text-[13px] text-sub">
+          목표 {goalSet ? <span className="font-medium text-ink">{member.goal}</span> : <span className="text-muted">미설정</span>}
+          {hasVal(member.pain) && <> · 불편 부위 <span className="font-medium text-ink">{member.pain}</span></>}
+        </p>
+        {/* 건강 체크(OT 신청서) — 해당 항목이 있으면 맨 먼저 · 빨강(운동 강도 · 종목을 조심) */}
+        {member.health_screen?.items?.length > 0 && (
+          <p className="mt-1 rounded-lg bg-rose-50 px-2.5 py-1.5 text-[13px] font-semibold text-danger-text">건강 체크 · {healthScreenText(member.health_screen)}</p>
+        )}
+        {(member.weekly_freq || member.lead_source) && (
+          <p className="mt-1 text-[13px] text-sub">
+            {member.weekly_freq && <>운동 가능 <span className="font-medium text-ink">{WEEKLY_OPTS.find(([v]) => v === member.weekly_freq)?.[1]}</span></>}
+            {member.weekly_freq && member.lead_source && " · "}
+            {member.lead_source && <>알게 된 경로 <span className="font-medium text-ink">{member.lead_source}</span></>}
+          </p>
+        )}
+        {/* 원하는 요일 · 시간(OT 신청서 · 2026-10-06) — 없으면 예전 '가능 빈도 · 시간대' 글 */}
+        {(formatSlots(member.preferred_slots) || hasVal(member.availability)) && (
+          <p className="mt-1 text-[13px] text-sub">원하는 시간 <span className="font-medium text-ink">{formatSlots(member.preferred_slots) || member.availability}</span></p>
+        )}
         </div>
 
         {unknown.length > 0 && (

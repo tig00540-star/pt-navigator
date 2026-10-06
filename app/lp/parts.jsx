@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, Mic, ZoomIn } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, X, ZoomIn } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
 import ImageLightbox from "@/components/ui/ImageLightbox";
@@ -179,11 +179,11 @@ export function GroupLabel({ children, dark }) {
   );
 }
 
-export function Shot({ src, alt, zoom = true }) {
+export function Shot({ src, alt, zoom = true, wide = false }) {
   const [open, setOpen] = useState(false);
   // 이미 1080×1350 WebP ~100KB로 최적화한 정적 캡처 — next/image 변환 없이 그대로 내보낸다.
   // eslint-disable-next-line @next/next/no-img-element
-  const img = <img src={src} alt={alt} width={1080} height={1350} loading="lazy" decoding="async"
+  const img = <img src={src} alt={alt} width={wide ? 1600 : 1080} height={wide ? 900 : 1350} loading="lazy" decoding="async"
     className="block h-auto w-full rounded-2xl border border-line bg-card" />;
   if (!zoom) return img;
   // 탭하면 크게 — 폰에서 글자를 읽을 수 있게.
@@ -203,10 +203,10 @@ export function Shot({ src, alt, zoom = true }) {
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
-export function Visual({ img, demo, alt, dark }) {
+export function Visual({ img, demo, alt, dark, wide }) {
   return (
-    <div className={`mx-auto w-full max-w-[480px] rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
-      {img ? <Shot src={img} alt={alt} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
+    <div className={`mx-auto w-full rounded-[24px] border p-1.5 sm:p-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"} ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
+      {img ? <Shot src={img} alt={alt} wide={wide} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
     </div>
   );
 }
@@ -230,7 +230,7 @@ export function StepShots({ steps }) {
   };
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-3">
-      <div className="grid grid-cols-3 gap-1 rounded-full bg-elevate p-[3px]" role="tablist" aria-label="단계">
+      <div className={`grid gap-1 rounded-full bg-elevate p-[3px] ${steps.length === 2 ? "grid-cols-2" : "grid-cols-3"}`} role="tablist" aria-label="단계">
         {steps.map((s, i) => (
           <button key={s.step} type="button" role="tab" aria-selected={i === active} onClick={() => go(i)}
             className={`min-h-[44px] rounded-full px-1 text-[13px] font-extrabold transition-colors sm:text-[14px] ${FOCUS} ${
@@ -264,6 +264,139 @@ export function StepShots({ steps }) {
   );
 }
 
+/* 사진 아래 '직접 눌러 보기' 한 줄 — 사진이 있는 칸은 TryCard 대신 이것만(2026-10-06). */
+export function TryLink({ href, dark }) {
+  return (
+    <a href={href} className={`mx-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[15px] font-bold no-underline transition-colors ${FOCUS} ${
+      dark ? "border border-white/25 text-white hover:bg-white/10" : "border border-line-strong bg-card text-ink hover:bg-elevate"}`}>
+      가입 없이 직접 눌러 보기 <ArrowRight size={16} aria-hidden="true" />
+    </a>
+  );
+}
+
+/* 그 밖의 기능 — 기능 이름 + 실제 화면을 옆으로 넘겨 보고, 누르면 크게(2026-10-06 · 대표 요청).
+   items: { name, desc, img, alt, wide? } · 사진은 데모 센터(지어낸 회원)에서 찍은 실제 앱 화면 1080×1350.
+   wide = 가로 화면(세일즈북 발표 · 폰 가로 · 1600×900) → 칸이 넓고 16:9.
+   폰: 손가락으로 넘김(다음 카드가 살짝 보여 넘길 수 있다는 걸 앎) · PC: 양옆 화살표.
+   크게 보기: 화면 전체 · 좌우 넘김(화살표 · 키보드 ← → · 손가락 밀기) · ESC/바깥 눌러 닫기. */
+export function FeatureGallery({ items, dark, label = "그 밖의 기능 화면" }) {
+  const trackRef = useRef(null);
+  const [open, setOpen] = useState(-1);
+  const [edge, setEdge] = useState({ start: true, end: false });
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const start = el.scrollLeft < 8, end = el.scrollLeft + el.clientWidth > el.scrollWidth - 8;
+    if (start !== edge.start || end !== edge.end) setEdge({ start, end });
+  };
+  const page = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const card = el.querySelector("li");
+    const step = card ? card.getBoundingClientRect().width + 14 : el.clientWidth;
+    el.scrollBy({ left: dir * Math.max(step, Math.floor(el.clientWidth / step) * step), behavior: "smooth" });
+  };
+  const arrow = `flex h-11 w-11 items-center justify-center rounded-full border transition-colors disabled:opacity-30 ${FOCUS} ${
+    dark ? "border-white/25 text-white hover:bg-white/10" : "border-line-strong bg-card text-ink hover:bg-elevate"}`;
+  return (
+    <div className="w-full">
+      {/* 본문 열(760px)보다 넓게 — 폰은 화면 끝까지, PC는 열 밖으로 조금 더(끝은 흐리게) · 여백은 트랙 안쪽 */}
+      <ul ref={trackRef} onScroll={onScroll} aria-label={label}
+        className="lp-steps lp-gallery -mx-5 m-0 flex list-none snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-px-5 px-5 pb-2 pt-1 lg:-mx-[100px] lg:scroll-px-[100px] lg:px-[100px] xl:-mx-[170px] xl:scroll-px-[170px] xl:px-[170px]">
+        {items.map((it, i) => (
+          <li key={it.img} className={`flex-none snap-start ${it.wide ? "w-[min(86vw,420px)]" : "w-[min(70vw,236px)]"}`}>
+            <button type="button" onClick={() => setOpen(i)} aria-label={`${it.name} 화면 크게 보기`}
+              className={`group block w-full cursor-zoom-in rounded-2xl p-0 text-left ${FOCUS}`}>
+              <span className={`relative block overflow-hidden rounded-2xl border ${dark ? "border-white/10 bg-white/5" : "border-line bg-card shadow-sm"}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={it.img} alt={it.alt} width={it.wide ? 1600 : 1080} height={it.wide ? 900 : 1350} loading="lazy" decoding="async"
+                  className={`block h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none ${it.wide ? "aspect-[16/9]" : "aspect-[4/5]"}`} />
+                <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2 py-1 text-[12px] font-bold text-white">
+                  <ZoomIn size={12} strokeWidth={2.6} aria-hidden="true" /> 크게
+                </span>
+              </span>
+              <span className={`mt-3 block text-[16px] font-extrabold tracking-[-0.01em] ${dark ? "text-white" : "text-ink"}`}>{it.name}</span>
+              <span className={`mt-1 block text-[14px] leading-[1.5] ${dark ? "text-white/65" : "text-sub"}`}>{it.desc}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className={`m-0 text-left text-[13px] ${dark ? "text-white/55" : "text-muted"}`}>옆으로 넘겨 보세요 · 누르면 크게 보여요</p>
+        <div className="flex flex-none gap-2">
+          <button type="button" onClick={() => page(-1)} disabled={edge.start} aria-label="이전 기능" className={arrow}><ChevronLeft size={20} aria-hidden="true" /></button>
+          <button type="button" onClick={() => page(1)} disabled={edge.end} aria-label="다음 기능" className={arrow}><ChevronRight size={20} aria-hidden="true" /></button>
+        </div>
+      </div>
+      {open >= 0 && createPortal(<GalleryViewer items={items} index={open} onIndex={setOpen} onClose={() => setOpen(-1)} />, document.body)}
+    </div>
+  );
+}
+
+function GalleryViewer({ items, index, onIndex, onClose }) {
+  const n = items.length, it = items[index];
+  const closeRef = useRef(null);
+  const swipe = useRef(null);
+  const swiped = useRef(false);   // 밀어서 넘긴 직후의 click은 '바깥 눌러 닫기'로 치지 않는다
+  const go = (d) => onIndex((i) => (i + d + n) % n);
+  useEffect(() => {
+    const prevFocus = document.activeElement;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    return () => { document.body.style.overflow = prevOverflow; prevFocus?.focus?.(); };
+  }, []);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowRight") onIndex((i) => (i + 1) % n);
+      else if (e.key === "ArrowLeft") onIndex((i) => (i - 1 + n) % n);
+    };
+    window.addEventListener("keydown", onKey);
+    // 옆 사진 미리 받아 두기 — 넘길 때 빈 화면 없이
+    [items[(index + 1) % n], items[(index - 1 + n) % n]].forEach((x) => { const im = new Image(); im.src = x.img; });
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, n, items, onIndex, onClose]);
+  const down = (e) => { swipe.current = { x: e.clientX, y: e.clientY }; };
+  const up = (e) => {
+    const s = swipe.current;
+    swipe.current = null;
+    if (!s) return;
+    const dx = e.clientX - s.x, dy = e.clientY - s.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { swiped.current = true; go(dx < 0 ? 1 : -1); }
+  };
+  const nav = `absolute top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:flex ${FOCUS}`;
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`${it.name} 화면`}
+      onClick={() => { if (swiped.current) { swiped.current = false; return; } onClose(); }}
+      onPointerDown={down} onPointerUp={up}
+      className="fixed inset-0 z-[100] flex flex-col bg-[rgb(10_11_15/0.94)] text-white">
+      <div className="flex items-center justify-between px-4 pt-[max(12px,env(safe-area-inset-top))]">
+        <span className="text-[14px] font-bold text-white/70">{index + 1} / {n}</span>
+        <button ref={closeRef} type="button" onClick={onClose} aria-label="닫기"
+          className={`flex h-11 w-11 items-center justify-center rounded-full text-white/85 hover:bg-white/10 hover:text-white ${FOCUS}`}>
+          <X size={24} aria-hidden="true" />
+        </button>
+      </div>
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 py-2 sm:px-20">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img key={it.img} src={it.img} alt={it.alt} onClick={(e) => { e.stopPropagation(); swiped.current = false; }} draggable={false}
+          className="max-h-full max-w-full select-none rounded-2xl object-contain shadow-2xl" />
+        <button type="button" onClick={(e) => { e.stopPropagation(); go(-1); }} aria-label="이전 화면" className={`${nav} left-5`}><ChevronLeft size={26} aria-hidden="true" /></button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); go(1); }} aria-label="다음 화면" className={`${nav} right-5`}><ChevronRight size={26} aria-hidden="true" /></button>
+      </div>
+      <div onClick={(e) => e.stopPropagation()} className="mx-auto flex w-full max-w-[560px] items-center gap-3 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-2">
+        <button type="button" onClick={() => go(-1)} aria-label="이전 화면" className={`flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/12 sm:hidden ${FOCUS}`}><ChevronLeft size={22} aria-hidden="true" /></button>
+        <div className="min-w-0 flex-1 text-center">
+          <p className="m-0 text-[17px] font-extrabold">{it.name}</p>
+          <p className="m-0 mt-0.5 text-[14px] leading-[1.5] text-white/70">{it.desc}</p>
+        </div>
+        <button type="button" onClick={() => go(1)} aria-label="다음 화면" className={`flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/12 sm:hidden ${FOCUS}`}><ChevronRight size={22} aria-hidden="true" /></button>
+      </div>
+    </div>
+  );
+}
+
 /* 기능 한 행 — 라벨 알약 · 제목 두 줄 · (흐름 칩) · 효과 3줄 · 보충 한 줄 · 앱 화면(한 열). */
 export function FeatureRow({ pill, title, flow, checks, note, visual, dark, children }) {
   return (
@@ -280,6 +413,51 @@ export function FeatureRow({ pill, title, flow, checks, note, visual, dark, chil
       <div className="rv mt-1.5 w-full" style={stagger(flow ? 3 : 2)}>
         {children || <Visual {...visual} dark={dark} />}
       </div>
+    </div>
+  );
+}
+
+/* 기능 묶음(2026-10-06) — 일하는 순서대로 5묶음. 머리(알약 · 제목 · 효과 3줄) → 대표 장면 1장 크게 → 나머지는 옆으로 넘겨 보기 → 직접 눌러 보기.
+   대표 장면을 크게 두는 건 넘기는 칸은 보통 첫 1~2장만 보고 지나가서다. */
+export function Bundle({ id, pill, title, checks, note, hero, items, label, href, dark, children }) {
+  return (
+    <div id={id} className="w-full scroll-mt-28">
+      <FeatureRow pill={pill} title={title} checks={checks} note={note} dark={dark}>
+        <div className="flex w-full flex-col items-center gap-7">
+          {hero && <Visual {...hero} dark={dark} />}
+          {items?.length > 0 && <FeatureGallery items={items} dark={dark} label={label || `${pill} 화면`} />}
+          {children}
+          {href && <TryLink href={href} dark={dark} />}
+        </div>
+      </FeatureRow>
+    </div>
+  );
+}
+
+// 사진이 아직 없는 기능 칸 — 실제 동작 순서 + 체험 페이지로(2026-10-06 · 사진이 오면 Visual로 바꾼다).
+//   예시 문구(quote)는 데모 센터에서 실제로 만든 결과만 넣는다(지어내지 않음).
+export function TryCard({ href, steps, quote, quoteBy, dark }) {
+  return (
+    <div className={`mx-auto w-full max-w-[460px] rounded-2xl border px-5 py-5 text-left ${dark ? "border-white/15 bg-white/5" : "border-line bg-card shadow-sm"}`}>
+      <ol className="m-0 list-none space-y-2.5 p-0">
+        {steps.map((s, i) => (
+          <li key={s} className="flex items-start gap-3">
+            <span className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-[12.5px] font-black ${dark ? "bg-white/15 text-white" : "bg-primary text-white"}`}>{i + 1}</span>
+            <span className={`text-[15.5px] font-semibold leading-[1.5] ${dark ? "text-white/90" : "text-ink"}`}>{s}</span>
+          </li>
+        ))}
+      </ol>
+      {quote && (
+        <figure className={`m-0 mt-4 rounded-xl px-4 py-3 ${dark ? "bg-white/10" : "bg-primary-soft"}`}>
+          <blockquote className={`m-0 text-[15px] font-bold leading-[1.55] ${dark ? "text-white" : "text-primary-strong"}`}>{quote}</blockquote>
+          {quoteBy && <figcaption className={`mt-1.5 text-[12.5px] ${dark ? "text-white/55" : "text-sub"}`}>{quoteBy}</figcaption>}
+        </figure>
+      )}
+      {href && (
+        <a href={href} className={`mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl text-[15.5px] font-extrabold no-underline transition-colors ${FOCUS} ${dark ? "bg-white text-ink hover:bg-elevate" : "bg-ink text-white hover:bg-ink/85"}`}>
+          가입 없이 직접 눌러 보기 <ArrowRight size={17} aria-hidden="true" />
+        </a>
+      )}
     </div>
   );
 }
@@ -355,6 +533,7 @@ export const LP_CSS = `
 .lp-faq[open] .lp-faq-chev{transform:rotate(180deg)}
 .lp-steps{scrollbar-width:none}
 .lp-steps::-webkit-scrollbar{display:none}
+@media(min-width:640px){.lp-gallery{-webkit-mask-image:linear-gradient(to right,transparent,#000 16px,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(to right,transparent,#000 16px,#000 calc(100% - 56px),transparent)}}
 .rv-on .rv{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
 .rv-on .rv.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.lp-faq-chev{transition:none!important}.rv-on .rv{opacity:1!important;transform:none!important;transition:none!important}}
