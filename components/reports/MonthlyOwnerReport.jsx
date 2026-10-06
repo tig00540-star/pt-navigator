@@ -115,7 +115,7 @@ export default function MonthlyOwnerReport({ goals = [], onGoTab }) {
                   </p>
                 )}
                 <div className="mt-2.5">
-                  <RecommendGoal rec={t.recommend} trainerId={t.trainer_id} current={goalOf(t.trainer_id, t.recommend?.ym)} who={`${personName(t.name)} · `} />
+                  <RecommendGoal readOnly rec={t.recommend} trainerId={t.trainer_id} current={goalOf(t.trainer_id, t.recommend?.ym)} who={`${personName(t.name)} · `} />
                 </div>
               </section>
             );

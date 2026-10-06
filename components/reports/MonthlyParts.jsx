@@ -3,7 +3,7 @@
 /* 월간 결산 화면 공용 조각(2026-10-06) — 대표 결산 · 트레이너 성적표 · 개인 '내 결산'이 같이 쓴다. */
 
 import { useState } from "react";
-import { Target } from "lucide-react";
+import { MessageSquareText, Target } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { won, manwon } from "@/lib/format";
 
@@ -32,8 +32,8 @@ export function Num({ label, value, sub, children }) {
   );
 }
 
-/** 추천 목표 + [목표로 정하기] — trainer_goal upsert(본인 · 대표는 자기 센터 트레이너) */
-export function RecommendGoal({ rec, trainerId, current, who = "" }) {
+/** 추천 목표 + [목표로 정하기](트레이너 본인) · readOnly = 대표 결산(보여 주기만 · 면담용 · 목표는 트레이너가 정한다) */
+export function RecommendGoal({ rec, trainerId, current, who = "", readOnly = false }) {
   const [saved, setSaved] = useState(current ?? null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -57,6 +57,12 @@ export function RecommendGoal({ rec, trainerId, current, who = "" }) {
         <span className="tabular-nums text-[16px] font-bold text-ink">{won(rec.target)}</span>
       </div>
       {why && <p className="m-0 mt-1 text-[12.5px] text-sub">근거: {why}</p>}
+      {readOnly ? (
+        <p className="m-0 mt-1.5 flex items-center gap-1 text-[12.5px] text-sub">
+          <MessageSquareText className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          트레이너 면담 때 활용하세요 · 지금 목표 {current ? manwon(current) : "아직 안 정함"}
+        </p>
+      ) : (
       <div className="mt-2 flex items-center gap-2">
         {saved === rec.target ? (
           <span className="text-[13px] font-semibold text-cyan-700">목표로 정했어요</span>
@@ -67,6 +73,7 @@ export function RecommendGoal({ rec, trainerId, current, who = "" }) {
           </button>
         )}
       </div>
+      )}
       {err && <p className="m-0 mt-1 text-[12.5px] text-danger-text">{err}</p>}
     </div>
   );

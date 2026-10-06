@@ -8,7 +8,7 @@
 --   · 트레이너 성적표(kind trainer · 본인) — 규칙 기반(AI 없음) · 이벤트 · 할 일 · 추천 목표
 --   · 개인 계정 '내 결산'(kind solo · 본인) — 성적표 + 장부/받은 금액 + AI 총평
 --   · 만드는 곳 = 서버 예약 작업(service_role)만 · 클라 쓰기 없음 · 열어 본 시각(seen_at)으로 실제로 쓰이는지 잰다.
---   · 추천 목표 [목표로 정하기]: 트레이너 본인 + 대표(자기 센터 트레이너) → trainer_goal 쓰기 정책을 대표까지 넓힌다.
+--   · 추천 목표: 트레이너 성적표엔 [목표로 정하기](본인 · 기존 정책) · 대표 결산엔 보여 주기만('트레이너 면담 때 활용하세요' · 대표 결정)
 -- =============================================================================
 
 create table if not exists monthly_report (
@@ -44,21 +44,7 @@ $$;
 revoke all on function mark_monthly_report_seen(uuid) from public, anon;
 grant execute on function mark_monthly_report_seen(uuid) to authenticated;
 
--- 트레이너 목표: 대표도 자기 센터 트레이너 것을 정할 수 있게(결산의 [목표로 정하기])
-drop policy if exists trainer_goal_ins on trainer_goal;
-create policy trainer_goal_ins on trainer_goal for insert
-  with check (account_id = auth_account_id()
-              and (trainer_id = auth.uid()
-                   or (auth_is_owner() and exists (select 1 from trainer t where t.id = trainer_id and t.account_id = auth_account_id()))));
-drop policy if exists trainer_goal_upd on trainer_goal;
-create policy trainer_goal_upd on trainer_goal for update
-  using (account_id = auth_account_id() and (trainer_id = auth.uid() or auth_is_owner()))
-  with check (account_id = auth_account_id()
-              and (trainer_id = auth.uid()
-                   or (auth_is_owner() and exists (select 1 from trainer t where t.id = trainer_id and t.account_id = auth_account_id()))));
-
 -- =============================================================================
 -- 검증: select tablename from pg_tables where tablename = 'monthly_report';
 -- 롤백: drop table if exists monthly_report; drop function if exists mark_monthly_report_seen(uuid);
---       trainer_goal 정책은 2026-07-12-trainer-goal.sql 정의로 다시.
 -- =============================================================================
