@@ -275,10 +275,11 @@ export function TryLink({ href, dark }) {
 }
 
 /* 그 밖의 기능 — 기능 이름 + 실제 화면을 옆으로 넘겨 보고, 누르면 크게(2026-10-06 · 대표 요청).
-   items: { name, desc, img, alt } · 사진은 데모 센터(지어낸 회원)에서 찍은 실제 앱 화면 1080×1350.
+   items: { name, desc, img, alt, wide? } · 사진은 데모 센터(지어낸 회원)에서 찍은 실제 앱 화면 1080×1350.
+   wide = 가로 화면(세일즈북 발표 · 폰 가로 · 1600×900) → 칸이 넓고 16:9.
    폰: 손가락으로 넘김(다음 카드가 살짝 보여 넘길 수 있다는 걸 앎) · PC: 양옆 화살표.
    크게 보기: 화면 전체 · 좌우 넘김(화살표 · 키보드 ← → · 손가락 밀기) · ESC/바깥 눌러 닫기. */
-export function FeatureGallery({ items, dark }) {
+export function FeatureGallery({ items, dark, label = "그 밖의 기능 화면" }) {
   const trackRef = useRef(null);
   const [open, setOpen] = useState(-1);
   const [edge, setEdge] = useState({ start: true, end: false });
@@ -300,16 +301,16 @@ export function FeatureGallery({ items, dark }) {
   return (
     <div className="w-full">
       {/* 본문 열(760px)보다 넓게 — 폰은 화면 끝까지, PC는 열 밖으로 조금 더(끝은 흐리게) · 여백은 트랙 안쪽 */}
-      <ul ref={trackRef} onScroll={onScroll} aria-label="그 밖의 기능 화면"
+      <ul ref={trackRef} onScroll={onScroll} aria-label={label}
         className="lp-steps lp-gallery -mx-5 m-0 flex list-none snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-px-5 px-5 pb-2 pt-1 lg:-mx-[100px] lg:scroll-px-[100px] lg:px-[100px] xl:-mx-[170px] xl:scroll-px-[170px] xl:px-[170px]">
         {items.map((it, i) => (
-          <li key={it.img} className="w-[min(70vw,236px)] flex-none snap-start">
+          <li key={it.img} className={`flex-none snap-start ${it.wide ? "w-[min(86vw,420px)]" : "w-[min(70vw,236px)]"}`}>
             <button type="button" onClick={() => setOpen(i)} aria-label={`${it.name} 화면 크게 보기`}
               className={`group block w-full cursor-zoom-in rounded-2xl p-0 text-left ${FOCUS}`}>
               <span className={`relative block overflow-hidden rounded-2xl border ${dark ? "border-white/10 bg-white/5" : "border-line bg-card shadow-sm"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={it.img} alt={it.alt} width={1080} height={1350} loading="lazy" decoding="async"
-                  className="block aspect-[4/5] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none" />
+                <img src={it.img} alt={it.alt} width={it.wide ? 1600 : 1080} height={it.wide ? 900 : 1350} loading="lazy" decoding="async"
+                  className={`block h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none ${it.wide ? "aspect-[16/9]" : "aspect-[4/5]"}`} />
                 <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2 py-1 text-[12px] font-bold text-white">
                   <ZoomIn size={12} strokeWidth={2.6} aria-hidden="true" /> 크게
                 </span>

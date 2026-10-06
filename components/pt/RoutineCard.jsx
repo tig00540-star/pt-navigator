@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowDown, ArrowUp, ChevronDown, Copy, Dumbbell, Eye, EyeOff, Hand, Lock, Minus, Pencil, Plus, RefreshCw, Trash2, Unlock } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { buildExerciseSeries } from "@/lib/workout";
-import { draftRoutine, itemFromSeries, inferStep, groupOf, machineFor, nextValues, latestPtTop, isRisky, breakSinceConfirm, LAYOUTS, LAYOUT_KEYS, GROUP_LABEL, GROUP_KEYS } from "@/lib/routine";
+import { draftRoutine, itemFromSeries, inferStep, groupOf, machineFor, nextValues, latestPtTop, isRisky, breakSinceConfirm, warmupFor, LAYOUTS, LAYOUT_KEYS, GROUP_LABEL, GROUP_KEYS } from "@/lib/routine";
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Toast from "@/components/ui/Toast";
@@ -196,7 +196,7 @@ export default function RoutineCard({ member, logs = [] }) {
                 {it.ptRef && <span>PT {kg(it.ptRef.weight)} × {it.ptRef.reps}회</span>}
                 {it.ptRef && it.weight > it.ptRef.weight && <span className="font-semibold text-danger-text">PT에서 한 무게보다 무거워요</span>}
                 {!it.ptRef && it.weight >= 40 && <span className="font-semibold text-danger-text">무게를 한 번 더 확인해 주세요</span>}
-                {it.warmup && <span>워밍업 {kg(it.warmup.weight)} × {it.warmup.reps}회</span>}
+                {warmupFor(it) && <span>워밍업 {kg(it.warmup.weight)} × {it.warmup.reps}회</span>}
                 <button type="button" onClick={() => setItem(k, { locked: !it.locked })}
                   className={`ml-auto inline-flex min-h-[30px] items-center gap-1 rounded-lg px-2 text-[12.5px] font-semibold ${it.locked ? "bg-ot-soft text-ot-text" : "text-sub"}`}>
                   {it.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />} {it.locked ? "무게 고정" : "무게 고정 안 함"}
