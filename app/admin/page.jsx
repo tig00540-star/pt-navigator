@@ -420,7 +420,7 @@ export default function AdminDashboard() {
         <section className="mb-8">
           <OwnerWideHome
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
-            appts={appts} goals={goals} expenses={expenses} trainers={trainers} ym={ym}
+            appts={appts} goals={goals} expenses={expenses} incomes={incomes} trainers={trainers} ym={ym}
             centerName={centerName} onGoTab={goTab} />
         </section>
         )}
@@ -438,7 +438,7 @@ export default function AdminDashboard() {
         <section className="mb-8">
           <OwnerOverview
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
-            trainers={trainers} appts={appts} expenses={expenses} ym={ym}
+            trainers={trainers} appts={appts} expenses={expenses} incomes={incomes} ym={ym}
             onGoTab={goTab} />
         </section>
         )}
@@ -563,7 +563,7 @@ export default function AdminDashboard() {
           >
             <span className="text-[13px] leading-relaxed text-sub">
               이달 <b className="text-ink">트레이너별 급여 계산·확정</b>은 <b className="text-ink">트레이너 탭</b>에서 해요.
-              여기선 급여 규칙(스킴)만 설정해요.
+              여기선 급여 방식만 정해요.
             </span>
             <span className="inline-flex shrink-0 items-center gap-0.5 text-[13px] font-semibold text-primary-strong">
               트레이너 탭 <ChevronRight className="h-3.5 w-3.5" />

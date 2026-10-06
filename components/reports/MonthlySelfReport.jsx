@@ -34,7 +34,8 @@ export default function MonthlySelfReport({ goals = [] }) {
   const c = solo ? rep.data.center : null;
   const ai = solo && rep.ai?.state === "ready" ? rep.ai : null;
   const praise = ai?.praise?.length ? ai.praise : (t.signals?.good || []).map((s) => s.text);
-  const current = goals.find((g) => g.ym === t.recommend?.ym)?.target_revenue ?? null;
+  // 내 목표만(대표 겸 트레이너는 센터 전체 목표를 읽을 수 있어 다른 트레이너 목표가 잡히던 것 · 2026-10-07)
+  const current = goals.find((g) => g.trainer_id === t.trainer_id && g.ym === t.recommend?.ym)?.target_revenue ?? null;
   const title = solo ? `${ymKo(rep.ym)} 결산` : `${ymKo(rep.ym)} 성적표`;
 
   return (

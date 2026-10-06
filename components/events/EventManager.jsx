@@ -221,7 +221,7 @@ export default function EventManager({ trainers = null }) {
                       <span className="block text-[13px] text-sub">
                         {!ev.active ? "끝냄" : EVENT_STATUS_LABEL[st]} · {ev.kind === "challenge" ? `오운완 ${ev.goal_count}회` : "일반"}{ev.reward_text ? ` · ${ev.reward_text}` : ""}
                       </span>
-                      <span className="block text-[12.5px] text-muted">{eventPeriodText(ev)}{ev.scope === "center" ? " · 센터 전체" : me?.owner ? ` · ${tName(ev.target_trainer)} 회원` : ""}{ev.capacity ? ` · 정원 ${ev.capacity}명` : ""}</span>
+                      <span className="block text-[12.5px] text-muted">{eventPeriodText(ev)}{ev.scope === "center" ? " · 센터 전체" : me?.owner ? ` · ${tName(ev.target_trainer || ev.created_by) || "담당"} 회원` : ""}{ev.capacity ? ` · 정원 ${ev.capacity}명` : ""}</span>
                     </span>
                     <ChevronDown className={`mt-1 h-4 w-4 shrink-0 text-muted transition-transform ${openId === ev.id ? "rotate-180" : ""}`} aria-hidden="true" />
                   </button>

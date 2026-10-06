@@ -101,7 +101,7 @@ function ExpandDetail({ rev, id, ym, pay, run, prev, onSaveRun, onGoPayroll }) {
           onClick={onGoPayroll}
           className="mt-2 text-[12px] font-medium text-muted underline-offset-2 transition hover:text-sub hover:underline"
         >
-          급여 규칙(스킴) 수정 → 급여 탭
+          급여 방식 바꾸기 → 급여 탭
         </button>
       )}
     </div>

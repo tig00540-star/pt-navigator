@@ -50,7 +50,8 @@ async function main() {
   const ai = await generateOwnerAI(buildOwnerAIInput(d, (id) => names.get(id) || "담당 미정"), env.ANTHROPIC_API_KEY);
   if (!ai) throw new Error("AI 총평을 읽지 못했어요(저장 안 함) · 다시 실행해 주세요.");
   const { error } = await sb.from("owner_daily_report").upsert(
-    { account_id: aid, ymd: d.dateISO, data: d, ai: { ...ai, state: "ready" }, generated_at: nowISO }, { onConflict: "account_id,ymd" });
+    { account_id: aid, ymd: d.dateISO, data: d, ai: { ...ai, state: "ready" }, generated_at: new Date(`${d.dateISO}T08:23:00+09:00`).toISOString() },   // 데모: 실제 예약 작업처럼 아침 8시대로(화면이 '아침 보고서 · 오후 N시 기준'으로 어색하지 않게)
+    { onConflict: "account_id,ymd" });
   if (error) throw new Error(error.message);
   console.log("✔ 저장했어요(AI 총평 포함).");
 }

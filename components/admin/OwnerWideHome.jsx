@@ -38,7 +38,7 @@ function Box({ title, icon: Icon, action, onAction, children }) {
 }
 
 export default function OwnerWideHome({
-  members = [], otRows = [], contracts = [], logs = [], appts = [], goals = [], expenses = [],
+  members = [], otRows = [], contracts = [], logs = [], appts = [], goals = [], expenses = [], incomes = [],
   trainers = [], ym, centerName, onGoTab,
 }) {
   const visible = useMemo(() => members.filter((m) => !m.hidden), [members]);
@@ -154,7 +154,7 @@ export default function OwnerWideHome({
       {/* ③ 기존 '한눈에' 콘솔 */}
       <OwnerOverview
         members={members} otRows={otRows} contracts={contracts} logs={logs}
-        trainers={trainers} appts={appts} expenses={expenses} ym={ym} onGoTab={onGoTab} inHome />
+        trainers={trainers} appts={appts} expenses={expenses} incomes={incomes} ym={ym} onGoTab={onGoTab} inHome />
     </div>
   );
 }

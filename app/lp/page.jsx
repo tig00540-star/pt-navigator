@@ -21,7 +21,7 @@ import { PLANS } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, Bundle, H3,
+  Pill, Checks, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, Bundle, H3, FeatureGallery,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -174,6 +174,17 @@ const BUNDLES = [
 // 회원 전용 페이지에 실제로 뜨는 문구 — 후기가 아니라 제품 화면이다(실제 폰 알림 사진이 오면 바꾼다).
 const MEMBER_NOTICES = ["오늘 운동일지가 도착했어요", "이번 달 출석 8회, 오운완 챌린지 진행 중"];
 
+// 태블릿 · PC 버전 — 같은 계정이 넓은 배치로(2026-10-06 · 데모 센터 실제 화면 · 넓은 홈은 1024px부터)
+const WIDE = [
+  { device: "pc", name: "회원 관리", desc: "목록 · 대시보드 · 지난 수업을 한 화면에", img: "/lp/shots/2026-10/W02.webp", alt: "PC 회원 화면: 왼쪽 회원 목록, 가운데 PT 대시보드, 오른쪽 지난 수업" },
+  { device: "pc", name: "OT 사전 준비 리포트", desc: "회원 목록 옆에 리포트를 펼쳐 놓고", img: "/lp/shots/2026-10/W03.webp", alt: "PC OT 사전 준비 리포트: 30초 요약 · 입장 첫마디 · 오늘 운동 4개" },
+  { device: "pc", name: "넓은 홈", desc: "오늘 일정 · 챙길 회원 · 회원 쪽 소식", img: "/lp/shots/2026-10/P01.webp", alt: "PC 넓은 홈: 오늘 수업 · 오늘 일정 · 챙길 회원 · 회원 쪽 소식 · 오운완 랭킹" },
+  { device: "pc", name: "내 실적", desc: "성적표 · 예상 급여 · 매출 · 등록률", img: "/lp/shots/2026-10/W06.webp", alt: "PC 내 실적: 지난달 성적표 · 이달 예상 급여 · 이달 매출과 목표 · 등록률 · 수업 수" },
+  { device: "tablet", name: "주간 스케줄", desc: "스케줄과 오늘 할 일을 나란히", img: "/lp/shots/2026-10/P02.webp", alt: "태블릿 주간 스케줄과 오늘 할 일(이탈 위험 · 새 OT 회원 · 수업 요청)" },
+  { device: "tablet", name: "재등록 리포트", desc: "회원 목록 옆에 30초 요약과 대사", img: "/lp/shots/2026-10/W04.webp", alt: "태블릿 재등록 사전 준비 리포트: 30초 요약과 수업 순서별 대사" },
+  { device: "tablet", name: "세일즈북 발표", desc: "회원 앞에 태블릿을 놓고 한 장씩", img: "/lp/shots/2026-10/W05.webp", alt: "태블릿 세일즈북 발표: 숫자로 확인된 변화 장" },
+];
+
 // 사진 없이 이름만 — 묶음 아래 한 줄
 const MORE = ["월간 성적표", "인바디 분석", "사례 보관함", "폰 알림", "급여 자동계산", "프리랜서 장부"];
 
@@ -196,7 +207,7 @@ const TIERS = [
 
 const FAQ = [
   { q: "설치해야 하나요?", a: "아니요. 브라우저로 바로 쓰고, 홈 화면에 추가하면 앱처럼 열립니다." },
-  { q: "어떤 기기에서 되나요?", a: "폰에 맞춰 만들었고, 태블릿·PC에서도 그대로 열립니다." },
+  { q: "어떤 기기에서 되나요?", a: "폰에 맞춰 만들었고, 태블릿 · PC에서는 넓은 화면에 맞춘 배치로 열려요. 같은 계정이라 어디서 열어도 기록이 그대로예요." },
   { q: "AI가 대신 팔아주나요?", a: "아니요. 관찰은 트레이너가, 근거 정리는 AI가 맡습니다." },
   { q: "회원 정보는 안전한가요?", a: "계정별로 데이터가 분리되고, 회원은 본인 것만 봅니다." },
   { q: "센터에 소속돼 있는데 혼자 써도 되나요?", a: "네. 개인 트레이너로 가입하고 '센터 소속'을 고르면 돼요. 회원 페이지와 OT 신청서엔 '○○짐 · 내 이름 트레이너'로 나와요." },
@@ -385,6 +396,21 @@ export default function LandingPage() {
               <span className="text-primary-strong">이용료가 회수됩니다.</span>
             </p>
             <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <Arrow /></a>
+          </div>
+        </section>
+
+        {/* 태블릿 · PC 버전 제공 — 넓은 화면 모음(2026-10-06 대표) */}
+        <section id="devices" className="scroll-mt-28 border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
+          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-6 text-center">
+            <Pill>태블릿 · PC 버전 제공</Pill>
+            <h2 className={`rv m-0 ${H2} ${H2_LG}`}>
+              <span className="block">큰 화면에선,</span>
+              <span className="block text-primary">큰 화면답게.</span>
+            </h2>
+            <p className="rv m-0 max-w-[540px] text-[clamp(16px,2.4vw,19px)] leading-[1.6] text-sub" style={stagger(1)}>
+              폰과 같은 계정으로 태블릿 · PC에서도 열려요. 화면이 넓어지면 목록과 내용을 나란히 놓는 넓은 배치로 바뀌어요. 설치 없이 브라우저로.
+            </p>
+            <div className="rv w-full" style={stagger(2)}><FeatureGallery items={WIDE} label="태블릿 · PC 화면" /></div>
           </div>
         </section>
 

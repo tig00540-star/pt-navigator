@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, X, ZoomIn } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, Monitor, Tablet, X, ZoomIn } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
 import ImageLightbox from "@/components/ui/ImageLightbox";
@@ -277,6 +277,12 @@ export function TryLink({ href, dark }) {
 /* 그 밖의 기능 — 기능 이름 + 실제 화면을 옆으로 넘겨 보고, 누르면 크게(2026-10-06 · 대표 요청).
    items: { name, desc, img, alt, wide? } · 사진은 데모 센터(지어낸 회원)에서 찍은 실제 앱 화면 1080×1350.
    wide = 가로 화면(세일즈북 발표 · 폰 가로 · 1600×900) → 칸이 넓고 16:9.
+   device = "pc"(1600×1000) | "tablet"(1600×1112 · 1180×820 가로) → 넓은 칸 + 왼쪽 위 'PC' · '태블릿' 표시. */
+const DEVICE = {
+  pc: { label: "PC", Icon: Monitor, w: 1600, h: 1000, aspect: "aspect-[16/10]" },
+  tablet: { label: "태블릿", Icon: Tablet, w: 1600, h: 1112, aspect: "aspect-[1180/820]" },
+};
+/*
    폰: 손가락으로 넘김(다음 카드가 살짝 보여 넘길 수 있다는 걸 앎) · PC: 양옆 화살표.
    크게 보기: 화면 전체 · 좌우 넘김(화살표 · 키보드 ← → · 손가락 밀기) · ESC/바깥 눌러 닫기. */
 export function FeatureGallery({ items, dark, label = "그 밖의 기능 화면" }) {
@@ -304,13 +310,18 @@ export function FeatureGallery({ items, dark, label = "그 밖의 기능 화면"
       <ul ref={trackRef} onScroll={onScroll} aria-label={label}
         className="lp-steps lp-gallery -mx-5 m-0 flex list-none snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-px-5 px-5 pb-2 pt-1 lg:-mx-[100px] lg:scroll-px-[100px] lg:px-[100px] xl:-mx-[170px] xl:scroll-px-[170px] xl:px-[170px]">
         {items.map((it, i) => (
-          <li key={it.img} className={`flex-none snap-start ${it.wide ? "w-[min(86vw,420px)]" : "w-[min(70vw,236px)]"}`}>
+          <li key={it.img} className={`flex-none snap-start ${it.device ? "w-[min(86vw,480px)]" : it.wide ? "w-[min(86vw,420px)]" : "w-[min(70vw,236px)]"}`}>
             <button type="button" onClick={() => setOpen(i)} aria-label={`${it.name} 화면 크게 보기`}
               className={`group block w-full cursor-zoom-in rounded-2xl p-0 text-left ${FOCUS}`}>
               <span className={`relative block overflow-hidden rounded-2xl border ${dark ? "border-white/10 bg-white/5" : "border-line bg-card shadow-sm"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={it.img} alt={it.alt} width={it.wide ? 1600 : 1080} height={it.wide ? 900 : 1350} loading="lazy" decoding="async"
-                  className={`block h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none ${it.wide ? "aspect-[16/9]" : "aspect-[4/5]"}`} />
+                <img src={it.img} alt={it.alt} width={DEVICE[it.device]?.w ?? (it.wide ? 1600 : 1080)} height={DEVICE[it.device]?.h ?? (it.wide ? 900 : 1350)} loading="lazy" decoding="async"
+                  className={`block h-auto w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none ${DEVICE[it.device]?.aspect ?? (it.wide ? "aspect-[16/9]" : "aspect-[4/5]")}`} />
+                {DEVICE[it.device] && (() => { const D = DEVICE[it.device]; return (
+                  <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-ink/80 px-2.5 py-1 text-[12px] font-bold text-white">
+                    <D.Icon size={13} strokeWidth={2.4} aria-hidden="true" /> {D.label}
+                  </span>
+                ); })()}
                 <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2 py-1 text-[12px] font-bold text-white">
                   <ZoomIn size={12} strokeWidth={2.6} aria-hidden="true" /> 크게
                 </span>

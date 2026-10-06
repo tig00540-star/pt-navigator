@@ -147,7 +147,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false, free
       if (error || !data || data.length === 0) { showToast("저장하지 못했어요. 다시 시도해 주세요."); setSaving(false); return; }
       setSchemes((p) => [...p, data[0]]);
     }
-    showToast("급여 스킴이 저장되었어요");
+    showToast("급여 방식을 저장했어요");
     setSaving(false);
     } catch {
       showToast("저장하지 못했어요. 다시 시도해 주세요.");
@@ -372,7 +372,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false, free
 
             {/* 저장 */}
             <Button variant="primary" size="md" fullWidth onClick={save} disabled={saving} className="gap-2">
-              <Wallet className="h-4 w-4" strokeWidth={2.5} /> {saving ? "저장 중…" : "급여 스킴 저장"}
+              <Wallet className="h-4 w-4" strokeWidth={2.5} /> {saving ? "저장 중…" : "급여 방식 저장"}
             </Button>
 
             {/* override 삭제 — 트레이너 스코프이고 전용 정책이 있을 때만(계정 기본은 못 지움) */}
