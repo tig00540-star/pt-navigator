@@ -44,7 +44,7 @@ create table if not exists ai_usage (
   output_tokens     integer,
   cache_read_tokens integer,
   cost_usd          numeric(10, 5),
-  ok                boolean,                     -- null = 진행 중 · true = 성공 · false = 실패(세는 행이면 지워짐)
+  ok                boolean,                     -- null = 진행 중 · true = 성공 · false = 실패(세지 않음 · 원가는 남김)
   ym                text not null,               -- KST 'YYYY-MM'
   created_at        timestamptz not null default now()
 );
@@ -120,6 +120,7 @@ begin
   return jsonb_build_object('tier', tier, 'trial', trial, 'ym', v_ym, 'groups', v_out);
 end $$;
 revoke all on function ai_quota_for(uuid, text) from public, anon, authenticated;
+grant execute on function ai_quota_for(uuid, text) to service_role;
 
 -- 화면용: 내 계정 한도(센터는 계정 공용이라 트레이너도 같은 숫자를 본다)
 create or replace function my_ai_quota()
@@ -160,6 +161,7 @@ begin
   return jsonb_build_object('ok', true, 'id', rid, 'counted', true, 'group', g, 'left', left_n - 1);
 end $$;
 revoke all on function ai_reserve(uuid, uuid, text, text, uuid) from public, anon, authenticated;
+grant execute on function ai_reserve(uuid, uuid, text, text, uuid) to service_role;
 
 -- 6) 끝내기 — 성공이면 토큰 · 원가 기록, 실패면 세지 않음(세는 자리를 풀고 원가는 남긴다)
 create or replace function ai_finish(p_id uuid, p_ok boolean, p_model text default null,
@@ -177,6 +179,7 @@ begin
    where id = p_id;
 end $$;
 revoke all on function ai_finish(uuid, boolean, text, integer, integer, integer, numeric) from public, anon, authenticated;
+grant execute on function ai_finish(uuid, boolean, text, integer, integer, integer, numeric) to service_role;
 
 -- 6.5) 센터 합류 좌석 = 3 + 추가 좌석(2026-10-07-join-center.sql의 _join_center에서 좌석 줄만 바뀜 · 나머지 그대로)
 create or replace function _join_center(p_trainer uuid, p_code text)
