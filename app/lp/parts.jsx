@@ -284,6 +284,34 @@ export function FeatureRow({ pill, title, flow, checks, note, visual, dark, chil
   );
 }
 
+// 사진이 아직 없는 기능 칸 — 실제 동작 순서 + 체험 페이지로(2026-10-06 · 사진이 오면 Visual로 바꾼다).
+//   예시 문구(quote)는 데모 센터에서 실제로 만든 결과만 넣는다(지어내지 않음).
+export function TryCard({ href, steps, quote, quoteBy, dark }) {
+  return (
+    <div className={`mx-auto w-full max-w-[460px] rounded-2xl border px-5 py-5 text-left ${dark ? "border-white/15 bg-white/5" : "border-line bg-card shadow-sm"}`}>
+      <ol className="m-0 list-none space-y-2.5 p-0">
+        {steps.map((s, i) => (
+          <li key={s} className="flex items-start gap-3">
+            <span className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-[12.5px] font-black ${dark ? "bg-white/15 text-white" : "bg-primary text-white"}`}>{i + 1}</span>
+            <span className={`text-[15.5px] font-semibold leading-[1.5] ${dark ? "text-white/90" : "text-ink"}`}>{s}</span>
+          </li>
+        ))}
+      </ol>
+      {quote && (
+        <figure className={`m-0 mt-4 rounded-xl px-4 py-3 ${dark ? "bg-white/10" : "bg-primary-soft"}`}>
+          <blockquote className={`m-0 text-[15px] font-bold leading-[1.55] ${dark ? "text-white" : "text-primary-strong"}`}>{quote}</blockquote>
+          {quoteBy && <figcaption className={`mt-1.5 text-[12.5px] ${dark ? "text-white/55" : "text-sub"}`}>{quoteBy}</figcaption>}
+        </figure>
+      )}
+      {href && (
+        <a href={href} className={`mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl text-[15.5px] font-extrabold no-underline transition-colors ${FOCUS} ${dark ? "bg-white text-ink hover:bg-elevate" : "bg-ink text-white hover:bg-ink/85"}`}>
+          가입 없이 직접 눌러 보기 <ArrowRight size={17} aria-hidden="true" />
+        </a>
+      )}
+    </div>
+  );
+}
+
 // 전 → 후 줄(취소선 → 굵게).
 export function BeforeAfter({ rows }) {
   return (

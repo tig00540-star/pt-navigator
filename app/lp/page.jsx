@@ -21,7 +21,7 @@ import { PLANS } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, FeatureRow, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS,
+  Pill, Checks, FeatureRow, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, TryCard,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -43,6 +43,35 @@ const WHY = [
   ["회원이 늘수록 관리도 두 배", "회원이 셀프로 관리"],
 ];
 
+// QR 신청 — 배정 받고 카톡 · 문자 한 통 vs 등록하는 자리에서 QR(대표 현장 경험 · 숫자는 앱이 실제로 잰 뒤에)
+const QR_WHY = [
+  ["배정 받고 카톡 · 문자 한 통", "등록하는 자리에서 QR로 신청 끝"],
+  ["답장 기다리며 일정 맞추는 연락", "원하는 요일 · 시간을 회원이 직접"],
+  ["만나서야 아는 목표 · 몸 상태", "목표 · 운동 경험 · 건강 체크를 미리"],
+  ["쌓이다 보면 빠지는 OT 회원", "신청하면 바로 내 OT 회원 · 폰 알림"],
+];
+
+const ONLY = [
+  {
+    pill: "수업 예약 요청",
+    title: ["수업 시간 맞추는 카톡,", "이제 그만."],
+    flow: ["회원이 빈 시간 선택", "트레이너 승인", "스케줄에 반영"],
+    checks: ["회원 전용 페이지에서 새 수업 · 시간 변경 · 취소 요청", "트레이너 수업이 있는 시간은 흐리게, 빈 시간만", "변경 · 취소는 수업 N시간 전까지(트레이너가 정함)"],
+    note: "승인하면 스케줄에 바로 들어가고 회원 폰에 알림이 가요",
+    try: { href: "/try#booking", steps: ["회원이 이번 주 · 다음 주 빈 시간을 골라 요청", "트레이너 폰에 '수업 요청' 카드와 알림", "승인 한 번 → 양쪽 일정에 바로"] },
+  },
+  {
+    pill: "회원 이벤트",
+    title: ["출석 챌린지,", "엑셀 없이."],
+    flow: ["이벤트 열기", "회원 참여", "자동 집계"],
+    checks: ["출석 챌린지(기간 안 운동한 날 N회) · 일반 이벤트", "신청 기간 · 정원(선착순) · 상품까지", "참여 명단과 달성 여부가 자동으로 모여요"],
+    note: "회원 폰에 바로 뜨고, 참여하면 트레이너에게 알림이 와요",
+    try: { href: "/try#event", steps: ["트레이너가 이벤트를 열면 회원 홈에 바로", "회원이 '참여하기'", "운동한 날이 쌓이면 달성 · 상품 지급 대기까지"] },
+  },
+];
+
+const TRY_LINKS = [["/try#qr", "QR로 OT 신청"], ["/try#event", "회원 이벤트"], ["/try#booking", "수업 예약 요청"], ["/try#sign", "운동일지 · 서명"]];
+
 const OT_STEPS = [
   { step: "OT 보고서", img: "/lp/shots/ot-brief.webp", alt: "1차 OT 준비 화면: 3분 각인과 오늘 시킬 운동" },
   { step: "클로징 멘트", img: "/lp/shots/ot-closing.webp", alt: "OT 화면: 떠보기·근거·플랜 제시·요청 클로징 흐름" },
@@ -62,8 +91,8 @@ const LOG = {
   pill: "운동일지",
   title: ["쓰지 말고,", "말하세요."],
   flow: ["말로 복기", "일지 정리", "무게 추이"],
-  checks: ["운동별 무게·횟수·세트를 알아서 정리", "회원에게 보낼 일지까지 한 번에", "세션 차감·출석 기록도 자동"],
-  note: "회원이 확인하면 종이 수업 확인 서명을 대신해요",
+  checks: ["운동별 무게·횟수·세트를 알아서 정리", "회원이 일지를 확인하고 손가락으로 서명", "한 달 수업을 서명과 함께 '수업 확인서' 한 장으로"],
+  note: "종이 수업 확인 서명을 대신해요 · 세션 차감 · 출석도 자동",
 };
 
 // 데모 계정 최준호 수업 — ① 대표가 실제로 녹음한 문장(앞부분 그대로 · 칸에 맞춰 뒤는 …) ② 그 녹음을 AI가 정리한 실제 결과 ③ 쌓인 무게 추이.
@@ -80,7 +109,7 @@ const MEMBER = {
   pill: "회원 전용 페이지",
   title: ["붙잡지 마세요.", "회원이 스스로 챙깁니다."],
   flow: ["링크 하나", "기록 열람", "출석 챌린지"],
-  checks: ["설치 없이 링크로 여는 회원 전용 페이지", "운동일지·인바디·변화 그래프를 회원이 직접", "출석이 쌓이는 오운완 챌린지와 포상"],
+  checks: ["설치 없이 링크로 여는 회원 전용 페이지", "운동일지 · 인바디 · 변화 그래프를 회원이 직접", "오운완 · 이벤트 참여 · 수업 예약 요청까지"],
   note: "링크와 휴대폰 뒤 4자리로 열려요",
   visual: { img: "/lp/shots/member-graph.webp", alt: "회원 전용 페이지: 인바디 변화(체중·골격근량·체지방 추이)" },
 };
@@ -88,13 +117,13 @@ const MEMBER = {
 // 회원 전용 페이지에 실제로 뜨는 문구 — 후기가 아니라 제품 화면이다.
 const MEMBER_NOTICES = ["오늘 운동일지가 도착했어요", "이번 달 출석 8회, 오운완 챌린지 진행 중"];
 
-const MORE = ["급여 자동계산", "스케줄·노쇼", "운동 라이브러리", "내 실적 리포트", "센터 공지(센터 요금제)"];
+const MORE = ["월간 성적표 · 결산", "스케줄 · 개인 일정", "개인운동 루틴", "오운완 랭킹", "인바디 분석", "목표 로드맵", "세일즈북 · 사례 보관함", "폰 알림", "급여 자동계산", "프리랜서 장부"];
 
 const TIERS = [
   {
     key: "solo",
     tagline: "개인 트레이너 1인",
-    feats: ["1·2차 OT · 재등록 서포트", "음성 운동일지 · AI 리포트", "회원 전용 페이지 (성과 그래프·비포애프터)", "실적 · 급여 자동계산"],
+    feats: ["1·2차 OT · 재등록 서포트 · 세일즈북", "QR OT 신청서 · 수업 예약 요청 · 회원 이벤트", "음성 운동일지 · 회원 확인 서명", "회원 전용 페이지 · 월간 결산 · 급여/장부"],
     highlight: true,
     cta: { label: "7일 무료 체험", href: "/signup" },
   },
@@ -112,7 +141,9 @@ const FAQ = [
   { q: "어떤 기기에서 되나요?", a: "폰에 맞춰 만들었고, 태블릿·PC에서도 그대로 열립니다." },
   { q: "AI가 대신 팔아주나요?", a: "아니요. 관찰은 트레이너가, 근거 정리는 AI가 맡습니다." },
   { q: "회원 정보는 안전한가요?", a: "계정별로 데이터가 분리되고, 회원은 본인 것만 봅니다." },
-  { q: "혼자 하는데도 되나요?", a: "네. 솔로 플랜으로 쓰고 급여·실적도 본인 기준으로 계산됩니다." },
+  { q: "센터에 소속돼 있는데 혼자 써도 되나요?", a: "네. 개인 트레이너로 가입하고 '센터 소속'을 고르면 돼요. 회원 페이지와 OT 신청서엔 '○○짐 · 내 이름 트레이너'로 나와요." },
+  { q: "프리랜서도 되나요?", a: "네. '프리랜서'를 고르면 PT 매출 · 그 밖의 매출 · 지출 · 남은 돈을 장부로 함께 봐요. 센터와 매출을 나누면 그 방식도 정할 수 있어요." },
+  { q: "가입 전에 써 볼 수 있나요?", a: "네. '직접 눌러 보기'에서 트레이너 폰과 회원 폰을 나란히 두고 QR 신청 · 이벤트 · 수업 요청 · 서명을 해 볼 수 있어요." },
   { q: "의료·재활 목적인가요?", a: "아니요. 운동 지도·세일즈·회원관리 도구입니다." },
 ];
 
@@ -156,7 +187,7 @@ export default function LandingPage() {
                 label="앱처럼 설치"
               />
             </div>
-            <p className="m-0 text-[14px] text-sub">설치 없이 폰에서 바로 · 7일 무료 체험</p>
+            <p className="m-0 text-[14px] text-sub">설치 없이 폰에서 바로 · 7일 무료 체험 · <a href="/try" className="font-bold text-primary-strong underline-offset-2 hover:underline">가입 없이 먼저 눌러 보기</a></p>
           </div>
         </section>
 
@@ -204,6 +235,25 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ④-1 QR 신청 — 핵심 이야기(2026-10-06) */}
+        <section className="border-t border-line bg-bg px-5 py-[clamp(56px,10vw,104px)]">
+          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-5 text-center">
+            <Pill>OT 신청 QR</Pill>
+            <h2 className={`rv ${H2} ${H2_LG}`}>
+              <span className="block">카톡 한 통 대신,</span>
+              <span className="block text-primary">QR 한 장.</span>
+            </h2>
+            <p className="rv m-0 max-w-[520px] text-[clamp(16px,2.4vw,19px)] leading-[1.6] text-sub" style={stagger(1)}>
+              회원권을 등록하는 그 자리에서 QR로 OT 신청까지 끝내면, 연락을 주고받을 일 없이 첫 OT로 이어져요. 신청은 바로 내 OT 회원이 되고, 원하는 시간 · 목표 · 몸 상태를 미리 알고 준비해요.
+            </p>
+            <div className="mt-2 flex w-full justify-center"><BeforeAfter rows={QR_WHY} /></div>
+            <div className="rv mt-3 w-full" style={stagger(2)}>
+              <TryCard href="/try#qr" steps={["회원이 QR을 찍고 요일 · 시간 · 목표를 골라 신청", "트레이너 폰에 '새 OT 회원'과 알림이 바로", "미리 아는 정보로 1차 OT를 잡고 준비 리포트까지"]} />
+            </div>
+            <p className="m-0 text-[13.5px] text-sub">센터 QR로 받으면 대표가 트레이너를 정해 넘겨줘요 · 대표용 페이지</p>
+          </div>
+        </section>
+
         {/* ⑤ 기능 — 트레이너 화면 */}
         <section id="features" className="scroll-mt-28 border-t border-line bg-card px-5 pb-[clamp(56px,10vw,104px)] pt-[clamp(48px,8vw,88px)]">
           <div className="mx-auto flex max-w-[760px] flex-col items-center gap-16 text-center">
@@ -224,6 +274,13 @@ export default function LandingPage() {
             <FeatureRow {...LOG}>
               <StepShots steps={LOG_STEPS} />
             </FeatureRow>
+
+            <GroupLabel>오직 트레이너에만 있어요</GroupLabel>
+            {ONLY.map((r) => (
+              <FeatureRow key={r.pill} pill={r.pill} title={r.title} flow={r.flow} checks={r.checks} note={r.note}>
+                <TryCard href={r.try.href} steps={r.try.steps} />
+              </FeatureRow>
+            ))}
 
             <GroupLabel>회원 전용 페이지</GroupLabel>
 
@@ -246,6 +303,19 @@ export default function LandingPage() {
                   <span key={m} className="rounded-full bg-bg px-3.5 py-2 text-[14px] font-semibold">{m}</span>
                 ))}
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 체험 띠 — 가입 전에 직접(2026-10-06) */}
+        <section className="border-t border-line bg-card px-5 py-[clamp(48px,8vw,80px)]">
+          <div className="rv mx-auto flex max-w-[760px] flex-col items-center gap-5 text-center">
+            <h2 className={`${H2} ${H2_MD}`}>가입 전에,<br /><span className="text-primary">직접 눌러 보세요.</span></h2>
+            <p className="m-0 max-w-[480px] text-[16px] leading-[1.6] text-sub">트레이너 폰과 회원 폰을 나란히 두고 한쪽에서 누르면 다른 폰에 바로 도착해요.</p>
+            <div className="flex max-w-[560px] flex-wrap justify-center gap-2">
+              {TRY_LINKS.map(([href, label]) => (
+                <a key={href} href={href} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-line-strong bg-card px-4 text-[15px] font-semibold text-ink no-underline transition-colors hover:bg-elevate">{label} <Arrow /></a>
+              ))}
             </div>
           </div>
         </section>

@@ -17,7 +17,7 @@ import { PLANS } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_GHOST_DARK, Header, Footer, useReveal, stagger,
-  Checks, FeatureRow, GroupLabel, BeforeAfter, Faq, Arrow, LP_CSS,
+  Checks, FeatureRow, GroupLabel, BeforeAfter, Faq, Arrow, LP_CSS, TryCard,
 } from "../lp/parts";
 
 const SIGNUP_CENTER = "/signup?type=center";
@@ -26,15 +26,16 @@ const WHY = [
   ["매출은 월말 정산 때야 안다", "이달 매출·다음달 예상을 실시간으로"],
   ["OT는 많은데 등록이 안 되는 이유를 모른다", "어디서 새는지 단계별로"],
   ["회원이 떠난 뒤에야 안다", "이탈 위험·만료 임박을 먼저"],
+  ["배정한 OT 회원이 연락 없이 사라진다", "센터 QR 신청 → 배정 → 첫 OT까지 한눈에"],
   ["트레이너 평가가 감에 의존한다", "트레이너별 등록률·재등록률·수업 수"],
 ];
 
 const ROWS = [
   {
-    pill: "오늘 챙길 것",
+    pill: "아침 보고서",
     title: ["아침에 열면,", "오늘 할 일부터."],
-    checks: ["이탈 위험·재등록 대상 회원을 급한 순서로", "오늘 신규 OT 예정과 명단", "트레이너 코칭까지 담은 AI 운영 보고서"],
-    note: "대표 화면을 열면 그날 보고서가 자동으로 만들어져요",
+    checks: ["AI 한 줄 총평 → 어제 결과(등록 · 보류 · 그만 · 이유 · 회원의 말)", "오늘 오는 OT · 재등록 기회 회원", "트레이너별 코칭과 결과 줄마다 대표 피드백"],
+    note: "매일 아침 8시대에 만들어지고 폰 알림이 와요",
     visual: { img: "/lp/shots/owner-today.webp", alt: "대표 화면의 오늘 챙길 것(재등록 챙길 회원·이번 주 등록 임박·오늘 신규 OT)" },
   },
   {
@@ -53,7 +54,32 @@ const ROWS = [
   },
 ];
 
-const OPS = ["트레이너 초대", "회원 등록·배정", "회원 인계(잔여 세션 이월)", "급여 자동계산·확정", "필수 공지", "스케줄·노쇼"];
+// 사진이 오기 전까지 TryCard(실제 순서 · 데모 센터에서 실제로 만든 문장만)
+const NEW_ROWS = [
+  {
+    pill: "OT 신청 · 배정",
+    title: ["OT 회원이", "새지 않게."],
+    checks: ["회원권 등록하는 자리에서 센터 QR로 OT 신청", "대표가 트레이너를 고르면 그 트레이너 폰으로 바로", "신청 → 배정 → 첫 OT 예약 → 1차 OT → 등록, 어디서 멈췄는지"],
+    note: "트레이너별 QR도 있어요 · 원하는 요일 · 시간 · 목표를 미리 받아요",
+    card: { steps: ["회원이 센터 QR로 신청", "대표 홈에 '배정 대기' · 트레이너 고르기", "트레이너 폰에 '새 OT 회원' 알림 · 첫 OT 예약"] },
+  },
+  {
+    pill: "월간 결산",
+    title: ["매달 1일,", "트레이너 면담 자료까지."],
+    checks: ["지난달 매출 · 등록률 · 재등록률 · 이탈을 전달과 비교", "트레이너별 잘한 점 · 보완할 점 · 이번 달 해 볼 것", "트레이너별 이번 달 추천 목표 매출"],
+    note: "보완할 점은 대표만 봐요 · 트레이너에겐 성적표가 따로 가요",
+    card: { steps: ["매월 1일 아침, 지난달 결산이 대표 화면에", "트레이너별 카드로 면담 준비", "트레이너는 자기 성적표 · 이벤트 · 챙길 회원을"], quote: "9월은 목표의 93%를 채우고 OT도 16건으로 늘었지만, 매출이 지난달보다 크게 줄어 재등록 대상 17명을 먼저 챙기셔야 해요.", quoteBy: "데모 센터 9월 결산 · AI 총평(실제 생성)" },
+  },
+  {
+    pill: "수업 증빙",
+    title: ["종이 서명 대신,", "기록으로 남겨요."],
+    checks: ["회원이 운동일지를 확인하고 손가락으로 서명", "확인 안 하면 정해진 시간 뒤 자동 확인 · '내용이 달라요'는 트레이너에게", "한 달 수업을 서명과 함께 '수업 확인서' 한 장으로"],
+    note: "인쇄 · PDF로 저장할 수 있어요",
+    card: { href: "/try#sign", steps: ["트레이너가 운동일지 저장", "회원 폰에 확인 창 · 손가락 서명", "수업마다 서명 · 월별 수업 확인서"] },
+  },
+];
+
+const OPS = ["센터 이벤트", "트레이너 초대", "회원 등록·배정", "회원 인계(잔여 세션 이월)", "급여 자동계산·확정", "필수 공지", "스케줄·노쇼"];
 
 const STEPS = [
   ["센터 계정 만들기", "7일 무료로 시작"],
@@ -122,6 +148,11 @@ export default function CenterLandingPage() {
           <div className="mx-auto flex max-w-[760px] flex-col items-center gap-16 text-center">
             <GroupLabel dark>대표 화면</GroupLabel>
             {ROWS.map((r) => <FeatureRow key={r.pill} {...r} dark />)}
+            {NEW_ROWS.map((r) => (
+              <FeatureRow key={r.pill} pill={r.pill} title={r.title} checks={r.checks} note={r.note} dark>
+                <TryCard dark {...r.card} />
+              </FeatureRow>
+            ))}
             <div className="rv flex flex-col items-center gap-3.5">
               <p className="m-0 text-[17px] font-extrabold">운영도 손이 덜 가게</p>
               <div className="flex max-w-[560px] flex-wrap justify-center gap-2">
@@ -144,7 +175,7 @@ export default function CenterLandingPage() {
               감시 도구가 아닙니다. 트레이너의 수업 밖 업무를 덜어주는 앱이고, 대표 화면의 숫자는 그 결과로 쌓입니다.
             </p>
             <div className="rv my-1.5" style={stagger(2)}>
-              <Checks items={["말로 30초면 운동일지 끝", "OT 들어가기 전 3분, 바로 말할 클로징 멘트", "재등록 시기를 앱이 먼저 알림"]} />
+              <Checks items={["말로 30초면 운동일지 끝", "OT 들어가기 전 3분, 바로 말할 클로징 멘트", "재등록 시기를 앱이 먼저 알림", "수업 시간 맞추는 카톡 대신 예약 요청 · 승인"]} />
             </div>
             <a href="/lp" className={`rv ${BTN_OUTLINE}`} style={stagger(3)}>트레이너용 페이지 보기 <Arrow /></a>
           </div>
@@ -185,7 +216,7 @@ export default function CenterLandingPage() {
                 <div className="text-[17px] font-extrabold text-primary-strong">하루 약 {wonApprox(plan.amount / 30)}</div>
               </div>
               <div className="border-t border-line pt-[18px]">
-                <Checks items={["트레이너 앱 전체(OT·운동일지·재등록·회원 전용 페이지)", "대표 대시보드 (매출·정산·등록·이탈)", "트레이너 3인 좌석 + 대표 1인", "트레이너 코칭 · 팀 관리"]} />
+                <Checks items={["트레이너 앱 전체(OT · 운동일지 · 재등록 · 회원 전용 페이지)", "대표 대시보드(아침 보고서 · 매출 · 정산 · 등록 · 이탈)", "센터 QR OT 신청 · 배정 · 월간 결산", "트레이너 3인 좌석 + 대표 1인"]} />
               </div>
               <div className="flex flex-col gap-2">
                 <a href={contact} className={`w-full ${BTN_PRIMARY}`}>센터 도입 문의</a>
