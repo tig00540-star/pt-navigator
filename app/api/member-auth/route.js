@@ -93,11 +93,14 @@ export async function POST(req) {
     .select("plan, subscription_status, current_period_end")
     .eq("id", member.account_id)
     .maybeSingle();
+  // 이용 중 + 기간이 끝난 뒤 30일(볼 수만 · 2026-10-07 · DB auth_member_id와 같은 창)
+  const endMs = acct?.current_period_end ? Date.parse(acct.current_period_end) : null;
+  const nowMs = Date.now();
   const premiumActive =
     acct &&
     acct.plan === "premium" &&
-    acct.subscription_status === "active" &&
-    (!acct.current_period_end || new Date(acct.current_period_end) > new Date());
+    ((acct.subscription_status === "active" && (endMs == null || endMs > nowMs))
+      || (endMs != null && endMs <= nowMs && endMs > nowMs - 30 * 86400000));
   if (!premiumActive) {
     console.warn(`[member-auth] 403 회원앱 중단 — 계정 premium/활성 아님 member_id=${member.id}`);
     return Response.json(

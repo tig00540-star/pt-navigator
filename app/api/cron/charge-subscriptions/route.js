@@ -15,6 +15,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { chargeBilling, tossReady } from "@/lib/toss";
 import { PLANS, planAmount } from "@/lib/plans";
+import { sendPush, ownerIds } from "@/lib/pushServer";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -135,5 +136,30 @@ export async function GET(req) {
     }
   }
 
-  return Response.json({ ok: true, total: (accounts || []).length, charged, canceled, failed, skipped, errors });
+  // ── 읽기 전용 30일이 끝나기 하루 전 — 대표에게 '내일 기록이 지워져요' 알림(2026-10-07 · 한 번만 · purge_notified_at) ──
+  //   ⚠️ 실제 파기는 아직 자동으로 하지 않는다(대표 확인 뒤 별도 작업). 대상 수만 돌려준다(purgeDue).
+  let purgeNotified = 0, purgeDue = 0;
+  const RO = 30 * DAY;
+  const { data: ro } = await sb.from("account")
+    .select("id, current_period_end, purge_notified_at, subscription_status")
+    .not("current_period_end", "is", null)
+    .lte("current_period_end", new Date(now - RO + DAY).toISOString())   // 끝 + 30일 ≤ 내일
+    .limit(500);
+  for (const a of ro || []) {
+    const end = Date.parse(a.current_period_end);
+    if (a.subscription_status === "active" && end > now) continue;      // 다시 결제해서 이용 중
+    if (end + RO <= now) { purgeDue++; continue; }                       // 이미 30일 지남 = 파기 대상(보고만)
+    if (a.purge_notified_at) continue;
+    const ids = await ownerIds(sb, a.id);
+    const day = new Date(end + RO + 9 * 3600000);
+    await sendPush(sb, {
+      trainerIds: ids, type: "account", url: "/settings",
+      title: "내일 기록이 지워져요",
+      body: `${day.getUTCMonth() + 1}월 ${day.getUTCDate()}일에 회원 · 기록이 지워져요. 필요하면 오늘 '내 데이터 내려받기'를 해 주세요.`,
+    });
+    await sb.from("account").update({ purge_notified_at: new Date(now).toISOString() }).eq("id", a.id);
+    purgeNotified++;
+  }
+
+  return Response.json({ ok: true, total: (accounts || []).length, charged, canceled, failed, skipped, errors, purgeNotified, purgeDue });
 }

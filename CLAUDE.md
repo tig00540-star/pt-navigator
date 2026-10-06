@@ -206,6 +206,14 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **개인 '내 결산'**(kind solo): 성적표 + AI(잘한 점 · 보완할 점 · 해 볼 것 · 비교 = 내 지난달) + 남은 돈/받은 금액.
 - 추천 목표 = max(최근 3개월 평균 × 1.1, 재등록 대상 × 재등록률 × 평균 금액 + OT 회원 × 등록률 × 평균 신규) · 10만 원 단위. 열어 본 시각 `seen_at`(rpc `mark_monthly_report_seen`)으로 실제 쓰이는지 잰다. ⚠️ 데모로 **진행 중인 달**을 저장하면 1일 실제 작업이 건너뛴다(스크립트가 막음).
 
+### 구독 해지 · 끝난 뒤 30일 '볼 수만' · 내 데이터 내려받기 (2026-10-07 · SQL `docs/migrations/2026-10-07-cancel-readonly.sql` · 계획서 `docs/v2-계획-해지-합류-독립.md` 1단계)
+
+- **해지 예약:** 설정 › 내 정보 › **'구독 관리'**(`SubscriptionCard` · 대표 · 개인 계정 주인만) 맨 아래 글자 버튼 → 확인 창(만료일까지 그대로 · 그 뒤 30일 볼 수만 · 그다음 파기 · 이유 선택) → `/api/billing/cancel`(service_role · `cancel_at_period_end` · `cancel_requested_at` · `cancel_reason`) · 만료 전엔 [해지 예약 취소]. 결제 작업은 원래대로 해지 예약이면 청구 안 하고 만료 때 inactive.
+- **읽기 전용 30일:** 이용 기간 끝 ~ 끝 + 30일. 읽기 규칙 = 기존 SELECT 규칙(auth_account_id · auth_is_owner · auth_account_plan)을 본뜬 `__ro` 규칙을 `refresh_read_only_policies()`가 표마다 자동 생성(`auth_read_*` 함수) · **쓰기 규칙은 그대로**(이용 중만). ⚠️ **새 표 · 새 SELECT 규칙을 만들면 `select refresh_read_only_policies();`를 한 번 더 실행.** 저장소(사진 · 서명 그림)는 이 기간에 안 열림. `my_account_status()`에 `mode`(full · read_only · locked) · `read_only_until` · `cancel_at_period_end`. 앱(`AuthGate` `ReadOnlyShell`) = 결제벽 대신 앱을 열고 맨 위 빨간 띠(대표 = 내려받기 · 카드 등록하고 다시 쓰기 / 센터 트레이너 = 대표에게 알려 주세요). 회원 페이지 = `auth_member_id`가 이 기간도 열고 `auth_member_writable`은 이용 중만 · `member_me.center_open` → '지금은 기록을 볼 수만 있어요' · `member-auth` 로그인도 같은 창.
+- **내 데이터 내려받기:** `/api/export`(대표만 · 이용 중 또는 읽기 전용 30일 · 호출자 계정만) → 엑셀 CSV 묶음 ZIP(`lib/zip` 의존성 없는 store ZIP · BOM) — 트레이너 · 회원 · 계약 · 운동일지(확인 상태) · OT 기록 · 인바디 · 예약 · 장부 · 유산소 · 개인운동 · 동의 · 사진/서명 7일 링크 · 읽어 주세요.
+- **파기:** 결제 작업(`charge-subscriptions`)이 파기 하루 전 대표 폰 알림(type `account` · `purge_notified_at` 한 번). ⚠️ **자동 파기는 아직 안 함**(대상 수 `purgeDue`만 보고 · 대표 확인 뒤 별도 작업).
+- 약관 제11조 · 환불 정책 3장 문구 = 설정에서 해지 예약 · 만료 뒤 30일 열람 · 내려받기(`COMPANY.termsDate`).
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.
