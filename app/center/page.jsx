@@ -30,6 +30,13 @@ const WHY = [
   ["트레이너 평가가 감에 의존한다", "트레이너별 등록률·재등록률·수업 수"],
 ];
 
+// 자동 보고 — 실제로 도는 것만(아침 보고서 cron · 월간 결산 cron · 폰 알림)
+const AUTO_REPORTS = [
+  ["매일 아침 8시대", "아침 보고서 · 어제 결과와 오늘 할 일"],
+  ["매월 1일", "월간 결산 · 트레이너 면담 자료까지"],
+  ["그때그때", "OT 신청 · 배정 대기를 폰 알림으로"],
+];
+
 const ROWS = [
   {
     pill: "아침 보고서",
@@ -153,6 +160,31 @@ export default function CenterLandingPage() {
               <span className="block text-primary">뒤늦게 보입니다.</span>
             </h2>
             <div className="flex w-full justify-center"><BeforeAfter rows={WHY} /></div>
+          </div>
+        </section>
+
+        {/* ③-1 입력 없음 — 전부 자동으로 보고(2026-10-06 대표 문구) · 장부(FC 매출 · 지출)만 예외라 정직하게 한 줄 */}
+        <section className="border-t border-line bg-bg px-5 py-[clamp(56px,10vw,104px)]">
+          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-6 text-center">
+            <h2 className={`rv ${H2} ${H2_LG}`}>
+              <span className="block">대표님이 직접</span>
+              <span className="block">입력하는 건 없습니다.</span>
+            </h2>
+            <p className="rv m-0 max-w-[520px] text-[clamp(17px,2.6vw,20px)] font-bold leading-[1.6] text-primary-strong" style={stagger(1)}>
+              전부 자동으로 만들어지고, 보고드립니다.
+            </p>
+            <p className="rv m-0 max-w-[520px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] text-sub" style={stagger(2)}>
+              트레이너가 수업하며 남긴 운동일지 · OT 결과 · 계약 기록이 그대로 매출 · 등록률 · 이탈 숫자가 돼요. 대표님은 열어 보기만 하시면 돼요.
+            </p>
+            <ul className="m-0 grid w-full max-w-[600px] list-none gap-2.5 p-0 text-left sm:grid-cols-3">
+              {AUTO_REPORTS.map(([when, what], i) => (
+                <li key={when} className="rv rounded-2xl border border-line bg-card px-4 py-4 shadow-sm" style={stagger(i)}>
+                  <div className="text-[14px] font-bold text-primary-strong">{when}</div>
+                  <div className="mt-1 text-[16px] font-extrabold leading-[1.45]">{what}</div>
+                </li>
+              ))}
+            </ul>
+            <p className="m-0 text-[13.5px] text-sub">센터 FC 매출 · 지출만 정산 장부에 한 줄씩 적어요.</p>
           </div>
         </section>
 
