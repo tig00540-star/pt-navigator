@@ -10,6 +10,7 @@ import PasswordChange from "@/components/views/PasswordChange";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OunwanRewardSettings from "@/components/views/OunwanRewardSettings";
 import MyIntakeCard from "@/components/intake/MyIntakeCard";
+import BookingPrefCard from "@/components/booking/BookingPrefCard";
 import NotifySettings from "@/components/notify/NotifySettings";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
@@ -47,6 +48,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
           <TrainerProfileSettings />
           <div className="space-y-6">
           <MyIntakeCard />
+          <BookingPrefCard />
           <TrainerGoalSetter />
           <PasswordChange />
           {/* 로그아웃 — AuthGate의 전 화면 플로팅에서 이관(콘텐츠 가림 제거). signOut 시 onAuthStateChange가

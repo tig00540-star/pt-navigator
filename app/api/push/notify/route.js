@@ -3,6 +3,7 @@
 //   같은 센터 · 맞는 역할(대표 / 담당 트레이너 / 본인 회원)일 때만. 받는 트레이너가 그 종류를 꺼 두면 안 감.
 //   ot_assigned(대표 → 트레이너) · owner_feedback(대표 → 트레이너) · payroll(대표 → 트레이너)
 //   routine_request(회원 → 담당 트레이너) · log_written(트레이너 → 회원) · test(내 기기)
+//   appt_request(회원 → 담당 트레이너 · 예약/변경/취소 요청) · appt_decided(트레이너 → 회원 · 승인/거절 결과)
 import { serviceClient, callerOf } from "@/lib/serverCaller";
 import { sendPush } from "@/lib/pushServer";
 import { personName } from "@/lib/format";
@@ -10,6 +11,13 @@ import { personName } from "@/lib/format";
 export const runtime = "nodejs";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// "10월 8일(수) 오후 7시"(KST)
+const slotText = (iso) => {
+  if (!iso) return "";
+  const d = new Date(Date.parse(iso) + 9 * 3600000);
+  const h = d.getUTCHours();
+  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${"일월화수목금토"[d.getUTCDay()]}) ${h < 12 ? "오전" : "오후"} ${h % 12 || 12}시`;
+};
 const md = (iso) => { const d = new Date(Date.parse(iso) + 9 * 3600000); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`; };
 
 export async function POST(req) {
@@ -58,6 +66,22 @@ export async function POST(req) {
     if (q?.user_id === who.id && q.status === "open" && who.trainer_id) {
       r = await sendPush(sb, { trainerIds: [who.trainer_id], type: "routine_request", title: "루틴 요청이 왔어요",
         body: `${await memberName(who.id)} 회원이 개인운동 루틴을 요청했어요`, url: `/pt/${who.id}/logs` });
+    }
+  } else if (type === "appt_request" && who.kind === "member") {
+    const { data: q } = await sb.from("appt_request").select("member_id, trainer_id, kind, want_start, orig_start, status").eq("id", id).maybeSingle();
+    if (q?.member_id === who.id && q.status === "pending") {
+      const what = q.kind === "new" ? `${slotText(q.want_start)} 새 수업` : q.kind === "change" ? `${slotText(q.orig_start)} → ${slotText(q.want_start)}로 변경` : `${slotText(q.orig_start)} 수업 취소`;
+      r = await sendPush(sb, { trainerIds: [q.trainer_id], type: "appt_request", title: "수업 요청이 왔어요",
+        body: `${await memberName(who.id)} · ${what}`, url: "/today" });
+    }
+  } else if (type === "appt_decided" && who.kind === "trainer") {
+    const { data: q } = await sb.from("appt_request").select("account_id, member_id, kind, want_start, orig_start, status, decide_note").eq("id", id).maybeSingle();
+    if (q?.account_id === who.account_id && (q.status === "approved" || q.status === "declined")) {
+      const { data: m } = await sb.from("user_table").select("member_token").eq("id", q.member_id).maybeSingle();
+      const ok = q.status === "approved";
+      const what = q.kind === "new" ? `${slotText(q.want_start)} 수업` : q.kind === "change" ? `${slotText(q.want_start)}로 변경` : `${slotText(q.orig_start)} 수업 취소`;
+      r = await sendPush(sb, { memberIds: [q.member_id], type: "appt_decided", title: ok ? "요청이 승인됐어요" : "요청이 거절됐어요",
+        body: `${what}${ok ? "" : q.decide_note ? ` · ${q.decide_note.slice(0, 60)}` : " · 트레이너와 다시 정해 주세요"}`, url: m?.member_token ? `/m/${m.member_token}` : "/" });
     }
   } else if (type === "log_written" && who.kind === "trainer") {
     const { data: l } = await sb.from("daily_workout_log").select("user_id, session_at, created_at, voided, source").eq("id", id).maybeSingle();

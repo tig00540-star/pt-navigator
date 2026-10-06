@@ -174,6 +174,13 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **화면:** 트레이너 설정 **'알림'** 탭(`NotifySettings` · 이 폰 켜기/끄기 · 시험 알림 · 종류별 on/off · 대표 줄은 대표만) · 회원 전용 페이지 홈 **'운동일지 알림 받기'**(`MemberPushCard` · 지난 회원 없음).
 - ⚠️ **아이폰은 홈 화면에 추가한 앱에서만** 알림 가능(iOS 16.4+) → 화면이 안내. 운동일지 자동 확인 24시간 단축은 회원 알림이 충분히 퍼진 뒤(대표 결정 대기).
 
+### 회원 수업 예약 · 변경 · 취소 요청 (2026-10-06 · SQL `docs/migrations/2026-10-06-appt-request.sql`)
+
+- **회원** `components/member/BookingCard`(회원 전용 페이지 홈 · 지난 회원 없음 · 남은 수업 0회는 보기만): 잡힌 수업(`member_upcoming_appt`) · [시간 바꾸기] [취소하기] · [새 수업 요청하기](이번 주 + 다음 주 · 1시간 칸 6~23시 · 트레이너 바쁜 칸 흐림 = `member_trainer_busy`(다른 회원 수업 · 개인 일정 시각만 · `lib/booking` `busySlots`가 반복 일정 펼침)) · 요청 중 '트레이너 확인 중 · 요청 취소' · 결과(승인/거절 + 한마디) '확인'. **변경 · 취소 · 새 요청 시각은 수업 N시간 전까지**(트레이너가 정함 · 기본 12) — 지나면 "트레이너와 직접 이야기해 주세요".
+- **DB가 관문:** `request_appt`(auth_member_writable · pt_active · 창 · 정각 · 기준 시간 · 같은 예약 중복 요청 · 새 요청 3개까지) · `withdraw_appt_request` · `mark_appt_request_seen` · **`decide_appt_request`**(트레이너/대표 · 승인 = 예약을 실제로 insert/옮기기/취소 · 같은 시각 booked 있으면 conflict). 표 `appt_request`(쓰기 정책 없음 · 함수로만) · 규칙 `trainer_booking_pref`(accept · cutoff_hours 1~72 · 본인만) · 회원용 `member_booking_rule`.
+- **트레이너:** 설정 '내 정보' **'회원 예약 요청'**(`BookingPrefCard` · 받기 on/off · 3/6/12/24/48시간 전) · **'수업 요청' 카드**(`ApptRequestToday` · 폰 홈 · 오늘 · 넓은 홈 · 승인/거절+한마디). 알림: 요청 → 트레이너 `appt_request`(종류 on/off) · 결과 → 회원 `appt_decided`.
+- **운동일지 자동 확인 24시간(같은 날 · 폰 알림 뒤):** 동의서 `2026-10-06.2`(24시간 문구) 이상 동의 회원부터 24시간 · 48시간 문구에만 동의한 회원은 48시간(DB 함수 per-member · `lib/workoutHash` `autoConfirmHours(version)`). 버전이 올라 회원 페이지가 한 번 더 묻는다.
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.

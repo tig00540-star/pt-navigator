@@ -13,6 +13,7 @@ import { memberSupabase } from "@/lib/memberSupabase";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import MyPtCard from "@/components/member/MyPtCard";
 import MemberPushCard from "@/components/member/MemberPushCard";
+import BookingCard from "@/components/member/BookingCard";
 import RoutineSection from "@/components/member/RoutineSection";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
@@ -808,7 +809,7 @@ function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
    ⚠️ fail-open: member-confirm이 503(데모/키부재)이면 큐를 통째로 끈다(아래 disabledByServer).
    ⚠️ pending 계산은 뷰가 주는 confirmed_at에 의존 — confirm 확정분은 제외되고(확인 전용 · dispute 제거),
       수업 시작 1시간 뒤부터 뜬다(confirmDue · 2026-10-06 · 옛: 다음 날부터). */
-function ConfirmFlow({ logs, onReload, consentAt = null }) {
+function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -915,7 +916,7 @@ function ConfirmFlow({ logs, onReload, consentAt = null }) {
           )}
           <p className="mt-3 text-[13px] leading-relaxed text-sub">
             이 날 수업을 받은 게 맞으면 확인해 주세요. 다르면 &lsquo;내용이 달라요&rsquo;를 눌러 주세요.
-            {autoConfirmAt(cur, consentAt) && <> <b className="font-semibold text-ink">{fmtWhen(autoConfirmAt(cur, consentAt))}</b>이 지나면 자동으로 확인돼요.</>}
+            {autoConfirmAt(cur, consentAt, consentVersion) && <> <b className="font-semibold text-ink">{fmtWhen(autoConfirmAt(cur, consentAt, consentVersion))}</b>이 지나면 자동으로 확인돼요.</>}
           </p>
 
           {err && <p className="mt-3 text-[12px] text-danger-text">{err}</p>}
@@ -994,7 +995,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
   const goTab = (t) => { setSubTab(t); try { window.scrollTo({ top: 0 }); } catch { /* 무시 */ } };
   // 운동일지 탭 숫자 = 확인 알림과 같은 기준(수업 1시간 뒤 · confirmDue).
   const pendingCount = ended ? 0 : logs.filter((l) => pendingM(l, nowMs)).length;
-  // 자동 확인 문구(2026-10-06 버전 이상)에 동의한 시각 — 이 뒤 수업만 48시간 자동 확인.
+  // 자동 확인 문구(2026-10-06 버전 이상)에 동의한 시각 — 이 뒤 수업만 자동 확인(.2 이상 24시간 · 그 전 48시간).
   const autoFrom = consent?.general?.agreed && (consent.general.version || "") >= AUTO_CONFIRM_FROM_VERSION ? consent.general.created_at : null;
   const TABS = [["home", "홈"], ["logs", "운동일지"], ["change", "변화"], ...(readOnly ? [] : [["write", "기록하기"]])];
 
@@ -1087,7 +1088,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {/* 운동일지 확인 유도 — 배너 + pending≥3 소프트 모달. 홈 · 운동일지 탭에서 보이고, 한 번만 그려 두어 탭을 바꿔도 창이 다시 안 뜬다. */}
         {!ended && (
           <div hidden={tab !== "home" && tab !== "logs"}>
-            <ConfirmFlow logs={logs} onReload={onReloadLogs} consentAt={autoFrom} />
+            <ConfirmFlow logs={logs} onReload={onReloadLogs} consentAt={autoFrom} consentVersion={consent?.general?.version || null} />
           </div>
         )}
 
@@ -1099,6 +1100,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
 
         {/* 운동일지 알림 받기(폰 푸시 · 2026-10-06) — 지난 회원은 없음 */}
         {!ended && <MemberPushCard supabase={memberSupabase} />}
+
+        {/* 수업 예약 · 변경 · 취소 요청(2026-10-06) — 지난 회원은 없음 · 남은 수업 0회는 보기만 */}
+        {!ended && <BookingCard supabase={memberSupabase} readOnly={readOnly} />}
 
         {/* 오운완 카드 — 최상단. 누적·연속은 RPC(ounwan) 값만 사용(§2 규칙).
             '오늘 했는지'만 로컬 파생 — 오늘은 항상 최근 조회 창 안이라 정확하다. */}

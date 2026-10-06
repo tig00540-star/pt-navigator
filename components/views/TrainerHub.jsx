@@ -35,6 +35,7 @@ import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday"
 import ReapproachToday from "@/components/views/ReapproachToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import OtApplicationToday from "@/components/views/OtApplicationToday";
+import ApptRequestToday from "@/components/views/ApptRequestToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
@@ -261,6 +262,8 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
 
       {/* 새 OT 회원(OT 신청서 · 2026-10-06) — 확인 안 한 게 있을 때만 */}
       <div className="[&>section]:mb-0 empty:hidden"><OtApplicationToday uid={uid} /></div>
+      {/* 회원 수업 요청(예약 · 변경 · 취소 · 2026-10-06) — 있을 때만 */}
+      <div className="[&>section]:mb-0 empty:hidden"><ApptRequestToday members={members} uid={uid} /></div>
       {/* 대표 피드백 — 편집 목록과 무관하게, 확인 안 한 게 있을 때만 */}
       <div className="[&>section]:mb-0 empty:hidden"><OwnerFeedbackToday members={members} uid={uid} /></div>
       {/* 급여 확정 — 대표가 확정했고 아직 확인 안 했을 때만 */}

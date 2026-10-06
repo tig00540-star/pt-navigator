@@ -75,7 +75,7 @@ export default function ConsentGate({ supabase, me, onDone, onSignOut, prev = nu
         <h1 className="mt-4 text-[24px] font-extrabold leading-tight tracking-[-0.03em]">{again ? <>바뀐 내용이 있어요<br />확인해 주세요</> : <>시작하기 전에<br />확인해 주세요</>}</h1>
         <p className="mt-2 text-[14.5px] leading-relaxed text-sub">
           {again
-            ? "운동일지 확인 방법이 생겼어요. 48시간 안에 확인하지 않으면 확인한 것으로 봐요. 아래 내용을 읽고 다시 동의해 주세요."
+            ? "운동일지 확인 방법이 바뀌었어요. 이제 수업 뒤 24시간 안에 확인하지 않으면 확인한 것으로 봐요(폰 알림으로 알려 드려요). 아래 내용을 읽고 다시 동의해 주세요."
             : `${me.center_name ? `${me.center_name}에서` : "센터에서"} ${me.name} 회원님의 운동 기록을 이 페이지로 보여 드려요. 아래 내용을 읽고 동의해 주세요.`}
         </p>
 

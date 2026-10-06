@@ -15,6 +15,7 @@ import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import OtApplicationToday from "@/components/views/OtApplicationToday";
+import ApptRequestToday from "@/components/views/ApptRequestToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
@@ -34,6 +35,7 @@ export default function TodoTab({ members, uid, onSelect }) {
 
       {/* 새 OT 회원(OT 신청서) — 맨 위 */}
       <OtApplicationToday uid={uid} />
+      <ApptRequestToday members={members} uid={uid} />
       {/* 대표 피드백(아침 보고서에서 대표가 남긴 것) */}
       <OwnerFeedbackToday members={members} uid={uid} />
       <PayrollConfirmedToday uid={uid} />
