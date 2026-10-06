@@ -48,14 +48,15 @@ export default function TransferAsk({ supabase, onMoved }) {
     <>
       {!open && (
         <button type="button" onClick={() => setOpen(true)}
-          className="mb-4 flex min-h-[48px] w-full items-center justify-between gap-2 rounded-2xl border border-primary/30 bg-primary-soft px-4 text-left text-[14px] font-bold text-primary-strong">
-          기록을 {ro(t.to_name)} 함께 옮길지 골라 주세요 <span className="text-[13px] font-semibold">{dateKo(t.deadline)}까지</span>
+          className="mb-4 flex min-h-[48px] w-full flex-col items-start gap-0.5 rounded-2xl border border-primary/30 bg-primary-soft px-4 py-3 text-left text-[14px] font-bold text-primary-strong">
+          기록을 {ro(t.to_name)} 함께 옮길지 골라 주세요
+          <span className="text-[13px] font-semibold text-sub">{dateKo(t.deadline)}까지 · 눌러서 고르기</span>
         </button>
       )}
       {open && (
         <Modal title="기록을 함께 옮길까요?" onClose={() => setOpen(false)}
           footer={(
-            <div className="flex flex-col gap-2">
+            <div className="flex w-full flex-col gap-2">
               <Button variant="primary" size="md" fullWidth onClick={() => answer(true)} disabled={busy}>{busy ? "처리하는 중…" : "함께 옮겨 주세요"}</Button>
               <Button variant="ghost" size="md" fullWidth onClick={() => answer(false)} disabled={busy}>옮기지 않을래요</Button>
             </div>

@@ -148,7 +148,7 @@ export default function SubscriptionCard() {
       {ask && (
         <Modal title="구독을 해지할까요?" onClose={() => setAsk(false)}
           footer={(
-            <div className="flex gap-2">
+            <div className="flex w-full gap-2">
               <Button variant="ghost" size="md" fullWidth onClick={() => setAsk(false)}>계속 쓸게요</Button>
               <Button variant="danger" size="md" fullWidth onClick={() => call("cancel")} disabled={busy !== ""}>
                 {busy === "cancel" ? "처리하는 중…" : "해지 예약"}
