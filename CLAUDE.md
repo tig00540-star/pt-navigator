@@ -189,6 +189,23 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **회원 운동일지 표(2026-10-06 · 어르신도 한눈에):** `components/member/WorkoutLogBody`(회원 운동일지 목록 · 확인 창 공용) = 맨 위 'N종목 · M세트' → 종목마다 표(세트 | 무게 | 횟수 · 숫자 크게 · 0kg = 맨몸) + **'지난번보다 ▲ N kg'**(그 종목 가장 무거운 세트가 늘었을 때만 · cyan · `gainsByLog`) → **트레이너 설명 = 저장된 글 그대로 전부 펼침**(대표 결정). 최근 일지는 펼친 채로 · 운동일지 탭 **'가가 글씨 크게'**(이 기기 `pt-member-bigtext`). 저장 데이터는 그대로(보여 주기만).
 - **회원 홈 정리:** 이벤트 띠 → 알림 켜기 한 줄(꺼져 있을 때만 · 켜지면 맨 아래 '폰 알림 받는 중 · 끄기' = `MemberPushCard place`) → **'내 PT' 하나**(남은 수업 + 수업 일정(`BookingCard embedded` · 트레이너가 요청 안 받으면 잡힌 수업만) + 목표 로드맵 접힘) → 오운완. **운동 달력은 운동일지 탭으로.** 지난 회원은 '내 PT'에 '다음 수업' 한 줄.
 
+### 개인 트레이너 계정 · 일하는 방식 (2026-10-06 · SQL `docs/migrations/2026-10-06-solo-mode.sql`)
+
+- '개인 트레이너' 가입 = solo 계정(본인이 트레이너 겸 주인 · role owner). **일하는 방식** `account.work_mode`: `employed`(센터 소속 · 급여 · 수수료 · 비면 이것) / `freelance`(회원비 직접). **상호** `account.brand_name`(소속 센터 또는 상호 · 선택). 가입 화면이 받고(트리거) · 설정 › 내 정보 `SoloProfileCard`에서 바꿈(rpc `set_solo_profile` · account UPDATE 정책은 열지 않는다 · 열 권한 grant에 두 칸 추가). `useAccount` → `isFreelance` · `isEmployedSolo` · `workMode` · `brandName`(바꾸면 `ACCOUNT_CHANGED` 이벤트로 다시 읽음).
+- **내 실적:** 센터 소속 = 예상 급여가 맨 위 · 급여 방식 '수동'이면 **받은 금액 직접 적기**(payroll_run 본인 upsert · seen_at 같이) · 개인은 적은 금액을 언제든 고치기/지우기. 프리랜서 = **이달 남은 돈**(PT 몫 + PT 외 매출 − 지출 · PT 몫 = 적은 금액 > 급여 방식 계산 > 방식 없으면 PT 매출 전부) + **장부 · 정산**(대표 정산 화면 `SettlementPanel solo` 재사용 · FC 칸 대신 'PT 외 매출'). 프리랜서도 급여 방식(매출 나눔)을 고를 수 있다(대표 결정).
+- **회원 쪽 이름:** `member_me.center_name` = 개인은 상호(없으면 null) + `is_solo` → `lib/format` `operatorName`("상호 · 홍길동 트레이너" / "홍길동 트레이너"). OT 신청서 머리도 같은 규칙(`intake_link_info.solo`). 수업 확인서 머리 = 상호.
+- 개인 계정에 숨기는 것: 알림의 대표 피드백 · 급여 확정 · 배정 대기 · 아침 보고서, 이벤트 대상 고르기(늘 내 회원), 공지 종. 센터 소속 트레이너(role trainer): 센터 구독이 끝나면 결제 대신 "대표에게 알려 주세요".
+- 가격표는 **트레이너마다 따로**(센터 소속도 · 대표 결정 · 같은 가격도 설명이 다를 수 있어서).
+- 시험 계정: 개인 · 프리랜서 `scripts/demo/.solo-credentials.json`(깃 제외 · `lib/demo.js`에 등록).
+
+### 월간 결산 (2026-10-06 · SQL `docs/migrations/2026-10-06-monthly-report.sql`)
+
+- **매월 1일 아침**(Vercel Cron `20 23 * * *` UTC → `app/api/cron/monthly-report` · KST 1일만 · `?force=1&ym=&account=&redo=1` 점검) 지난달 결산을 `monthly_report`에 저장 + 폰 알림(종류 `monthly`). 숫자 = `lib/monthlyReport` `monthlyReportData`(memberStatus 재사용 · 비율은 그달에 결과를 남긴 것만 · 표본 작으면 'OT 양' 신호) · 만들기 = `lib/monthlyReportBuild`(예약 작업 · `scripts/demo/monthly-now.mjs` 공용 · **활동 없는 달은 안 만듦**) · AI = `lib/monthlyReportAI`(Sonnet · 센터 1회 · 개인 1회 · 프리미엄만 · 회원 이름 안 넘김).
+- **대표 결산**(kind owner · 보고서 › [아침 보고서 | 월간 결산] · 홈 카드 1~10일): AI 총평 → 센터 숫자 → 트레이너별(잘한 점 · **보완할 점 = '트레이너 면담 때 활용하세요 · 대표만 보여요'** · 해 볼 것 · **추천 목표는 보여 주기만 + 면담용**) → 이벤트 → 급여 확정.
+- **트레이너 성적표**(kind trainer · 내 실적 맨 위 `MonthlySelfReport` · 홈 · 오늘 카드): 규칙 기반(AI 없음) · **보완할 점은 저장도 안 함** · 회원이 운동한 날 · 확인율 · 무게 늘어난 회원 · 내 이벤트(참여 · 달성 · 상품 지급 대기) · 챙길 회원 · 추천 목표 [목표로 정하기](본인 trainer_goal).
+- **개인 '내 결산'**(kind solo): 성적표 + AI(잘한 점 · 보완할 점 · 해 볼 것 · 비교 = 내 지난달) + 남은 돈/받은 금액.
+- 추천 목표 = max(최근 3개월 평균 × 1.1, 재등록 대상 × 재등록률 × 평균 금액 + OT 회원 × 등록률 × 평균 신규) · 10만 원 단위. 열어 본 시각 `seen_at`(rpc `mark_monthly_report_seen`)으로 실제 쓰이는지 잰다. ⚠️ 데모로 **진행 중인 달**을 저장하면 1일 실제 작업이 건너뛴다(스크립트가 막음).
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.
