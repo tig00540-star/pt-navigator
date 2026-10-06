@@ -102,7 +102,7 @@ export default function SettlementPanel({
       if (!r || typeof r.earned_on !== "string") continue;
       const d = r.earned_on.slice(0, 10);
       if (d < from || d > to) continue;
-      rows.push({ id: "i" + r.id, rowId: r.id, table: "income", date: d, label: incomeKindLabel(r.kind), amount: r.amount || 0, memo: r.memo, income: true });
+      rows.push({ id: "i" + r.id, rowId: r.id, table: "income", date: d, label: solo && r.kind !== "fc" ? "PT 외 매출" : incomeKindLabel(r.kind), amount: r.amount || 0, memo: r.memo, income: true });
     }
     for (const e of expenses) {
       if (!e || typeof e.spent_on !== "string") continue;
@@ -111,7 +111,7 @@ export default function SettlementPanel({
       rows.push({ id: "e" + e.id, rowId: e.id, table: "expense", date: d, label: e.category || "기타", amount: e.amount || 0, memo: e.memo, income: false });
     }
     return rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  }, [incomes, expenses, from, to]);
+  }, [incomes, expenses, from, to, solo]);
 
   return (
     <div className="space-y-4">

@@ -61,3 +61,4 @@ shell.txt
 
 # 데모 계정 로그인 정보(scripts/demo/seed-demo.mjs가 생성) — 절대 커밋 금지
 scripts/demo/.demo-credentials.json
+scripts/demo/.solo-credentials.json

@@ -23,12 +23,18 @@ const MODES = [
 
 export default function SoloProfileCard() {
   const acc = useAccount();
+  // 알림은 바깥에 — 저장 뒤 계정을 다시 읽으면 폼이 새로 그려져도(key) '저장했어요'가 남게
+  const { toast, showToast } = useToast();
   if (!acc.isSolo || acc.loading) return null;
-  return <SoloProfileForm key={`${acc.workMode}|${acc.brandName}`} initMode={acc.workMode || "employed"} initBrand={acc.brandName || ""} trainerName={acc.trainerName} />;
+  return (
+    <>
+      <SoloProfileForm key={`${acc.workMode}|${acc.brandName}`} initMode={acc.workMode || "employed"} initBrand={acc.brandName || ""} trainerName={acc.trainerName} showToast={showToast} />
+      <Toast message={toast} />
+    </>
+  );
 }
 
-function SoloProfileForm({ initMode, initBrand, trainerName }) {
-  const { toast, showToast } = useToast();
+function SoloProfileForm({ initMode, initBrand, trainerName, showToast }) {
   const [mode, setMode] = useState(initMode);
   const [brand, setBrand] = useState(initBrand);
   const [busy, setBusy] = useState(false);
@@ -67,7 +73,6 @@ function SoloProfileForm({ initMode, initBrand, trainerName }) {
       <div className="mt-3 flex justify-end">
         <Button variant="primary" size="md" onClick={save} disabled={!dirty || busy}>{busy ? "저장 중…" : "저장"}</Button>
       </div>
-      <Toast message={toast} />
     </Card>
   );
 }

@@ -67,6 +67,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
   const [manualAmt, setManualAmt] = useState("");
   const [manualBusy, setManualBusy] = useState(false);
   const [manualNote, setManualNote] = useState("");
+  const [manualEdit, setManualEdit] = useState(false);   // 적은 금액 고치기
 
   const loadIncomes = useCallback(async () => {
     if (!supabase) return;
@@ -224,7 +225,13 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     if (error || !data?.length) { console.error("받은 금액 저장 실패", error); setManualNote("저장하지 못했어요. 다시 시도해 주세요."); return; }
     setRuns((rs) => [...rs.filter((r) => !(r.trainer_id === uid && r.ym === ym)), data[0]]);
     setManualAmt("");
+    setManualEdit(false);
   };
+  const showManual = manualPay && (!confirmed || manualEdit);
+  const editLink = manualPay && confirmed && !manualEdit ? (
+    <button type="button" onClick={() => { setManualAmt(String(myRun.final_total ?? "")); setManualEdit(true); }}
+      className="mt-2 min-h-[36px] text-[13px] font-semibold text-sub underline underline-offset-2 hover:text-ink">받은 금액 고치기</button>
+  ) : null;
   // 개인 계정 + 수동 급여 — 대표 확정 화면이 없으니 받은 금액(내 몫)을 직접 적는다
   const manualCard = (
     <div className="rounded-2xl border border-primary/30 bg-primary-soft p-5 shadow-sm">
@@ -277,9 +284,9 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
           <div className={`mt-1.5 tabular-nums text-[30px] font-bold tracking-[-0.03em] ${monthNet < 0 ? "text-danger-text" : "text-ink"}`}>{won(monthNet)}</div>
           <div className="mt-0.5 text-[13px] text-sub">{ptShareLabel} {won(ptShare)}{hasScheme ? ` (PT 매출 ${won(rev.total)} 중)` : ""}{monthIncome ? ` + PT 외 ${won(monthIncome)}` : ""} − 지출 {won(monthExpense)}</div>
         </button>
-        {manualPay && !confirmed && <div className="mt-3">{manualCard}</div>}
+        {showManual ? <div className="mt-3">{manualCard}</div> : editLink}
         </>
-      ) : manualPay && !confirmed ? (
+      ) : showManual ? (
         manualCard
       ) : (
       <button type="button" onClick={openPay} className="block w-full rounded-2xl border border-primary/30 bg-primary-soft p-5 text-left shadow-sm transition hover:border-primary/60 active:scale-[0.99]">
@@ -305,6 +312,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         )}
       </button>
       )}
+      {!isFreelance && editLink}
 
       {/* 매출 — 목표가 있으면 같은 칸 안에 진행 막대(2026-10-03 · 따로 있던 '목표 달성' 카드를 합침 · 같은 숫자를 두 번 보여주지 않게) */}
       <StatTile label="이달 매출(내 등록)" value={won(rev.total)} onClick={openRevenue}>
