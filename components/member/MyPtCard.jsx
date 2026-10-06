@@ -5,7 +5,9 @@
      member_contract(횟수 · 진행 수만 · 금액 없음) · member_next_appt(앞으로 잡힌 예약 시각) · member_roadmap_view(트레이너가 '보이기' 켠 것만).
    남은 수업 = 트레이너 앱 remainingSessions와 같은 규칙(취소 제외 · 노쇼 포함 차감 · 유료 먼저 · 인계 계약 제외) · 활성 = 남은 게 있는 가장 오래된 계약.
    표시(대표 결정 2026-10-03): 합계는 크게, 유료/서비스 나눔은 작게. 남은 회수 재촉 문구는 넣지 않는다.
-   표가 아직 없거나(SQL 전) 실패하면 카드가 조용히 숨는다(회원 화면을 막지 않는다). */
+   표가 아직 없거나(SQL 전) 실패하면 카드가 조용히 숨는다(회원 화면을 막지 않는다).
+   2026-10-06 홈 정리: children(= 수업 예약 · BookingCard embedded)을 받으면 '다음 수업' 줄 대신 그걸 넣는다(카드 하나로).
+   로드맵은 접어 둔다(한 줄 '지금 N단계' → 누르면 펼침). */
 
 import { useEffect, useState } from "react";
 import { CalendarClock, Check, ChevronDown, Dumbbell, Flag } from "lucide-react";
@@ -24,7 +26,7 @@ const remainOf = (c) => {
   return { paid, service, total: paid + service };
 };
 
-export default function MyPtCard({ supabase }) {
+export default function MyPtCard({ supabase, children = null }) {
   const [data, setData] = useState(null);
   const [openStage, setOpenStage] = useState(null);
 
@@ -50,7 +52,7 @@ export default function MyPtCard({ supabase }) {
   const queued = active ? withRem.filter((c) => c.id !== active.id && c.rem.total > 0 && String(c.started_at) > String(active.started_at)) : [];
   const queuedTotal = queued.reduce((s, c) => s + c.rem.total, 0);
   const rm = data.roadmap && Array.isArray(data.roadmap.stages) && data.roadmap.stages.length ? data.roadmap : null;
-  if (!active && !rm && !data.appts.length) return null;
+  if (!active && !rm && !data.appts.length && !children) return null;
 
   const total = active ? (active.sessions_total ?? 0) + (active.service_sessions ?? 0) : 0;
   const done = active ? Math.min(total, active.used ?? 0) : 0;
@@ -83,19 +85,23 @@ export default function MyPtCard({ supabase }) {
         <p className="text-[14px] text-sub">진행 중인 PT 계약이 없어요.</p>
       )}
 
-      <div className="mt-4 flex items-center gap-2 rounded-xl bg-elevate px-3.5 py-3">
-        <CalendarClock className="h-4 w-4 shrink-0 text-primary-strong" aria-hidden="true" />
-        <span className="text-[13px] text-sub">다음 수업</span>
-        <span className="ml-auto text-[14px] font-semibold text-ink">{next ? apptLabel(next) : "트레이너와 잡아 주세요"}</span>
-      </div>
+      {children ? <div className="mt-4">{children}</div> : (
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-elevate px-3.5 py-3">
+          <CalendarClock className="h-4 w-4 shrink-0 text-primary-strong" aria-hidden="true" />
+          <span className="text-[13px] text-sub">다음 수업</span>
+          <span className="ml-auto text-[14px] font-semibold text-ink">{next ? apptLabel(next) : "트레이너와 잡아 주세요"}</span>
+        </div>
+      )}
 
       {rm && (
-        <div className="mt-5">
-          <p className="mb-2 flex items-center gap-1.5 text-[14px] font-bold text-ink">
-            <Flag className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 나의 목표 로드맵
-            {rm.title && <span className="min-w-0 truncate text-[13px] font-normal text-sub">· {rm.title}</span>}
-          </p>
-          <ol className="m-0 list-none p-0">
+        <details className="group mt-4 border-t border-line pt-3">
+          <summary className="flex min-h-[40px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-bold text-ink [&::-webkit-details-marker]:hidden">
+            <Flag className="h-4 w-4 shrink-0 text-primary-strong" aria-hidden="true" /> 나의 목표 로드맵
+            <span className="min-w-0 truncate text-[13px] font-normal text-sub">· 지금 {cur + 1}단계 {rm.stages[cur]?.title || ""}</span>
+            <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          {rm.title && <p className="m-0 mb-2 mt-1 text-[13px] text-sub">{rm.title}</p>}
+          <ol className="m-0 mt-2 list-none p-0">
             {rm.stages.map((s, i) => {
               const state = i < cur ? "done" : i === cur ? "now" : "next";
               const open = shown === i && s.detail;
@@ -117,7 +123,7 @@ export default function MyPtCard({ supabase }) {
               );
             })}
           </ol>
-        </div>
+        </details>
       )}
     </section>
   );

@@ -8,7 +8,7 @@ import PtPricingSettings from "@/components/views/PtPricingSettings";
 import CenterMachineSettings from "@/components/views/CenterMachineSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
-import OunwanRewardSettings from "@/components/views/OunwanRewardSettings";
+import EventManager from "@/components/events/EventManager";
 import MyIntakeCard from "@/components/intake/MyIntakeCard";
 import BookingPrefCard from "@/components/booking/BookingPrefCard";
 import NotifySettings from "@/components/notify/NotifySettings";
@@ -22,7 +22,7 @@ export const SETTINGS_SUBTABS = [
   { id: "money",   label: "가격표" },
   { id: "gear",    label: "장비 · 큐" },
   { id: "library", label: "도서관" },
-  { id: "reward",  label: "포상" },   // 오운완 누적 N회 → 보상 정의(회원앱 진행 바에 반영)
+  { id: "reward",  label: "이벤트" }, // 회원 이벤트(2026-10-06 · 옛 '포상' 흡수 · 주소는 /settings/reward 그대로)
   { id: "notify",  label: "알림" },   // 폰 푸시 알림 켜기 · 종류별 on/off(2026-10-06)
 ];
 
@@ -73,7 +73,7 @@ export default function SettingsView({ isSolo = false, sub = "me" }) {
       )}
       {sub === "gear" && <CenterMachineSettings />}
       {sub === "library" && <TrainerLibrary />}
-      {sub === "reward" && <OunwanRewardSettings />}
+      {sub === "reward" && <EventManager />}
       {sub === "notify" && <NotifySettings />}
     </div>
   );

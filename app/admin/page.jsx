@@ -42,6 +42,7 @@ import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import MemberFlow from "@/components/admin/MemberFlow";
 import OtIntakePanel from "@/components/admin/OtIntakePanel";
 import OtPendingCard from "@/components/admin/OtPendingCard";
+import EventManager from "@/components/events/EventManager";
 import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
 import CenterMonthSummary from "@/components/admin/CenterMonthSummary";
 import TrainerQualityReport from "@/components/admin/TrainerQualityReport";
@@ -496,6 +497,13 @@ export default function AdminDashboard() {
         {atab === "ops" && (
         <section className="mb-8">
           <AdminAnnouncements trainers={trainers} />
+        </section>
+        )}
+
+        {/* ===== 회원 이벤트(2026-10-06) — 센터 전체 · 트레이너별 회원 대상 ===== */}
+        {atab === "ops" && (
+        <section className="mb-8">
+          <EventManager trainers={trainers.filter((t) => t.active !== false)} />
         </section>
         )}
 

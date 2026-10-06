@@ -4,6 +4,7 @@
 //   ot_assigned(대표 → 트레이너) · owner_feedback(대표 → 트레이너) · payroll(대표 → 트레이너)
 //   routine_request(회원 → 담당 트레이너) · log_written(트레이너 → 회원) · test(내 기기)
 //   appt_request(회원 → 담당 트레이너 · 예약/변경/취소 요청) · appt_decided(트레이너 → 회원 · 승인/거절 결과)
+//   event_new(만든 트레이너/대표 → 대상 회원) · event_join(회원 → 만든 사람 + 담당 트레이너)
 import { serviceClient, callerOf } from "@/lib/serverCaller";
 import { sendPush } from "@/lib/pushServer";
 import { personName } from "@/lib/format";
@@ -82,6 +83,30 @@ export async function POST(req) {
       const what = q.kind === "new" ? `${slotText(q.want_start)} 수업` : q.kind === "change" ? `${slotText(q.want_start)}로 변경` : `${slotText(q.orig_start)} 수업 취소`;
       r = await sendPush(sb, { memberIds: [q.member_id], type: "appt_decided", title: ok ? "요청이 승인됐어요" : "요청이 거절됐어요",
         body: `${what}${ok ? "" : q.decide_note ? ` · ${q.decide_note.slice(0, 60)}` : " · 트레이너와 다시 정해 주세요"}`, url: m?.member_token ? `/m/${m.member_token}` : "/" });
+    }
+  } else if (type === "event_new" && who.kind === "trainer") {
+    const { data: e } = await sb.from("member_event").select("account_id, created_by, scope, target_trainer, title, reward_text, active").eq("id", id).maybeSingle();
+    if (e?.account_id === who.account_id && e.active && (e.created_by === who.id || who.role === "owner")) {
+      let q = sb.from("user_table").select("id, member_token").eq("account_id", e.account_id).neq("status", "inactive").eq("hidden", false);
+      if (e.scope === "trainer") q = q.eq("trainer_id", e.target_trainer);
+      const { data: ms } = await q;
+      // 회원마다 자기 페이지 주소가 달라 한 명씩 보낸다(알림 켠 회원만 실제로 감).
+      const { data: subs } = await sb.from("push_subscription").select("member_id").in("member_id", (ms || []).map((m) => m.id));
+      const withSub = new Set((subs || []).map((s) => s.member_id));
+      let sent = 0;
+      for (const m of (ms || []).filter((x) => withSub.has(x.id))) {
+        const one = await sendPush(sb, { memberIds: [m.id], type: "event_new", title: "새 이벤트가 열렸어요",
+          body: `${e.title}${e.reward_text ? ` · ${e.reward_text}` : ""}`, url: m.member_token ? `/m/${m.member_token}` : "/" });
+        sent += one.sent || 0;
+      }
+      r = { sent };
+    }
+  } else if (type === "event_join" && who.kind === "member") {
+    const { data: j } = await sb.from("member_event_join").select("event_id").eq("event_id", id).eq("member_id", who.id).maybeSingle();
+    const { data: e } = j ? await sb.from("member_event").select("created_by, title").eq("id", id).maybeSingle() : { data: null };
+    if (e) {
+      r = await sendPush(sb, { trainerIds: [e.created_by, who.trainer_id], type: "event_join", title: "이벤트 참여",
+        body: `${await memberName(who.id)} 회원이 '${e.title}'에 참여했어요`, url: "/settings/reward" });
     }
   } else if (type === "log_written" && who.kind === "trainer") {
     const { data: l } = await sb.from("daily_workout_log").select("user_id, session_at, created_at, voided, source").eq("id", id).maybeSingle();

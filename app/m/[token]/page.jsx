@@ -8,12 +8,13 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Flame, Trophy, Sparkles } from "lucide-react";
+import { NotebookPen, Scale, Dumbbell, TrendingUp, TrendingDown, Minus, LogOut, ChevronDown, Activity, Plus, Trash2, Camera, ImagePlus, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Flame, Sparkles } from "lucide-react";
 import { memberSupabase } from "@/lib/memberSupabase";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import MyPtCard from "@/components/member/MyPtCard";
 import MemberPushCard from "@/components/member/MemberPushCard";
 import BookingCard from "@/components/member/BookingCard";
+import MemberEvents from "@/components/member/MemberEvents";
 import RoutineSection from "@/components/member/RoutineSection";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
@@ -715,7 +716,7 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
       loadHome의 조회는 limit(30/60)이 걸려 있어 buildActivityMap을 세면 누적이 창에 갇히고,
       기록이 쌓일수록 옛 날짜가 밀려나 '누적이 줄어드는' 현상이 생긴다(성취 화면에선 치명적).
       buildActivityMap은 '오늘 했는지' 판정에만 쓴다 — 오늘은 항상 최근 창 안이라 정확. */
-function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
+function OunwanCard({ stats, todayDone, onGoWrite }) {
   const total = stats?.total ?? 0;
   const streak = stats?.streak ?? 0;
   const monthCount = stats?.month_count ?? 0;
@@ -775,31 +776,7 @@ function OunwanCard({ stats, rewards, todayDone, onGoWrite }) {
         ))}
       </div>
 
-      {/* 트레이너 포상 — 정의된 게 있을 때만. 데모/0건이면 통째로 숨김. */}
-      {rewards.length > 0 && (
-        <div className="mt-4 space-y-2 border-t border-line pt-4">
-          <div className="flex items-center gap-1.5">
-            <Trophy className="h-4 w-4 text-primary-strong" />
-            <span className="text-xs font-bold text-sub">트레이너 포상</span>
-          </div>
-          {rewards.map((r) => {
-            const done = total >= r.milestone;
-            const pct = Math.min(100, Math.round((total / Math.max(1, r.milestone)) * 100));
-            return (
-              <div key={r.id}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold text-ink">{r.reward_text}</span>
-                  <span className="shrink-0 text-[11px] text-muted">{total}/{r.milestone}회</span>
-                </div>
-                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-elevate">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-                </div>
-                {done && <div className="mt-1 text-[11px] font-bold text-primary-strong">달성! 트레이너에게 받으세요 🎉</div>}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* 옛 '트레이너 포상'은 이벤트(MemberEvents · 홈 맨 위)로 옮겼다(2026-10-06). */}
     </section>
   );
 }
@@ -957,7 +934,7 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
   );
 }
 
-function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, rewards, onReloadLogs, consentRows, onConsentRows }) {
+function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPhotos, schedule, onReloadSchedule, onSignOut, ounwan, onReloadLogs, consentRows, onConsentRows }) {
   // 탭(2026-10-06 대표: '내 기록'에 정보가 너무 많다) — 홈 · 운동일지 · 변화 · 기록하기. 첫 화면 = 홈.
   //   전부 그려 두고 안 보이는 탭만 숨긴다 — 탭을 오가도 펼친 것 · 쓰던 글 · 확인 창 상태가 남는다.
   const [subTab, setSubTab] = useState("home");
@@ -1092,33 +1069,33 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
           </div>
         )}
 
-        {/* ── 홈: 내 PT · 오운완 · 달력 ── */}
+        {/* ── 홈(2026-10-06 정리): 이벤트 띠 → 알림 켜기 한 줄(꺼져 있을 때만) → 내 PT(남은 수업 + 수업 일정 · 예약 · 변경 · 로드맵 접힘) → 오운완 ── */}
         <div hidden={tab !== "home"}>
 
-        {/* 내 PT — 남은 수업 · 다음 수업 · 목표 로드맵(2026-10-03 · 자기완결 · 표 없으면 숨김) */}
-        <MyPtCard supabase={memberSupabase} />
+        {/* 이벤트(옛 '트레이너 포상' 대신 · 열린 게 있을 때만) */}
+        {!ended && <MemberEvents supabase={memberSupabase} />}
 
-        {/* 운동일지 알림 받기(폰 푸시 · 2026-10-06) — 지난 회원은 없음 */}
-        {!ended && <MemberPushCard supabase={memberSupabase} />}
+        {/* 운동일지 알림 받기 — 꺼져 있을 때만 한 줄(켜지면 맨 아래 '알림 받는 중 · 끄기') */}
+        {!ended && <MemberPushCard supabase={memberSupabase} place="home" />}
 
-        {/* 수업 예약 · 변경 · 취소 요청(2026-10-06) — 지난 회원은 없음 · 남은 수업 0회는 보기만 */}
-        {!ended && <BookingCard supabase={memberSupabase} readOnly={readOnly} />}
+        {/* 내 PT — 남은 수업 + 수업 일정(예약 · 변경 · 취소 요청 · 지난 회원은 '다음 수업' 한 줄) + 목표 로드맵(접힘) */}
+        <MyPtCard supabase={memberSupabase}>
+          {!ended ? <BookingCard supabase={memberSupabase} readOnly={readOnly} embedded /> : null}
+        </MyPtCard>
 
-        {/* 오운완 카드 — 최상단. 누적·연속은 RPC(ounwan) 값만 사용(§2 규칙).
-            '오늘 했는지'만 로컬 파생 — 오늘은 항상 최근 조회 창 안이라 정확하다. */}
+        {/* 오운완 카드 — 누적·연속은 RPC(ounwan) 값만 사용(§2 규칙) · '오늘 했는지'만 로컬 파생. */}
         <OunwanCard
           stats={ounwan}
-          rewards={rewards}
           todayDone={Boolean(buildActivityMap(logs, cardio, schedule)[todayStr()])}
           onGoWrite={readOnly ? null : () => goTab("write")}
         />
-
-        {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음). 한눈 개요 먼저. */}
-        <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
         </div>
 
-        {/* ── 운동일지: PT 운동일지 · 내가 한 개인운동 · 유산소 ── */}
+        {/* ── 운동일지: 운동 달력 · PT 운동일지 · 내가 한 개인운동 · 유산소 ── */}
         <div hidden={tab !== "logs"}>
+
+        {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음 · 2026-10-06 홈에서 옮김) */}
+        <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
 
         {/* 수업일지 타임라인 */}
         <section className="mb-8">
@@ -1267,6 +1244,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         )}
 
         <MemberFooter supabase={memberSupabase} me={me} consent={consent} onChanged={(rows) => onConsentRows?.(rows)} />
+        {!ended && <MemberPushCard supabase={memberSupabase} place="footer" />}
 
         {/* 로그아웃 */}
         <div className="mt-4 text-center">
@@ -1289,7 +1267,6 @@ export default function MemberHome() {
   const [photos, setPhotos] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [ounwan, setOunwan] = useState(null);   // ounwan_stats() 1행 {total, month_count, streak} — 누적·연속의 유일한 소스
-  const [rewards, setRewards] = useState([]);   // 내 트레이너의 활성 포상(회원 read 정책 스코프)
   const [consentRows, setConsentRows] = useState(null); // member_consent 본인 행 · null = 표 없음/조회 실패(동의 화면 건너뜀)
   const [last4, setLast4] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1331,7 +1308,7 @@ export default function MemberHome() {
   const loadHome = useCallback(async () => {
     if (!memberSupabase) return;
     try {
-      const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes, ounwanRes, rewardRes, consentRes] = await Promise.all([
+      const [meRes, logRes, inbodyRes, cardioRes, photoRes, schedRes, ounwanRes, consentRes] = await Promise.all([
         memberSupabase.from("member_me").select("*").maybeSingle(),
         // 수업 날짜(session_at) 기준 최신순 — 늦게 적은 일지가 맨 위로 오지 않게. 옛 행(session_at 없음)은 뒤로.
         memberSupabase.from("member_workout_log").select("*")
@@ -1343,7 +1320,6 @@ export default function MemberHome() {
         memberSupabase.from("schedule_check").select("*").order("on_date", { ascending: false }).limit(60),
         // 오운완 집계 — 서버 RPC(정의 단일 출처). 위 조회들의 limit과 무관하게 전체 이력 기준.
         memberSupabase.rpc("ounwan_stats"),
-        memberSupabase.from("trainer_reward").select("*").eq("active", true).order("milestone"),
         memberSupabase.from("member_consent").select("kind, agreed, created_at, version"),
       ]);
       // 공용 기기: 다른 회원 링크를 열었는데 앞 회원 세션이 남아 있으면 로그아웃하고 이 링크로 다시 로그인(2026-10-06).
@@ -1359,7 +1335,6 @@ export default function MemberHome() {
       setPhotos(photoRes.data ?? []);
       setSchedule(schedRes.data ?? []);
       setOunwan(ounwanRes.data?.[0] ?? null);   // RPC는 setof → 배열. 실패/0행이면 null(카드가 0으로 표시)
-      setRewards(rewardRes.data ?? []);
       if (consentRes.error) console.error("동의 기록 조회 실패", consentRes.error);
       setConsentRows(consentRes.error ? null : consentRes.data ?? []);
       setPhase("home");
@@ -1409,11 +1384,11 @@ export default function MemberHome() {
 
   const signOut = async () => {
     if (memberSupabase) await memberSupabase.auth.signOut({ scope: "local" }); // 이 기기만(다른 기기 로그인은 그대로)
-    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setOunwan(null); setRewards([]); setConsentRows(null); setLast4(""); setPhase("login");
+    setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setOunwan(null); setConsentRows(null); setLast4(""); setPhase("login");
   };
 
   if (phase === "checking") return <ScreenMsg>불러오는 중…</ScreenMsg>;
   if (phase === "login")
     return <LoginCard last4={last4} setLast4={setLast4} onSubmit={submit} busy={busy} err={err} />;
-  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} ounwan={ounwan} rewards={rewards} onReloadLogs={loadHome} consentRows={consentRows} onConsentRows={(rows) => setConsentRows((p) => [...(p || []), ...rows])} />;
+  return <HomeView me={me} logs={logs} inbody={inbody} cardio={cardio} onReloadCardio={loadCardio} photos={photos} onReloadPhotos={loadPhotos} schedule={schedule} onReloadSchedule={loadSchedule} onSignOut={signOut} ounwan={ounwan} onReloadLogs={loadHome} consentRows={consentRows} onConsentRows={(rows) => setConsentRows((p) => [...(p || []), ...rows])} />;
 }

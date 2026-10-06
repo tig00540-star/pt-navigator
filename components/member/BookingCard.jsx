@@ -23,7 +23,8 @@ const ERR = {
   no_appt: "그 수업은 이미 바뀌었거나 취소됐어요.",
 };
 
-export default function BookingCard({ supabase, readOnly = false }) {
+// embedded = '내 PT' 카드 안에 들어갈 때(테두리 · 제목 없이 · 2026-10-06 홈 정리).
+export default function BookingCard({ supabase, readOnly = false, embedded = false }) {
   const [d, setD] = useState(null);           // { rule, appts, reqs, busy } · false = 숨김
   const [nowMs] = useState(() => Date.now());
   const [pick, setPick] = useState(null);     // { mode: 'new'|'change'|'cancel', appt? }
@@ -42,7 +43,7 @@ export default function BookingCard({ supabase, readOnly = false }) {
       supabase.from("member_trainer_busy").select("*"),
     ]);
     if (ru.error || ap.error || rq.error) { console.error("수업 예약 읽기 실패", ru.error || ap.error || rq.error); setD(false); return; }
-    if (!ru.data || ru.data.accept === false) { setD(false); return; }
+    if (!ru.data) { setD(false); return; }
     setD({ rule: ru.data, appts: ap.data || [], reqs: rq.data || [], busy: bz.data || [] });
   }, [supabase]);
   useEffect(() => {
@@ -61,6 +62,8 @@ export default function BookingCard({ supabase, readOnly = false }) {
 
   if (!d) return null;
   const cut = d.rule.cutoff_hours;
+  // 트레이너가 앱 요청을 안 받으면 잡힌 수업만 보여 준다(버튼 없음).
+  const ro = readOnly || d.rule.accept === false;
   const headers = async () => {
     const { data } = await supabase.auth.getSession();
     const t = data?.session?.access_token;
@@ -94,9 +97,12 @@ export default function BookingCard({ supabase, readOnly = false }) {
   const seen = async (id) => { await supabase.rpc("mark_appt_request_seen", { p_id: id }); await load(); };
 
   const btn = "min-h-[40px] rounded-lg border border-line bg-card px-3 text-[14px] font-semibold text-ink";
+  const Wrap = embedded ? "div" : "section";
   return (
-    <section className="mb-6 rounded-2xl border border-line bg-card p-4 shadow-sm">
-      <h2 className="m-0 flex items-center gap-1.5 text-[15px] font-bold text-ink"><CalendarClock className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 수업 예약</h2>
+    <Wrap className={embedded ? "" : "mb-6 rounded-2xl border border-line bg-card p-4 shadow-sm"}>
+      {embedded
+        ? <p className="m-0 flex items-center gap-1.5 text-[14px] font-bold text-ink"><CalendarClock className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 수업 일정</p>
+        : <h2 className="m-0 flex items-center gap-1.5 text-[15px] font-bold text-ink"><CalendarClock className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 수업 예약</h2>}
 
       {decided.map((r) => (
         <div key={r.id} className={`mt-3 flex items-start gap-2 rounded-xl px-3 py-2.5 text-[14px] ${r.status === "approved" ? "bg-primary-soft text-ink" : "bg-elevate text-ink"}`}>
@@ -119,9 +125,9 @@ export default function BookingCard({ supabase, readOnly = false }) {
               {p ? (
                 <div className="mt-1 flex items-center gap-2 text-[13px] text-sub">
                   <span>{KIND_LABEL[p.kind]} 요청 · 트레이너 확인 중{p.kind === "change" ? ` (→ ${slotText(p.want_start)})` : ""}</span>
-                  {!readOnly && <button type="button" onClick={() => withdraw(p.id)} className="ml-auto shrink-0 font-semibold text-sub">요청 취소</button>}
+                  {!ro && <button type="button" onClick={() => withdraw(p.id)} className="ml-auto shrink-0 font-semibold text-sub">요청 취소</button>}
                 </div>
-              ) : readOnly ? null : ok ? (
+              ) : ro ? null : ok ? (
                 <div className="mt-2 flex gap-2">
                   <button type="button" onClick={() => open("change", a)} className={btn}>시간 바꾸기</button>
                   <button type="button" onClick={() => open("cancel", a)} className={btn}>취소하기</button>
@@ -135,12 +141,12 @@ export default function BookingCard({ supabase, readOnly = false }) {
         {pendingNew.map((r) => (
           <li key={r.id} className="flex items-center gap-2 rounded-xl border border-dashed border-line px-3 py-2.5 text-[14px]">
             <span className="min-w-0 flex-1"><b className="font-semibold text-ink">새 수업 요청</b> · {slotText(r.want_start)} <span className="text-sub">· 확인 중</span></span>
-            {!readOnly && <button type="button" onClick={() => withdraw(r.id)} className="shrink-0 text-[13px] font-semibold text-sub">요청 취소</button>}
+            {!ro && <button type="button" onClick={() => withdraw(r.id)} className="shrink-0 text-[13px] font-semibold text-sub">요청 취소</button>}
           </li>
         ))}
       </ul>
 
-      {!readOnly && (
+      {!ro && (
         <>
           <button type="button" onClick={() => open("new")} className="mt-3 min-h-[44px] w-full rounded-xl bg-ink text-[15px] font-bold text-white">새 수업 요청하기</button>
           <p className="m-0 mt-2 text-[12.5px] leading-relaxed text-muted">트레이너가 승인하면 예약이 잡혀요. 변경 · 취소는 수업 {cut}시간 전까지 요청할 수 있어요.</p>
@@ -192,6 +198,6 @@ export default function BookingCard({ supabase, readOnly = false }) {
           <p className="m-0 mt-2 text-center text-[12.5px] text-muted">트레이너가 확인하면 알려 드려요.</p>
         </Modal>
       )}
-    </section>
+    </Wrap>
   );
 }

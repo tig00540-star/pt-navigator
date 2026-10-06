@@ -181,6 +181,13 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **트레이너:** 설정 '내 정보' **'회원 예약 요청'**(`BookingPrefCard` · 받기 on/off · 3/6/12/24/48시간 전) · **'수업 요청' 카드**(`ApptRequestToday` · 폰 홈 · 오늘 · 넓은 홈 · 승인/거절+한마디). 알림: 요청 → 트레이너 `appt_request`(종류 on/off) · 결과 → 회원 `appt_decided`.
 - **운동일지 자동 확인 24시간(같은 날 · 폰 알림 뒤):** 동의서 `2026-10-06.2`(24시간 문구) 이상 동의 회원부터 24시간 · 48시간 문구에만 동의한 회원은 48시간(DB 함수 per-member · `lib/workoutHash` `autoConfirmHours(version)`). 버전이 올라 회원 페이지가 한 번 더 묻는다.
 
+### 회원 이벤트(옛 포상 흡수) · 회원 홈 정리 (2026-10-06 · SQL `docs/migrations/2026-10-06-member-event.sql`)
+
+- **이벤트 `member_event`**(트레이너 = 내 회원 · 대표 = 센터 전체/특정 트레이너 회원): 종류 **출석 챌린지**(기간 안 오운완 N회 · 진행은 DB `_event_progress` = `ounwan_days` 기간 카운트 · 상시면 전체) / **일반 이벤트**(참여 신청만) · 제목 · 설명 · 상품/혜택 · **이벤트 기간**(starts_on~ends_on · 비우면 상시) · **신청 기간**(join_from~join_until · 비우면 이벤트 기간) · 정원(선착순) · 만들 때 회원 폰 알림(`event_new`). 관리 = `components/events/EventManager`(트레이너 설정 '이벤트' 탭 = 옛 '포상' · 주소 `/settings/reward` 그대로 · 대표 운영 탭) · 참여 명단 rpc `event_participants`(센터 이벤트는 트레이너에게 자기 회원만) · **지급 완료** `set_event_reward`.
+- **회원** `components/member/MemberEvents`(홈 맨 위 띠 · 자세히 시트 · **[참여하기] = rpc `join_member_event` · 참여 취소 없음(대표 결정 · 화면에 미리 알림)** · 챌린지 진행 막대 · 달성 → "트레이너에게 받으세요"). 읽기 `member_events_view`(끝난 지 7일까지). 참여 → 만든 사람 + 담당 트레이너 알림 `event_join`.
+- **옛 포상 `trainer_reward`** → SQL이 '상시 출석 챌린지'(legacy_reward_id)로 옮김 · 표는 남김 · 앱은 더 안 읽음(오운완 카드의 포상 칸 · `OunwanRewardSettings` 사용 중단).
+- **회원 홈 정리:** 이벤트 띠 → 알림 켜기 한 줄(꺼져 있을 때만 · 켜지면 맨 아래 '폰 알림 받는 중 · 끄기' = `MemberPushCard place`) → **'내 PT' 하나**(남은 수업 + 수업 일정(`BookingCard embedded` · 트레이너가 요청 안 받으면 잡힌 수업만) + 목표 로드맵 접힘) → 오운완. **운동 달력은 운동일지 탭으로.** 지난 회원은 '내 PT'에 '다음 수업' 한 줄.
+
 ### 대표 화면 스타일 통일 (2026-10-05)
 
 트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.
