@@ -42,6 +42,8 @@ import RevenuePipeline from "@/components/admin/RevenuePipeline";
 import MemberFlow from "@/components/admin/MemberFlow";
 import OtIntakePanel from "@/components/admin/OtIntakePanel";
 import OtPendingCard from "@/components/admin/OtPendingCard";
+import MonthlyOwnerReport from "@/components/reports/MonthlyOwnerReport";
+import MonthlyReadyCard from "@/components/reports/MonthlyReadyCard";
 import EventManager from "@/components/events/EventManager";
 import ScheduleAnalytics from "@/components/admin/ScheduleAnalytics";
 import CenterMonthSummary from "@/components/admin/CenterMonthSummary";
@@ -61,6 +63,7 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 const ATABS = [
   { id: "overview",  label: "한눈에" },    // ← Phase A 데스크톱 콘솔
   { id: "briefing",  label: "보고서" },
+  { id: "monthly",   label: "월간 결산" },   // 매월 1일 지난달 결산(2026-10-06 · MonthlyOwnerReport)
   { id: "perf",      label: "트레이너" },  // ★id는 "perf" 그대로(atab state·모든 {atab==="perf"} 참조 무변).
   { id: "revenue",   label: "매출" },
   { id: "settle",       label: "정산 보기" },   // 기간 정산(PT+FC+기타−지출=순이익)
@@ -76,7 +79,7 @@ const ATABS = [
    대표는 하루에 여러 번 열지 않는다. 탭 9개를 가로로 훑게 하는 대신 5개로 줄인다. */
 const AGROUPS = [
   { id: "hub",      label: "홈",         tabs: ["hub"], icon: Home },
-  { id: "briefing", label: "보고서", tabs: ["briefing"], icon: FileText },
+  { id: "briefing", label: "보고서", tabs: ["briefing", "monthly"], icon: FileText },
   { id: "revenue",  label: "매출",        tabs: ["revenue"], icon: Wallet },
   // 정산은 '보는' 화면이 아니라 '하는' 화면(입력·월말 마감)이라 매출 분석 옆 세그먼트에
   // 숨으면 매달 찾아 들어가야 한다. 원장이 반복하는 실무라 상단에 제 집을 준다.
@@ -85,7 +88,7 @@ const AGROUPS = [
   { id: "members",  label: "등록·이탈",    tabs: ["flow"], icon: Repeat2 },
   { id: "ops",      label: "운영",        tabs: ["schedule", "ops"], icon: Settings2 },
 ];
-const ATAB_LABEL = { settle: "정산 보기", settle_entry: "장부 적기", perf: "성과·리더보드", payroll: "급여 설정", schedule: "스케줄", ops: "센터 운영" };
+const ATAB_LABEL = { briefing: "아침 보고서", monthly: "월간 결산", settle: "정산 보기", settle_entry: "장부 적기", perf: "성과·리더보드", payroll: "급여 설정", schedule: "스케줄", ops: "센터 운영" };
 // 옛 탭 id 흡수 — ownerBriefing 카드가 tab:"funnel"·"retention"을 들고 온다(lib은 안 건드린다).
 const normalizeTab = (tab) => (tab === "funnel" || tab === "retention" ? "flow" : tab);
 const groupOf = (tab) => AGROUPS.find((g) => g.tabs.includes(tab))?.id ?? (tab === "overview" ? "hub" : "hub");
@@ -149,6 +152,13 @@ export default function AdminDashboard() {
   const wide = useIsWide(); // 태블릿 가로·PC = 홈을 한 화면 대시보드로(OwnerWideHome)
   // 탭 이동 공통 — 옛 id(funnel·retention)를 새 화면(flow)으로 흘린다.
   const goTab = (id) => setAtab(normalizeTab(id));
+  // 알림에서 바로 열기(?tab=monthly 등 · 2026-10-06 월간 결산)
+  useEffect(() => {
+    (async () => {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (t && ATABS.some((x) => x.id === normalizeTab(t))) setAtab(normalizeTab(t));
+    })();
+  }, []);
   const [perfDetailOpen, setPerfDetailOpen] = useState(false); // 트레이너 탭 '클로징·재등록 분석' 접기(기본 닫힘 · 표시만)
   const [showMemberCreate, setShowMemberCreate] = useState(false); // 운영 탭 회원 등록·배정 모달
   const [showReassign, setShowReassign] = useState(false); // 운영 탭 회원 재배정(인계) 모달
@@ -403,6 +413,7 @@ export default function AdminDashboard() {
 
         {/* OT 신청 배정 대기(센터 QR · 2026-10-06) — 홈 맨 위 · 있을 때만 */}
         {atab === "hub" && <OtPendingCard onGo={() => goTab("flow")} />}
+        {atab === "hub" && <MonthlyReadyCard kind="owner" onGo={() => goTab("monthly")} />}
 
         {/* ===== 홈(허브) — 9개 탭을 5묶음으로 고르는 첫 화면 ===== */}
         {atab === "hub" && wide && (
@@ -440,6 +451,13 @@ export default function AdminDashboard() {
             members={rows} otRows={otRows} contracts={contracts} logs={logs}
             appts={appts} goals={goals} trainers={trainers} ym={ym}
             onGoTab={goTab} />
+        </section>
+        )}
+
+        {/* ===== 월간 결산 — 매월 1일 지난달(2026-10-06) ===== */}
+        {atab === "monthly" && (
+        <section className="mb-8">
+          <MonthlyOwnerReport goals={goals} onGoTab={goTab} />
         </section>
         )}
 

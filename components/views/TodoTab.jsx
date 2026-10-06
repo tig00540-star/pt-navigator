@@ -15,6 +15,7 @@ import NoNextBookingToday from "@/components/views/NoNextBookingToday";
 import UnconfirmedConfirmToday from "@/components/views/UnconfirmedConfirmToday";
 import OwnerFeedbackToday from "@/components/views/OwnerFeedbackToday";
 import OtApplicationToday from "@/components/views/OtApplicationToday";
+import MonthlyReadyCard from "@/components/reports/MonthlyReadyCard";
 import ApptRequestToday from "@/components/views/ApptRequestToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
@@ -33,6 +34,8 @@ export default function TodoTab({ members, uid, onSelect }) {
         <p className="mt-0.5 text-[13px] text-sub">다시 연락할 회원 · 재등록 타이밍 · 직접 적은 메모를 한 곳에서 봐요.</p>
       </div>
 
+      {/* 지난달 결산 · 성적표(매월 1~10일 · 안 열어 봤을 때) */}
+      <MonthlyReadyCard className="mb-0" />
       {/* 새 OT 회원(OT 신청서) — 맨 위 */}
       <OtApplicationToday uid={uid} />
       <ApptRequestToday members={members} uid={uid} />

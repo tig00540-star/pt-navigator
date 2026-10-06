@@ -16,6 +16,7 @@ import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import MonthlyReport from "@/components/views/MonthlyReport";
+import MonthlySelfReport from "@/components/reports/MonthlySelfReport";
 import Card from "@/components/ui/Card";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import SettlementPanel from "@/components/admin/SettlementPanel";
@@ -272,6 +273,9 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
           <FileText className="h-4 w-4 text-primary-strong" aria-hidden="true" /> 지난 달 · 보고서
         </button>
       </div>
+
+      {/* 월간 결산 · 성적표(매월 1일 서버가 만든 것 · 2026-10-06) */}
+      <MonthlySelfReport goals={goals} />
 
       {isFreelance ? (
         <>
