@@ -208,7 +208,7 @@ const TIERS = [
     tagline: "트레이너 3인 + 대표 1인",
     feats: ["프로 전부(센터가 함께 쓰는 한도)", `말로 쓰는 운동일지 월 ${PLANS.center.ai.voice}건 · 대본 월 ${PLANS.center.ai.prep}번`, "대표 화면 · 아침 보고서 · 월간 결산", `트레이너 추가 1인 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원`],
     highlight: false,
-    cta: { label: "센터 자세히 보기", href: "/center" },
+    cta: { label: "센터로 시작하기", href: "/signup?type=center" },   // 상품 카드마다 바로 결제 경로(토스 심사 2026-10-07) · 센터 소개는 아래 띠 · 머리 전환
   },
 ];
 
