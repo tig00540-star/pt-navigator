@@ -179,7 +179,7 @@ export function GroupLabel({ children, dark }) {
   );
 }
 
-export function Shot({ src, alt, zoom = true, wide = false }) {
+export function Shot({ src, alt, zoom = true, wide = false, badge = null }) {
   const [open, setOpen] = useState(false);
   // 이미 1080×1350 WebP ~100KB로 최적화한 정적 캡처 — next/image 변환 없이 그대로 내보낸다.
   // eslint-disable-next-line @next/next/no-img-element
@@ -192,6 +192,9 @@ export function Shot({ src, alt, zoom = true, wide = false }) {
       <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} 크게 보기`}
         className={`group relative block w-full cursor-zoom-in rounded-2xl p-0 ${FOCUS}`}>
         {img}
+        {badge && (
+          <span className="pointer-events-none absolute left-2.5 top-2.5 inline-flex items-center rounded-full bg-ink/80 px-2.5 py-1 text-[12px] font-bold text-white">{badge}</span>
+        )}
         <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2.5 py-1 text-[12px] font-bold text-white">
           <ZoomIn size={13} strokeWidth={2.6} aria-hidden="true" /> 크게 보기
         </span>
@@ -203,11 +206,11 @@ export function Shot({ src, alt, zoom = true, wide = false }) {
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
-export function Visual({ img, demo, alt, dark, wide, caption, who }) {
+export function Visual({ img, demo, alt, dark, wide, caption, who, badge }) {
   return (
     <div className={`mx-auto flex w-full flex-col gap-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"}`}>
       <div className={`rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
-        {img ? <Shot src={img} alt={alt} wide={wide} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
+        {img ? <Shot src={img} alt={alt} wide={wide} badge={badge} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
       </div>
       {caption && <ShotCaption who={who}>{caption}</ShotCaption>}
     </div>
@@ -262,12 +265,13 @@ export function StepShots({ steps }) {
                   <figcaption className="flex items-center gap-1.5 text-[13px] font-bold text-primary-strong">
                     <Mic size={15} strokeWidth={2.6} aria-hidden="true" /> {s.quoteLabel || "트레이너가 실제로 녹음한 말"}
                   </figcaption>
-                  <blockquote className="m-0 rounded-[18px_18px_18px_4px] bg-elevate px-4 py-3.5 text-[clamp(14px,3.9vw,17px)] leading-[1.6] text-ink">
+                  <blockquote className={`m-0 rounded-[18px_18px_18px_4px] bg-elevate px-4 py-3.5 leading-[1.6] text-ink ${
+                    s.quote.length < 60 ? "my-auto px-5 py-6 text-[clamp(20px,5.6vw,26px)] font-bold" : "text-[clamp(14px,3.9vw,17px)]"}`}>
                     {s.quote}
                   </blockquote>
                 </figure>
               ) : (
-                <Shot src={s.img} alt={s.alt} />
+                <Shot src={s.img} alt={s.alt} badge="실제 앱 화면" />
               )}
             </li>
           ))}
@@ -443,37 +447,52 @@ export function FeatureRow({ pill, title, flow, checks, note, visual, dark, chil
   );
 }
 
-/* 기능 묶음(2026-10-06) — 일하는 순서대로 5묶음. 머리(알약 · 제목 · 효과 3줄) → 대표 장면 1장 크게 → 나머지는 옆으로 넘겨 보기 → 직접 눌러 보기.
-   대표 장면을 크게 두는 건 넘기는 칸은 보통 첫 1~2장만 보고 지나가서다.
-   2026-10-07: 위쪽 '핵심 4가지'를 없애고 묶음 안 대표 장면을 '핵심 기능'(core)으로 — 같은 내용이 위아래 두 번 나와 복잡했다(대표). */
-export function CoreFeature({ title, desc, visual, steps, dark }) {
-  return (
-    <div className="flex w-full flex-col items-center gap-4">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <span className="inline-flex min-h-[30px] items-center gap-1 rounded-full bg-primary px-3 text-[13px] font-extrabold text-white">
-          <Star size={13} fill="currentColor" strokeWidth={0} aria-hidden="true" /> 핵심 기능
-        </span>
-        <p className={`m-0 text-[clamp(21px,4.6vw,27px)] font-black leading-[1.35] tracking-[-0.035em] ${dark ? "text-white" : "text-ink"}`}>{title}</p>
-        {desc && <p className={`m-0 max-w-[480px] text-[16px] leading-[1.6] ${dark ? "text-white/70" : "text-sub"}`}>{desc}</p>}
-      </div>
-      {visual && <Visual {...visual} dark={dark} />}
-      {steps && <StepShots steps={steps} />}
-    </div>
-  );
-}
-
-export function Bundle({ id, pill, title, checks, note, core, hero, items, label, href, dark, children }) {
+/* 기능 묶음 — 한 기능 한 장(2026-10-07 · 아우라핏 구성 참고 · 색 · 문장은 우리 것).
+   이름표 → 제목 2줄 → 설명 2줄 → '· 한 줄 포인트' → 큰 사진 1장(또는 트레이너 → 앱 → 회원 단계) → '기능 더 보기'(접힘: 효과 줄 · 나머지 화면).
+   desc가 없는 묶음(대표 랜딩)은 예전처럼 효과 줄 · 설명을 위에 펼쳐 둔다. */
+export function Bundle({ id, pill, title, desc, point, checks, note, core, hero, items, label, href, dark, children }) {
+  const simple = Boolean(desc);
+  const main = core || hero;
+  const gallery = items?.length > 0 && <FeatureGallery items={items} dark={dark} label={label || `${pill} 화면`} />;
   return (
     <div id={id} className="w-full scroll-mt-28">
-      <FeatureRow pill={pill} title={title} checks={checks} note={note} dark={dark}>
-        <div className="flex w-full flex-col items-center gap-7">
-          {core && <CoreFeature {...core} dark={dark} />}
-          {!core && hero && <Visual {...hero} dark={dark} />}
-          {items?.length > 0 && <FeatureGallery items={items} dark={dark} label={label || `${pill} 화면`} />}
+      <div className="flex w-full flex-col items-center gap-[18px] text-center">
+        <div className="rv flex flex-col items-center gap-3.5" style={stagger(0)}>
+          <Pill dark={dark}>{pill}</Pill>
+          <h3 className={H3}>{title[0]}<br />{title[1]}</h3>
+        </div>
+        <div className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
+          {simple ? (
+            <>
+              <p className={`m-0 max-w-[520px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] ${dark ? "text-white/70" : "text-sub"}`}>{desc}</p>
+              {point && <p className={`m-0 text-[15px] font-bold ${dark ? "text-white" : "text-primary-strong"}`}>· {point}</p>}
+            </>
+          ) : (
+            <>
+              <Checks items={checks} dark={dark} />
+              {note && <p className={`m-0 text-[14px] ${dark ? "text-white/60" : "text-sub"}`}>· {note}</p>}
+            </>
+          )}
+        </div>
+        <div className="rv mt-1.5 flex w-full flex-col items-center gap-6" style={stagger(2)}>
+          {main?.steps ? <StepShots steps={main.steps} /> : main ? <Visual {...main} badge="실제 앱 화면" dark={dark} /> : null}
           {children}
+          {simple ? (items?.length > 0 || checks?.length > 0) && (
+            <details className="lp-more w-full max-w-[640px] text-left">
+              <summary className={`mx-auto flex min-h-[48px] w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border px-5 text-[15px] font-bold ${FOCUS} ${
+                dark ? "border-white/25 text-white" : "border-line-strong bg-card text-ink hover:bg-elevate"}`}>
+                {pill} 기능 더 보기{items?.length ? ` · ${items.length}개` : ""}
+                <ChevronDown size={18} className="lp-more-chev transition-transform" aria-hidden="true" />
+              </summary>
+              <div className="mt-5 flex flex-col items-center gap-6">
+                {checks?.length > 0 && <Checks items={checks} dark={dark} />}
+                {gallery}
+              </div>
+            </details>
+          ) : gallery}
           {href && <TryLink href={href} dark={dark} />}
         </div>
-      </FeatureRow>
+      </div>
     </div>
   );
 }
@@ -597,6 +616,8 @@ export function Footer() {
 /* ───────── 스코프 CSS ───────── */
 export const LP_CSS = `
 .lp-faq summary::-webkit-details-marker{display:none}
+.lp-more summary::-webkit-details-marker{display:none}
+.lp-more[open] .lp-more-chev{transform:rotate(180deg)}
 .lp-faq[open] .lp-faq-chev{transform:rotate(180deg)}
 .lp-steps{scrollbar-width:none}
 .lp-steps::-webkit-scrollbar{display:none}
