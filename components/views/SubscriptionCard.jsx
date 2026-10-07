@@ -97,6 +97,8 @@ export default function SubscriptionCard() {
   const [memo, setMemo] = useState("");
   const [allowLeave, setAllowLeave] = useState(true);   // 센터 해지 — 트레이너들이 개인 계정으로 이어 쓰게(기본 켬)
   const [change, setChange] = useState(null);           // { action, amount, trial } — 요금제 · 자리 바꾸기 확인 창
+  const [refund, setRefund] = useState(null);           // 첫 결제 7일 안 전액 환불 { eligible, until, amount } (2026-10-07)
+  const [askRefund, setAskRefund] = useState(false);
   const { toast, showToast } = useToast();
   const quota = useAiQuota();
 
@@ -117,6 +119,14 @@ export default function SubscriptionCard() {
       lastPay: a?.last_payment_at || null, untilRo: row.read_only_until || plusDays(end, READ_ONLY_DAYS),
       nextPlan: a?.next_billing_plan || null, seats: a?.extra_seats || 0, nextSeats: a?.next_extra_seats ?? null,
     });
+    // 7일 전액 환불 가능 여부 — 실패해도 카드는 그대로(버튼만 안 보임)
+    if (mode === "full") {
+      try {
+        const r = await fetch("/api/billing/refund", { headers: await authHeader() });
+        const j = await r.json().catch(() => ({}));
+        setRefund(r.ok && j.eligible ? j : null);
+      } catch (e) { console.error("환불 가능 여부 확인 실패", e); setRefund(null); }
+    } else setRefund(null);
   }, []);
 
   useEffect(() => {
@@ -154,6 +164,26 @@ export default function SubscriptionCard() {
       await load();
     } catch (e) {
       console.error("구독 변경 실패", e);
+      showToast("인터넷 연결을 확인하고 다시 시도해 주세요.");
+    } finally { setBusy(""); }
+  };
+
+  const doRefund = async () => {
+    setBusy("refund");
+    try {
+      const res = await fetch("/api/billing/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ reason: [reason, memo.trim()].filter(Boolean).join(" · ") }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { showToast(j.error || "환불하지 못했어요. 다시 시도해 주세요."); return; }
+      showToast(j.partial ? j.error : `${won(j.refunded || 0)}을 환불했어요`);
+      setAskRefund(false); setReason(""); setMemo("");
+      // 이용이 끝나 결제벽 · 읽기 전용으로 바뀐다 — 계정 상태를 새로 읽게 새로고침
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (e) {
+      console.error("환불 실패", e);
       showToast("인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally { setBusy(""); }
   };
@@ -239,6 +269,13 @@ export default function SubscriptionCard() {
 
         {live && (st.plan === "solo" || st.plan === "center") && !trial && <AiPackSection showToast={showToast} />}
 
+        {refund && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-3.5 py-2.5">
+            <span className="text-[13.5px] leading-relaxed text-sub">첫 결제 7일 안이라 <b className="text-ink">써 봤어도 전액 환불</b>할 수 있어요 · {dateKo(refund.until)}까지</span>
+            <Button variant="ghost" size="sm" onClick={() => setAskRefund(true)} disabled={busy !== ""}>환불받기</Button>
+          </div>
+        )}
+
         <div className="mt-4 flex flex-col gap-2">
           <Button variant="ghost" size="md" fullWidth onClick={exportData} disabled={busy !== ""}>
             <Download className="h-4 w-4" aria-hidden="true" /> {busy === "export" ? "준비하는 중…" : "내 데이터 내려받기"}
@@ -299,6 +336,36 @@ export default function SubscriptionCard() {
               <li>· 쓰는 트레이너가 자리보다 많으면 줄일 수 없어요. 먼저 운영 탭에서 트레이너를 정리해 주세요.</li>
             </>}
           </ul>
+        </Modal>
+      )}
+
+      {askRefund && refund && (
+        <Modal title="전액 환불할까요?" onClose={() => setAskRefund(false)}
+          footer={(
+            <div className="flex w-full gap-2">
+              <Button variant="ghost" size="md" fullWidth onClick={() => setAskRefund(false)}>계속 쓸게요</Button>
+              <Button variant="danger" size="md" fullWidth onClick={doRefund} disabled={busy !== ""}>
+                {busy === "refund" ? "처리하는 중…" : `${won(refund.amount)} 환불받기`}
+              </Button>
+            </div>
+          )}>
+          <ul className="m-0 list-none space-y-2 p-0 text-[14px] leading-relaxed text-ink">
+            <li>· 결제한 <b>{won(refund.amount)}</b>을 전액 돌려드려요. 카드 결제 취소라 카드사에 따라 며칠 걸릴 수 있어요.</li>
+            <li>· 환불하면 <b>지금 바로 이용이 끝나요</b>. {dateKo(plusDays(new Date().toISOString(), READ_ONLY_DAYS))}까지 볼 수만 있고 데이터를 내려받을 수 있어요. 그다음 회원 · 기록이 <b className="text-danger-text">지워져요</b>.</li>
+            <li>· 7일 전액 환불은 <b>계정당 한 번</b>이에요. 다시 쓰려면 카드를 등록하면 바로 결제돼요.</li>
+            <li>· 추가 팩은 따로예요. 안 쓴 팩이 있으면 먼저 위 &lsquo;추가 팩&rsquo;에서 환불해 주세요.</li>
+          </ul>
+          <p className="m-0 mt-4 text-[13px] font-semibold text-sub">아쉬웠던 점을 알려 주시면 고치는 데 써요(선택)</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {REASONS.map((r) => (
+              <button key={r} type="button" onClick={() => setReason(reason === r ? "" : r)} aria-pressed={reason === r}
+                className={`min-h-[36px] rounded-full border px-3 text-[13px] font-semibold ${reason === r ? "border-primary bg-primary-soft text-primary-strong" : "border-line bg-card text-sub"}`}>
+                {r}
+              </button>
+            ))}
+          </div>
+          <textarea value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={200} rows={2} placeholder="더 하고 싶은 말(선택)"
+            className={`${inputCls} mt-2`} />
         </Modal>
       )}
 

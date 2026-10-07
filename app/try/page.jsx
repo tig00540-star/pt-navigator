@@ -74,7 +74,7 @@ export default function TryPage() {
             {next ? (
               <button type="button" onClick={() => go(next.id)} className={BTN_OUTLINE}>다음 체험 · {next.label} <Arrow /></button>
             ) : null}
-            <a href="/signup" className={BTN_PRIMARY}>내 회원으로 해 보기 · 7일 무료 <Arrow /></a>
+            <a href="/signup" className={BTN_PRIMARY}>내 회원으로 해 보기 <Arrow /></a>
             <p className="m-0 text-[13.5px] text-sub">체험은 간단히 재현한 화면이에요. 실제 앱은 데이터가 저장되고 폰 알림이 와요.</p>
           </div>
         </div>

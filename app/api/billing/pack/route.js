@@ -9,11 +9,10 @@
 // -----------------------------------------------------------------------------
 import { serviceClient, callerOf } from "@/lib/serverCaller";
 import { confirmPayment, cancelPayment, tossReady } from "@/lib/toss";
-import { PACKS } from "@/lib/plans";
+import { PACKS, REFUND_DAYS } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
-const REFUND_DAYS = 7;
 const ORDER_RE = /^pack_(prep10|voice50)_([0-9a-f-]{36})_(\d{10,})$/;
 
 async function guard(req) {

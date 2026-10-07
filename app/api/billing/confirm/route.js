@@ -1,11 +1,13 @@
-// 카드 등록 성공 → 빌링키 발급 + 7일 무료체험 시작(계정 활성). ⚠️ owner만. service_role.
-// 2026-10-06 오류 점검: ① 무료체험은 계정당 한 번 — 체험이나 결제 이력이 있으면 바로 첫 달 결제(실패면 활성화 안 함).
+// 카드 등록 성공 → 빌링키 발급 + 바로 첫 달 결제(계정 활성). ⚠️ owner만. service_role.
+// 2026-10-07 대표 결정: 무료 체험 없앰 → 등록 즉시 첫 결제 · 첫 결제 7일 안 전액 환불(/api/billing/refund · 계정당 한 번).
+//   (옛 체험 계정은 이미 기간이 잡혀 있어 결제 작업 charge-subscriptions가 이어 받는다.)
+// 2026-10-06 오류 점검: ① 결제 실패면 활성화 안 함.
 //   ② 요금제는 화면이 아니라 계정 종류(account.type: solo · center)로 서버가 정한다(센터가 솔로 가격으로 결제되던 구멍).
 // create-trainer 라우트와 동일한 보안 패턴(Bearer→getUser→owner 검증→service_role write).
-// 첫 실청구는 없음(7일 무료) — 만료 임박 시 크론(Phase 2)이 billingKey로 자동 청구.
+// 다음 달부터는 결제 작업(charge-subscriptions)이 billingKey로 자동 청구.
 import { createClient } from "@supabase/supabase-js";
 import { issueBillingKey, chargeBilling, tossReady } from "@/lib/toss";
-import { PLANS, TRIAL_DAYS, planAmount } from "@/lib/plans";
+import { PLANS, planAmount } from "@/lib/plans";
 import { sendPush } from "@/lib/pushServer";
 
 // 달 더하기 — 말일 넘침 보정(크론 charge-subscriptions와 같은 규칙).
@@ -66,7 +68,7 @@ export async function POST(req) {
   const customerKey = (body.customerKey || "").trim();
   // 요금제 = 계정 종류가 정하는 범위 안에서(서버가 검증). 센터 계정 = center · 개인 계정 = basic | solo(프로 · 기본값).
   //   2026-10-07 요금제 개편 — 개인은 화면에서 베이직/프로를 고른다. 그 밖의 값은 무시.
-  const { data: acct } = await sb.from("account").select("type, current_period_end, no_trial, extra_seats").eq("id", me.account_id).maybeSingle();
+  const { data: acct } = await sb.from("account").select("type, extra_seats").eq("id", me.account_id).maybeSingle();
   const planKey = acct?.type === "center" ? "center" : body.plan === "basic" ? "basic" : "solo";
   const plan = PLANS[planKey];
   if (!authKey || !customerKey || !plan) {
@@ -90,71 +92,30 @@ export async function POST(req) {
     return Response.json({ error: "카드 등록 응답이 올바르지 않습니다." }, { status: 400 });
   }
 
-  // 1.5) 무료체험은 한 번만 — 체험 · 결제 이력이 있거나 기간이 한 번이라도 잡혔던 계정은 바로 첫 달 결제.
-  const { data: past } = await sb.from("payment").select("id").eq("account_id", me.account_id).in("status", ["TRIAL", "DONE"]).limit(1);
-  // 센터에서 독립한 계정(no_trial)은 체험 없이 바로 첫 결제(2026-10-07 대표 결정)
-  const trialUsed = (past && past.length > 0) || Boolean(acct?.current_period_end) || Boolean(acct?.no_trial);
+  // 2) 바로 첫 달 결제(2026-10-07 · 무료 체험 없음) — 결제 이력이 없던 계정이면 7일 안 전액 환불 대상(화면 안내용 · 판정은 /api/billing/refund)
+  const { data: past } = await sb.from("payment").select("id").eq("account_id", me.account_id).in("status", ["TRIAL", "DONE", "CANCELED"]).limit(1);
+  const refundable = !(past && past.length > 0);
   const now = Date.now();
   const nowIso = new Date(now).toISOString();
-  if (trialUsed) {
-    const amount = planAmount(planKey, acct?.extra_seats);
-    const orderId = `sub_${me.account_id}_${now}`;
-    const res = await chargeBilling(billingKey, { customerKey, amount, orderId, orderName: `${plan.name} 월 구독` });
-    if (!(res.ok && res.data?.status === "DONE")) {
-      console.error("[billing/confirm] 첫 결제 실패:", res.status, res.error?.code || res.error?.message);
-      await sb.from("payment").insert({ account_id: me.account_id, order_id: orderId, amount, status: "FAILED", plan: planKey, raw: { error: res.error ?? null, status: res.status ?? null } });
-      return Response.json({ error: "카드 결제에 실패했어요. 카드 정보를 확인하고 다시 시도해 주세요." }, { status: 402 });
-    }
-    const end = addOneMonth(new Date(now)).toISOString();
-    const { data: up2, error: ue3 } = await sb.from("account").update({
-      subscription_status: "active", plan: "premium", current_period_end: end, last_payment_at: nowIso,
-      billing_provider: "toss", billing_key: billingKey, billing_customer_key: customerKey, billing_plan: planKey, next_billing_plan: null, cancel_at_period_end: false,
-    }).eq("id", me.account_id).select();
-    await sb.from("payment").insert({ account_id: me.account_id, order_id: orderId, toss_payment_key: res.data.paymentKey || null, amount, status: "DONE",
-      plan: planKey, period_start: nowIso, period_end: end, raw: { approvedAt: res.data.approvedAt ?? null } });
-    if (ue3 || !up2 || up2.length === 0) {
-      console.error("[billing/confirm] 결제 성공 · 계정 활성 실패(수동 보정 필요):", ue3?.message);
-      return Response.json({ error: "결제는 됐지만 이용 시작이 늦어지고 있어요. 고객센터로 알려 주세요." }, { status: 500 });
-    }
-    await notifyWaitingMembers(sb, me.account_id);
-    return Response.json({ ok: true, paid: true, periodEnd: end, plan: planKey });
+  const amount = planAmount(planKey, acct?.extra_seats);
+  const orderId = `sub_${me.account_id}_${now}`;
+  const res = await chargeBilling(billingKey, { customerKey, amount, orderId, orderName: `${plan.name} 월 구독` });
+  if (!(res.ok && res.data?.status === "DONE")) {
+    console.error("[billing/confirm] 첫 결제 실패:", res.status, res.error?.code || res.error?.message);
+    await sb.from("payment").insert({ account_id: me.account_id, order_id: orderId, amount, status: "FAILED", plan: planKey, raw: { error: res.error ?? null, status: res.status ?? null } });
+    return Response.json({ error: "카드 결제에 실패했어요. 카드 정보를 확인하고 다시 시도해 주세요." }, { status: 402 });
   }
-
-  // 2) 7일 무료체험 시작(처음 한 번) — 계정 활성 + 결제수단 저장. plan='premium'(회원앱 포함) · billing_plan=좌석등급.
-  const trialEnd = new Date(now + TRIAL_DAYS * 86400000).toISOString();
-  const { data: upd, error: ue2 } = await sb
-    .from("account")
-    .update({
-      subscription_status: "active",
-      plan: "premium",
-      current_period_end: trialEnd,
-      billing_provider: "toss",
-      billing_key: billingKey,
-      billing_customer_key: customerKey,
-      billing_plan: plan.key,
-      next_billing_plan: null,
-      cancel_at_period_end: false,
-    })
-    .eq("id", me.account_id)
-    .select();
-  if (ue2 || !upd || upd.length === 0) {
-    console.error("[billing/confirm] account 업데이트 실패(RLS/스코프?):", ue2?.message);
-    return Response.json({ error: "구독 활성에 실패했습니다." }, { status: 400 });
+  const end = addOneMonth(new Date(now)).toISOString();
+  const { data: up2, error: ue3 } = await sb.from("account").update({
+    subscription_status: "active", plan: "premium", current_period_end: end, last_payment_at: nowIso,
+    billing_provider: "toss", billing_key: billingKey, billing_customer_key: customerKey, billing_plan: planKey, next_billing_plan: null, cancel_at_period_end: false,
+  }).eq("id", me.account_id).select();
+  await sb.from("payment").insert({ account_id: me.account_id, order_id: orderId, toss_payment_key: res.data.paymentKey || null, amount, status: "DONE",
+    plan: planKey, period_start: nowIso, period_end: end, raw: { approvedAt: res.data.approvedAt ?? null } });
+  if (ue3 || !up2 || up2.length === 0) {
+    console.error("[billing/confirm] 결제 성공 · 계정 활성 실패(수동 보정 필요):", ue3?.message);
+    return Response.json({ error: "결제는 됐지만 이용 시작이 늦어지고 있어요. 고객센터로 알려 주세요." }, { status: 500 });
   }
-
-  // 3) 감사 로그(체험 시작). orderId=멱등키. 실패해도 활성은 유지(비차단).
-  const orderId = `trial_${me.account_id}_${now}`;
-  const { error: pe } = await sb.from("payment").insert({
-    account_id: me.account_id,
-    order_id: orderId,
-    amount: 0,
-    status: "TRIAL",
-    plan: plan.key,
-    period_start: nowIso,
-    period_end: trialEnd,
-    raw: { card: issued.data.card ?? null },
-  }).select();
-  if (pe) console.warn("[billing/confirm] payment 로그 실패(비차단):", pe.message);
-
-  return Response.json({ ok: true, trialEnd, plan: plan.key });
+  await notifyWaitingMembers(sb, me.account_id);
+  return Response.json({ ok: true, paid: true, refundable, periodEnd: end, plan: planKey });
 }

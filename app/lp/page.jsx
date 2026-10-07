@@ -192,14 +192,14 @@ const TIERS = [
     tagline: "트레이너 1인 · AI는 맛보기",
     feats: ["회원 관리 · 스케줄 · 운동일지 직접 입력", "회원용 화면 · 운동일지 회원 서명", "QR OT 신청서 · 수업 예약 요청 · 이벤트", "실적 · 급여 · 장부 계산", "AI 기능마다 매달 3번 써 보기"],
     highlight: false,
-    cta: { label: "7일 무료 체험", href: "/signup" },
+    cta: { label: "시작하기", href: "/signup" },
   },
   {
     key: "solo",
     tagline: "AI까지 트레이너 1인",
     feats: ["베이직 전부", `말로 쓰는 운동일지 월 ${PLANS.solo.ai.voice}건`, `OT · 재등록 대본 월 ${PLANS.solo.ai.prep}번`, "세일즈북(상담 자료) · 인바디 분석"],
     highlight: true,
-    cta: { label: "7일 무료 체험", href: "/signup" },
+    cta: { label: "시작하기", href: "/signup" },
   },
   {
     key: "center",
@@ -219,6 +219,7 @@ const FAQ = [
   { q: "프리랜서도 되나요?", a: "네. '프리랜서'를 고르면 PT 매출 · 그 밖의 매출 · 지출 · 남은 돈을 장부로 함께 봐요. 센터와 매출을 나누면 그 방식도 정할 수 있어요." },
   { q: "가입 전에 써 볼 수 있나요?", a: "네. '직접 눌러 보기'에서 트레이너 폰과 회원 폰을 나란히 두고 QR 신청 · 이벤트 · 수업 요청 · 서명을 해 볼 수 있어요." },
   { q: "AI를 다 쓰면 어떻게 되나요?", a: `기록 · 회원 관리는 그대로 쓰고, AI만 다음 달 1일까지 멈춰요. 프로는 추가 팩(OT · 재등록 대본 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 운동일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)으로 바로 이어 쓸 수 있어요. 산 뒤 7일 안에 안 썼으면 전액 환불돼요.` },
+  { q: "써 보고 마음에 안 들면요?", a: "첫 결제 뒤 7일 안이면 써 봤어도 전액 환불해 드려요. 설정 › 구독 관리에서 버튼 한 번이면 돼요(계정당 한 번)." },
   { q: "베이직에서 프로로 바꿀 수 있나요?", a: "네. 설정에서 바로 바뀌어요. 남은 기간만큼 차액만 내면 돼요." },
   { q: "의료·재활 목적인가요?", a: "아니요. 운동 지도·세일즈·회원관리 도구입니다." },
 ];
@@ -256,14 +257,14 @@ export default function LandingPage() {
               운동일지 · 회원 변화 · 재등록 자료 · OT 대본까지, 앱이 기록하고 앱이 정리해요.
             </p>
             <div className="mt-1.5 flex w-full max-w-[420px] flex-col gap-2.5 sm:max-w-none sm:flex-row sm:justify-center">
-              <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <Arrow /></a>
+              <a href="/signup" className={BTN_PRIMARY}>지금 시작하기 <Arrow /></a>
               {/* InstallAppButton은 자체 클래스(레드 채움)를 갖고 있어 겹치는 속성은 !로 덮는다. */}
               <InstallAppButton
                 className="!min-h-[52px] justify-center !rounded-xl !border !border-line-strong !bg-card !px-6 !py-0 !text-[17px] !text-ink hover:!bg-elevate"
                 label="앱처럼 설치"
               />
             </div>
-            <p className="m-0 text-[14px] text-sub">설치 없이 폰에서 바로 · 7일 무료 체험 · <a href="/try" className="font-bold text-primary-strong underline-offset-2 hover:underline">가입 없이 먼저 눌러 보기</a></p>
+            <p className="m-0 text-[14px] text-sub">설치 없이 폰에서 바로 · 7일 안에 전액 환불 · <a href="/try" className="font-bold text-primary-strong underline-offset-2 hover:underline">가입 없이 먼저 눌러 보기</a></p>
           </div>
         </section>
 
@@ -370,7 +371,7 @@ export default function LandingPage() {
               신규·재등록 1건만 더 나와도,<br />
               <span className="text-primary-strong">이용료가 회수됩니다.</span>
             </p>
-            <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <Arrow /></a>
+            <a href="/signup" className={BTN_PRIMARY}>지금 시작하기 <Arrow /></a>
           </div>
         </section>
 
@@ -392,7 +393,7 @@ export default function LandingPage() {
         {/* ⑥ 가격 + ⑦ 센터 상자 */}
         <section id="pricing" className="scroll-mt-28 border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
           <div className="mx-auto flex max-w-[1040px] flex-col items-center gap-7 text-center">
-            <h2 className={`rv ${H2} ${H2_MD}`}>7일 무료로 먼저 써보세요.</h2>
+            <h2 className={`rv ${H2} ${H2_MD}`}>써 보고 아니면, 7일 안에 전액 환불.</h2>
             <div className="grid w-full max-w-[420px] gap-3.5 text-left md:max-w-none md:grid-cols-3">
               {TIERS.map((tier, i) => {
                 const plan = PLANS[tier.key];
@@ -419,7 +420,7 @@ export default function LandingPage() {
                 );
               })}
             </div>
-            <p className="m-0 max-w-[520px] text-center text-[13px] leading-[1.6] text-sub">부가세 포함 · <strong className="font-bold text-ink">1개월 단위 정기결제(이용 기간 1개월)</strong> · 7일 무료 체험 뒤 첫 결제, 이후 매달 같은 날 자동 결제 · 언제든 해지(남은 기간까지 이용) · <a href="/legal/refund" className="font-bold text-ink underline underline-offset-2">환불 정책</a></p>
+            <p className="m-0 max-w-[520px] text-center text-[13px] leading-[1.6] text-sub">부가세 포함 · <strong className="font-bold text-ink">1개월 단위 정기결제(이용 기간 1개월)</strong> · 카드를 등록하면 바로 첫 결제, 이후 매달 같은 날 자동 결제 · <strong className="font-bold text-ink">첫 결제 7일 안에는 써 봤어도 전액 환불</strong>(계정당 한 번) · 언제든 해지(남은 기간까지 이용) · <a href="/legal/refund" className="font-bold text-ink underline underline-offset-2">환불 정책</a></p>
 
             <div className="rv mt-3 flex w-full flex-col items-center gap-3.5 rounded-3xl bg-ink px-6 py-[clamp(28px,6vw,44px)] text-white">
               <Pill dark>센터 대표님께</Pill>
@@ -456,7 +457,7 @@ export default function LandingPage() {
               <span className="block">바로 써보세요.</span>
             </h2>
             <div className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
-              <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <Arrow /></a>
+              <a href="/signup" className={BTN_PRIMARY}>지금 시작하기 <Arrow /></a>
               <span className="text-[14px] text-sub">월 {basic.amount.toLocaleString("ko-KR")}원부터</span>
             </div>
           </div>
