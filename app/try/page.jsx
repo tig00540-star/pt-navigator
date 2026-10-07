@@ -46,7 +46,7 @@ export default function TryPage() {
   return (
     <div className="min-h-dvh bg-bg text-ink antialiased [word-break:keep-all]">
       <style>{LP_CSS + TRY_CSS}</style>
-      <Header page="trainer" nav={[["/lp#features", "기능"], ["/lp#pricing", "가격"], ["/center", "센터 대표용"]]} cta={{ label: "무료로 시작", href: "/signup" }} />
+      <Header page="trainer" nav={[["/lp#features", "기능"], ["/lp#pricing", "가격"], ["/center", "센터 대표용"]]} cta={{ label: "시작하기", href: "/signup" }} />
       <main className="mx-auto w-full max-w-[1100px] px-4 pb-16 pt-8 sm:px-6">
         <div className="mx-auto max-w-[720px] text-center">
           <span className="inline-flex min-h-[32px] items-center rounded-full bg-primary-soft px-3.5 text-[13.5px] font-bold text-primary-strong">가입 없이 직접 눌러 보기</span>
@@ -74,7 +74,7 @@ export default function TryPage() {
             {next ? (
               <button type="button" onClick={() => go(next.id)} className={BTN_OUTLINE}>다음 체험 · {next.label} <Arrow /></button>
             ) : null}
-            <a href="/signup" className={BTN_PRIMARY}>내 회원으로 해 보기 · 7일 무료 <Arrow /></a>
+            <a href="/signup" className={BTN_PRIMARY}>내 회원으로 해 보기 <Arrow /></a>
             <p className="m-0 text-[13.5px] text-sub">체험은 간단히 재현한 화면이에요. 실제 앱은 데이터가 저장되고 폰 알림이 와요.</p>
           </div>
         </div>

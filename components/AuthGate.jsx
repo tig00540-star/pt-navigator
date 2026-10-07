@@ -246,7 +246,7 @@ export default function AuthGate({ children }) {
   );
 }
 
-// 층1 결제벽 — 미활성/만료 계정. 토스 카드등록(빌링) → 7일 무료체험(B4-A). 원장만 결제 가능.
+// 층1 결제벽 — 미활성/만료 계정. 토스 카드등록(빌링) → 바로 첫 달 결제 · 첫 결제 7일 안 전액 환불(2026-10-07 · 체험 없앰). 대표만 결제 가능.
 // ⚠️ 실제 활성화는 /billing/success 착지 → /api/billing/confirm(service_role)에서 일어남.
 function Paywall({ status, onSignOut, uid, onBack = null }) {
   const noAccount = status?.has_account === false;
@@ -256,7 +256,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
     ? "계정 정보를 불러오지 못했어요. 잠시 후 다시 로그인해 주세요."
     : expired
     ? "이용 기간이 끝났어요. 카드를 등록하면 바로 이어서 이용할 수 있어요."
-    : "7일 무료로 먼저 써보세요. 체험 기간엔 청구되지 않고, 언제든 해지할 수 있어요.";
+    : "카드를 등록하면 바로 시작해요. 써 보고 마음에 안 들면 7일 안에 전액 환불해 드려요.";
 
   // 요금제 고르기(2026-10-07 개편) — 센터 계정 = 센터만 · 개인 계정 = 베이직 | 프로(기본). 서버(confirm)도 같은 규칙으로 검증.
   const [plan, setPlan] = useState(null);
@@ -277,7 +277,6 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
     })();
     return () => { alive = false; };
   }, [uid]);
-  const trialUsed = expired || noTrial; // 기간이 끝난 계정 · 독립 계정 = 등록 즉시 결제
   const [busy, setBusy] = useState(false);
   const [payErr, setPayErr] = useState("");
   const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
@@ -340,11 +339,10 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
             </div>
             {payErr && <div className="mb-2 text-xs font-semibold text-danger-text">{payErr}</div>}
             <Button variant="primary" size="md" fullWidth onClick={startCheckout} disabled={busy || !plan}>
-              {busy ? "결제창 여는 중…" : trialUsed ? "카드 등록하고 이어서 이용하기" : "카드 등록하고 7일 무료 시작"}
+              {busy ? "결제창 여는 중…" : expired ? "카드 등록하고 이어서 이용하기" : "카드 등록하고 시작하기"}
             </Button>
             <p className="mt-2 text-center text-[12px] leading-relaxed text-muted">
-              {trialUsed ? "부가세 포함 · 등록하면 바로 첫 달이 결제돼요 · 이후 매달 자동결제 · 언제든 해지"
-                : `부가세 포함 · 7일 무료(체험 중엔 AI를 프로처럼) · 이후 ${plan && PLANS[plan] ? PLANS[plan].amount.toLocaleString("ko-KR") + "원" : ""} 매달 자동결제 · 언제든 해지`}
+              {`부가세 포함 · 오늘 ${plan && PLANS[plan] ? PLANS[plan].amount.toLocaleString("ko-KR") + "원" : "첫 달"} 결제 · 이후 매달 같은 날 자동결제 · ${expired ? "" : "7일 안 전액 환불 · "}언제든 해지`}
             </p>
           </>
         )}

@@ -6,7 +6,7 @@
    - 트레이너 랜딩(/lp)과 같은 틀: 첫 화면 한 줄 → '대표님이 하는 것 | 앱이 하는 것' 표 → 한 기능 한 장(묶음 6개) → 태블릿 · PC → 가격 → 자주 묻는 질문.
    - 배경은 페이지 전체 짙은 색 하나(2026-10-07 대표 · 트레이너 랜딩은 흰색 하나). 색 값은 LP_CSS의 .lp-dark가 토큰째 바꾼다.
    - 대표는 '트레이너 감시 도구'가 아니라 '트레이너가 먼저 편해지고, 그 결과가 숫자로 보이는 센터'를 산다.
-   - 주 행동 = 도입 문의(카카오톡 채널) · 보조 = 센터로 7일 무료 시작(/signup?type=center).
+   - 주 행동 = 도입 문의(카카오톡 채널) · 보조 = 센터로 시작하기(/signup?type=center · 첫 결제 7일 안 전액 환불).
    - 화면 = 데모 센터(가짜 회원)에서 찍은 실제 앱 캡처(public/lp/shots · 4:5). 공개 페이지: AuthGate isPublicMarketing에 /center 포함.
    ========================================================================= */
 
@@ -132,18 +132,18 @@ const WIDE = [
 ];
 
 const STEPS = [
-  ["센터 계정 만들기", "7일 무료로 시작"],
+  ["센터 계정 만들기", "카드 등록하고 바로 시작 · 7일 안 전액 환불"],
   ["트레이너 초대", "최대 3명, 이메일로 계정 발급"],
   ["회원 등록·배정", "그날부터 숫자가 쌓입니다"],
 ];
 
 const FAQ = [
   { q: "트레이너가 4명 이상이면요?", a: `트레이너 1명당 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원으로 자리를 더할 수 있어요(최대 ${3 + MAX_EXTRA_SEATS}명). 구독 관리에서 결제하면 바로 열려요.` },
-  { q: "AI를 다 쓰면 어떻게 되나요?", a: `센터 전체가 함께 쓰는 한도예요(음성일지 월 ${PLANS.center.ai.voice}건 · OT · 재등록 대본 월 ${PLANS.center.ai.prep}번 · 자리 1개 추가마다 +100건 · +20번). 다 쓰면 그달만 추가 팩(대본 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 음성일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)을 살 수 있고, 7일 안에 안 썼으면 전액 환불돼요.` },
+  { q: "AI를 다 쓰면 어떻게 되나요?", a: `센터 전체가 함께 쓰는 한도예요(음성일지 월 ${PLANS.center.ai.voice}건 · OT · 재등록 대본 월 ${PLANS.center.ai.prep}번 · 자리 1개 추가마다 +100건 · +20번). 다 쓰면 그달만 추가 팩(대본 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 음성일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)을 살 수 있어요. 산 팩은 7일 안에 한 번도 안 썼을 때만 전액 환불돼요(한 번이라도 쓰면 환불 안 돼요).` },
   { q: "트레이너들이 싫어하지 않을까요?", a: "트레이너의 일지·OT 준비·재등록 챙기기를 덜어주는 앱이라, 트레이너가 먼저 편해집니다." },
   { q: "다른 센터와 데이터가 섞이지 않나요?", a: "센터별로 완전히 분리되고, 매출·정산 화면은 대표만 봅니다." },
   { q: "기존 PT 회원은 어떻게 옮기나요?", a: "회원을 등록할 때 '인계받은 PT'로 남은 세션을 이어서 등록할 수 있습니다." },
-  { q: "결제는 어떻게 되나요?", a: "7일 무료 후 월 자동결제이고, 언제든 해지할 수 있습니다." },
+  { q: "결제는 어떻게 되나요?", a: "카드를 등록하면 바로 첫 달이 결제되고, 이후 매달 같은 날 자동 결제예요. 첫 결제 7일 안에는 써 봤어도 전액 환불해 드리고(계정당 한 번), 언제든 해지할 수 있어요." },
 ];
 
 export default function CenterLandingPage() {
@@ -177,9 +177,9 @@ export default function CenterLandingPage() {
             </p>
             <div className="mt-1.5 flex w-full max-w-[420px] flex-col gap-2.5 sm:max-w-none sm:flex-row sm:justify-center">
               <a href={contact} className={BTN_PRIMARY}>센터 도입 문의 <Arrow /></a>
-              <a href={SIGNUP_CENTER} className={BTN_OUTLINE}>센터로 7일 무료 시작</a>
+              <a href={SIGNUP_CENTER} className={BTN_OUTLINE}>센터로 시작하기</a>
             </div>
-            <p className="m-0 text-[14px] text-sub">트레이너 3인 + 대표 1인 · 7일 무료 체험</p>
+            <p className="m-0 text-[14px] text-sub">트레이너 3인 + 대표 1인 · 7일 안 전액 환불</p>
           </div>
         </section>
 
@@ -295,10 +295,10 @@ export default function CenterLandingPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <a href={contact} className={`w-full ${BTN_PRIMARY}`}>센터 도입 문의</a>
-                <a href={SIGNUP_CENTER} className={`w-full ${BTN_OUTLINE}`}>센터로 7일 무료 시작</a>
+                <a href={SIGNUP_CENTER} className={`w-full ${BTN_OUTLINE}`}>센터로 시작하기</a>
               </div>
             </div>
-            <p className="m-0 max-w-[520px] text-center text-[13px] leading-[1.6] text-sub">부가세 포함 · <strong className="font-bold text-ink">1개월 단위 정기결제(이용 기간 1개월)</strong> · 7일 무료 체험 뒤 첫 결제, 이후 매달 같은 날 자동 결제 · 언제든 해지(남은 기간까지 이용) · <a href="/legal/refund" className="font-bold text-ink underline underline-offset-2">환불 정책</a></p>
+            <p className="m-0 max-w-[520px] text-center text-[13px] leading-[1.6] text-sub">부가세 포함 · <strong className="font-bold text-ink">1개월 단위 정기결제(이용 기간 1개월)</strong> · 카드를 등록하면 바로 첫 결제, 이후 매달 같은 날 자동 결제 · <strong className="font-bold text-ink">첫 결제 7일 안에는 써 봤어도 전액 환불</strong>(계정당 한 번) · 언제든 해지(남은 기간까지 이용) · <a href="/legal/refund" className="font-bold text-ink underline underline-offset-2">환불 정책</a></p>
           </div>
         </section>
 
@@ -319,7 +319,7 @@ export default function CenterLandingPage() {
             </h2>
             <div className="rv flex w-full max-w-[420px] flex-col gap-2.5 sm:max-w-none sm:flex-row sm:justify-center" style={stagger(1)}>
               <a href={contact} className={BTN_PRIMARY}>센터 도입 문의 <Arrow /></a>
-              <a href={SIGNUP_CENTER} className={BTN_OUTLINE}>센터로 7일 무료 시작</a>
+              <a href={SIGNUP_CENTER} className={BTN_OUTLINE}>센터로 시작하기</a>
             </div>
           </div>
         </section>

@@ -67,13 +67,13 @@ export default function DownloadPage() {
             {/* 기기가 지원하면 버튼 한 번으로 설치, 아이폰이면 3단계 안내 시트 */}
             <InstallAppButton />
             <Link href="/signup" className={`${cta} bg-primary text-white hover:bg-[#c11f1f]`}>
-              7일 무료로 시작 <ArrowRight size={17} strokeWidth={2.4} />
+              지금 시작하기 <ArrowRight size={17} strokeWidth={2.4} />
             </Link>
             <Link href="/" className={`${cta} border border-line-strong bg-card text-ink hover:bg-elevate`}>
               로그인
             </Link>
           </div>
-          <p className="mt-3 text-[13px] text-muted">아이폰 · 안드로이드 · 태블릿 · PC 어디서나 · 카드 등록 후 7일 무료</p>
+          <p className="mt-3 text-[13px] text-muted">아이폰 · 안드로이드 · 태블릿 · PC 어디서나 · 첫 결제 7일 안 전액 환불</p>
         </div>
 
         {/* 홈 화면에 추가 안내 */}

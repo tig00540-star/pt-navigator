@@ -77,7 +77,7 @@ export default function LeaveCenterPage() {
               {p.with_members
                 ? <li>· 대표가 <b>회원과 함께</b> 허락했어요. 담당 회원 {p.members}명에게 &lsquo;기록을 함께 옮길까요?&rsquo;를 물어요(카드 등록을 마친 뒤 · 동의한 회원만 · 14일).</li>
                 : <li>· 회원은 함께 가지 않아요{p.allowed ? "(대표가 회원 없이 허락)" : ""}. 회원을 데려가려면 대표의 허락이 필요해요.</li>}
-              <li>· 무료 체험 없이, 카드를 등록하면 바로 첫 달이 결제돼요(베이직 {won(PLANS.basic.amount)} · 프로 {won(PLANS.solo.amount)} 중 선택 · 부가세 포함).</li>
+              <li>· 카드를 등록하면 바로 첫 달이 결제돼요(베이직 {won(PLANS.basic.amount)} · 프로 {won(PLANS.solo.amount)} 중 선택 · 부가세 포함).</li>
               <li>· {p.center_name}에서는 바로 빠져요. 센터 회원 · 기록은 더 볼 수 없어요.</li>
             </ul>
 
