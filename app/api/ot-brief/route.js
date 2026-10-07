@@ -258,6 +258,33 @@ ${STAKES_AXIS}
 }
 
 // ── ① firstPrompt — 사전무장 컨닝페이퍼(3스텝: 인사 → 즉효운동 3~4개 → 클로징). 3분전 스캔용. ──
+// 내 라이브러리에서 별표한 운동자료(library_item.favorite) — 1차 · 2차+ · 재등록 대본이 같이 쓴다(2026-10-07).
+//   AI가 영상 내용을 보는 게 아니라 제목 · 분류 · 메모를 보고 고른다. [fn] 번호가 lib_ref(s)로 돌아온다.
+function favoritesBlock(favorites) {
+  const favs = Array.isArray(favorites) ? favorites.filter(Boolean) : [];
+  return favs.length
+    ? favs.map((f, i) => `[f${i}] ${f.category ? f.category + " · " : ""}${g(f.title)}${f.note ? ` (${f.note})` : ""}`).join("\n")
+    : "없음(즐겨찾기한 운동자료 없음)";
+}
+
+// 대본이 쓴 자료 번호(lib_ref · lib_refs)에 그 자료의 제목 · 링크를 붙여 저장한다 — 나중에 라이브러리 순서가 바뀌거나
+//   자료를 지워도 대본의 '내 자료' 링크가 엉뚱한 자료를 가리키지 않게(attachPkgSnapshots와 같은 생각).
+function attachLibSnapshots(out, favs) {
+  if (!out || typeof out !== "object" || !Array.isArray(favs) || !favs.length) return out;
+  const at = (i) => {
+    if (!Number.isInteger(i) || i < 0 || i >= favs.length) return null;
+    const f = favs[i] || {};
+    const url = typeof f.url === "string" && /^https?:\/\//i.test(f.url) ? f.url : "";
+    return { title: String(f.title || "").slice(0, 120), url };
+  };
+  const fix = (arr) => arr.map((x) => (x && typeof x === "object" && Number.isInteger(x.lib_ref) ? { ...x, lib: at(x.lib_ref) } : x));
+  if (Array.isArray(out.exercises)) out.exercises = fix(out.exercises);
+  if (Array.isArray(out.session_plan)) out.session_plan = fix(out.session_plan);
+  if (out.proof && Array.isArray(out.proof.moves)) out.proof.moves = fix(out.proof.moves);
+  if (Array.isArray(out.lib_refs)) out.libs = [...new Set(out.lib_refs.filter(Number.isInteger))].map(at).filter(Boolean);
+  return out;
+}
+
 function firstPrompt(member, packages, favorites) {
   const m = member || {};
   const has = (v) => v != null && !['', '-', '없음', '미설정'].includes(String(v).trim()); // 빈 칸은 "-"로 저장되기도 한다
@@ -287,10 +314,7 @@ function firstPrompt(member, packages, favorites) {
         return `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
       }).join("\n")
     : "등록된 패키지 없음";
-  const favs = Array.isArray(favorites) ? favorites.filter(Boolean) : [];
-  const favBlock = favs.length
-    ? favs.map((f, i) => `[f${i}] ${f.category ? f.category + " · " : ""}${g(f.title)}${f.note ? ` (${f.note})` : ""}`).join("\n")
-    : "없음(즐겨찾기한 운동자료 없음)";
+  const favBlock = favoritesBlock(favorites);
   return `[상황·대전제] 1차 OT 입장 3분 전. 이 출력의 유일한 목적 = 이 회원의 '등록(클로징) 확률 극대화'다.
 트레이너는 이걸 30초~1분에 훑어 머리에 넣고 폰을 주머니에 넣는다. '참고 설명'이 아니라 '바로 외워
 바로 말할 완성 대사'로 써라. 추상 지침·개발자용 매핑 설명 금지.
@@ -461,7 +485,7 @@ ${SAY_STYLE}
 //      cases 없거나 빈 배열이면 지금과 바이트 동일한 프롬프트(회귀 안전 제1원칙).
 const RESULT_KO = { success: "등록", hold: "보류", fail: "실패", none: "결과 미기록" };
 const REASON_KO = { money: "가격 부담", time: "시간 부족", schedule: "일정", consider: "생각해볼게요", compare: "다른 곳 비교", partner: "가족·배우자 상의", personal: "개인 사정" };
-function secondPrompt(member, report, cases = [], caseTier = "tentative", packages = [], round = 2, history = []) {
+function secondPrompt(member, report, cases = [], caseTier = "tentative", packages = [], round = 2, history = [], favorites = []) {
   const m = member || {};
   const r = report || {};
   const n = Number.isInteger(round) && round >= 2 ? round : 2;
@@ -553,7 +577,10 @@ ${pkgBlock}
 ${SAMEDAY_PLAN}
 ${GENDER_HINT}
 ${EXERCISE_BAR}
-   각 항목: exercise(짧은 동작 이름만 · 15자 안팎 · 세팅을 붙이지 마라) / how(세팅·하는 법 한 문장) / point(왜 시키나 or 핵심 큐 1문장).
+   각 항목: exercise(짧은 동작 이름만 · 15자 안팎 · 세팅을 붙이지 마라) / how(세팅·하는 법 한 문장) / point(왜 시키나 or 핵심 큐 1문장)
+   / lib_ref(아래 [내 즐겨찾기 운동자료]에서 쓴 자료 번호(정수) · 안 썼으면 null).
+   [내 즐겨찾기 운동자료] (트레이너가 별표한 자기 자료 — 이 회원 상황에 맞으면 session_plan · proof에서 '우선' 골라 lib_ref로 참조. [fn]=자료번호)
+${favoritesBlock(favorites)}
 
 ③ proof(증명 포인트 2개): 위 수업 구성 중/직후, 회원이 '어? 되네'를 부인 못 하게 터뜨릴 결정적 순간 2개.
    ★동작은 이 회원의 goal·pain·1차 관찰(movements/reaction)에서 도출하라 — 고정 동작 습관 반복 금지,
@@ -562,7 +589,8 @@ ${EXERCISE_BAR}
 ${SAMEDAY_PROOF}
 ${REHAB_TONE}
    moves[] 각: exercise(짧은 동작 이름만 · 15자 안팎) / how(어떻게 시켜 비교하는지 한 문장) / target_reaction(before→after 분명한 차이) /
-   point_it_out(그 순간 그대로 말할 대사 — "아까랑 다르죠?" + '혼자선 이 각도(혼자선 못 찾는 지점) 못 잡는다' 심기).
+   point_it_out(그 순간 그대로 말할 대사 — "아까랑 다르죠?" + '혼자선 이 각도(혼자선 못 찾는 지점) 못 잡는다' 심기) /
+   lib_ref([내 즐겨찾기 운동자료]에서 쓴 자료 번호(정수) · 안 썼으면 null).
    so_what: 두 증명을 묶어 'PT를 받아야 한다'는 회원 스스로의 결론으로 잇는 한 줄.
    if_weak: 증거 반응이 약하게 올 때 살릴 큐·조정 한 줄(숫자 없이·방향만).
 
@@ -614,20 +642,20 @@ ${SAY_STYLE}
   "cheat": ["회원 핵심 한 줄", "오늘 꼭 할 것 한 줄", "클로징 한 마디(대사)"],
   "member_read": "지금까지 확인된 것 + 지금 클로징 국면 한 줄",
   "recall": { "line": "...", "why": "..." },
-  "session_plan": [ { "exercise": "...", "how": "...", "point": "..." } ],
-  "proof": { "moves": [ { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "..." }, { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "..." } ], "so_what": "...", "if_weak": "..." },
+  "session_plan": [ { "exercise": "...", "how": "...", "point": "...", "lib_ref": null } ],
+  "proof": { "moves": [ { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "...", "lib_ref": null }, { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "...", "lib_ref": null } ], "so_what": "...", "if_weak": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON_OT},
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]${caseSchemaLine}
 }
-※ objection_defense는 5개 각 1개. proof.moves는 2개.`;
+※ objection_defense는 5개 각 1개. proof.moves는 2개. lib_ref는 정수 또는 null.`;
 }
 
 // ④ phase="reregister" user 프롬프트 — 재등록 브리핑(OT 클로징의 PT 대칭).
 // ⚠️ origin 독립: ot_log에 의존하지 않는다(인계·외부 PT는 관찰이 없음). PT 관리 데이터만 근거.
-function reregisterPrompt(member, ctx, packages = []) {
+function reregisterPrompt(member, ctx, packages = [], favorites = []) {
   const m = member || {};
   const c = ctx || {};
   const g3 = (v) => (v == null || v === "" ? "없음" : v);
@@ -717,6 +745,9 @@ ${pkgBlock}
    - goal_raise: 수업 중간중간 목표를 한 단계 올려 동기를 계속 부여하는 포인트 + 대사
      ("이제 이건 되시니까, 다음은 ○○ 가봅시다").
    - timing: 오늘 수업 중 재등록 얘기를 꺼내기 가장 좋은 타이밍 한 줄.
+   [내 즐겨찾기 운동자료] (트레이너가 별표한 자기 자료 — next_roadmap · gap_awareness · goal_raise에서 '다음 단계
+   운동'을 말할 때 이 회원 상황에 맞으면 이 자료의 운동을 '우선' 쓰고, 쓴 자료 번호를 lib_refs에 담아라. [fn]=자료번호)
+${favoritesBlock(favorites)}
 
 ③ sales_metaphor: 회원 세계에서 끌어온 비유 하나(운동·기계 클리셰 금지 · 요청 첫 문장에 녹아 들어간다). metaphor + bridge(재등록 필요성으로).
 ${METAPHOR_RULE}
@@ -767,6 +798,7 @@ ${SAY_STYLE}
   "member_read": "그동안 + 지금 재등록 국면 한 줄",
   "why_now": { "proven": "첫 수업부터 지금까지(숫자 인용)", "satisfaction": "회원이 만족한 점 또는 빈 문자열", "risk_if_stop": "...", "next_roadmap": "앞으로 더 할 것", "future_change": "앞으로 달라질 것" },
   "session_flow": { "gap_awareness": "...", "goal_raise": "...", "timing": "..." },
+  "lib_refs": [],
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON},
   "sweetener": "재등록 혜택 한 줄(덤 · 구체 금액 없이) 또는 빈 문자열",
@@ -774,7 +806,7 @@ ${SAY_STYLE}
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]
 }
-※ objection_defense 5개 각 1개.`;
+※ objection_defense 5개 각 1개. lib_refs는 쓴 자료 번호(정수) 배열, 안 썼으면 [].`;
 }
 
 // ⑥ phase="salesbook" user 프롬프트 — 회원 대면 세일즈북(2차 준비 자료). 독자=회원 본인.
@@ -1226,6 +1258,7 @@ const FIELD_TERMS = [
   // ① 3스텝 재설계 신규 키(exercises 블록) 누출 방어.
   ["workout_intro", "오늘 운동 안내"],
   ["exercises", "운동"],
+  ["lib_refs", "자료 번호"],
   ["lib_ref", "자료 번호"],
   ["reason", "이유"],
   ["cue", "짚을 말"],
@@ -1572,10 +1605,12 @@ export async function POST(request) {
   }
 
   const model = REPORT_PHASES.has(phase) ? MODEL_REPORT : MODEL_FAST;
+  // 별표한 운동자료 — 1차 · 2차+ · 재등록 공용(번호 [fn]이 lib_ref(s)로 돌아오니 화면도 같은 순서로 보낸다).
+  const boundedFavs = Array.isArray(favorites) ? favorites.filter(Boolean).slice(0, 30) : [];
   const basePrompt =
-    phase === "first" ? firstPrompt(member, packages, favorites)
-    : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages, otRound, boundedHistory)
-    : phase === "reregister" ? reregisterPrompt(member, ptContext, packages)
+    phase === "first" ? firstPrompt(member, packages, boundedFavs)
+    : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages, otRound, boundedHistory, boundedFavs)
+    : phase === "reregister" ? reregisterPrompt(member, ptContext, packages, boundedFavs)
     : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
     : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)
     : phase === "first_salesbook" ? firstSalesbookPrompt(member, report, recommendedProgram, packages)
@@ -1644,7 +1679,7 @@ export async function POST(request) {
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "first_salesbook" ? REQUIRED_FIRST_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : phase === "roadmap" ? REQUIRED_ROADMAP : [];
     let brief;
-    try { brief = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase)), packages); }
+    try { brief = attachLibSnapshots(attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase)), packages), boundedFavs); }
     catch (e) { await finishAi(admin, slot.id, { ok: false, model, usage: msg.usage }); throw e; }   // 결과가 깨지면 안 셈(원가는 기록)
     await finishAi(admin, slot.id, { ok: true, model, usage: msg.usage });
     console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);

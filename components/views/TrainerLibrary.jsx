@@ -112,7 +112,7 @@ export default function TrainerLibrary() {
     setConfirmId(null); showToast("삭제했어요");
   };
 
-  // 즐겨찾기 토글 — 별표한 자료는 1차 OT 운동 추천에 '우선' 반영. .select() 하드닝.
+  // 즐겨찾기 토글 — 별표한 자료는 OT(1차 · 2차+) · 재등록 대본의 운동 추천에 '우선' 반영. .select() 하드닝.
   // ⚠️ favorite 컬럼 마이그레이션 전이면 실패 → 안내(비차단).
   const toggleFav = async (r) => {
     const next = !r.favorite;
@@ -176,6 +176,7 @@ export default function TrainerLibrary() {
       {/* 리스트(카테고리별 그룹) */}
       <Card as="section">
         <SectionTitle icon={BookMarked}>저장한 자료</SectionTitle>
+        <p className="mt-1 text-[13px] text-sub">별표한 자료는 OT · 재등록 대본이 운동을 고를 때 먼저 반영해요. 제목 · 카테고리 · 메모를 보고 골라요.</p>
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
@@ -220,7 +221,7 @@ export default function TrainerLibrary() {
                                 </div>
                               ) : (
                                 <div className="flex shrink-0 items-center gap-1">
-                                  <button onClick={() => toggleFav(r)} className={r.favorite ? "text-amber-500" : "text-muted transition hover:text-amber-500"} aria-label="즐겨찾기" title="OT 운동 추천에 우선 반영">
+                                  <button onClick={() => toggleFav(r)} className={r.favorite ? "text-amber-500" : "text-muted transition hover:text-amber-500"} aria-label="즐겨찾기" title="OT · 재등록 대본에 우선 반영">
                                     <Star className="h-4 w-4" fill={r.favorite ? "currentColor" : "none"} />
                                   </button>
                                   <button onClick={() => startEdit(r)} className="text-muted transition hover:text-primary-strong" aria-label="수정"><Pencil className="h-4 w-4" /></button>

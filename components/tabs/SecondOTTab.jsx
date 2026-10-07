@@ -178,6 +178,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   const [caseData, setCaseData] = useState([]);
   const [caseGate, setCaseGate] = useState({ on: false, tier: "off" });
   const [packages, setPackages] = useState([]); // 내 active PT 패키지(recommended_program 실가격 재료)
+  const [favorites, setFavorites] = useState([]); // 내 라이브러리에서 별표한 운동자료(대본이 수업 구성에 우선 반영 · lib_ref)
   const { toast, showToast } = useToast();
 
   const canAI = Boolean(supabase && member?.id);
@@ -193,6 +194,12 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
         .eq("trainer_id", uid).eq("active", true)
         .order("sort", { ascending: true }).order("created_at", { ascending: true });
       if (!cancelled) setPackages(pkgs || []);
+      // 별표한 운동자료(1차와 같은 조회 · favorite 컬럼이 없으면 에러 → [] 비차단).
+      const { data: favs } = await supabase
+        .from("library_item").select("id, title, category, url, note")
+        .eq("trainer_id", uid).eq("favorite", true)
+        .order("category", { ascending: true }).order("created_at", { ascending: true });
+      if (!cancelled) setFavorites(favs || []);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -222,6 +229,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           round,
           history,
           packages,
+          favorites,
           photoLabels, // 서버가 이어서 만드는 세일즈북의 사진 장 재료
           ...(useCases ? { closingCases: caseData, caseTier: caseGate.tier } : {}),
           save: { kind: "ot", memberId: member.id, round, meta: metaIn },
@@ -491,7 +499,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
             이전 형식 리포트예요. &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀌어요.
           </div>
         )}
-        <PrepReport kind="second" data={b} packages={packages} caseTier={meta?.caseTier} />
+        <PrepReport kind="second" data={b} packages={packages} favorites={favorites} caseTier={meta?.caseTier} />
 
         </AIBriefBlock>
 

@@ -43,6 +43,18 @@ function Note({ label, children }) {
 }
 
 // '자세히' — 눌러야 펼쳐지는 참고 묶음.
+// 대본이 쓴 '내 자료'(라이브러리 별표 자료) — http(s) 링크만 연다. 링크가 없으면 제목만.
+function LibLink({ lib }) {
+  if (!lib?.title) return null;
+  const href = typeof lib.url === "string" && /^https?:\/\//i.test(lib.url) ? lib.url : null;
+  const cls = "inline-flex items-center gap-1 text-[12px] font-semibold text-pt-text";
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={`${cls} hover:underline`}>
+      <ExternalLink className="h-3 w-3" /> 내 자료: {lib.title}
+    </a>
+  ) : <span className={cls}>내 자료: {lib.title}</span>;
+}
+
 function More({ label = "자세히", children }) {
   const [open, setOpen] = useState(false);
   const has = Array.isArray(children) ? children.some(Boolean) : Boolean(children);
@@ -119,6 +131,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   });
   const objLabel = (r) => (rereg ? labelOf(REG_REASON_OPTS, r) : OBJ_LABEL[r] || r);
   const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  // 대본이 쓴 내 자료 — 서버가 붙여 저장한 제목 · 링크(lib)가 먼저, 옛 결과는 지금 라이브러리 순번으로.
+  const libOf = (x) => x?.lib || (Number.isInteger(x?.lib_ref) ? favorites[x.lib_ref] || null : null);
+  const regLibs = Array.isArray(d.libs) ? d.libs.filter(Boolean)
+    : (Array.isArray(d.lib_refs) ? d.lib_refs.filter(Number.isInteger).map((i) => favorites[i]).filter(Boolean) : []);
 
   const { lines, derived } = cheatLines(kind, d);
   const exercises = (d.exercises || []).filter(Boolean);
@@ -153,6 +169,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             <Note label="멈추면">{wn.risk_if_stop}</Note>
             <Note label="앞으로 더 할 것">{wn.next_roadmap}</Note>
             <Note label="앞으로 달라질 것">{wn.future_change}</Note>
+            {regLibs.map((lib, i) => <LibLink key={i} lib={lib} />)}
           </More>
         </>
       ),
@@ -187,7 +204,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
         <>
           {d.workout_intro && <Say>{d.workout_intro}</Say>}
           {exercises.map((ex, i) => {
-            const lib = Number.isInteger(ex.lib_ref) ? favorites[ex.lib_ref] || null : null;
+            const lib = libOf(ex);
             const alts = (Array.isArray(ex.alts) ? ex.alts : []).filter((a) => a && a.name);
             const { name, how } = splitName(ex);
             return (
@@ -209,11 +226,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
                       {alts.map((a, j) => <Note key={j} label={plainText(a.name)}>{a.why}</Note>)}
                     </div>
                   )}
-                  {lib && (
-                    <a href={lib.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-pt-text hover:underline">
-                      <ExternalLink className="h-3 w-3" /> 내 자료: {lib.title}
-                    </a>
-                  )}
+                  <LibLink lib={lib} />
                 </More>
               </div>
             );
@@ -225,8 +238,9 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
           {plan.length > 0 && (
             <ol className="m-0 list-none space-y-1 p-0">
               {plan.map((p, i) => (
-                <li key={i} className="text-[14px] leading-[1.55] text-ink">
+                <li key={i} className="flex flex-wrap items-center gap-x-2 text-[14px] leading-[1.55] text-ink">
                   <span className="font-semibold">{i + 1}. {splitEx(p).name}</span>
+                  <LibLink lib={libOf(p)} />
                 </li>
               ))}
             </ol>
@@ -238,7 +252,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
                 <span className="text-[15px] font-bold text-ink">{splitEx(mv).name}</span>
               </p>
               <Say strong>{mv.point_it_out}</Say>
-              <More><Note label="하는 법">{splitEx(mv).how}</Note><Note label="노릴 반응">{mv.target_reaction}</Note></More>
+              <More><Note label="하는 법">{splitEx(mv).how}</Note><Note label="노릴 반응">{mv.target_reaction}</Note><LibLink lib={libOf(mv)} /></More>
             </div>
           ))}
           <More label="운동별 하는 법 · 포인트 · 반응 약하면">

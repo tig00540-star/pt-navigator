@@ -91,6 +91,7 @@ const weightChange = (logs) => buildExerciseSeries(logs)
 export default function PtReRegTab({ member, contracts, setContracts, logs }) {
   const { toast, showToast } = useToast();
   const [packages, setPackages] = useState([]); // 본인 active PT 패키지(recommended_program 재료)
+  const [favorites, setFavorites] = useState([]); // 내 라이브러리에서 별표한 운동자료(대본이 다음 단계 운동에 우선 반영 · lib_refs)
   const [inbodyRows, setInbodyRows] = useState([]); // 인바디 이력(변화량 재료)
 
   // 회차 — 기본은 지금 끝나 가는 계약. 알약으로 지난 회차를 고를 수 있다.
@@ -133,6 +134,12 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
         .eq("trainer_id", uid).eq("active", true)
         .order("sort", { ascending: true }).order("created_at", { ascending: true });
       if (!cancelled) setPackages(pkgs || []);
+      // 별표한 운동자료(1차 OT와 같은 조회 · favorite 컬럼이 없으면 에러 → [] 비차단).
+      const { data: favs } = await supabase
+        .from("library_item").select("id, title, category, url, note")
+        .eq("trainer_id", uid).eq("favorite", true)
+        .order("category", { ascending: true }).order("created_at", { ascending: true });
+      if (!cancelled) setFavorites(favs || []);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -315,7 +322,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "reregister", member, ptContext, packages, ...(cur?.id ? { save: { kind: "contract", contractId: cur.id, satisfaction } } : {}) }),
+        body: JSON.stringify({ phase: "reregister", member, ptContext, packages, favorites, ...(cur?.id ? { save: { kind: "contract", contractId: cur.id, satisfaction } } : {}) }),
       });
       // 서버가 답을 준 순간에만 '만드는 중' 표시를 지운다 — 끊긴 경우엔 남겨 두고 돌아왔을 때 이어 받는다.
       if (pendingKey) clearPending(pendingKey);
@@ -470,7 +477,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             <span>{new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요</span>
           )}
         >
-          {regBrief && <PrepReport kind="reregister" data={regBrief} packages={packages} highlightReason={regReason} />}
+          {regBrief && <PrepReport kind="reregister" data={regBrief} packages={packages} favorites={favorites} highlightReason={regReason} />}
         </AIBriefBlock>
       )}
 
