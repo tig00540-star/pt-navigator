@@ -419,7 +419,7 @@ export default function LandingPage() {
                 );
               })}
             </div>
-            <p className="m-0 text-[13px] text-sub">부가세 포함 · 7일 무료 · 언제든 해지</p>
+            <p className="m-0 max-w-[520px] text-center text-[13px] leading-[1.6] text-sub">부가세 포함 · <strong className="font-bold text-ink">1개월 단위 정기결제(이용 기간 1개월)</strong> · 7일 무료 체험 뒤 첫 결제, 이후 매달 같은 날 자동 결제 · 언제든 해지(남은 기간까지 이용) · <a href="/legal/refund" className="font-bold text-ink underline underline-offset-2">환불 정책</a></p>
 
             <div className="rv mt-3 flex w-full flex-col items-center gap-3.5 rounded-3xl bg-ink px-6 py-[clamp(28px,6vw,44px)] text-white">
               <Pill dark>센터 대표님께</Pill>
