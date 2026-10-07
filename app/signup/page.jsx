@@ -1,5 +1,6 @@
 "use client";
 
+import { authErrorKo } from "@/lib/authError";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -34,6 +35,7 @@ export default function SignupPage() {
     if (busy) return;
     if (!supabase) { setErr("데모 모드라 가입할 수 없어요. 키를 설정한 뒤 다시 시도해 주세요."); return; }
     if (!email.trim() || !pw || !displayName.trim()) { setErr("이메일·비밀번호·이름은 필수입니다."); return; }
+    if (pw.length < 6) { setErr("비밀번호를 6자 이상으로 입력해 주세요."); return; }
     if (type === "center" && !accountName.trim()) { setErr("센터명을 입력해 주세요."); return; }
     if (type === "solo" && !workMode) { setErr("어떻게 일하시는지 골라 주세요."); return; }
     setBusy(true); setErr("");
@@ -50,7 +52,7 @@ export default function SignupPage() {
       },
     });
     setBusy(false);
-    if (error) { setErr("가입하지 못했어요: " + (error.message || "다시 시도해 주세요")); return; }
+    if (error) { console.error("가입 실패", error); setErr("가입하지 못했어요. " + authErrorKo(error)); return; }
     if (data?.session) { router.replace("/"); return; }        // 이메일 인증 OFF → 즉시 로그인 → 앱으로
     setSent(true);                                             // 인증 ON → 메일 확인 안내
   };
@@ -89,7 +91,7 @@ export default function SignupPage() {
         <div className="space-y-3">
           <input type="email" inputMode="email" autoComplete="email" placeholder="이메일"
             value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
-          <input type="password" autoComplete="new-password" placeholder="비밀번호"
+          <input type="password" autoComplete="new-password" placeholder="비밀번호(6자 이상)"
             value={pw} onChange={(e) => setPw(e.target.value)} className={inputCls} />
           <input type="text" placeholder="이름(실명)"
             value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={inputCls} />

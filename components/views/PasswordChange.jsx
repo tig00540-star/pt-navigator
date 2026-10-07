@@ -6,6 +6,7 @@
    자기완결 · 데모 가드 · useToast (PtPricingSettings 패턴). SMTP/메일 불필요.
    ========================================================================= */
 
+import { authErrorKo } from "@/lib/authError";
 import { useState } from "react";
 import { KeyRound } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -33,8 +34,7 @@ export default function PasswordChange({ forced = false, onDone }) {
       const { error } = await supabase.auth.updateUser({ password: pw, data: { must_change_pw: false } });
       if (error) {
         console.error("비밀번호 변경 실패", error);
-        const m = String(error.message || "");
-        showToast(/least|short|characters/i.test(m) ? "비밀번호를 더 길게 입력해 주세요." : /same|different/i.test(m) ? "지금과 다른 비밀번호를 입력해 주세요." : "변경하지 못했어요. 다시 시도해 주세요.");
+        showToast(authErrorKo(error, "변경하지 못했어요. 다시 시도해 주세요."));
         setSaving(false); return;
       }
       setPw(""); setPw2("");
