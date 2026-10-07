@@ -16,6 +16,8 @@ import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import { AiQuotaNote, AiLockCard, useAiLocked } from "@/components/ui/AiQuota";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 const emptyStage = () => ({ title: "", detail: "" });
 const inputCls = "w-full rounded-lg border border-line bg-elevate px-3 py-2 text-[14px] text-ink outline-none focus:border-primary";
@@ -25,6 +27,7 @@ export default function RoadmapCard({ member, contracts = [], logs = [] }) {
   const [row, setRow] = useState(undefined);   // undefined=불러오는 중 · null=없음 · false=표 없음
   const [edit, setEdit] = useState(null);      // 편집 중 초안 { title, stages, current }
   const [busy, setBusy] = useState("");        // "ai" | "save" | ""
+  const roadmapLocked = useAiLocked("roadmap");
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +99,7 @@ export default function RoadmapCard({ member, contracts = [], logs = [] }) {
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ phase: "roadmap", member, ptContext: { sessions_done: done.length, months, inbody_change, weight_change, next_roadmap: wn.next_roadmap || null, future_change: wn.future_change || null } }),
       });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); console.error("로드맵 초안 실패", d); showToast("초안을 만들지 못했어요. 다시 시도해 주세요."); return; }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); console.error("로드맵 초안 실패", d); showToast(res.status === 402 ? d.error : "초안을 만들지 못했어요. 다시 시도해 주세요."); return; }
       const d = await res.json();
       const stages = (Array.isArray(d.stages) ? d.stages : []).filter((s) => s && s.title).slice(0, 6).map((s) => ({ title: String(s.title), detail: String(s.detail || "") }));
       if (!stages.length) { showToast("초안을 만들지 못했어요. 다시 시도해 주세요."); return; }
@@ -106,6 +109,7 @@ export default function RoadmapCard({ member, contracts = [], logs = [] }) {
       showToast("인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setBusy("");
+      refreshAiQuota();
     }
   };
 
@@ -163,17 +167,19 @@ export default function RoadmapCard({ member, contracts = [], logs = [] }) {
         <p className="-mt-1.5 text-[13px] leading-relaxed text-sub">
           회원 전용 페이지에 &lsquo;지금 몇 단계이고 앞으로 무엇이 남았는지&rsquo;를 보여 줘요. 남은 단계가 보이면 회원이 먼저 다음을 생각해요.
         </p>
+        <AiLockCard kind="roadmap" className="mt-3"><p className="m-0 mt-1.5 text-[13px] text-sub">직접 만들기는 그대로 쓸 수 있어요.</p></AiLockCard>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={aiDraft} disabled={busy === "ai"}
+          {!roadmapLocked && <button type="button" onClick={aiDraft} disabled={busy === "ai"}
             className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary px-4 text-[14px] font-semibold text-white disabled:opacity-60">
             {busy === "ai" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Sparkles className="h-4 w-4" aria-hidden="true" />}
             {busy === "ai" ? "초안 만드는 중…" : "AI 초안 만들기"}
-          </button>
+          </button>}
           <button type="button" onClick={() => setEdit({ title: member?.goal && member.goal !== "-" ? member.goal : "", stages: [emptyStage(), emptyStage(), emptyStage()], current: 0 })}
             className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-line bg-card px-4 text-[14px] font-semibold text-ink">
             <Pencil className="h-4 w-4" aria-hidden="true" /> 직접 만들기
           </button>
         </div>
+        <AiQuotaNote kind="roadmap" className="mt-2" />
         <Toast message={toast} />
       </Card>
     );

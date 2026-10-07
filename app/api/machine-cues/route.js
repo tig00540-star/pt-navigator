@@ -4,6 +4,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tidyDeep, NO_DASH_RULE } from "@/lib/tidyText";
 import { requireTrainer } from "@/lib/requireTrainer";
+import { adminClient, reserveAi, finishAi } from "@/lib/aiQuota";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // Sonnet 호출. Hobby+fluid compute 300s 내 여유 + 업스트림 무응답 폭주 상한.
@@ -49,6 +50,9 @@ export async function POST(request) {
 ${NO_DASH_RULE}`,
       messages: [{ role: "user", content: `다음 기구의 실행 큐 초안을 만들어 주세요.\n\n${info}` }],
     });
+    const admin = adminClient();   // 원가 기록만(세지 않음 · 2026-10-07)
+    const slot = await reserveAi(admin, { userId: auth.user?.id, kind: "cues", unitKey: `cues:${crypto.randomUUID()}` });
+    await finishAi(admin, slot.id, { ok: true, model: CUE_MODEL, usage: msg.usage });
     const out = msg.content.filter((x) => x.type === "text").map((x) => x.text).join("");
     const s = out.indexOf("{"), e = out.lastIndexOf("}");
     if (s === -1 || e === -1) throw new Error("파싱 실패");

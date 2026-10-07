@@ -1,3 +1,4 @@
+"use client";
 /* =========================================================================
    AIBriefBlock — AI 사전무장/브리핑 블록의 단일 출처.
    T-03(1차 사전무장) · T-05(2차 등록당위성) · T-08(재등록)에서 재사용.
@@ -12,9 +13,12 @@
 
    purge-safe: 모든 색 클래스는 정적 문자열 리터럴(동적 조립 금지 · Button/Badge 컨벤션).
    ========================================================================= */
+import { useEffect, useRef } from "react";
 import { Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import Button from "./Button";
 import Badge from "./Badge";
+import { AiQuotaNote, AiLockCard, useAiLocked } from "./AiQuota";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 /* 상태별 바깥 테두리. stale만 amber로 주의를 준다.
    ⚠️ 좌측 3px 레드는 상태와 무관하게 항상 유지된다 — DS 레퍼런스 구현은 loading에서
@@ -41,11 +45,19 @@ export default function AIBriefBlock({
   onRegenerate,
   generateLabel = "브리핑 생성",
   bare = false,  // 리포트가 떠 있을 때 '한 장의 문서'로(제목 머리 + 구분선 + 본문 · 안쪽은 카드 대신 줄 · OT 리포트 2026-10-02)
+  quotaKind = null, // AI 월 한도 종류('ot' · 'rereg') — 남은 수 한 줄 · 다 쓰면 만들기 버튼 대신 잠금 카드(2026-10-07)
   className = "",
   children,
   ...rest
 }) {
   const loading = status === "loading";
+  const locked = useAiLocked(quotaKind || "none");
+  // 만들기가 끝나면(loading → 다른 상태) 남은 수를 다시 읽는다
+  const prev = useRef(status);
+  useEffect(() => {
+    if (quotaKind && prev.current === "loading" && status !== "loading") refreshAiQuota();
+    prev.current = status;
+  }, [status, quotaKind]);
   const showRegen = SHOW_REGEN.includes(status) && typeof onRegenerate === "function";
   const showBody = SHOW_REGEN.includes(status);
   const flat = bare && showBody;
@@ -105,11 +117,12 @@ export default function AIBriefBlock({
           {idleDescription && (
             <p className="text-[13px] leading-relaxed text-sub">{idleDescription}</p>
           )}
-          {typeof onGenerate === "function" && (
+          {quotaKind && locked ? <AiLockCard kind={quotaKind} className="w-full" /> : typeof onGenerate === "function" && (
             <Button variant="primary" size="md" onClick={onGenerate}>
               <Sparkles className="h-4 w-4" strokeWidth={2.5} /> {generateLabel}
             </Button>
           )}
+          {quotaKind && !locked && <AiQuotaNote kind={quotaKind} />}
         </div>
       )}
 

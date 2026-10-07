@@ -258,8 +258,9 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
     ? "이용 기간이 끝났어요. 카드를 등록하면 바로 이어서 이용할 수 있어요."
     : "7일 무료로 먼저 써보세요. 체험 기간엔 청구되지 않고, 언제든 해지할 수 있어요.";
 
-  // 요금제는 계정 종류로 정해진다(서버도 같은 규칙 · 2026-10-06) — 센터 계정이 솔로 가격으로 결제되던 구멍을 막는다.
+  // 요금제 고르기(2026-10-07 개편) — 센터 계정 = 센터만 · 개인 계정 = 베이직 | 프로(기본). 서버(confirm)도 같은 규칙으로 검증.
   const [plan, setPlan] = useState(null);
+  const [isCenterAcct, setIsCenterAcct] = useState(false);
   // 센터 소속 트레이너는 결제할 수 없다(서버가 거절) → 카드 등록 대신 '대표에게 알려 주세요'(2026-10-06 점검)
   const [staff, setStaff] = useState(false);
   const [noTrial, setNoTrial] = useState(false);   // 센터에서 독립한 개인 계정 = 체험 없이 바로 첫 결제(2026-10-07)
@@ -269,6 +270,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
       if (!supabase || !uid) return;
       const { data } = await supabase.from("trainer").select("role, account:account_id(type, no_trial)").eq("id", uid).maybeSingle();
       if (!alive) return;
+      setIsCenterAcct(data?.account?.type === "center");
       setPlan(data?.account?.type === "center" ? "center" : "solo");
       setStaff(Boolean(data) && data.role !== "owner");
       setNoTrial(Boolean(data?.account?.no_trial));
@@ -315,20 +317,23 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
         {!noAccount && !staff && (
           <>
             <div className="mb-4 grid gap-2">
-              {Object.values(PLANS).filter((p) => !plan || p.key === plan).map((p) => (
+              {(isCenterAcct ? [PLANS.center] : [PLANS.solo, PLANS.basic]).map((p) => (
                 <button
                   key={p.key}
                   type="button"
                   aria-pressed={plan === p.key}
-                  onClick={() => {}}
-                  className={`rounded-lg border px-3 py-2.5 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-primary ${
+                  onClick={() => setPlan(p.key)}
+                  className={`rounded-xl border px-3.5 py-3 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-primary ${
                     plan === p.key ? "border-primary bg-primary-soft" : "border-line bg-elevate hover:border-line-strong"}`}
                 >
-                  <div className="text-[13px] font-bold text-ink">{p.name}</div>
-                  <div className="mt-0.5 text-[11px] leading-tight text-muted">{p.desc}</div>
-                  <div className="mt-1 font-mono text-[13px] font-bold text-primary-strong">
-                    {p.amount.toLocaleString("ko-KR")}
-                    <span className="text-[10px] font-medium text-muted">원/월</span>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[15px] font-bold text-ink">{p.name}{p.key === "solo" && <span className="ml-1.5 text-[12px] font-bold text-primary-strong">추천</span>}</span>
+                    <span className="text-[15px] font-black tabular-nums text-ink">{p.amount.toLocaleString("ko-KR")}<span className="text-[12px] font-semibold text-muted">원/월</span></span>
+                  </div>
+                  <div className="mt-1 text-[12.5px] leading-snug text-sub">
+                    {p.key === "basic" ? "기록 · 회원 관리 · 회원 전용 페이지 · AI는 기능마다 매달 3번"
+                      : p.key === "solo" ? `베이직 전부 + 음성일지 월 ${p.ai.voice}건 · OT · 재등록 대본 월 ${p.ai.prep}번`
+                      : `트레이너 3명 + 대표 · 센터 공용 음성일지 월 ${p.ai.voice}건 · 대본 월 ${p.ai.prep}번`}
                   </div>
                 </button>
               ))}
@@ -337,8 +342,9 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
             <Button variant="primary" size="md" fullWidth onClick={startCheckout} disabled={busy || !plan}>
               {busy ? "결제창 여는 중…" : trialUsed ? "카드 등록하고 이어서 이용하기" : "카드 등록하고 7일 무료 시작"}
             </Button>
-            <p className="mt-2 text-center text-[11px] leading-relaxed text-muted">
-              {trialUsed ? "등록하면 바로 첫 달이 결제돼요 · 이후 매달 자동결제 · 언제든 해지" : "7일간 무료 · 체험 중 청구 없음 · 이후 자동결제 · 언제든 해지"}
+            <p className="mt-2 text-center text-[12px] leading-relaxed text-muted">
+              {trialUsed ? "부가세 포함 · 등록하면 바로 첫 달이 결제돼요 · 이후 매달 자동결제 · 언제든 해지"
+                : `부가세 포함 · 7일 무료(체험 중엔 AI를 프로처럼) · 이후 ${plan && PLANS[plan] ? PLANS[plan].amount.toLocaleString("ko-KR") + "원" : ""} 매달 자동결제 · 언제든 해지`}
             </p>
           </>
         )}

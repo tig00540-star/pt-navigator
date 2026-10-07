@@ -64,9 +64,10 @@ export async function POST(req) {
   const body = await req.json().catch(() => ({}));
   const authKey = (body.authKey || "").trim();
   const customerKey = (body.customerKey || "").trim();
-  // 요금제 = 계정 종류(서버가 정함). 화면이 보낸 plan은 참고하지 않는다.
-  const { data: acct } = await sb.from("account").select("type, current_period_end, no_trial").eq("id", me.account_id).maybeSingle();
-  const planKey = acct?.type === "center" ? "center" : "solo";
+  // 요금제 = 계정 종류가 정하는 범위 안에서(서버가 검증). 센터 계정 = center · 개인 계정 = basic | solo(프로 · 기본값).
+  //   2026-10-07 요금제 개편 — 개인은 화면에서 베이직/프로를 고른다. 그 밖의 값은 무시.
+  const { data: acct } = await sb.from("account").select("type, current_period_end, no_trial, extra_seats").eq("id", me.account_id).maybeSingle();
+  const planKey = acct?.type === "center" ? "center" : body.plan === "basic" ? "basic" : "solo";
   const plan = PLANS[planKey];
   if (!authKey || !customerKey || !plan) {
     return Response.json({ error: "결제 정보가 올바르지 않습니다." }, { status: 400 });
@@ -96,7 +97,7 @@ export async function POST(req) {
   const now = Date.now();
   const nowIso = new Date(now).toISOString();
   if (trialUsed) {
-    const amount = planAmount(planKey);
+    const amount = planAmount(planKey, acct?.extra_seats);
     const orderId = `sub_${me.account_id}_${now}`;
     const res = await chargeBilling(billingKey, { customerKey, amount, orderId, orderName: `${plan.name} 월 구독` });
     if (!(res.ok && res.data?.status === "DONE")) {
@@ -107,7 +108,7 @@ export async function POST(req) {
     const end = addOneMonth(new Date(now)).toISOString();
     const { data: up2, error: ue3 } = await sb.from("account").update({
       subscription_status: "active", plan: "premium", current_period_end: end, last_payment_at: nowIso,
-      billing_provider: "toss", billing_key: billingKey, billing_customer_key: customerKey, billing_plan: planKey, cancel_at_period_end: false,
+      billing_provider: "toss", billing_key: billingKey, billing_customer_key: customerKey, billing_plan: planKey, next_billing_plan: null, cancel_at_period_end: false,
     }).eq("id", me.account_id).select();
     await sb.from("payment").insert({ account_id: me.account_id, order_id: orderId, toss_payment_key: res.data.paymentKey || null, amount, status: "DONE",
       plan: planKey, period_start: nowIso, period_end: end, raw: { approvedAt: res.data.approvedAt ?? null } });
@@ -131,6 +132,7 @@ export async function POST(req) {
       billing_key: billingKey,
       billing_customer_key: customerKey,
       billing_plan: plan.key,
+      next_billing_plan: null,
       cancel_at_period_end: false,
     })
     .eq("id", me.account_id)

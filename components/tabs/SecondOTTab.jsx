@@ -33,6 +33,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { otObsHash } from "@/lib/otHash";
 import { closingSuccessCount, closingCasesForTrainer, closingCaseGate } from "@/lib/memberStatus";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 /* ---- 데모 폴백 데이터 (키/회원/관찰 없을 때만 노출) ---- */
 const RAW_FEEDBACK =
@@ -249,6 +250,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       setAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
     } finally {
       setGenerating(false);
+      refreshAiQuota();
     }
   };
 
@@ -475,7 +477,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
         <AIBriefBlock
           bare
           status={stale ? "stale" : "ready"}
-          title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
+          title={`오늘의 OT 대본 · ${round}차`}
           onRegenerate={() => generateBrief(obs)}
           meta={
             meta?.generatedAt && (
@@ -516,7 +518,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     <AIBriefBlock
       bare
       status="loading"
-      title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
+      title={`오늘의 OT 대본 · ${round}차`}
       waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
     />
   );
@@ -526,8 +528,9 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     <AIBriefBlock
       bare
       status="idle"
-      title={`오늘의 OT 사전 준비 리포트 · ${round}차`}
-      generateLabel={`${round}차 OT 준비 리포트 만들기`}
+      title={`오늘의 OT 대본 · ${round}차`}
+      quotaKind="ot"
+      generateLabel={`${round}차 OT 대본 만들기`}
       idleDescription={`${member.name} 회원의 ${round > 2 ? `1~${round - 1}차` : "1차"} OT 기록·피드백을 모두 근거로 ${round}차 OT를 준비해요. 수업 전에 한 번 만들면, 다음부터는 저장된 걸 바로 보여드려요.`}
       onGenerate={() => generateBrief(obs)}
     />
@@ -552,7 +555,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           <span className="font-semibold text-ink">{member.name}</span> 회원의 1차 OT 피드백이 아직 없어요.
         </p>
         <p className="mt-1 text-xs text-muted">
-          1차 &lsquo;OT 피드백&rsquo;에 관찰을 먼저 남기면 {round}차 준비 리포트를 만들 수 있어요.
+          1차 &lsquo;OT 피드백&rsquo;에 관찰을 먼저 남기면 {round}차 대본을 만들 수 있어요.
         </p>
       </div>
     );

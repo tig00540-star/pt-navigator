@@ -31,6 +31,7 @@ import ReapproachDateField from "@/components/ui/ReapproachDateField";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import PrepReport from "@/components/ot/PrepReport";
 import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
+import { refreshAiQuota } from "@/lib/useAiQuota";
 
 const SAT_OPTS = [
   { value: "very", label: "아주 만족" },
@@ -336,6 +337,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
       setRegAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
     } finally {
       setRegGenerating(false);
+      refreshAiQuota();
     }
   };
 
@@ -456,8 +458,9 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
         <AIBriefBlock
           bare
           status={regGenerating || regWaiting ? "loading" : regBrief ? "ready" : "idle"}
-          title="재등록 사전 준비 리포트"
-          generateLabel="재등록 리포트 만들기"
+          title="재등록 상담 대본"
+          quotaKind="rereg"
+          generateLabel="재등록 대본 만들기"
           idleDescription={`${member.name} 회원의 ${curIdx >= 1 ? "지난 재등록 이후 이번 계약 기간과 " : ""}첫 수업부터 지금까지의 변화(인바디 · 운동 무게 · 출석)와 위 만족도를 근거로, 오늘 수업에서 재등록까지 잇는 리포트를 만들어요. 맨 위 30초 요약, 그다음 변화 · 오늘 수업 흐름 · 클로징 · 거절 대응 순서예요.`}
           waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
           onGenerate={isCurrent ? generateReReg : undefined}

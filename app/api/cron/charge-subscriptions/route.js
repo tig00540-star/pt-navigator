@@ -54,7 +54,7 @@ export async function GET(req) {
   // 청구 대상 — 빌링키 있고 활성이며 곧 만료. (해지예약도 active라 여기 잡혀 아래서 분기.)
   const { data: accounts, error: ae } = await sb
     .from("account")
-    .select("id, billing_key, billing_customer_key, billing_plan, current_period_end, cancel_at_period_end, subscription_status")
+    .select("id, type, billing_key, billing_customer_key, billing_plan, extra_seats, next_billing_plan, next_extra_seats, current_period_end, cancel_at_period_end, subscription_status")
     .not("billing_key", "is", null)
     .eq("subscription_status", "active")
     .lte("current_period_end", dueBeforeIso)
@@ -79,11 +79,14 @@ export async function GET(req) {
       continue;
     }
 
-    const amount = planAmount(acc.billing_plan);
-    if (!amount) { failed++; if (errors.length < 5) errors.push(`${acc.id}: 알 수 없는 플랜(${acc.billing_plan})`); continue; }
+    // 다음 결제일부터 바뀌는 것(프로 → 베이직 내리기 · 센터 자리 줄이기 · 2026-10-07) — 이번 청구부터 새 값으로
+    const planKey = acc.type === "center" ? "center" : (acc.next_billing_plan || acc.billing_plan || "solo");
+    const seats = acc.type === "center" ? (acc.next_extra_seats ?? acc.extra_seats ?? 0) : 0;
+    const amount = planAmount(planKey, seats);
+    if (!amount) { failed++; if (errors.length < 5) errors.push(`${acc.id}: 알 수 없는 플랜(${planKey})`); continue; }
 
     const orderId = `sub_${acc.id}_${today}`;
-    const orderName = `${PLANS[acc.billing_plan]?.name || "구독"} 월 구독`;
+    const orderName = `${PLANS[planKey]?.name || "구독"} 월 구독`;
 
     // 멱등 사전조회 — 오늘 이미 성공 청구했으면 연장만 보장하고 재청구 안 함.
     const { data: dup } = await sb.from("payment").select("id, status").eq("order_id", orderId).maybeSingle();
@@ -105,6 +108,7 @@ export async function GET(req) {
         current_period_end: newEnd.toISOString(),
         last_payment_at: new Date(now).toISOString(),
         subscription_status: "active",
+        billing_plan: planKey, extra_seats: seats, next_billing_plan: null, next_extra_seats: null,
       }).eq("id", acc.id).select();
       if (upd.error || !upd.data || upd.data.length === 0) {
         // 청구는 됐는데 DB 연장 실패 — 반드시 로깅(수동 보정 신호). payment 는 DONE 으로 남겨 다음날 재청구 방지.
@@ -116,7 +120,7 @@ export async function GET(req) {
         toss_payment_key: res.data.paymentKey || null,
         amount,
         status: "DONE",
-        plan: acc.billing_plan,
+        plan: planKey,
         period_start: new Date(now).toISOString(),
         period_end: newEnd.toISOString(),
         raw: { approvedAt: res.data.approvedAt ?? null },
@@ -128,7 +132,7 @@ export async function GET(req) {
         order_id: orderId,
         amount,
         status: "FAILED",
-        plan: acc.billing_plan,
+        plan: planKey,
         raw: { error: res.error ?? null, status: res.status ?? null },
       });
       failed++;

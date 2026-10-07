@@ -69,6 +69,7 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
         </div>
         <div>
           <Line label="④ 요청" text={seq.ask} ask />
+          {seq.nudge && <p className="m-0 mt-1.5 text-[15px] leading-[1.6] text-ink"><span className="mr-1 text-[12.5px] font-semibold text-sub">이어서 웃으며</span>&ldquo;{plainText(seq.nudge)}&rdquo;</p>}
           {seq.hold && <p className="m-0 mt-1 text-[12.5px] text-muted">요청한 뒤엔 먼저 말하지 말고 기다려요.</p>}
         </div>
         <Line label="⑤ 망설이면" text={seq.flush} />
@@ -113,6 +114,7 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           {seq.trial_close && <SpeechBit label="② 확인 질문" text={seq.trial_close} />}
           {seq.plan_pitch && <SpeechBit label="③ 추천 플랜 · 횟수와 가격의 이유" text={seq.plan_pitch} />}
           {seq.ask && <SpeechBit label="④ 요청" text={seq.ask} strong />}
+          {seq.nudge && <SpeechBit label="이어서 웃으며 · 가벼운 한마디" text={seq.nudge} />}
           {seq.hold && (
             /* 트레이너 행동 지시 — 대사 아님(회색 이탤릭 + 🔇로 명확히 구분). */
             <p className="rounded-md border border-line bg-elevate px-2.5 py-1.5 text-[12px] italic leading-relaxed text-muted">

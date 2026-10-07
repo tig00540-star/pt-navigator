@@ -127,7 +127,7 @@ export default function DeckList() {
       ) : list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-8 text-center">
           <p className="m-0 text-[15px] font-semibold text-ink">{q || kind !== "all" ? "맞는 세일즈북이 없어요" : "아직 만든 세일즈북이 없어요"}</p>
-          <p className="m-0 mt-1 text-[13px] text-sub">OT 회원은 1차 제안이 바로 떠요. 2차 OT 준비하기·재등록 준비에서 세일즈북을 만들면 여기 모여요.</p>
+          <p className="m-0 mt-1 text-[13px] text-sub">OT 회원은 1차 제안이 바로 떠요. 2차 OT 대본 · 재등록 대본을 만들면 세일즈북이 여기 모여요.</p>
         </div>
       ) : (
         <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-3">

@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, Monitor, Tablet, X, ZoomIn } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, Monitor, Star, Tablet, X, ZoomIn } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
 import ImageLightbox from "@/components/ui/ImageLightbox";
@@ -87,7 +87,7 @@ export function Header({ page, nav, cta }) {
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0">
           <Link href="/login" className={`inline-flex min-h-[44px] items-center rounded-lg px-2.5 text-[15px] font-semibold text-sub no-underline transition-colors hover:text-ink ${FOCUS}`}>로그인</Link>
-          <a href={cta.href} className={`inline-flex min-h-[44px] items-center rounded-[10px] bg-ink px-4 text-[15px] font-bold text-white no-underline transition-colors hover:bg-ink/85 ${FOCUS}`}>{cta.label}</a>
+          <a href={cta.href} className={`inline-flex min-h-[44px] items-center rounded-[10px] px-4 text-[15px] font-bold text-white no-underline transition-colors ${page === "center" ? "bg-primary hover:bg-primary/85" : "bg-ink hover:bg-ink/85"} ${FOCUS}`}>{cta.label}</a>
         </div>
       </div>
       <div className="px-4 pb-1.5 lg:hidden"><Switch page={page} wide /></div>
@@ -159,7 +159,7 @@ export function Flow({ steps }) {
         const last = i === steps.length - 1;
         return (
           <span key={s} className="flex items-center gap-1.5">
-            <span className={`rounded-full border px-[11px] py-[7px] ${last ? "border-ink bg-ink text-white" : "border-line-strong bg-card text-ink"}`}>{s}</span>
+            <span className={`rounded-full border px-[11px] py-[7px] ${last ? "border-ink bg-ink text-card" : "border-line-strong bg-card text-ink"}`}>{s}</span>
             {!last && <span className="text-muted" aria-hidden="true">›</span>}
           </span>
         );
@@ -179,7 +179,7 @@ export function GroupLabel({ children, dark }) {
   );
 }
 
-export function Shot({ src, alt, zoom = true, wide = false }) {
+export function Shot({ src, alt, zoom = true, wide = false, badge = null }) {
   const [open, setOpen] = useState(false);
   // 이미 1080×1350 WebP ~100KB로 최적화한 정적 캡처 — next/image 변환 없이 그대로 내보낸다.
   // eslint-disable-next-line @next/next/no-img-element
@@ -192,7 +192,10 @@ export function Shot({ src, alt, zoom = true, wide = false }) {
       <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} 크게 보기`}
         className={`group relative block w-full cursor-zoom-in rounded-2xl p-0 ${FOCUS}`}>
         {img}
-        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2.5 py-1 text-[12px] font-bold text-white">
+        {badge && (
+          <span className="pointer-events-none absolute left-2.5 top-2.5 inline-flex items-center rounded-full bg-black/75 px-2.5 py-1 text-[12px] font-bold text-white">{badge}</span>
+        )}
+        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[12px] font-bold text-white">
           <ZoomIn size={13} strokeWidth={2.6} aria-hidden="true" /> 크게 보기
         </span>
       </button>
@@ -203,10 +206,24 @@ export function Shot({ src, alt, zoom = true, wide = false }) {
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
-export function Visual({ img, demo, alt, dark, wide }) {
+export function Visual({ img, demo, alt, dark, wide, caption, who, badge }) {
   return (
-    <div className={`mx-auto w-full rounded-[24px] border p-1.5 sm:p-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"} ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
-      {img ? <Shot src={img} alt={alt} wide={wide} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
+    <div className={`mx-auto flex w-full flex-col gap-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"}`}>
+      <div className={`rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
+        {img ? <Shot src={img} alt={alt} wide={wide} badge={badge} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
+      </div>
+      {caption && <ShotCaption who={who}>{caption}</ShotCaption>}
+    </div>
+  );
+}
+
+/* 사진 아래 '화면 설명' — 처음 온 사람이 사진만 보고는 뭔지 모른다(2026-10-07 대표). 쉬운 말 한두 문장. */
+// who = 이 화면을 누가 만들었나(2026-10-07 대표: 사진만 보면 트레이너가 다 적은 것처럼 보인다) — '트레이너가 한 것' · '앱이 만든 화면' · '회원 폰 화면'
+export function ShotCaption({ who, children }) {
+  return (
+    <div className="rounded-2xl bg-card px-4 py-3 text-left shadow-sm">
+      <p className="m-0 text-[13px] font-extrabold text-primary-strong">{who || "화면 설명"}</p>
+      <p className="m-0 mt-0.5 text-[15px] leading-[1.6] text-ink">{children}</p>
     </div>
   );
 }
@@ -246,20 +263,22 @@ export function StepShots({ steps }) {
               {s.quote ? (
                 <figure className="m-0 flex aspect-[4/5] flex-col gap-3 overflow-hidden rounded-2xl border border-line bg-card p-[clamp(16px,5vw,28px)] text-left">
                   <figcaption className="flex items-center gap-1.5 text-[13px] font-bold text-primary-strong">
-                    <Mic size={15} strokeWidth={2.6} aria-hidden="true" /> 수업 끝나고 말한 그대로
+                    <Mic size={15} strokeWidth={2.6} aria-hidden="true" /> {s.quoteLabel || "트레이너가 실제로 녹음한 말"}
                   </figcaption>
-                  <blockquote className="m-0 rounded-[18px_18px_18px_4px] bg-elevate px-4 py-3.5 text-[clamp(14px,3.9vw,17px)] leading-[1.6] text-ink">
+                  <blockquote className={`m-0 rounded-[18px_18px_18px_4px] bg-elevate px-4 py-3.5 leading-[1.6] text-ink ${
+                    s.quote.length < 60 ? "my-auto px-5 py-6 text-[clamp(20px,5.6vw,26px)] font-bold" : "text-[clamp(14px,3.9vw,17px)]"}`}>
                     {s.quote}
                   </blockquote>
                 </figure>
               ) : (
-                <Shot src={s.img} alt={s.alt} />
+                <Shot src={s.img} alt={s.alt} badge="실제 앱 화면" />
               )}
             </li>
           ))}
         </ol>
       </div>
-      <p className="m-0 text-[13px] text-muted">옆으로 넘기거나 단계를 누르세요 · 화면을 누르면 크게 보여요</p>
+      {steps[active]?.caption && <ShotCaption who={steps[active].who}>{steps[active].caption}</ShotCaption>}
+      <p className="m-0 text-[13px] text-muted">옆으로 넘기거나 위 단계를 누르세요</p>
     </div>
   );
 }
@@ -318,11 +337,11 @@ export function FeatureGallery({ items, dark, label = "그 밖의 기능 화면"
                 <img src={it.img} alt={it.alt} width={DEVICE[it.device]?.w ?? (it.wide ? 1600 : 1080)} height={DEVICE[it.device]?.h ?? (it.wide ? 900 : 1350)} loading="lazy" decoding="async"
                   className={`block h-auto w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none ${DEVICE[it.device]?.aspect ?? (it.wide ? "aspect-[16/9]" : "aspect-[4/5]")}`} />
                 {DEVICE[it.device] && (() => { const D = DEVICE[it.device]; return (
-                  <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-ink/80 px-2.5 py-1 text-[12px] font-bold text-white">
+                  <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-1 text-[12px] font-bold text-white">
                     <D.Icon size={13} strokeWidth={2.4} aria-hidden="true" /> {D.label}
                   </span>
                 ); })()}
-                <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2 py-1 text-[12px] font-bold text-white">
+                <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[12px] font-bold text-white">
                   <ZoomIn size={12} strokeWidth={2.6} aria-hidden="true" /> 크게
                 </span>
               </span>
@@ -428,19 +447,52 @@ export function FeatureRow({ pill, title, flow, checks, note, visual, dark, chil
   );
 }
 
-/* 기능 묶음(2026-10-06) — 일하는 순서대로 5묶음. 머리(알약 · 제목 · 효과 3줄) → 대표 장면 1장 크게 → 나머지는 옆으로 넘겨 보기 → 직접 눌러 보기.
-   대표 장면을 크게 두는 건 넘기는 칸은 보통 첫 1~2장만 보고 지나가서다. */
-export function Bundle({ id, pill, title, checks, note, hero, items, label, href, dark, children }) {
+/* 기능 묶음 — 한 기능 한 장(2026-10-07 · 아우라핏 구성 참고 · 색 · 문장은 우리 것).
+   이름표 → 제목 2줄 → 설명 2줄 → '· 한 줄 포인트' → 큰 사진 1장(또는 트레이너 → 앱 → 회원 단계) → '기능 더 보기'(접힘: 효과 줄 · 나머지 화면).
+   desc가 없는 묶음(대표 랜딩)은 예전처럼 효과 줄 · 설명을 위에 펼쳐 둔다. */
+export function Bundle({ id, pill, title, desc, point, checks, note, core, hero, items, label, href, dark, children }) {
+  const simple = Boolean(desc);
+  const main = core || hero;
+  const gallery = items?.length > 0 && <FeatureGallery items={items} dark={dark} label={label || `${pill} 화면`} />;
   return (
     <div id={id} className="w-full scroll-mt-28">
-      <FeatureRow pill={pill} title={title} checks={checks} note={note} dark={dark}>
-        <div className="flex w-full flex-col items-center gap-7">
-          {hero && <Visual {...hero} dark={dark} />}
-          {items?.length > 0 && <FeatureGallery items={items} dark={dark} label={label || `${pill} 화면`} />}
+      <div className="flex w-full flex-col items-center gap-[18px] text-center">
+        <div className="rv flex flex-col items-center gap-3.5" style={stagger(0)}>
+          <Pill dark={dark}>{pill}</Pill>
+          <h3 className={H3}>{title[0]}<br />{title[1]}</h3>
+        </div>
+        <div className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
+          {simple ? (
+            <>
+              <p className={`m-0 max-w-[520px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] ${dark ? "text-white/70" : "text-sub"}`}>{desc}</p>
+              {point && <p className={`m-0 text-[15px] font-bold ${dark ? "text-white" : "text-primary-strong"}`}>· {point}</p>}
+            </>
+          ) : (
+            <>
+              <Checks items={checks} dark={dark} />
+              {note && <p className={`m-0 text-[14px] ${dark ? "text-white/60" : "text-sub"}`}>· {note}</p>}
+            </>
+          )}
+        </div>
+        <div className="rv mt-1.5 flex w-full flex-col items-center gap-6" style={stagger(2)}>
+          {main?.steps ? <StepShots steps={main.steps} /> : main ? <Visual {...main} badge="실제 앱 화면" dark={dark} /> : null}
           {children}
+          {simple ? (items?.length > 0 || checks?.length > 0) && (
+            <details className="lp-more w-full max-w-[640px] text-left">
+              <summary className={`mx-auto flex min-h-[48px] w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border px-5 text-[15px] font-bold ${FOCUS} ${
+                dark ? "border-white/25 text-white" : "border-line-strong bg-card text-ink hover:bg-elevate"}`}>
+                {pill} 기능 더 보기{items?.length ? ` · ${items.length}개` : ""}
+                <ChevronDown size={18} className="lp-more-chev transition-transform" aria-hidden="true" />
+              </summary>
+              <div className="mt-5 flex flex-col items-center gap-6">
+                {checks?.length > 0 && <Checks items={checks} dark={dark} />}
+                {gallery}
+              </div>
+            </details>
+          ) : gallery}
           {href && <TryLink href={href} dark={dark} />}
         </div>
-      </FeatureRow>
+      </div>
     </div>
   );
 }
@@ -469,6 +521,30 @@ export function TryCard({ href, steps, quote, quoteBy, dark }) {
           가입 없이 직접 눌러 보기 <ArrowRight size={17} aria-hidden="true" />
         </a>
       )}
+    </div>
+  );
+}
+
+/* 트레이너가 하는 일 | 앱이 하는 일(2026-10-07 대표: "트레이너가 직접 기입할 게 거의 없다 · 앱이 기록하고 앱이 정리한다"가 핵심).
+   rows: [{ task, me, app }] · me가 "없음"이면 흐리게. 폰 = 한 줄씩 카드 · 넓은 화면 = 3칸 표. 실제 동작만 쓴다(인바디는 숫자 입력이라 그대로 적음). */
+export function WhoDoes({ rows, meLabel = "트레이너가 하는 것", meShort = "트레이너" }) {
+  return (
+    <div className="w-full max-w-[720px] overflow-hidden rounded-2xl border border-line bg-card text-left shadow-sm">
+      <div className="hidden grid-cols-[110px_minmax(0,1fr)_minmax(0,1.4fr)] gap-4 border-b border-line bg-elevate px-5 py-3 text-[13px] font-extrabold text-sub sm:grid">
+        <span>일</span><span>{meLabel}</span><span className="text-primary-strong">앱이 알아서 하는 것</span>
+      </div>
+      {rows.map((r, i) => (
+        <div key={r.task} className={`rv grid gap-1.5 px-5 py-4 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1.4fr)] sm:gap-4 ${i ? "border-t border-line" : ""}`} style={stagger(i)}>
+          <span className="text-[16px] font-black text-ink">{r.task}</span>
+          <span className={`text-[15px] leading-[1.5] ${r.me === "없음" ? "text-muted" : "font-bold text-ink"}`}>
+            <span className="mr-1.5 text-[12.5px] font-bold text-muted sm:hidden">{meShort}</span>
+            {r.me === "없음" ? <span className="font-extrabold text-primary-strong">없음</span> : r.me.split("**").map((t, k) => (k % 2 ? <span key={k} className="text-primary-strong">{t}</span> : t))}
+          </span>
+          <span className="text-[15px] leading-[1.5] text-sub">
+            <span className="mr-1.5 text-[12.5px] font-bold text-primary-strong sm:hidden">앱</span>{r.app}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -540,7 +616,10 @@ export function Footer() {
 
 /* ───────── 스코프 CSS ───────── */
 export const LP_CSS = `
+.lp-dark{--color-card:#0f172a;--color-bg:#16203a;--color-elevate:#1e293b;--color-line:rgba(255,255,255,.10);--color-line-strong:rgba(255,255,255,.24);--color-ink:#f5f6f8;--color-sub:rgba(255,255,255,.72);--color-muted:rgba(255,255,255,.52);--color-primary-soft:rgba(239,68,68,.16);--color-primary-strong:#fca5a5;color-scheme:dark}
 .lp-faq summary::-webkit-details-marker{display:none}
+.lp-more summary::-webkit-details-marker{display:none}
+.lp-more[open] .lp-more-chev{transform:rotate(180deg)}
 .lp-faq[open] .lp-faq-chev{transform:rotate(180deg)}
 .lp-steps{scrollbar-width:none}
 .lp-steps::-webkit-scrollbar{display:none}

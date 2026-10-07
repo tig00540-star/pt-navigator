@@ -62,6 +62,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
   - 수업 기록 = **운동일지**(❌수업일지). 회원앱 확인도 "운동일지 확인". (트레이너 탭 헤더 "수업 확인서 · 운동일지"는 서명 대체 성격을 설명하는 것이라 유지)
   - OT 후 등록 비율 = **등록률**(❌클로징률·전환율). **행동은 '클로징'**(클로징 멘트·클로징 시퀀스·클로징 결과) — "클로징으로 등록률을 올린다". 재등록 비율은 **재등록률**(❌'전환').
   - 띄어쓰기: 이탈 위험 · 만료 임박 · OT 회원 · PT 회원.
+  - AI가 만드는 OT · 재등록 준비 문서 = **대본**(❌사전 준비 리포트 · 2026-10-07 대표): '오늘의 OT 대본' · '재등록 상담 대본' · 'OT 대본 만들기' · 한도 'OT · 재등록 대본'. 탭 이름 'OT 준비하기'는 행동이라 그대로. (코드 이름 `PrepReport` · phase `first`/`second`/`reregister` · 한도 그룹 `prep`은 그대로)
 - **금액은 `lib/format.js`만** — `won`(반올림 포함)·`wonApprox`(추정치 1,000원 단위)·`manwon`(좁은 칸 만원 축약). 화면에 로컬 WON/manwon 만들지 말 것. **추정치는 반드시 `wonApprox`**, 실제 계약·지출·급여는 `won`.
 - **'진행 수업' = voided·노쇼 제외**(`sessionsCount`·`sessionsThisMonthByTrainer` 동일). 수업 수를 보여줄 땐 OT(`ot_log` 1·2차)+PT를 같이 — 한쪽만 세면 옆 화면과 숫자가 달라진다. ⚠️ 급여용 `sessionCountByTrainer`만 별개 기준(노쇼 포함).
 - **좌석:** `lib/plans.js` `trainerSeats`(solo 0 · center 3 · 관리자 제외) — 관문은 `app/api/create-trainer`(409 `seat_limit`).
@@ -227,6 +228,15 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **독립:** `/leave-center`(AuthGate 통과 · 설정 `LeaveCenterCard` · 결제벽 · 읽기 전용 띠에서 들어옴) → `/api/move/leave` → DB `_leave_center`(service_role): 새 solo 계정(`no_trial`=체험 없이 바로 첫 결제 · billing/confirm이 읽음) · trainer → owner · 본인 것 이동(사례 보관함은 회원과 함께일 때만) · 회원마다 `member_transfer` kind `leave`.
 - **회원:** `my_member_transfer` · `answer_member_transfer`는 **받는 계정이 이용 중일 때만**(독립 트레이너가 결제를 마친 뒤 · billing/confirm이 회원 알림). 동의 = `moved_out_ledger`(떠나는 센터 · 계약 금액 · 날짜 · 이름 없음 · 대표 SELECT) + `_move_member`.
 - **센터 숫자:** `lib/movedOut` `ledgerAsContracts` — 대표 화면 정산(`SettlementPanel`) · 매출(`RevenuePipeline`) · 월간 결산(`monthlyReportBuild`)이 계약에 더해 읽음(user_id null · handed_over → 회원 · 남은 수업 계산엔 안 들어감). 그 밖의 화면(홈 · 리더보드)은 지금 계약만.
+
+### 요금제 · AI 월 한도 · 추가 팩 (2026-10-07 · SQL `docs/migrations/2026-10-07-pricing.sql` · 계획서 `docs/v2-계획-요금제-개편.md`)
+
+- **요금제 3개(금액 = 부가세 포함 실제 결제 · `lib/plans` 한 곳):** 베이직 19,900(AI 기능마다 매달 3번) · 프로 59,000(키 `solo` · 음성일지 120 · 준비 25) · 센터 149,000(3인 + 대표 · 센터 공용 음성일지 300 · 준비 60) · 트레이너 추가 39,900(+100 · +20 · **최대 7자리 = 트레이너 10명** · 한 번 결제 최고 428,300 = 토스 신고값 · `MAX_EXTRA_SEATS` + DB 제약 `2026-10-07-seat-cap.sql`) · 팩 준비 10번 14,900 · 음성일지 50건 9,900(2026-10-07 대표 조정). 요금 등급 = **`account.billing_plan`**(basic | solo | center) · ⚠️ **`account.plan='premium'`은 회원 전용 페이지 관문이라 세 등급 모두 그대로**(베이직도 회원 페이지 씀).
+- **세는 규칙(DB가 관문):** `ai_usage`(호출마다 한 행 · 토큰 · 원가 · `unit_key`가 (계정, 달)마다 한 번만 counted) · `ai_reserve`(부르기 전 자리 · 남은 수 0이면 거절 · 같은 단위 다시 만들기는 안 셈) · `ai_finish`(실패 = 안 셈 · 원가는 남김) · `ai_quota_for` / 화면 `my_ai_quota`. 단위: OT `ot:{회원}:r{차수}` · 재등록 `rereg:{계약}` · 음성일지 `voice:{회원}:{KST 날짜}` · 인바디 `inbody:{회원}:{측정}` · 로드맵 `roadmap:{회원}`. 베이직은 기능마다 따로, 프로 · 센터는 OT + 재등록 = '준비' 하나. 세일즈북 · 대표 보고서 · 월간 결산 · 장비 큐 = 원가만 기록(안 셈). 체험 중 = 프로 한도. 매달 1일(KST) 리셋. ⚠️ `ai_usage`의 회원 칸은 `target_member`(일부러 — `_move_member`가 user_id · member_id를 찾아 옮기는데 사용량은 돈 낸 계정 것).
+- **서버:** `lib/aiQuota`(`reserveAi` · `finishAi` · `quotaResponse` 402 `{code:'quota'}` · `logUsage`) — `ot-brief` · `voice-log` · `machine-cues` · `owner-report` · 아침 보고서 · 월간 결산. 서비스 키 없거나 SQL 전이면 막지 않고 기록만 건너뜀. 베이직 세일즈북 AI = 그달 그 회원을 준비로 만든 경우만(아니면 화면이 짧은 판).
+- **화면:** `lib/useAiQuota`(한 번 읽어 공유 · `refreshAiQuota`) · `components/ui/AiQuota`(`AiQuotaNote` 남은 수 · `AiLockCard` 다 썼을 때 · `useAiLocked`) · `AIBriefBlock quotaKind`(1차 · 2차+ · 재등록) · VoiceLogTab · PtInbodyTab · RoadmapCard. 결제벽 = 개인은 베이직/프로 고르기 · 센터는 센터.
+- **바꾸기(`/api/billing/plan`):** 올리기(베이직 → 프로) = 남은 기간 차액만 빌링키로 바로 결제 → 바로 프로(`lib/plans` `proratedDiff`) · 내리기 = 다음 결제일(`next_billing_plan`) · 센터 자리 더하기 = 일할 금액 결제해야 열림(`extra_seats`) · 줄이기 = 다음 결제일(`next_extra_seats` · 쓰는 트레이너보다 적게는 못 줄임) · 체험 중은 결제 없이. 결제 작업이 다음 결제일에 next_* 적용. 좌석 관문 = `create-trainer` · `_join_center` 둘 다 3 + extra_seats.
+- **추가 팩(`/api/billing/pack` · `/billing/pack`):** 프로 · 센터 대표만(베이직 불가) · **일반결제 결제창**(자동결제는 정기 구독에만 쓰는 게 토스 정책) · `ai_credit`(그달 말 소멸) · 기본 한도 먼저 쓰고 넘친 만큼 팩(산 순서) · **7일 안 미사용이면 전액 환불 · 그 뒤나 한 번이라도 쓰면 불가**(구매 전 확인 창에 미리 알림 · 체크해야 결제). 결제 기록 `payment.plan` = basic | solo | center(월 구독) · upgrade · seat · pack_prep · pack_voice — 합류 일할 환불은 월 구독 결제만 본다.
 
 ### 대표 화면 스타일 통일 (2026-10-05)
 

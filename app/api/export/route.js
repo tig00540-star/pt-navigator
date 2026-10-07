@@ -111,7 +111,7 @@ export async function POST(req) {
     ]) },
     { name: "OT 기록.csv", data: toCsv(ots.data || [], [
       ["id", "번호"], [M, "회원"], ["ot_round", "차수"], ["closing_result", "결과"], ["closing_reason", "이유"], ["closing_detail", "자세히"],
-      ["note", "메모"], [(r) => kst(r.created_at), "기록일"], ["report", "준비 리포트 · 피드백(JSON)"],
+      ["note", "메모"], [(r) => kst(r.created_at), "기록일"], ["report", "대본 · 피드백(JSON)"],
     ]) },
     { name: "인바디.csv", data: toCsv(inb.data || [], [
       [M, "회원"], [(r) => kst(r.measured_at), "측정일"], ["weight", "체중"], ["skeletal_muscle", "골격근량"], ["body_fat_mass", "체지방량"],

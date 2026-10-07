@@ -288,7 +288,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
 
       <div className="grid gap-4 @3xl:grid-cols-2 @3xl:items-start @6xl:grid-cols-3">
       {/* 1. 결과 */}
-      <Block n={1} title="오늘 어떻게 끝났나요?" uses="다음 차수 열기 · 등록률 · 다음 OT 준비 리포트의 클로징 방향에 쓰여요">
+      <Block n={1} title="오늘 어떻게 끝났나요?" uses="다음 차수 열기 · 등록률 · 다음 OT 대본의 클로징 방향에 쓰여요">
         <div className="grid gap-2">
           {RESULTS.map((r) => {
             const on = form.result === r.value;
@@ -313,7 +313,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
               <Chip on={form.proposed === false} onClick={() => set("proposed", false)}>아직 못 했어요</Chip>
             </div>
             {form.result === "continue" && form.proposed === false && (
-              <p className="mt-2 text-[12px] leading-relaxed text-ot-text">다음 OT 준비 리포트가 &lsquo;이번엔 꼭 제안까지&rsquo;로 맞춰져요.</p>
+              <p className="mt-2 text-[12px] leading-relaxed text-ot-text">다음 OT 대본이 &lsquo;이번엔 꼭 제안까지&rsquo;로 맞춰져요.</p>
             )}
             {form.result === "continue" && form.proposed === true && (
               <p className="mt-2 text-[12px] leading-relaxed text-ot-text">다음 OT는 &lsquo;클로징 우선&rsquo;으로 준비돼요. 망설인 이유부터 풀고 등록을 마무리해요.</p>
@@ -354,7 +354,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
       <Block n={2} title="오늘 수업에서 본 것" uses="★표시한 운동은 다음 OT에서 '지난번 기억나세요?'로 다시 보여주는 증명 장면이 되고, 세일즈북의 '확인한 변화'가 돼요">
         <Q label="운동별 반응" hint="해당하는 것만 탭">
           {form.moves.length === 0 && (
-            <p className="mb-2 text-[12px] text-muted">준비 리포트를 만들면 오늘 운동이 여기 미리 채워져요. 아래에서 직접 추가해도 돼요.</p>
+            <p className="mb-2 text-[12px] text-muted">대본을 만들면 오늘 운동이 여기 미리 채워져요. 아래에서 직접 추가해도 돼요.</p>
           )}
           <div className="space-y-2">
             {form.moves.map((m, i) => (
@@ -395,7 +395,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
       </Block>
 
       {/* 3. 다음 OT 방향 */}
-      <Block n={3} title="다음 OT 방향" uses="다음 OT 준비 리포트의 클로징 근거·플랜 제시·말투가 여기서 정해져요"
+      <Block n={3} title="다음 OT 방향" uses="다음 OT 대본의 클로징 근거·플랜 제시·말투가 여기서 정해져요"
         className="@3xl:col-span-2 @6xl:col-span-1" bodyClassName="mt-4 grid gap-4 @3xl:grid-cols-2 @3xl:items-start @6xl:grid-cols-1">
         <Q label="회원이 진짜 원하는 것" hint="처음 말한 목표 말고, 대화하다 알게 된 등록할 이유">
           {member?.goal && member.goal !== "미설정" && (

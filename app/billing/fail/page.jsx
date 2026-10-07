@@ -11,15 +11,16 @@ export const dynamic = "force-dynamic";
 function FailInner() {
   const sp = useSearchParams();
   const reason = sp.get("message"); // 토스가 실패 사유를 전달(있을 때만)
+  const pack = sp.get("kind") === "pack"; // 추가 팩 결제창(2026-10-07) — 카드 등록이 아니라 결제 취소
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
-        <div className="text-lg font-semibold text-ink">카드 등록이 취소됐어요</div>
+        <div className="text-lg font-semibold text-ink">{pack ? "결제가 취소됐어요" : "카드 등록이 취소됐어요"}</div>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           {reason || "결제가 완료되지 않았어요. 다시 시도하시거나 다른 카드로 등록해 주세요."}
         </p>
-        <Link href="/" className="mt-5 inline-block w-full">
-          <Button variant="primary" size="md" fullWidth>다시 시도</Button>
+        <Link href={pack ? "/settings/me#subscription" : "/"} className="mt-5 inline-block w-full">
+          <Button variant="primary" size="md" fullWidth>{pack ? "구독 관리로 돌아가기" : "다시 시도"}</Button>
         </Link>
       </div>
     </div>
