@@ -87,7 +87,7 @@ export function Header({ page, nav, cta }) {
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0">
           <Link href="/login" className={`inline-flex min-h-[44px] items-center rounded-lg px-2.5 text-[15px] font-semibold text-sub no-underline transition-colors hover:text-ink ${FOCUS}`}>로그인</Link>
-          <a href={cta.href} className={`inline-flex min-h-[44px] items-center rounded-[10px] bg-ink px-4 text-[15px] font-bold text-white no-underline transition-colors hover:bg-ink/85 ${FOCUS}`}>{cta.label}</a>
+          <a href={cta.href} className={`inline-flex min-h-[44px] items-center rounded-[10px] px-4 text-[15px] font-bold text-white no-underline transition-colors ${page === "center" ? "bg-primary hover:bg-primary/85" : "bg-ink hover:bg-ink/85"} ${FOCUS}`}>{cta.label}</a>
         </div>
       </div>
       <div className="px-4 pb-1.5 lg:hidden"><Switch page={page} wide /></div>
@@ -159,7 +159,7 @@ export function Flow({ steps }) {
         const last = i === steps.length - 1;
         return (
           <span key={s} className="flex items-center gap-1.5">
-            <span className={`rounded-full border px-[11px] py-[7px] ${last ? "border-ink bg-ink text-white" : "border-line-strong bg-card text-ink"}`}>{s}</span>
+            <span className={`rounded-full border px-[11px] py-[7px] ${last ? "border-ink bg-ink text-card" : "border-line-strong bg-card text-ink"}`}>{s}</span>
             {!last && <span className="text-muted" aria-hidden="true">›</span>}
           </span>
         );
@@ -193,9 +193,9 @@ export function Shot({ src, alt, zoom = true, wide = false, badge = null }) {
         className={`group relative block w-full cursor-zoom-in rounded-2xl p-0 ${FOCUS}`}>
         {img}
         {badge && (
-          <span className="pointer-events-none absolute left-2.5 top-2.5 inline-flex items-center rounded-full bg-ink/80 px-2.5 py-1 text-[12px] font-bold text-white">{badge}</span>
+          <span className="pointer-events-none absolute left-2.5 top-2.5 inline-flex items-center rounded-full bg-black/75 px-2.5 py-1 text-[12px] font-bold text-white">{badge}</span>
         )}
-        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2.5 py-1 text-[12px] font-bold text-white">
+        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[12px] font-bold text-white">
           <ZoomIn size={13} strokeWidth={2.6} aria-hidden="true" /> 크게 보기
         </span>
       </button>
@@ -337,11 +337,11 @@ export function FeatureGallery({ items, dark, label = "그 밖의 기능 화면"
                 <img src={it.img} alt={it.alt} width={DEVICE[it.device]?.w ?? (it.wide ? 1600 : 1080)} height={DEVICE[it.device]?.h ?? (it.wide ? 900 : 1350)} loading="lazy" decoding="async"
                   className={`block h-auto w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none ${DEVICE[it.device]?.aspect ?? (it.wide ? "aspect-[16/9]" : "aspect-[4/5]")}`} />
                 {DEVICE[it.device] && (() => { const D = DEVICE[it.device]; return (
-                  <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-ink/80 px-2.5 py-1 text-[12px] font-bold text-white">
+                  <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-1 text-[12px] font-bold text-white">
                     <D.Icon size={13} strokeWidth={2.4} aria-hidden="true" /> {D.label}
                   </span>
                 ); })()}
-                <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2 py-1 text-[12px] font-bold text-white">
+                <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[12px] font-bold text-white">
                   <ZoomIn size={12} strokeWidth={2.6} aria-hidden="true" /> 크게
                 </span>
               </span>
@@ -527,17 +527,17 @@ export function TryCard({ href, steps, quote, quoteBy, dark }) {
 
 /* 트레이너가 하는 일 | 앱이 하는 일(2026-10-07 대표: "트레이너가 직접 기입할 게 거의 없다 · 앱이 기록하고 앱이 정리한다"가 핵심).
    rows: [{ task, me, app }] · me가 "없음"이면 흐리게. 폰 = 한 줄씩 카드 · 넓은 화면 = 3칸 표. 실제 동작만 쓴다(인바디는 숫자 입력이라 그대로 적음). */
-export function WhoDoes({ rows }) {
+export function WhoDoes({ rows, meLabel = "트레이너가 하는 것", meShort = "트레이너" }) {
   return (
     <div className="w-full max-w-[720px] overflow-hidden rounded-2xl border border-line bg-card text-left shadow-sm">
       <div className="hidden grid-cols-[110px_minmax(0,1fr)_minmax(0,1.4fr)] gap-4 border-b border-line bg-elevate px-5 py-3 text-[13px] font-extrabold text-sub sm:grid">
-        <span>일</span><span>트레이너가 하는 것</span><span className="text-primary-strong">앱이 알아서 하는 것</span>
+        <span>일</span><span>{meLabel}</span><span className="text-primary-strong">앱이 알아서 하는 것</span>
       </div>
       {rows.map((r, i) => (
         <div key={r.task} className={`rv grid gap-1.5 px-5 py-4 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1.4fr)] sm:gap-4 ${i ? "border-t border-line" : ""}`} style={stagger(i)}>
           <span className="text-[16px] font-black text-ink">{r.task}</span>
           <span className={`text-[15px] leading-[1.5] ${r.me === "없음" ? "text-muted" : "font-bold text-ink"}`}>
-            <span className="mr-1.5 text-[12.5px] font-bold text-muted sm:hidden">트레이너</span>
+            <span className="mr-1.5 text-[12.5px] font-bold text-muted sm:hidden">{meShort}</span>
             {r.me === "없음" ? <span className="font-extrabold text-primary-strong">없음</span> : r.me.split("**").map((t, k) => (k % 2 ? <span key={k} className="text-primary-strong">{t}</span> : t))}
           </span>
           <span className="text-[15px] leading-[1.5] text-sub">
@@ -616,6 +616,7 @@ export function Footer() {
 
 /* ───────── 스코프 CSS ───────── */
 export const LP_CSS = `
+.lp-dark{--color-card:#0f172a;--color-bg:#16203a;--color-elevate:#1e293b;--color-line:rgba(255,255,255,.10);--color-line-strong:rgba(255,255,255,.24);--color-ink:#f5f6f8;--color-sub:rgba(255,255,255,.72);--color-muted:rgba(255,255,255,.52);--color-primary-soft:rgba(239,68,68,.16);--color-primary-strong:#fca5a5;color-scheme:dark}
 .lp-faq summary::-webkit-details-marker{display:none}
 .lp-more summary::-webkit-details-marker{display:none}
 .lp-more[open] .lp-more-chev{transform:rotate(180deg)}

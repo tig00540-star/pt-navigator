@@ -189,7 +189,7 @@ const MORE = ["매달 내 성적표", "인바디 분석", "비포 · 애프터 �
 const TIERS = [
   {
     key: "basic",
-    tagline: "AI 없이 트레이너 1인",
+    tagline: "트레이너 1인 · AI는 맛보기",
     feats: ["회원 관리 · 스케줄 · 운동일지 직접 입력", "회원용 화면 · 운동일지 회원 서명", "QR OT 신청서 · 수업 예약 요청 · 이벤트", "실적 · 급여 · 장부 계산", "AI 기능마다 매달 3번 써 보기"],
     highlight: false,
     cta: { label: "7일 무료 체험", href: "/signup" },
@@ -268,7 +268,7 @@ export default function LandingPage() {
         </section>
 
         {/* ③ 숫자 띠 */}
-        <section aria-label="오직 트레이너 한눈에" className="bg-bg px-5 py-[clamp(40px,7vw,72px)]">
+        <section aria-label="오직 트레이너 한눈에" className="border-t border-line bg-card px-5 py-[clamp(40px,7vw,72px)]">
           <dl className="mx-auto m-0 grid max-w-[760px] grid-cols-3 gap-3 text-center">
             {FACTS.map((f, i) => (
               <div key={f.n} className="rv flex flex-col items-center gap-2" style={stagger(i)}>
@@ -364,7 +364,7 @@ export default function LandingPage() {
         </section>
 
         {/* 중간 행동 띠 */}
-        <section className="border-y border-line bg-primary-soft px-5 py-[clamp(48px,8vw,80px)]">
+        <section className="border-t border-line bg-card px-5 py-[clamp(48px,8vw,80px)]">
           <div className="rv mx-auto flex max-w-[760px] flex-col items-center gap-7 text-center">
             <p className="m-0 text-[clamp(22px,4.2vw,32px)] font-black leading-[1.4] tracking-[-0.035em]">
               신규·재등록 1건만 더 나와도,<br />
@@ -390,7 +390,7 @@ export default function LandingPage() {
         </section>
 
         {/* ⑥ 가격 + ⑦ 센터 상자 */}
-        <section id="pricing" className="scroll-mt-28 bg-bg px-5 py-[clamp(56px,10vw,104px)]">
+        <section id="pricing" className="scroll-mt-28 border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
           <div className="mx-auto flex max-w-[1040px] flex-col items-center gap-7 text-center">
             <h2 className={`rv ${H2} ${H2_MD}`}>7일 무료로 먼저 써보세요.</h2>
             <div className="grid w-full max-w-[420px] gap-3.5 text-left md:max-w-none md:grid-cols-3">
@@ -408,7 +408,7 @@ export default function LandingPage() {
                         <span className="text-[15px] text-sub">월</span>
                         <span className="text-[38px] font-black tracking-[-0.04em] tabular-nums">{plan.amount.toLocaleString("ko-KR")}원</span>
                       </div>
-                      {plan.regular ? <div className="text-[14px] text-sub"><s>{plan.regular.toLocaleString("ko-KR")}원</s> · 얼리버드</div> : <div className="text-[14px] text-sub">AI 없이 가볍게</div>}
+                      {plan.regular ? <div className="text-[14px] text-sub"><s>{plan.regular.toLocaleString("ko-KR")}원</s> · 얼리버드</div> : <div className="text-[14px] text-sub">AI는 기능마다 매달 3번</div>}
                       <div className="text-[16px] font-extrabold text-primary-strong">{perDay(plan.amount)}</div>
                     </div>
                     <div className="flex-1 border-t border-line pt-4">
@@ -431,7 +431,7 @@ export default function LandingPage() {
         </section>
 
         {/* ⑧ 자주 묻는 질문 */}
-        <section id="faq" className="scroll-mt-28 bg-card px-5 py-[clamp(56px,10vw,104px)]">
+        <section id="faq" className="scroll-mt-28 border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
           <div className="mx-auto flex max-w-[760px] flex-col items-center gap-6">
             <h2 className={`rv ${H2} ${H2_MD}`}>자주 묻는 질문</h2>
             <Faq items={FAQ} />
@@ -442,7 +442,7 @@ export default function LandingPage() {
         </section>
 
         {/* ⑨ 만든 사람 + 마무리 */}
-        <section className="bg-bg px-5 py-[clamp(64px,11vw,112px)]">
+        <section className="border-t border-line bg-card px-5 py-[clamp(64px,11vw,112px)]">
           <div className="mx-auto flex w-full max-w-[760px] flex-col items-center gap-[18px] text-center">
             <h2 className={`rv ${H2} text-[clamp(24px,4.6vw,36px)] leading-[1.35] [text-wrap:balance]`}>
               <span className="block">트레이너 경력 10년. 팀장·관리자까지 다 해본 사람이</span>
