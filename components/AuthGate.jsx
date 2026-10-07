@@ -271,7 +271,17 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
       const { data } = await supabase.from("trainer").select("role, account:account_id(type, no_trial)").eq("id", uid).maybeSingle();
       if (!alive) return;
       setIsCenterAcct(data?.account?.type === "center");
-      setPlan(data?.account?.type === "center" ? "center" : "solo");
+      let pick = "solo";
+      if (data?.account?.type === "center") pick = "center";
+      else {
+        // 홈페이지 가격 카드에서 고른 요금제(가입 때 저장 · 2026-10-07) — 없으면 프로
+        const { data: ses } = await supabase.auth.getSession();
+        let choice = ses?.session?.user?.user_metadata?.plan_choice;
+        if (!choice) { try { choice = localStorage.getItem("ot.planChoice"); } catch { choice = null; } }
+        if (choice === "basic" || choice === "solo") pick = choice;
+      }
+      if (!alive) return;
+      setPlan(pick);
       setStaff(Boolean(data) && data.role !== "owner");
       setNoTrial(Boolean(data?.account?.no_trial));
     })();

@@ -7,10 +7,13 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
 import { inputCls } from "@/components/ui/Field";
+import { PLANS } from "@/lib/plans";
+import { won } from "@/lib/format";
 
 export default function SignupPage() {
   const router = useRouter();
   const [type, setType] = useState("solo");     // 'solo' | 'center'
+  const [planChoice, setPlanChoice] = useState(""); // 홈페이지에서 고른 요금제(basic | solo · 개인만)
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [displayName, setDisplayName] = useState("");   // 내 이름(트레이너/원장 실명)
@@ -27,7 +30,11 @@ export default function SignupPage() {
   // (InstallAppButton과 같은 패턴 — 효과 본문에서 동기 setState를 피한다.)
   useEffect(() => {
     (async () => {
-      if (new URLSearchParams(window.location.search).get("type") === "center") setType("center");
+      const q = new URLSearchParams(window.location.search);
+      if (q.get("type") === "center") setType("center");
+      // 홈페이지 가격 카드에서 고른 요금제(basic | solo) — 결제 화면에서 미리 골라 둔다(2026-10-07)
+      const pc = q.get("plan");
+      if (pc === "basic" || pc === "solo") setPlanChoice(pc);
     })();
   }, []);
 
@@ -39,6 +46,7 @@ export default function SignupPage() {
     if (type === "center" && !accountName.trim()) { setErr("센터명을 입력해 주세요."); return; }
     if (type === "solo" && !workMode) { setErr("어떻게 일하시는지 골라 주세요."); return; }
     setBusy(true); setErr("");
+    if (type === "solo" && planChoice) { try { localStorage.setItem("ot.planChoice", planChoice); } catch { /* 저장 안 돼도 결제 화면에서 고르면 됨 */ } }
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: pw,
@@ -47,7 +55,7 @@ export default function SignupPage() {
           account_type: type,                                  // 트리거가 읽어 account 생성
           display_name: displayName.trim(),
           account_name: type === "center" ? accountName.trim() : displayName.trim(),
-          ...(type === "solo" ? { work_mode: workMode, brand_name: brand.trim().slice(0, 40) } : {}),
+          ...(type === "solo" ? { work_mode: workMode, brand_name: brand.trim().slice(0, 40), ...(planChoice ? { plan_choice: planChoice } : {}) } : {}),
         },
       },
     });
@@ -87,6 +95,12 @@ export default function SignupPage() {
             </button>
           ))}
         </div>
+
+        {type === "solo" && planChoice && PLANS[planChoice] && (
+          <p className="-mt-1 mb-4 rounded-lg bg-elevate px-3 py-2 text-center text-[13px] text-sub break-keep">
+            고른 요금제 <b className="text-ink">{PLANS[planChoice].name} · 월 {won(PLANS[planChoice].amount)}</b> · 결제 화면에서 바꿀 수 있어요
+          </p>
+        )}
 
         <div className="space-y-3">
           <input type="email" inputMode="email" autoComplete="email" placeholder="이메일"

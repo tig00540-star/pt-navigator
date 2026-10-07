@@ -192,14 +192,14 @@ const TIERS = [
     tagline: "트레이너 1인 · AI는 맛보기",
     feats: ["회원 관리 · 스케줄 · 운동일지 직접 입력", "회원용 화면 · 운동일지 회원 서명", "QR OT 신청서 · 수업 예약 요청 · 이벤트", "실적 · 급여 · 장부 계산", "AI 기능마다 매달 3번 써 보기"],
     highlight: false,
-    cta: { label: "시작하기", href: "/signup" },
+    cta: { label: "시작하기", href: "/signup?plan=basic" },   // 고른 요금제를 가입 → 결제 화면까지 들고 간다(2026-10-07)
   },
   {
     key: "solo",
     tagline: "AI까지 트레이너 1인",
     feats: ["베이직 전부", `말로 쓰는 운동일지 월 ${PLANS.solo.ai.voice}건`, `OT · 재등록 대본 월 ${PLANS.solo.ai.prep}번`, "세일즈북(상담 자료) · 인바디 분석"],
     highlight: true,
-    cta: { label: "시작하기", href: "/signup" },
+    cta: { label: "시작하기", href: "/signup?plan=solo" },
   },
   {
     key: "center",
