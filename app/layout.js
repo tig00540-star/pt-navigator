@@ -51,6 +51,7 @@ export const metadata = {
   twitter: { card: "summary_large_image", images: ["/og/trainer.png"] },
   // 검색 사이트 소유 확인(2026-10-07 · 공개 확인용 글자 · 비밀 아님)
   verification: {
+    google: "UGuXz224OB447e72Cys06HVCBLpKArTgj_e0gJTTnDg",
     other: { "naver-site-verification": "e7ad37fddb37a6f4dcf3f2b44499c765c6217c8d" },
   },
   appleWebApp: {
