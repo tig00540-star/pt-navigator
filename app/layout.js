@@ -49,6 +49,10 @@ export const metadata = {
     images: [{ url: "/og/trainer.png", width: 1200, height: 630, alt: "오직 트레이너: 트레이너만을 위한 앱. 수업 밖 일은 앱이 알아서." }],
   },
   twitter: { card: "summary_large_image", images: ["/og/trainer.png"] },
+  // 검색 사이트 소유 확인(2026-10-07 · 공개 확인용 글자 · 비밀 아님)
+  verification: {
+    other: { "naver-site-verification": "e7ad37fddb37a6f4dcf3f2b44499c765c6217c8d" },
+  },
   appleWebApp: {
     capable: true,
     title: "오직 트레이너",
