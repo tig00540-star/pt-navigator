@@ -35,6 +35,25 @@ async function notifyWaitingMembers(sb, accountId) {
   } catch (e) { console.error("[billing/confirm] 회원 알림 실패(비차단)", e); }
 }
 
+// 결제벽이 '이 계정에 맞는 요금제'를 고르려고 부른다(2026-10-07 토스 심사 중 발견):
+//   결제 전(inactive) 계정은 account SELECT 규칙에 막혀 화면이 계정 종류를 못 읽었다 → 센터 계정에도 개인 요금제(프로 · 베이직)가 떠서
+//   화면은 59,000원인데 서버(POST)는 계정 종류대로 149,000원을 청구할 뻔했다. 계정 종류의 정본은 여기(service_role).
+export async function GET(req) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+  const authz = req.headers.get("authorization") || "";
+  const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
+  if (!token) return Response.json({ error: "인증 필요" }, { status: 401 });
+  const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  const { data: u, error: ue } = await sb.auth.getUser(token);
+  if (ue || !u?.user?.id) return Response.json({ error: "세션 무효" }, { status: 401 });
+  const { data: me } = await sb.from("trainer").select("role, account_id").eq("id", u.user.id).maybeSingle();
+  if (!me?.account_id) return Response.json({ role: me?.role ?? null, type: null, noTrial: false });
+  const { data: acct } = await sb.from("account").select("type, no_trial").eq("id", me.account_id).maybeSingle();
+  return Response.json({ role: me.role, type: acct?.type ?? null, noTrial: Boolean(acct?.no_trial) });
+}
+
 export async function POST(req) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -268,11 +268,22 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
     let alive = true;
     (async () => {
       if (!supabase || !uid) return;
-      const { data } = await supabase.from("trainer").select("role, account:account_id(type, no_trial)").eq("id", uid).maybeSingle();
+      // 계정 종류는 서버에 묻는다 — 결제 전 계정은 account를 직접 못 읽는다(RLS · 2026-10-07 토스 심사 중 발견: 센터 계정에 개인 요금제가 떴음)
+      const { data: ses0 } = await supabase.auth.getSession();
+      let info = null;
+      try {
+        const r = await fetch("/api/billing/confirm", { headers: { Authorization: `Bearer ${ses0?.session?.access_token || ""}` } });
+        if (r.ok) info = await r.json();
+      } catch (e) { console.error("계정 종류 확인 실패", e); }
+      if (!info) {
+        const { data } = await supabase.from("trainer").select("role, account:account_id(type, no_trial)").eq("id", uid).maybeSingle();
+        info = { role: data?.role ?? null, type: data?.account?.type ?? ses0?.session?.user?.user_metadata?.account_type ?? null, noTrial: Boolean(data?.account?.no_trial) };
+      }
       if (!alive) return;
-      setIsCenterAcct(data?.account?.type === "center");
+      const data = { role: info.role, account: { type: info.type, no_trial: info.noTrial } };
+      setIsCenterAcct(data.account.type === "center");
       let pick = "solo";
-      if (data?.account?.type === "center") pick = "center";
+      if (data.account.type === "center") pick = "center";
       else {
         // 홈페이지 가격 카드에서 고른 요금제(가입 때 저장 · 2026-10-07) — 없으면 프로
         const { data: ses } = await supabase.auth.getSession();
@@ -282,7 +293,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
       }
       if (!alive) return;
       setPlan(pick);
-      setStaff(Boolean(data) && data.role !== "owner");
+      setStaff(Boolean(data.role) && data.role !== "owner");
       setNoTrial(Boolean(data?.account?.no_trial));
     })();
     return () => { alive = false; };
