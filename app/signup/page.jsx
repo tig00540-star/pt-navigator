@@ -99,7 +99,7 @@ export default function SignupPage() {
           )}
           {type === "solo" && (
             <>
-              <fieldset className="m-0 border-0 p-0">
+              <fieldset className="mx-0 border-0 p-0">
                 <legend className="mb-1.5 text-[13px] font-semibold text-ink">어떻게 일하세요?</legend>
                 <div className="grid grid-cols-2 gap-2">
                   {[{ k: "employed", l: "센터 소속", d: "급여 · 수수료를 받아요" }, { k: "freelance", l: "프리랜서", d: "회원비를 직접 받아요" }].map((o) => (
