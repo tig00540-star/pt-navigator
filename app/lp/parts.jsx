@@ -537,7 +537,8 @@ export function WhoDoes({ rows }) {
         <div key={r.task} className={`rv grid gap-1.5 px-5 py-4 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1.4fr)] sm:gap-4 ${i ? "border-t border-line" : ""}`} style={stagger(i)}>
           <span className="text-[16px] font-black text-ink">{r.task}</span>
           <span className={`text-[15px] leading-[1.5] ${r.me === "없음" ? "text-muted" : "font-bold text-ink"}`}>
-            <span className="mr-1.5 text-[12.5px] font-bold text-muted sm:hidden">트레이너</span>{r.me}
+            <span className="mr-1.5 text-[12.5px] font-bold text-muted sm:hidden">트레이너</span>
+            {r.me === "없음" ? <span className="font-extrabold text-primary-strong">없음</span> : r.me.split("**").map((t, k) => (k % 2 ? <span key={k} className="text-primary-strong">{t}</span> : t))}
           </span>
           <span className="text-[15px] leading-[1.5] text-sub">
             <span className="mr-1.5 text-[12.5px] font-bold text-primary-strong sm:hidden">앱</span>{r.app}
