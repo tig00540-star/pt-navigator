@@ -203,10 +203,23 @@ export function Shot({ src, alt, zoom = true, wide = false }) {
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
-export function Visual({ img, demo, alt, dark, wide }) {
+export function Visual({ img, demo, alt, dark, wide, caption }) {
   return (
-    <div className={`mx-auto w-full rounded-[24px] border p-1.5 sm:p-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"} ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
-      {img ? <Shot src={img} alt={alt} wide={wide} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
+    <div className={`mx-auto flex w-full flex-col gap-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"}`}>
+      <div className={`rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
+        {img ? <Shot src={img} alt={alt} wide={wide} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
+      </div>
+      {caption && <ShotCaption>{caption}</ShotCaption>}
+    </div>
+  );
+}
+
+/* 사진 아래 '화면 설명' — 처음 온 사람이 사진만 보고는 뭔지 모른다(2026-10-07 대표). 쉬운 말 한두 문장. */
+export function ShotCaption({ children }) {
+  return (
+    <div className="rounded-2xl bg-card px-4 py-3 text-left shadow-sm">
+      <p className="m-0 text-[13px] font-extrabold text-primary-strong">화면 설명</p>
+      <p className="m-0 mt-0.5 text-[15px] leading-[1.6] text-ink">{children}</p>
     </div>
   );
 }
@@ -246,7 +259,7 @@ export function StepShots({ steps }) {
               {s.quote ? (
                 <figure className="m-0 flex aspect-[4/5] flex-col gap-3 overflow-hidden rounded-2xl border border-line bg-card p-[clamp(16px,5vw,28px)] text-left">
                   <figcaption className="flex items-center gap-1.5 text-[13px] font-bold text-primary-strong">
-                    <Mic size={15} strokeWidth={2.6} aria-hidden="true" /> 수업 끝나고 말한 그대로
+                    <Mic size={15} strokeWidth={2.6} aria-hidden="true" /> {s.quoteLabel || "트레이너가 실제로 녹음한 말"}
                   </figcaption>
                   <blockquote className="m-0 rounded-[18px_18px_18px_4px] bg-elevate px-4 py-3.5 text-[clamp(14px,3.9vw,17px)] leading-[1.6] text-ink">
                     {s.quote}
@@ -259,7 +272,8 @@ export function StepShots({ steps }) {
           ))}
         </ol>
       </div>
-      <p className="m-0 text-[13px] text-muted">옆으로 넘기거나 단계를 누르세요 · 화면을 누르면 크게 보여요</p>
+      {steps[active]?.caption && <ShotCaption>{steps[active].caption}</ShotCaption>}
+      <p className="m-0 text-[13px] text-muted">옆으로 넘기거나 위 단계를 누르세요</p>
     </div>
   );
 }
