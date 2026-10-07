@@ -21,7 +21,7 @@ import { PLANS, PACKS, SEAT_PRICE } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, GroupLabel, BeforeAfter, Faq, Arrow, LP_CSS, Bundle, FeatureGallery,
+  Pill, Checks, GroupLabel, WhoDoes, Faq, Arrow, LP_CSS, Bundle, FeatureGallery,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -36,28 +36,31 @@ const FACTS = [
 // 실제 후기(이름·지역/센터·한 줄) — 허락받은 것만. 3개 모이기 전까지 구간 자체를 숨긴다.
 const REVIEWS = [];
 
-const WHY = [
-  ["일지·기록에 매일 40분", "말로 30초"],
-  ["OT 준비는 매번 백지에서", "할 말을 앱이 대본으로"],
-  ["재등록은 기억력에 의존", "재등록할 회원을 앱이 먼저 알려줌"],
-  ["회원이 늘수록 관리도 두 배", "회원이 폰으로 직접 확인"],
+// 트레이너가 하는 일 | 앱이 하는 일(2026-10-07) — 실제 동작만. 인바디는 결과지 숫자를 넣는다(대표: 1분이면 충분 · 정직하게).
+const WHO = [
+  { task: "운동일지", me: "\"벤치프레스 20kg 12개씩 5세트\" 말 한 마디", app: "종목 · 무게 · 횟수 · 세트 표로 정리, 운동 방법 설명, 회원 폰으로 보내기, 무게 그래프에 쌓기" },
+  { task: "인바디", me: "결과지 숫자 입력(1분)", app: "처음과 비교, 변화 그래프, 회원 폰에 보여 주기, 상담 자료에 넣기" },
+  { task: "OT", me: "버튼 한 번(신청서는 회원이 QR로)", app: "이 회원에게 할 말 대본, 오늘 시킬 운동, 망설일 때 대답" },
+  { task: "재등록", me: "없음", app: "남은 수업 알림, 처음과 지금 비교, 상담 대본 · 세일즈북" },
+  { task: "회원 관리", me: "없음", app: "회원 폰에 남은 수업 · 다음 수업 · 운동 기록 · 몸의 변화" },
+  { task: "실적 · 급여", me: "등록할 때 계약 금액 입력", app: "매출 · 급여 · 등록률 · 매달 성적표" },
 ];
 
 // 오직 트레이너가 다른 점 4가지(2026-10-06 대표) — 기능 설명 전에 먼저. 사진은 '결과 장면', 아래 묶음은 '과정 장면'.
 //   '우리만'이라고 쓰지 않는다(경쟁사 확인 전). 문구는 실제 동작만.
 const TRY_LINKS = [["/try#qr", "QR로 OT 신청"], ["/try#event", "회원 이벤트"], ["/try#booking", "수업 예약 요청"], ["/try#sign", "운동일지 · 서명"]];
 
-// 데모 계정 최준호 수업 — ① 대표가 실제로 녹음한 문장(앞부분 그대로 · 칸에 맞춰 뒤는 …) ② 회원 폰에 도착한 운동일지 ③ 회원 서명. (PT 회원 관리 묶음의 핵심 기능)
+// 운동일지 예시(2026-10-07) — ① 이 문장을 음성으로 실제 음성일지 기능에 넣었다(데모 회원 나개근) ② 앱이 정리한 트레이너 화면 ③ 회원 폰. 결과는 실제 출력(지어내지 않음).
 const LOG_STEPS = [
   {
-    step: "폰에 대고 말하기",
-    quote: "오늘 최준호 회원님 하체 했어요. 스쿼트 60킬로 10개씩 2세트, 70킬로 10개씩 2세트, 80킬로 10개씩 2세트 총 6세트 진행했고 다음으로 루마니안 데드리프트 40키로로 시작해서 10kg씩 올려서 12개 1세트로 총 3세트, 마지막으로 레그프레스 120킬로 고정으로 15개 3세트 했어요. …",
-    caption: "트레이너가 수업 끝나고 폰에 대고 이렇게 30초 말했어요. 받아 적거나 표를 채울 필요가 없어요.",
+    step: "트레이너가 말하기", who: "트레이너가 한 것",
+    quote: "오늘 벤치프레스 20킬로 12개씩 5세트 했어요.",
+    caption: "수업 끝나고 폰에 대고 이 한 마디만 했어요. 받아 적거나 표를 채울 필요가 없어요.",
   },
-  { step: "회원 폰에 도착", img: "/lp/shots/2026-10/M08.webp", alt: "회원 운동일지: 종목별 세트 · 무게 · 횟수 표와 지난번보다 늘어난 무게",
-    caption: "말한 내용이 종목 · 무게 · 횟수 표로 정리돼 회원 폰에 도착해요. 지난번보다 무게가 늘면 그것도 표시돼요." },
-  { step: "회원 서명", img: "/lp/shots/2026-10/T18.webp", alt: "지난 수업 목록: 음성으로 쓴 운동일지와 회원이 손가락으로 한 서명",
-    caption: "회원이 폰에서 확인하고 손가락으로 서명해요. 종이 수업 확인서가 필요 없어요." },
+  { step: "앱이 정리", who: "앱이 만든 화면", img: "/lp/shots/2026-10/T18.webp", alt: "지난 수업: 음성으로 남긴 운동일지와 종목 · 무게 · 횟수 · 세트",
+    caption: "앱이 종목 · 무게 · 횟수 · 세트를 표로 채우고, 운동 방법까지 써요. 이 기록이 쌓여 무게 변화 그래프가 돼요." },
+  { step: "회원 폰에 도착", who: "회원 폰 화면", img: "/lp/shots/2026-10/M08.webp", alt: "회원 폰에 도착한 운동일지: 종목별 세트 · 무게 · 횟수 표",
+    caption: "정리된 운동일지가 회원 폰으로 가요. 회원은 확인하고 손가락으로 서명해요. 종이 수업 확인서가 필요 없어요." },
 ];
 
 // 앱 기능 — 일하는 순서대로 5묶음(2026-10-06). 사진 = 데모 센터(지어낸 회원)의 실제 앱 화면.
@@ -72,7 +75,8 @@ const BUNDLES = [
       title: "세일즈 몰라도, 읽고 들어가면 돼요.",
       desc: "OT 들어가기 전에, 이 회원에게 할 말을 대본으로 써 줘요.",
       visual: { img: "/lp/shots/2026-10/T09.webp", alt: "OT 대본의 클로징: 왜 PT가 필요한지 · 확인 질문 · 추천 플랜 대사와 가격 한 줄",
-        caption: "OT 마지막에 등록을 권할 때 읽는 대사예요. 이 회원에게 맞는 PT 횟수와 가격도 같이 나와요." },
+        who: "앱이 만든 화면",
+        caption: "회원이 QR로 쓴 신청서와 내 가격표로 앱이 쓴 대사예요. OT 마지막에 읽기만 하면 돼요. 이 회원에게 맞는 PT 횟수와 가격도 같이 나와요." },
     },
     items: [
       { name: "한눈에 요약", desc: "이 회원 · 오늘 꼭 할 것 · 등록 제안을 세 줄로", img: "/lp/shots/2026-10/T07.webp", alt: "OT 대본 맨 위 30초 요약: 이 회원 · 오늘 꼭 · 요청 한 줄씩" },
@@ -95,10 +99,10 @@ const BUNDLES = [
       title: "재등록 상담 자료, 따로 안 만들어도 돼요.",
       desc: "수업 때마다 남긴 기록으로, 회원에게 보여 줄 '이만큼 변했어요' 화면이 저절로 생겨요.",
       steps: [
-        { step: "기록이 쌓이면", img: "/lp/shots/2026-10/R01.webp", alt: "PT 회원 대시보드: 이번 계약 14/20회와 처음보다 달라진 것(체중 · 골격근량 · 체지방률 · 레그프레스)",
-          caption: "트레이너 앱의 회원 화면이에요. 처음과 지금의 체중 · 근육량 · 운동 무게가 자동으로 나란히 보여요." },
-        { step: "상담 때 보여 주기", img: "/lp/shots/2026-10/R03p.webp", alt: "재등록 세일즈북의 숫자로 확인된 변화: 인바디와 대표 종목 무게의 처음 · 지금 · 변화",
-          caption: "재등록 상담 때 폰을 돌려 회원에게 보여 주는 화면이에요. 숫자는 그동안 잰 인바디와 수업 때 든 무게라, 회원이 믿어요." },
+        { step: "앱이 비교", who: "앱이 만든 화면", img: "/lp/shots/2026-10/R01.webp", alt: "PT 회원 대시보드: 이번 계약 14/20회와 처음보다 달라진 것(체중 · 골격근량 · 체지방률 · 레그프레스)",
+          caption: "트레이너가 정리한 게 아니에요. 운동일지와 인바디가 쌓이면 앱이 처음과 지금의 체중 · 근육량 · 운동 무게를 알아서 나란히 놓아요." },
+        { step: "상담 때 보여 주기", who: "앱이 만든 화면", img: "/lp/shots/2026-10/R03p.webp", alt: "재등록 세일즈북의 숫자로 확인된 변화: 인바디와 대표 종목 무게의 처음 · 지금 · 변화",
+          caption: "재등록 상담 때 회원에게 보여 주는 이 화면도 앱이 만들어요. 숫자는 그동안 기록된 인바디와 무게 그대로라, 회원이 믿어요." },
       ],
     },
     items: [
@@ -154,10 +158,10 @@ const BUNDLES = [
       title: "회원 폰에 '내 PT' 화면이 생겨요.",
       desc: "앱 설치 없이, 카톡으로 보낸 링크 하나로 열려요.",
       steps: [
-        { step: "남은 수업 · 일정", img: "/lp/shots/2026-10/M01.webp", alt: "회원 전용 페이지 내 PT: 남은 수업 12회 / 32회 · 수업 일정 · 시간 바꾸기 · 취소하기 · 새 수업 요청하기",
-          caption: "회원이 보는 화면이에요. 남은 수업 횟수와 다음 수업 시간을 직접 보고, 시간 변경도 여기서 요청해요." },
-        { step: "몸의 변화", img: "/lp/shots/2026-10/M09.webp", alt: "회원 인바디 변화: 체중 · 골격근량 · 체지방량 · 체지방률 · 기초대사량 · 내장지방",
-          caption: "회원이 자기 인바디가 지난번보다 얼마나 바뀌었는지 직접 봐요. 트레이너가 따로 설명하지 않아도 돼요." },
+        { step: "남은 수업 · 일정", who: "회원 폰 화면 · 앱이 알아서 채워요", img: "/lp/shots/2026-10/M01.webp", alt: "회원 전용 페이지 내 PT: 남은 수업 12회 / 32회 · 수업 일정 · 시간 바꾸기 · 취소하기 · 새 수업 요청하기",
+          caption: "트레이너가 따로 보내지 않아도, 남은 수업과 다음 수업 시간이 회원 폰에 늘 최신으로 떠요. 시간 변경도 여기서 요청해요." },
+        { step: "몸의 변화", who: "회원 폰 화면 · 앱이 알아서 채워요", img: "/lp/shots/2026-10/M09.webp", alt: "회원 인바디 변화: 체중 · 골격근량 · 체지방량 · 체지방률 · 기초대사량 · 내장지방",
+          caption: "인바디 숫자를 넣으면 회원 폰에 지난번과 비교가 바로 떠요. 트레이너가 따로 설명하지 않아도 돼요." },
       ],
     },
     items: [
@@ -254,11 +258,11 @@ export default function LandingPage() {
               트레이너가 직접 만든 PT 세일즈·회원관리 앱
             </span>
             <h1 className="m-0 text-[clamp(36px,8vw,60px)] font-black leading-[1.16] tracking-[-0.045em]">
-              <span className="block">OT는 등록으로,</span>
-              <span className="block text-primary">수업 밖 일은 앱으로.</span>
+              <span className="block">트레이너는 말만 하세요.</span>
+              <span className="block text-primary">기록하고 정리하는 건 앱이.</span>
             </h1>
             <p className="m-0 max-w-[540px] text-[clamp(17px,2.6vw,20px)] leading-[1.6] text-sub">
-              1차 OT 준비부터 클로징 멘트·운동일지·재등록까지, 트레이너의 수업 밖 업무를 앱이 맡습니다.
+              운동일지 · 회원 변화 · 재등록 자료 · OT 대본까지, 앱이 기록하고 앱이 정리해요.
             </p>
             <div className="mt-1.5 flex w-full max-w-[420px] flex-col gap-2.5 sm:max-w-none sm:flex-row sm:justify-center">
               <a href="/signup" className={BTN_PRIMARY}>7일 무료로 시작 <Arrow /></a>
@@ -306,13 +310,13 @@ export default function LandingPage() {
         <section className="border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
           <div className="mx-auto flex max-w-[760px] flex-col items-center gap-5 text-center">
             <h2 className={`rv ${H2} ${H2_LG}`}>
-              <span className="block">수업은 2시간,</span>
-              <span className="block text-primary">수업 밖 업무는 4시간.</span>
+              <span className="block">트레이너가 할 일은,</span>
+              <span className="block text-primary">이게 다예요.</span>
             </h2>
             <p className="rv m-0 max-w-[480px] text-[clamp(16px,2.4vw,19px)] leading-[1.6] text-sub" style={stagger(1)}>
-              일지·상담 준비·재등록 챙기기. 실력이 아니라 시간을 먹는 일들을 앱에 넘기세요.
+              일지 쓰기 · 변화 정리 · 상담 준비 · 재등록 챙기기. 나머지는 앱이 기록하고 정리해요.
             </p>
-            <div className="mt-2 flex w-full justify-center"><BeforeAfter rows={WHY} /></div>
+            <div className="mt-2 flex w-full justify-center"><WhoDoes rows={WHO} /></div>
           </div>
         </section>
 

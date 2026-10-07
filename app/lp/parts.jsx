@@ -203,22 +203,23 @@ export function Shot({ src, alt, zoom = true, wide = false }) {
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
-export function Visual({ img, demo, alt, dark, wide, caption }) {
+export function Visual({ img, demo, alt, dark, wide, caption, who }) {
   return (
     <div className={`mx-auto flex w-full flex-col gap-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"}`}>
       <div className={`rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
         {img ? <Shot src={img} alt={alt} wide={wide} /> : <DemoSlot src={demo} title={alt} w={DEMO_W} h={DEMO_H} />}
       </div>
-      {caption && <ShotCaption>{caption}</ShotCaption>}
+      {caption && <ShotCaption who={who}>{caption}</ShotCaption>}
     </div>
   );
 }
 
 /* 사진 아래 '화면 설명' — 처음 온 사람이 사진만 보고는 뭔지 모른다(2026-10-07 대표). 쉬운 말 한두 문장. */
-export function ShotCaption({ children }) {
+// who = 이 화면을 누가 만들었나(2026-10-07 대표: 사진만 보면 트레이너가 다 적은 것처럼 보인다) — '트레이너가 한 것' · '앱이 만든 화면' · '회원 폰 화면'
+export function ShotCaption({ who, children }) {
   return (
     <div className="rounded-2xl bg-card px-4 py-3 text-left shadow-sm">
-      <p className="m-0 text-[13px] font-extrabold text-primary-strong">화면 설명</p>
+      <p className="m-0 text-[13px] font-extrabold text-primary-strong">{who || "화면 설명"}</p>
       <p className="m-0 mt-0.5 text-[15px] leading-[1.6] text-ink">{children}</p>
     </div>
   );
@@ -272,7 +273,7 @@ export function StepShots({ steps }) {
           ))}
         </ol>
       </div>
-      {steps[active]?.caption && <ShotCaption>{steps[active].caption}</ShotCaption>}
+      {steps[active]?.caption && <ShotCaption who={steps[active].who}>{steps[active].caption}</ShotCaption>}
       <p className="m-0 text-[13px] text-muted">옆으로 넘기거나 위 단계를 누르세요</p>
     </div>
   );
@@ -501,6 +502,29 @@ export function TryCard({ href, steps, quote, quoteBy, dark }) {
           가입 없이 직접 눌러 보기 <ArrowRight size={17} aria-hidden="true" />
         </a>
       )}
+    </div>
+  );
+}
+
+/* 트레이너가 하는 일 | 앱이 하는 일(2026-10-07 대표: "트레이너가 직접 기입할 게 거의 없다 · 앱이 기록하고 앱이 정리한다"가 핵심).
+   rows: [{ task, me, app }] · me가 "없음"이면 흐리게. 폰 = 한 줄씩 카드 · 넓은 화면 = 3칸 표. 실제 동작만 쓴다(인바디는 숫자 입력이라 그대로 적음). */
+export function WhoDoes({ rows }) {
+  return (
+    <div className="w-full max-w-[720px] overflow-hidden rounded-2xl border border-line bg-card text-left shadow-sm">
+      <div className="hidden grid-cols-[110px_minmax(0,1fr)_minmax(0,1.4fr)] gap-4 border-b border-line bg-elevate px-5 py-3 text-[13px] font-extrabold text-sub sm:grid">
+        <span>일</span><span>트레이너가 하는 것</span><span className="text-primary-strong">앱이 알아서 하는 것</span>
+      </div>
+      {rows.map((r, i) => (
+        <div key={r.task} className={`rv grid gap-1.5 px-5 py-4 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1.4fr)] sm:gap-4 ${i ? "border-t border-line" : ""}`} style={stagger(i)}>
+          <span className="text-[16px] font-black text-ink">{r.task}</span>
+          <span className={`text-[15px] leading-[1.5] ${r.me === "없음" ? "text-muted" : "font-bold text-ink"}`}>
+            <span className="mr-1.5 text-[12.5px] font-bold text-muted sm:hidden">트레이너</span>{r.me}
+          </span>
+          <span className="text-[15px] leading-[1.5] text-sub">
+            <span className="mr-1.5 text-[12.5px] font-bold text-primary-strong sm:hidden">앱</span>{r.app}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
