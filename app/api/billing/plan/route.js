@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 import { serviceClient, callerOf } from "@/lib/serverCaller";
 import { chargeBilling, tossReady } from "@/lib/toss";
-import { PLANS, SEAT_PRICE, proratedDiff } from "@/lib/plans";
+import { PLANS, SEAT_PRICE, MAX_EXTRA_SEATS, proratedDiff } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -115,7 +115,7 @@ export async function POST(req) {
     if (!isCenter) return Response.json({ error: "센터 요금제에서만 트레이너 자리를 바꿀 수 있어요." }, { status: 409 });
     const cur = acc.extra_seats || 0;
     if (action === "seat_add") {
-      if (cur >= 20) return Response.json({ error: "자리는 20개까지 더할 수 있어요. 더 필요하면 고객센터로 알려 주세요." }, { status: 409 });
+      if (cur >= MAX_EXTRA_SEATS) return Response.json({ error: `트레이너는 최대 ${3 + MAX_EXTRA_SEATS}명까지예요. 더 필요하면 고객센터로 알려 주세요.` }, { status: 409 });
       const amount = quote(ctx, "seat_add");
       const p = await pay(amount, "seat", "트레이너 자리 추가(남은 기간)");
       if (!p.ok) return Response.json({ error: p.error }, { status: 402 });

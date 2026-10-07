@@ -13,7 +13,7 @@ import { CreditCard, Download } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { useAccount } from "@/lib/useAccount";
-import { PLANS, SEAT_PRICE, planAmount } from "@/lib/plans";
+import { PLANS, SEAT_PRICE, MAX_EXTRA_SEATS, planAmount } from "@/lib/plans";
 import { useAiQuota, refreshAiQuota, KIND_LABEL } from "@/lib/useAiQuota";
 import { won } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
@@ -230,7 +230,9 @@ export default function SubscriptionCard() {
             <span className="text-[13.5px] text-sub">트레이너 자리 <b className="text-ink">{centerSeats}명</b> · 1명 추가 월 {won(SEAT_PRICE)}</span>
             <span className="flex gap-1.5">
               {st.seats > 0 && <Button variant="ghost" size="sm" onClick={() => askChange("seat_remove")} disabled={busy !== ""}>줄이기</Button>}
-              <Button variant="primary" size="sm" onClick={() => askChange("seat_add")} disabled={busy !== ""}>{busy === "seat_add" ? "확인하는 중…" : "1명 더하기"}</Button>
+              {st.seats < MAX_EXTRA_SEATS
+                ? <Button variant="primary" size="sm" onClick={() => askChange("seat_add")} disabled={busy !== ""}>{busy === "seat_add" ? "확인하는 중…" : "1명 더하기"}</Button>
+                : <span className="self-center text-[13px] font-semibold text-muted">최대 {3 + MAX_EXTRA_SEATS}명</span>}
             </span>
           </div>
         )}
