@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, Monitor, Tablet, X, ZoomIn } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mic, Monitor, Star, Tablet, X, ZoomIn } from "lucide-react";
 import DemoSlot from "./DemoSlot";
 import CompanyInfo from "@/components/CompanyInfo";
 import ImageLightbox from "@/components/ui/ImageLightbox";
@@ -443,13 +443,31 @@ export function FeatureRow({ pill, title, flow, checks, note, visual, dark, chil
 }
 
 /* 기능 묶음(2026-10-06) — 일하는 순서대로 5묶음. 머리(알약 · 제목 · 효과 3줄) → 대표 장면 1장 크게 → 나머지는 옆으로 넘겨 보기 → 직접 눌러 보기.
-   대표 장면을 크게 두는 건 넘기는 칸은 보통 첫 1~2장만 보고 지나가서다. */
-export function Bundle({ id, pill, title, checks, note, hero, items, label, href, dark, children }) {
+   대표 장면을 크게 두는 건 넘기는 칸은 보통 첫 1~2장만 보고 지나가서다.
+   2026-10-07: 위쪽 '핵심 4가지'를 없애고 묶음 안 대표 장면을 '핵심 기능'(core)으로 — 같은 내용이 위아래 두 번 나와 복잡했다(대표). */
+export function CoreFeature({ title, desc, visual, steps, dark }) {
+  return (
+    <div className="flex w-full flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <span className="inline-flex min-h-[30px] items-center gap-1 rounded-full bg-primary px-3 text-[13px] font-extrabold text-white">
+          <Star size={13} fill="currentColor" strokeWidth={0} aria-hidden="true" /> 핵심 기능
+        </span>
+        <p className={`m-0 text-[clamp(21px,4.6vw,27px)] font-black leading-[1.35] tracking-[-0.035em] ${dark ? "text-white" : "text-ink"}`}>{title}</p>
+        {desc && <p className={`m-0 max-w-[480px] text-[16px] leading-[1.6] ${dark ? "text-white/70" : "text-sub"}`}>{desc}</p>}
+      </div>
+      {visual && <Visual {...visual} dark={dark} />}
+      {steps && <StepShots steps={steps} />}
+    </div>
+  );
+}
+
+export function Bundle({ id, pill, title, checks, note, core, hero, items, label, href, dark, children }) {
   return (
     <div id={id} className="w-full scroll-mt-28">
       <FeatureRow pill={pill} title={title} checks={checks} note={note} dark={dark}>
         <div className="flex w-full flex-col items-center gap-7">
-          {hero && <Visual {...hero} dark={dark} />}
+          {core && <CoreFeature {...core} dark={dark} />}
+          {!core && hero && <Visual {...hero} dark={dark} />}
           {items?.length > 0 && <FeatureGallery items={items} dark={dark} label={label || `${pill} 화면`} />}
           {children}
           {href && <TryLink href={href} dark={dark} />}

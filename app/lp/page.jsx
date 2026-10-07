@@ -21,7 +21,7 @@ import { PLANS, PACKS, SEAT_PRICE } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, GroupLabel, StepShots, BeforeAfter, Faq, Arrow, LP_CSS, Visual, TryLink, Bundle, H3, FeatureGallery,
+  Pill, Checks, GroupLabel, BeforeAfter, Faq, Arrow, LP_CSS, Bundle, FeatureGallery,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -45,51 +45,9 @@ const WHY = [
 
 // 오직 트레이너가 다른 점 4가지(2026-10-06 대표) — 기능 설명 전에 먼저. 사진은 '결과 장면', 아래 묶음은 '과정 장면'.
 //   '우리만'이라고 쓰지 않는다(경쟁사 확인 전). 문구는 실제 동작만.
-// 핵심 4가지(2026-10-07 다시 씀) — 처음 온 사람이 사진만 보고도 알게: 제목 = 얻는 것 · 한 줄 = 어떻게 · 사진 아래 '이 화면은'
-const SPECIAL = [
-  {
-    n: "01", pill: "OT 대본",
-    title: ["세일즈 몰라도,", "읽고 들어가면 됩니다."],
-    desc: "OT 들어가기 전에, 이 회원에게 할 말을 대본으로 써 줘요.",
-    visual: {
-      img: "/lp/shots/2026-10/T09.webp", alt: "OT 사전 준비 리포트의 클로징: 왜 PT가 필요한지 · 확인 질문 · 추천 플랜 대사와 가격 한 줄",
-      caption: "OT 마지막에 등록을 권할 때 읽는 대사예요. 이 회원에게 맞는 PT 횟수와 가격도 같이 나와요.",
-    },
-  },
-  {
-    n: "02", pill: "재등록 상담 자료",
-    title: ["재등록 상담 자료,", "따로 안 만들어도 돼요."],
-    desc: "수업 때마다 남긴 기록으로, 회원에게 보여 줄 '이만큼 변했어요' 화면이 저절로 생겨요.",
-    steps: [
-      { step: "기록이 쌓이면", img: "/lp/shots/2026-10/R01.webp", alt: "PT 회원 대시보드: 이번 계약 14/20회와 처음보다 달라진 것(체중 · 골격근량 · 체지방률 · 레그프레스)",
-        caption: "트레이너 앱의 회원 화면이에요. 처음과 지금의 체중 · 근육량 · 운동 무게가 자동으로 나란히 보여요." },
-      { step: "상담 때 보여 주기", img: "/lp/shots/2026-10/R03p.webp", alt: "재등록 세일즈북의 숫자로 확인된 변화: 인바디와 대표 종목 무게의 처음 · 지금 · 변화",
-        caption: "재등록 상담 때 폰을 돌려 회원에게 보여 주는 화면이에요. 숫자는 그동안 잰 인바디와 수업 때 든 무게라, 회원이 믿어요." },
-    ],
-  },
-  {
-    n: "03", pill: "말로 쓰는 운동일지",
-    title: ["운동일지,", "타자 치지 말고 말하세요."],
-    desc: "수업 끝나고 오늘 한 운동을 폰에 대고 말하면, 운동일지가 돼서 회원 폰으로 가요.",
-    stepsKey: "log",
-    href: "/try#sign",
-  },
-  {
-    n: "04", pill: "회원 전용 페이지",
-    title: ["회원 폰에", "'내 PT' 화면이 생겨요."],
-    desc: "앱 설치 없이, 카톡으로 보낸 링크 하나로 열려요.",
-    steps: [
-      { step: "남은 수업 · 일정", img: "/lp/shots/2026-10/M01.webp", alt: "회원 전용 페이지 내 PT: 남은 수업 12회 / 32회 · 수업 일정 · 시간 바꾸기 · 취소하기 · 새 수업 요청하기",
-        caption: "회원이 보는 화면이에요. 남은 수업 횟수와 다음 수업 시간을 직접 보고, 시간 변경도 여기서 요청해요." },
-      { step: "몸의 변화", img: "/lp/shots/2026-10/M09.webp", alt: "회원 인바디 변화: 체중 · 골격근량 · 체지방량 · 체지방률 · 기초대사량 · 내장지방",
-        caption: "회원이 자기 인바디가 지난번보다 얼마나 바뀌었는지 직접 봐요. 트레이너가 따로 설명하지 않아도 돼요." },
-    ],
-  },
-];
-
 const TRY_LINKS = [["/try#qr", "QR로 OT 신청"], ["/try#event", "회원 이벤트"], ["/try#booking", "수업 예약 요청"], ["/try#sign", "운동일지 · 서명"]];
 
-// 데모 계정 최준호 수업 — ① 대표가 실제로 녹음한 문장(앞부분 그대로 · 칸에 맞춰 뒤는 …) ② 그 녹음을 AI가 정리한 실제 결과 ③ 한 달 수업 확인서.
+// 데모 계정 최준호 수업 — ① 대표가 실제로 녹음한 문장(앞부분 그대로 · 칸에 맞춰 뒤는 …) ② 회원 폰에 도착한 운동일지 ③ 회원 서명. (PT 회원 관리 묶음의 핵심 기능)
 const LOG_STEPS = [
   {
     step: "폰에 대고 말하기",
@@ -110,8 +68,14 @@ const BUNDLES = [
     title: ["신청부터 등록까지,", "한 흐름으로."],
     checks: ["회원권 등록하는 자리에서 QR로 OT 신청 · 원하는 시간 · 목표 · 몸 상태를 미리", "수업 직전 3분 사전 준비 리포트 · 오늘 운동 4개", "끝나면 탭 몇 번으로 피드백, 다음 OT 준비로 이어져요"],
     note: "센터 QR로 받으면 대표가 트레이너를 정해 넘겨줘요",
-    hero: { img: "/lp/shots/2026-10/T07.webp", alt: "OT 사전 준비 리포트 맨 위 30초 요약: 이 회원 · 오늘 꼭 · 요청 한 줄씩" },
+    core: {
+      title: "세일즈 몰라도, 읽고 들어가면 돼요.",
+      desc: "OT 들어가기 전에, 이 회원에게 할 말을 대본으로 써 줘요.",
+      visual: { img: "/lp/shots/2026-10/T09.webp", alt: "OT 사전 준비 리포트의 클로징: 왜 PT가 필요한지 · 확인 질문 · 추천 플랜 대사와 가격 한 줄",
+        caption: "OT 마지막에 등록을 권할 때 읽는 대사예요. 이 회원에게 맞는 PT 횟수와 가격도 같이 나와요." },
+    },
     items: [
+      { name: "30초 요약", desc: "들어가기 직전 훑어볼 세 줄", img: "/lp/shots/2026-10/T07.webp", alt: "OT 사전 준비 리포트 맨 위 30초 요약: 이 회원 · 오늘 꼭 · 요청 한 줄씩" },
       { name: "QR 신청서", desc: "회원이 원하는 요일 · 시간을 직접", img: "/lp/shots/2026-10/T02.webp", alt: "회원이 보는 OT 신청서: 원하는 요일 · 시간 고르기" },
       { name: "새 OT 회원", desc: "신청하면 바로 내 폰에", img: "/lp/shots/2026-10/T04.webp", alt: "트레이너 홈의 새 OT 회원 카드: 내 QR로 신청 · 원하는 시간" },
       { name: "미리 알고 준비", desc: "목표 · 주 몇 번 · 아직 모르는 것까지", img: "/lp/shots/2026-10/T06.webp", alt: "OT 회원 대시보드: 목표 · 운동 가능 횟수 · 알게 된 경로 · 원하는 시간 · 아직 모르는 것" },
@@ -127,8 +91,18 @@ const BUNDLES = [
     title: ["재등록 시기,", "앱이 먼저 알려줘요."],
     checks: ["잔여가 줄어든 회원을 '오늘 할 일'에 먼저", "인바디 · 운동일지로 그동안의 변화 정리", "재등록 제안 멘트와 세일즈북까지 준비"],
     note: "잔여 10회 미만부터 알려줘요",
-    hero: { img: "/lp/shots/2026-10/T15.webp", alt: "재등록 사전 준비 리포트의 30초 요약" },
+    core: {
+      title: "재등록 상담 자료, 따로 안 만들어도 돼요.",
+      desc: "수업 때마다 남긴 기록으로, 회원에게 보여 줄 '이만큼 변했어요' 화면이 저절로 생겨요.",
+      steps: [
+        { step: "기록이 쌓이면", img: "/lp/shots/2026-10/R01.webp", alt: "PT 회원 대시보드: 이번 계약 14/20회와 처음보다 달라진 것(체중 · 골격근량 · 체지방률 · 레그프레스)",
+          caption: "트레이너 앱의 회원 화면이에요. 처음과 지금의 체중 · 근육량 · 운동 무게가 자동으로 나란히 보여요." },
+        { step: "상담 때 보여 주기", img: "/lp/shots/2026-10/R03p.webp", alt: "재등록 세일즈북의 숫자로 확인된 변화: 인바디와 대표 종목 무게의 처음 · 지금 · 변화",
+          caption: "재등록 상담 때 폰을 돌려 회원에게 보여 주는 화면이에요. 숫자는 그동안 잰 인바디와 수업 때 든 무게라, 회원이 믿어요." },
+      ],
+    },
     items: [
+      { name: "재등록 30초 요약", desc: "상담 들어가기 전 훑어볼 세 줄", img: "/lp/shots/2026-10/T15.webp", alt: "재등록 사전 준비 리포트의 30초 요약" },
       { name: "재등록 타이밍", desc: "잔여 10회 미만 회원을 먼저", img: "/lp/shots/2026-10/T14.webp", alt: "오늘 탭의 재등록 타이밍 카드: 잔여 10회 미만 회원 목록" },
       { name: "그동안의 여정", desc: "함께한 기간 · 완료 수업 · 주 평균", img: "/lp/shots/2026-10/R02.webp", alt: "재등록 세일즈북의 그동안의 여정: 1개월 · 14회 · 주 2.2회 · 남은 6회", wide: true },
       { name: "지금 어디까지 · 앞으로", desc: "지금 단계와 다음 단계", img: "/lp/shots/2026-10/R04.webp", alt: "재등록 세일즈북의 지금 어디까지 · 앞으로: 단계별 로드맵", wide: true },
@@ -152,10 +126,16 @@ const BUNDLES = [
     id: "b-pt", nav: "PT 회원 관리",
     pill: "PT 회원 관리",
     title: ["수업 밖 관리,", "앱이 먼저 챙겨요."],
-    checks: ["수업 예약 · 변경 · 취소 요청을 승인 한 번으로", "재등록 타이밍 · 운동일지 미확인 · 인바디 잴 회원을 먼저 알려줘요", "개인운동 루틴 · 회원 이벤트 · 오운완 랭킹"],
+    checks: ["수업 끝나고 말로 운동일지 · 회원 서명까지", "수업 예약 · 변경 · 취소 요청을 승인 한 번으로", "재등록 타이밍 · 운동일지 미확인 · 인바디 잴 회원을 먼저 알려줘요"],
     note: "회원이 '내용이 달라요'를 누르면 바로 보여요",
-    hero: { img: "/lp/shots/2026-10/T21.webp", alt: "트레이너 홈의 수업 요청 카드: 회원이 보낸 취소 · 시간 변경 · 새 수업 요청과 승인 · 거절 버튼" },
+    core: {
+      title: "운동일지, 타자 치지 말고 말하세요.",
+      desc: "수업 끝나고 오늘 한 운동을 폰에 대고 말하면, 운동일지가 돼서 회원 폰으로 가요.",
+      steps: LOG_STEPS,
+    },
     items: [
+      { name: "수업 요청 승인", desc: "회원이 보낸 변경 · 취소 · 새 수업을 한 번에", img: "/lp/shots/2026-10/T21.webp", alt: "트레이너 홈의 수업 요청 카드: 회원이 보낸 취소 · 시간 변경 · 새 수업 요청과 승인 · 거절 버튼" },
+      { name: "수업 확인서", desc: "한 달 수업을 회원 서명과 함께 한 장으로", img: "/lp/shots/2026-10/T19.webp", alt: "한 달 수업을 회원 서명과 함께 모은 수업 확인서" },
       { name: "스케줄", desc: "주간 표 · 개인 일정 · 회원 요청까지", img: "/lp/shots/2026-10/T20.webp", alt: "트레이너 주간 스케줄" },
       { name: "개인운동 루틴", desc: "PT 기록으로 만드는 혼자 오는 날 루틴", img: "/lp/shots/2026-10/T23.webp", alt: "회원 개인운동 루틴 카드" },
       { name: "회원 이벤트", desc: "출석 챌린지 · 참여 명단 · 상품 지급", img: "/lp/shots/2026-10/T22.webp", alt: "트레이너 설정의 이벤트 관리: 출석 챌린지 참여 명단과 달성 여부" },
@@ -170,12 +150,20 @@ const BUNDLES = [
     title: ["붙잡지 마세요.", "회원이 스스로 챙깁니다."],
     checks: ["설치 없이 링크로 여는 회원 전용 페이지", "운동일지 · 인바디 · 무게 변화를 회원이 직접", "오운완 · 이벤트 참여 · 수업 예약 요청까지"],
     note: "링크와 휴대폰 뒤 4자리로 열려요",
+    core: {
+      title: "회원 폰에 '내 PT' 화면이 생겨요.",
+      desc: "앱 설치 없이, 카톡으로 보낸 링크 하나로 열려요.",
+      steps: [
+        { step: "남은 수업 · 일정", img: "/lp/shots/2026-10/M01.webp", alt: "회원 전용 페이지 내 PT: 남은 수업 12회 / 32회 · 수업 일정 · 시간 바꾸기 · 취소하기 · 새 수업 요청하기",
+          caption: "회원이 보는 화면이에요. 남은 수업 횟수와 다음 수업 시간을 직접 보고, 시간 변경도 여기서 요청해요." },
+        { step: "몸의 변화", img: "/lp/shots/2026-10/M09.webp", alt: "회원 인바디 변화: 체중 · 골격근량 · 체지방량 · 체지방률 · 기초대사량 · 내장지방",
+          caption: "회원이 자기 인바디가 지난번보다 얼마나 바뀌었는지 직접 봐요. 트레이너가 따로 설명하지 않아도 돼요." },
+      ],
+    },
     items: [
-      { name: "내 PT", desc: "남은 수업 · 다음 수업 · 시간 바꾸기 · 취소", img: "/lp/shots/2026-10/M01.webp", alt: "회원 전용 페이지 내 PT: 남은 수업 12회 / 32회 · 수업 일정 · 시간 바꾸기 · 취소하기 · 새 수업 요청하기" },
       { name: "새 수업 요청", desc: "트레이너 빈 시간만 골라 요청", img: "/lp/shots/2026-10/M06.webp", alt: "새 수업 요청: 이번 주 · 다음 주 날짜와 시간 고르기(트레이너 일정 있는 칸은 흐리게)" },
       { name: "운동일지", desc: "세트 · 무게 · 횟수 표와 '지난번보다 ▲'", img: "/lp/shots/2026-10/M08.webp", alt: "회원 운동일지: 종목별 세트 · 무게 · 횟수 표와 지난번보다 늘어난 무게" },
       { name: "운동 달력", desc: "PT · 개인운동 · 유산소를 한 달에", img: "/lp/shots/2026-10/M07.webp", alt: "회원 운동 달력: PT · 개인운동 · 유산소를 색 점으로" },
-      { name: "인바디 변화", desc: "체중 · 골격근량 · 체지방을 직전과 비교", img: "/lp/shots/2026-10/M09.webp", alt: "회원 인바디 변화: 체중 · 골격근량 · 체지방량 · 체지방률 · 기초대사량 · 내장지방" },
       { name: "무게 변화", desc: "종목별로 얼마나 늘었는지", img: "/lp/shots/2026-10/M10.webp", alt: "회원 종목별 무게 변화 그래프" },
       { name: "개인운동 루틴", desc: "혼자 오는 날 할 것과 트레이너 한마디", img: "/lp/shots/2026-10/M11.webp", alt: "회원 개인운동 루틴: 오늘 할 부위 · 트레이너 한마디 · 세트별 무게와 횟수" },
       { name: "목표 로드맵", desc: "지금 몇 단계인지, 앞으로 남은 것", img: "/lp/shots/2026-10/M04.webp", alt: "회원 목표 로드맵: 지나온 단계와 지금 단계, 남은 단계" },
@@ -254,7 +242,7 @@ export default function LandingPage() {
       <style>{LP_CSS}</style>
       <Header
         page="trainer"
-        nav={[["#special", "다른 점"], ["#features", "기능"], ["#pricing", "가격"], ["#faq", "자주 묻는 질문"]]}
+        nav={[["#features", "기능"], ["#pricing", "가격"], ["#faq", "자주 묻는 질문"]]}
         cta={{ label: "무료로 시작", href: "/signup" }}
       />
 
@@ -325,38 +313,6 @@ export default function LandingPage() {
               일지·상담 준비·재등록 챙기기. 실력이 아니라 시간을 먹는 일들을 앱에 넘기세요.
             </p>
             <div className="mt-2 flex w-full justify-center"><BeforeAfter rows={WHY} /></div>
-          </div>
-        </section>
-
-        {/* ④-1 다른 점 4가지 — 기능 설명 전에 먼저(2026-10-06) */}
-        <section id="special" className="scroll-mt-28 border-t border-line bg-bg px-5 py-[clamp(56px,10vw,104px)]">
-          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-[clamp(56px,9vw,88px)] text-center">
-            <div className="rv flex flex-col items-center gap-4">
-              <Pill>핵심 4가지</Pill>
-              <h2 className={`m-0 ${H2} ${H2_LG}`}>
-                <span className="block">오직 트레이너는</span>
-                <span className="block text-primary">이게 다릅니다.</span>
-              </h2>
-            </div>
-            {SPECIAL.map((sp) => (
-              <div key={sp.n} className="flex w-full flex-col items-center gap-5">
-                <div className="rv flex flex-col items-center gap-3">
-                  <span className="flex items-center gap-2 text-[15px] font-black text-primary">
-                    <span className="tabular-nums tracking-[0.06em]">{sp.n}</span>
-                    <span className="h-px w-5 bg-primary/40" aria-hidden="true" />
-                    <span>{sp.pill}</span>
-                  </span>
-                  <h3 className={H3}>{sp.title[0]}<br />{sp.title[1]}</h3>
-                  <p className="m-0 max-w-[520px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] text-sub">{sp.desc}</p>
-                </div>
-                <div className="rv flex w-full flex-col items-center gap-4" style={stagger(1)}>
-                  {sp.visual && <Visual {...sp.visual} />}
-                  {sp.steps && <StepShots steps={sp.steps} />}
-                  {sp.stepsKey === "log" && <StepShots steps={LOG_STEPS} />}
-                  {sp.href && <TryLink href={sp.href} />}
-                </div>
-              </div>
-            ))}
           </div>
         </section>
 
