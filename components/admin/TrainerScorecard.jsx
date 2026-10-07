@@ -345,8 +345,8 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <MetricTile label="담당 회원" value={`OT ${t.cnt.ot} · PT ${t.cnt.pt}`} />
                 <MetricTile label="이달 수업" value={`OT ${t.sess.ot} · PT ${t.sess.pt}`} />
-                <MetricTile label="1차 등록률" value={pct(t.close.r1.rate)} g={g.r1} />
-                <MetricTile label="2차 등록률" value={pct(t.close.r2.rate)} g={g.r2} />
+                <MetricTile label="1차 클로징률" value={pct(t.close.r1.rate)} g={g.r1} />
+                <MetricTile label="2차 클로징률" value={pct(t.close.r2.rate)} g={g.r2} />
                 <MetricTile label="재등록" value={pct(t.rereg.rate)} g={g.re} />
                 <MetricTile label="출석(월 수업)" value={burnText(t.burn)} g={g.burn} />
                 <MetricTile label="일지 작성" value={pct(t.logRate.rate)} g={g.log} />

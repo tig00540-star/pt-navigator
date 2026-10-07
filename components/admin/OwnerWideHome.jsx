@@ -140,7 +140,7 @@ export default function OwnerWideHome({
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3 text-center">
             <div>
-              <div className="text-[12px] text-muted">등록률</div>
+              <div className="text-[12px] text-muted">클로징률</div>
               <div className="text-[18px] font-bold text-ink">{pct(funnel.intake ? funnel.confirmed / funnel.intake : null)}</div>
             </div>
             <div>

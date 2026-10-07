@@ -88,7 +88,7 @@ export default function OwnerHub({
           <Stat label="오늘 수업" value={`${todays.length}건`} sub={todays.length ? `완료 ${done} · 남음 ${todays.length - done}` : "예약 없음"} />
           <Stat label="오늘 신규 OT" value={`${newOt}명`} accent={newOt > 0} sub={newOt ? "등록 기회" : "없음"} />
           <Stat label="이달 매출" value={manwon(rev.net)} sub={target ? `목표의 ${pct(rev.net / target)}` : `신규 ${rev.cntNew} · 재등록 ${rev.cntRe}건`} />
-          <Stat label="등록률 · 재등록률" value={`${pct(convRate)} · ${pct(rereg.rate)}`} sub="누적 기준" />
+          <Stat label="클로징률 · 재등록률" value={`${pct(convRate)} · ${pct(rereg.rate)}`} sub="누적 기준" />
         </div>
         <button type="button" onClick={() => onGoTab("briefing")}
           className="mt-3 flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl bg-primary px-4 text-left text-white transition hover:bg-primary-strong active:scale-[0.99]">

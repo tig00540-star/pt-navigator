@@ -288,7 +288,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
 
       <div className="grid gap-4 @3xl:grid-cols-2 @3xl:items-start @6xl:grid-cols-3">
       {/* 1. 결과 */}
-      <Block n={1} title="오늘 어떻게 끝났나요?" uses="다음 차수 열기 · 등록률 · 다음 OT 대본의 클로징 방향에 쓰여요">
+      <Block n={1} title="오늘 어떻게 끝났나요?" uses="다음 차수 열기 · 클로징률 · 다음 OT 대본의 클로징 방향에 쓰여요">
         <div className="grid gap-2">
           {RESULTS.map((r) => {
             const on = form.result === r.value;

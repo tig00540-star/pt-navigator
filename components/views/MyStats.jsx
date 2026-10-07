@@ -357,9 +357,9 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         )}
       </StatTile>
 
-      {/* 등록률 | 이번 달 수업 — 수업 수는 급여 기준(노쇼 포함 · 취소 · 보강 제외 · 계약 담당 기준)이 정본(2026-10-03 대표). 누르면 급여 내역(회원별). */}
+      {/* 클로징률 | 이번 달 수업 — 수업 수는 급여 기준(노쇼 포함 · 취소 · 보강 제외 · 계약 담당 기준)이 정본(2026-10-03 대표). 누르면 급여 내역(회원별). */}
       <div className="grid grid-cols-2 gap-3">
-        <StatTile icon={Target} label="등록률" value={rate}>
+        <StatTile icon={Target} label="클로징률" value={rate}>
           <div className="mt-1.5 text-[12.5px] text-sub">등록 제안 {closing.attempted}명 중 {closing.success}명</div>
         </StatTile>
         <StatTile icon={Dumbbell} label="이번 달 수업" value={`${sessionCount}회`} onClick={isFreelance && !hasScheme ? undefined : openPay}>

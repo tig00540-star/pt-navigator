@@ -183,7 +183,7 @@ export default function MonthlyReport({ data, onClose }) {
           <StatTile icon={RefreshCw} label="재등록" value={`${rev.cntRe}건`}>
             <div className="mt-2 text-[12.5px] text-muted">재등록 매출 {won(rev.reRev)}</div>
           </StatTile>
-          <StatTile icon={Target} label="등록률(누적)" value={rate}>
+          <StatTile icon={Target} label="클로징률(누적)" value={rate}>
             <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 중 {closing.success}명 등록 · 전체 기간</div>
           </StatTile>
         </div>
@@ -223,7 +223,7 @@ export default function MonthlyReport({ data, onClose }) {
                   <div className="tabular-nums text-lg font-bold text-rose-700">{closing.fail}</div>
                 </div>
               </div>
-              <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 · 등록률 {rate}</div>
+              <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 · 클로징률 {rate}</div>
               {approachRows.length > 0 && (
                 <div className="mt-3">
                   <div className="text-[12.5px] font-semibold text-sub">통한 방향</div>
@@ -324,7 +324,7 @@ export default function MonthlyReport({ data, onClose }) {
           )}
         </ToneCard>
 
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">{data?.isFreelance ? "" : data?.isSolo ? "예상 급여는 완료한 수업으로 자동 계산한 금액이에요. " : "예상 급여는 완료한 수업으로 자동 계산한 금액이고, 실제 지급액은 대표가 확정한 금액이에요. "}등록률은 전체 기간 누적이에요. {ym} 기준.</p>
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">{data?.isFreelance ? "" : data?.isSolo ? "예상 급여는 완료한 수업으로 자동 계산한 금액이에요. " : "예상 급여는 완료한 수업으로 자동 계산한 금액이고, 실제 지급액은 대표가 확정한 금액이에요. "}클로징률은 전체 기간 누적이에요. {ym} 기준.</p>
       </div>
     </div>
   );

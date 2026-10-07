@@ -132,7 +132,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
               {forecast.expectedNew != null ? (
                 <>
                   <div className="mt-1 font-mono text-lg font-bold text-ink">{wonApprox(forecast.expectedNew)}</div>
-                  <div className="mt-1 text-[12px] leading-relaxed text-muted">OT 진행 {forecast.otPipeline}명 × 등록률 {pctText(forecast.convRate)} × 평균 {wonApprox(forecast.avgNew)}</div>
+                  <div className="mt-1 text-[12px] leading-relaxed text-muted">OT 진행 {forecast.otPipeline}명 × 클로징률 {pctText(forecast.convRate)} × 평균 {wonApprox(forecast.avgNew)}</div>
                 </>
               ) : <div className="mt-1 text-[12px] text-muted">OT 이력이 더 쌓이면 보여 드려요</div>}
             </div>
@@ -146,7 +146,7 @@ export default function RevenuePipeline({ members = [], contracts = [], logs = [
               ) : <div className="mt-1 text-[12px] text-muted">재등록 이력이 더 쌓이면 보여 드려요</div>}
             </div>
           </div>
-          <p className="mt-3 text-[12px] leading-relaxed text-muted">과거 등록률·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있어요.</p>
+          <p className="mt-3 text-[12px] leading-relaxed text-muted">과거 클로징률·재등록률·평균 계약금액으로 계산한 추정치예요. 실제와 다를 수 있어요.</p>
         </Card>
       </div>
 

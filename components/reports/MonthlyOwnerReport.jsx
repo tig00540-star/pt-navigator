@@ -72,7 +72,7 @@ export default function MonthlyOwnerReport({ goals = [], onGoTab }) {
           </Num>
           <Num label="목표 달성" value={c.goal ? pct(c.goalRate) : "—"} sub={c.goal ? `목표 ${won(c.goal)}` : "목표를 안 정했어요"} />
           <Num label="OT 진행" value={`${c.otHeld}건`} sub={`등록 ${c.ot.success}/${c.ot.attempted}`}><Delta cur={c.otHeld} prev={c.otHeldPrev} unit="건" /></Num>
-          <Num label="등록률 · 재등록률" value={`${pct(c.ot.rate)} · ${pct(c.rereg.rate)}`} sub={`재등록 ${c.rereg.success}/${c.rereg.attempted}`} />
+          <Num label="클로징률 · 재등록률" value={`${pct(c.ot.rate)} · ${pct(c.rereg.rate)}`} sub={`재등록 ${c.rereg.success}/${c.rereg.attempted}`} />
           <Num label="PT 수업" value={`${c.sessions}회`} sub={`2주+ 안 온 회원 ${c.churn}명`} />
           {c.ledger ? <Num label="장부 순이익" value={won(c.ledger.net)} sub={`지출 ${won(c.ledger.expense)}`} /> : <Num label="재등록 대상" value={`${c.expiring}명`} sub="이번 달 챙길 회원" />}
         </div>
@@ -138,7 +138,7 @@ export default function MonthlyOwnerReport({ goals = [], onGoTab }) {
         </button>
       )}
       <p className="m-0 text-[12px] leading-relaxed text-muted">
-        {new Date(rep.generated_at).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요. 등록률 · 재등록률은 그달에 결과를 남긴 것만 세요. 추천 목표는 최근 3개월 평균 × 1.1과 들어올 매출 예측 중 큰 값이에요.
+        {new Date(rep.generated_at).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요. 클로징률 · 재등록률은 그달에 결과를 남긴 것만 세요. 추천 목표는 최근 3개월 평균 × 1.1과 들어올 매출 예측 중 큰 값이에요.
       </p>
     </div>
   );

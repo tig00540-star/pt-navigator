@@ -185,7 +185,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
       <Card>
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 shrink-0 text-primary-strong" />
-          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">달마다 등록률 · 나아지고 있나</span>
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">달마다 클로징률 · 나아지고 있나</span>
         </div>
         {trend.every((t) => t.intake === 0) ? (
           <p className="mt-3 text-[12px] text-muted">아직 달별로 비교할 유입이 없어요.</p>
@@ -276,7 +276,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
       {onGoTab && (
         <button type="button" onClick={() => onGoTab("perf")}
           className="inline-flex items-center gap-1 text-[12px] font-semibold text-muted underline-offset-2 hover:text-sub hover:underline">
-          <Wallet className="h-3.5 w-3.5" /> 트레이너별 등록률·재등록률 보기 <ChevronRight className="h-3.5 w-3.5" />
+          <Wallet className="h-3.5 w-3.5" /> 트레이너별 클로징률·재등록률 보기 <ChevronRight className="h-3.5 w-3.5" />
         </button>
       )}
     </div>

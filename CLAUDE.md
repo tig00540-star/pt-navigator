@@ -60,7 +60,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
   - 센터 주인 = **대표**(❌원장·관리자). 가입 "센터 대표" · 플랜 "트레이너 3인 + 대표 1인" · 화면 "대표 화면/대표 대시보드" · AI 보고서 호칭 "대표님". (역할 코드값 `owner`·`admin` 색 토큰은 그대로 — 코드 이름이지 화면 글자가 아님)
   - 회원이 보는 화면 = **회원 전용 페이지**(❌회원앱 · 2026-10-01). 설치하는 앱이 아니라 링크로 여는 페이지라서. 조사 주의: '앱은/을' → '페이지는/를'. (코드 경로 `app/m/[token]`·컴포넌트명 `MemberAppLink`은 그대로)
   - 수업 기록 = **운동일지**(❌수업일지). 회원앱 확인도 "운동일지 확인". (트레이너 탭 헤더 "수업 확인서 · 운동일지"는 서명 대체 성격을 설명하는 것이라 유지)
-  - OT 후 등록 비율 = **등록률**(❌클로징률·전환율). **행동은 '클로징'**(클로징 멘트·클로징 시퀀스·클로징 결과) — "클로징으로 등록률을 올린다". 재등록 비율은 **재등록률**(❌'전환').
+  - OT 후 등록 비율 = **클로징률**(❌등록률·전환율 · 2026-10-08 대표 변경 · 앱 · 랜딩 · 영업 덱 모두). **행동도 '클로징'**(클로징 멘트·클로징 시퀀스·클로징 결과). 재등록 비율은 **재등록률**(❌'전환'). ⚠️ 2026-10 캡처(랜딩 · 덱 사진)에는 옛 '등록률'이 찍혀 있어 사진 설명(alt)도 다시 찍을 때 같이 바꾼다. 운영자 노션 주간 지표 칸 '전환율(%)'은 노션 표 칸 이름이라 그대로.
   - 띄어쓰기: 이탈 위험 · 만료 임박 · OT 회원 · PT 회원.
   - AI가 만드는 OT · 재등록 준비 문서 = **대본**(❌사전 준비 리포트 · 2026-10-07 대표): '오늘의 OT 대본' · '재등록 상담 대본' · 'OT 대본 만들기' · 한도 'OT · 재등록 대본'. 탭 이름 'OT 준비하기'는 행동이라 그대로. (코드 이름 `PrepReport` · phase `first`/`second`/`reregister` · 한도 그룹 `prep`은 그대로)
 - **금액은 `lib/format.js`만** — `won`(반올림 포함)·`wonApprox`(추정치 1,000원 단위)·`manwon`(좁은 칸 만원 축약). 화면에 로컬 WON/manwon 만들지 말 것. **추정치는 반드시 `wonApprox`**, 실제 계약·지출·급여는 `won`.
@@ -91,7 +91,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **파생 함수(`lib/memberStatus.js` · 전부 순수·기준시각 주입):**
   - per-trainer: `closingStatsByRoundByTrainer`(라운드별 클로징률 · 회원×라운드 dedup)·`reregisterStatsByTrainer`·`sessionsThisMonthByTrainer`·`logWriteRateByTrainer`·`churnRiskByTrainer`.
   - 계정 리스트: `churnRiskMembers`·`expiringMembers`·`avgReregisterAmount`.
-  - 퍼널: `otFunnel`(**지금 시점 스냅샷** · 추세 못 봄)·**`otFunnelByMonth`**(유입월 코호트 · 달별 등록률 · ⚠️ 최근 달은 진행 중이라 낮게 보임)·`otFunnelByTrainer`(라운드별 `firstSuccess`/`secondSuccess` 포함)·`closingDueSoon`(+내부 `_otResultByMember`).
+  - 퍼널: `otFunnel`(**지금 시점 스냅샷** · 추세 못 봄)·**`otFunnelByMonth`**(유입월 코호트 · 달별 클로징률 · ⚠️ 최근 달은 진행 중이라 낮게 보임)·`otFunnelByTrainer`(라운드별 `firstSuccess`/`secondSuccess` 포함)·`closingDueSoon`(+내부 `_otResultByMember`).
   - 매출/예측: `avgNewAmount`·`revenueCompositionInMonth`(Σ`revenueByTrainer`와 동치)·`revenueTrendByMonth`(6개월 · ym 문자열 정수연산)·`revenueForecastNextMonth`(다음달 추정 · 회원=visible).
   - 스케줄: `apptWeekdayHourGrid`(KST 요일×시 밀도 · 정원 없어 '가동률%' 아님)·`apptOutcomeByTrainer`(완료/취소/미처리)·`noshowByTrainer`(★노쇼는 `daily_workout_log.source='noshow'` 원천 · appointment 아님).
   - 브리핑: `ownerBriefing`(위 파생들을 impact ₩순 top3로 조립 · 룰기반 결정적 · AI 서술은 후속).
@@ -206,7 +206,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **대표 결산**(kind owner · 보고서 › [아침 보고서 | 월간 결산] · 홈 카드 1~10일): AI 총평 → 센터 숫자 → 트레이너별(잘한 점 · **보완할 점 = '트레이너 면담 때 활용하세요 · 대표만 보여요'** · 해 볼 것 · **추천 목표는 보여 주기만 + 면담용**) → 이벤트 → 급여 확정.
 - **트레이너 성적표**(kind trainer · 내 실적 맨 위 `MonthlySelfReport` · 홈 · 오늘 카드): 규칙 기반(AI 없음) · **보완할 점은 저장도 안 함** · 회원이 운동한 날 · 확인율 · 무게 늘어난 회원 · 내 이벤트(참여 · 달성 · 상품 지급 대기) · 챙길 회원 · 추천 목표 [목표로 정하기](본인 trainer_goal).
 - **개인 '내 결산'**(kind solo): 성적표 + AI(잘한 점 · 보완할 점 · 해 볼 것 · 비교 = 내 지난달) + 남은 돈/받은 금액.
-- 추천 목표 = max(최근 3개월 평균 × 1.1, 재등록 대상 × 재등록률 × 평균 금액 + OT 회원 × 등록률 × 평균 신규) · 10만 원 단위. 열어 본 시각 `seen_at`(rpc `mark_monthly_report_seen`)으로 실제 쓰이는지 잰다. ⚠️ 데모로 **진행 중인 달**을 저장하면 1일 실제 작업이 건너뛴다(스크립트가 막음).
+- 추천 목표 = max(최근 3개월 평균 × 1.1, 재등록 대상 × 재등록률 × 평균 금액 + OT 회원 × 클로징률 × 평균 신규) · 10만 원 단위. 열어 본 시각 `seen_at`(rpc `mark_monthly_report_seen`)으로 실제 쓰이는지 잰다. ⚠️ 데모로 **진행 중인 달**을 저장하면 1일 실제 작업이 건너뛴다(스크립트가 막음).
 
 ### 구독 해지 · 끝난 뒤 30일 '볼 수만' · 내 데이터 내려받기 (2026-10-07 · SQL `docs/migrations/2026-10-07-cancel-readonly.sql` · 계획서 `docs/v2-계획-해지-합류-독립.md` 1단계)
 
@@ -220,7 +220,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 
 - **초대:** 대표 운영 탭 `JoinInviteCard` → rpc `create_join_invite`(센터 대표만 · 16자 · 7일 · 한 번) → `/join-center/{code}`(AuthGate가 잠긴 계정도 통과). 미리 보기 · 합류 = `/api/move/join`(GET · POST · service_role · 개인 계정 주인만 · 좌석 3).
 - **합류 = DB `_join_center`(service_role만):** 트레이너 → 센터 소속 role trainer(같은 로그인) · 트레이너 것(pt_package · sales_case · intake_link · trainer_event · trainer_booking_pref · trainer_profile · library_item · notify_pref) 이동 · 회원마다 `member_transfer`(14일) · 개인 계정 닫기(inactive · 기간 = 지금 → 30일 볼 수만 · billing_key 지움 · `merged_into` · `closed_reason` join). **남은 개인 구독 = 토스 부분 취소 일할 환불**(`lib/refund` `proratedRefund` · `lib/toss` `cancelPayment` · 실패면 payment REFUND_FAILED + 로그 → 수동). 개인 장부(income · expense)는 안 옮김.
-- **회원 동의:** 회원 전용 페이지 `TransferAsk`(rpc `my_member_transfer` · `answer_member_transfer`) → 동의하면 `_move_member`: **account_id가 있는 모든 표**(information_schema로 찾음 · user_table · member_transfer · member_event_join · owner_feedback · 보고서 표 제외)를 회원 기준으로 바꿈 · 계약은 `imported_from` · `imported_at` · **counts_as_revenue=false**(센터 매출 · 급여 · 등록률 계산에 안 섞임 · 남은 수업 · 재등록 흐름엔 그대로) · 이벤트 참여 끊음 · `member_consent` kind `transfer`. 답 없으면 안 옮김(14일 · 옛 계정과 함께 30일 뒤 지워짐).
+- **회원 동의:** 회원 전용 페이지 `TransferAsk`(rpc `my_member_transfer` · `answer_member_transfer`) → 동의하면 `_move_member`: **account_id가 있는 모든 표**(information_schema로 찾음 · user_table · member_transfer · member_event_join · owner_feedback · 보고서 표 제외)를 회원 기준으로 바꿈 · 계약은 `imported_from` · `imported_at` · **counts_as_revenue=false**(센터 매출 · 급여 · 클로징률 계산에 안 섞임 · 남은 수업 · 재등록 흐름엔 그대로) · 이벤트 참여 끊음 · `member_consent` kind `transfer`. 답 없으면 안 옮김(14일 · 옛 계정과 함께 30일 뒤 지워짐).
 - ⚠️ 새 표에 회원 기록을 담으면 `account_id` + `user_id`/`member_id` 칸을 두면 이동에 자동 포함된다(이름이 다르면 `_move_member`가 놓침).
 
 ### 센터 → 개인 독립 (2026-10-07 · SQL `docs/migrations/2026-10-07-leave-center.sql` · 계획서 3단계)
@@ -242,7 +242,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 
 ### 대표 화면 스타일 통일 (2026-10-05)
 
-트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 등록률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.
+트레이너 화면과 같은 규칙: 섹션 제목 = `SectionTitle`(15px · admin 페이지의 로컬 `Eyebrow`도 이걸 감쌈) · **12px 미만 글씨 없음**(전 탭 측정 0) · 세부 탭 = 알약(`rounded-full bg-elevate p-[3px]`) · 문구 해요체. 폰 홈 `OwnerHub` = 인사 → 오늘 카드(오늘 수업 · 신규 OT · 이달 매출/목표 · 클로징률/재등록률 + 빨간 '오늘 보고서 보기' 버튼) → 바로가기 칸(트레이너 홈 Tile과 같은 모양). 넓은 홈은 같은 인사 · 버튼 + `OwnerOverview inHome`(이달 매출 KPI 중복 제거). 'LIVE' 배지 · '준비 중' 카드 제거.
 
 ### 대표 아침 보고서 + 대표 피드백 (2026-10-03)
 
