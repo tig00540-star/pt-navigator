@@ -239,7 +239,7 @@ export default function LandingPage() {
       <Header
         page="trainer"
         nav={[["#features", "기능"], ["#pricing", "가격"], ["#faq", "자주 묻는 질문"]]}
-        cta={{ label: "무료로 시작", href: "/signup" }}
+        cta={{ label: "시작하기", href: "/signup" }}
       />
 
       <main>

@@ -46,7 +46,7 @@ export default function TryPage() {
   return (
     <div className="min-h-dvh bg-bg text-ink antialiased [word-break:keep-all]">
       <style>{LP_CSS + TRY_CSS}</style>
-      <Header page="trainer" nav={[["/lp#features", "기능"], ["/lp#pricing", "가격"], ["/center", "센터 대표용"]]} cta={{ label: "무료로 시작", href: "/signup" }} />
+      <Header page="trainer" nav={[["/lp#features", "기능"], ["/lp#pricing", "가격"], ["/center", "센터 대표용"]]} cta={{ label: "시작하기", href: "/signup" }} />
       <main className="mx-auto w-full max-w-[1100px] px-4 pb-16 pt-8 sm:px-6">
         <div className="mx-auto max-w-[720px] text-center">
           <span className="inline-flex min-h-[32px] items-center rounded-full bg-primary-soft px-3.5 text-[13.5px] font-bold text-primary-strong">가입 없이 직접 눌러 보기</span>
