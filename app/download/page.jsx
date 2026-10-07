@@ -12,6 +12,10 @@ import InstallAppButton from "@/components/InstallAppButton";
 export const metadata = {
   title: "설치·시작 안내 · 오직 트레이너",
   description: "설치 없이 웹으로 바로 시작하고, 홈 화면에 추가하면 앱처럼 씁니다.",
+  openGraph: {
+    type: "website", locale: "ko_KR", siteName: "오직 트레이너", url: "/download", title: "설치·시작 안내 · 오직 트레이너", description: "설치 없이 웹으로 바로 시작하고, 홈 화면에 추가하면 앱처럼 씁니다.",
+    images: [{ url: "/og/trainer.png", width: 1200, height: 630, alt: "오직 트레이너" }],
+  },
 };
 
 function Sym({ size = 30 }) {
@@ -89,7 +93,7 @@ export default function DownloadPage() {
                 <ol className="mt-3 flex flex-col gap-2.5">
                   {steps.map((s, i) => (
                     <li key={s} className="flex gap-2.5 text-[14px] leading-[1.5] text-sub">
-                      <span className="mt-0.5 flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-elevate font-mono text-[11px] font-bold text-muted">{i + 1}</span>
+                      <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-elevate font-mono text-[12px] font-bold text-muted">{i + 1}</span>
                       {s}
                     </li>
                   ))}

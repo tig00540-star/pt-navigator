@@ -266,9 +266,24 @@ export function StepShots({ steps }) {
                     <Mic size={15} strokeWidth={2.6} aria-hidden="true" /> {s.quoteLabel || "트레이너가 실제로 녹음한 말"}
                   </figcaption>
                   <blockquote className={`m-0 rounded-[18px_18px_18px_4px] bg-elevate px-4 py-3.5 leading-[1.6] text-ink ${
-                    s.quote.length < 60 ? "my-auto px-5 py-6 text-[clamp(20px,5.6vw,26px)] font-bold" : "text-[clamp(14px,3.9vw,17px)]"}`}>
+                    s.quote.length < 60 ? "px-5 py-6 text-[clamp(20px,5.6vw,26px)] font-bold" : "text-[clamp(14px,3.9vw,17px)]"}`}>
                     {s.quote}
                   </blockquote>
+                  {/* 그 한 마디에서 앱이 알아듣는 칸(2026-10-07 · 빈 상자 대신) — 실제 결과는 다음 단계 화면 */}
+                  {s.extract?.length > 0 && (
+                    <div className="mt-1 flex flex-col gap-2.5">
+                      <p className="m-0 text-[13px] font-bold text-sub">앱이 알아듣는 것</p>
+                      <dl className="m-0 grid grid-cols-2 gap-2">
+                        {s.extract.map(([k, v]) => (
+                          <div key={k} className="rounded-xl border border-line bg-bg px-3 py-2.5">
+                            <dt className="text-[12px] font-bold text-muted">{k}</dt>
+                            <dd className="m-0 text-[clamp(16px,4.4vw,19px)] font-extrabold text-ink">{v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                  {s.next && <p className="m-0 mt-auto text-[13px] font-semibold text-primary-strong">{s.next} →</p>}
                 </figure>
               ) : (
                 <Shot src={s.img} alt={s.alt} badge="실제 앱 화면" />

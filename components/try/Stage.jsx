@@ -38,7 +38,7 @@ export function Guide({ steps, at, onReset }) {
       <ol className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1.5 p-0">
         {steps.map((s, i) => (
           <li key={s.t} className={`flex items-center gap-1.5 text-[13.5px] ${i < at ? "text-cyan-700" : i === at ? "font-bold text-ink" : "text-muted"}`}>
-            {i < at ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11.5px] font-bold ${i === at ? "bg-primary text-white" : "bg-elevate text-muted"}`}>{i + 1}</span>}
+            {i < at ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[12px] font-bold ${i === at ? "bg-primary text-white" : "bg-elevate text-muted"}`}>{i + 1}</span>}
             {s.t}
           </li>
         ))}

@@ -34,10 +34,21 @@ const handwriting = localFont({
   display: "swap",
 });
 
+// 공유 미리보기(카톡 · 문자 · 검색) — 2026-10-07. 페이지별(/lp · /center · /try · /download)은 각자 layout · page에서 덮어쓴다.
+const SITE = "https://www.onlytrainer.co.kr";
+const DESC = "트레이너는 말만 하세요. 운동일지 · OT 대본 · 재등록 자료 · 회원 전용 페이지까지, 앱이 기록하고 앱이 정리해요.";
 export const metadata = {
+  metadataBase: new URL(SITE),
   applicationName: "오직 트레이너",
-  title: "오직 트레이너",
-  description: "트레이너용 OT 세일즈·PT 관리 내비게이터",
+  title: "오직 트레이너 · 트레이너는 말만 하세요",
+  description: DESC,
+  openGraph: {
+    type: "website", locale: "ko_KR", siteName: "오직 트레이너", url: "/",
+    title: "오직 트레이너 · 트레이너는 말만 하세요",
+    description: DESC,
+    images: [{ url: "/og/trainer.png", width: 1200, height: 630, alt: "오직 트레이너: 트레이너는 말만 하세요. 기록하고 정리하는 건 앱이." }],
+  },
+  twitter: { card: "summary_large_image", images: ["/og/trainer.png"] },
   appleWebApp: {
     capable: true,
     title: "오직 트레이너",
