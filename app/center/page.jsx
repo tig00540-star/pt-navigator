@@ -139,7 +139,7 @@ const STEPS = [
 
 const FAQ = [
   { q: "트레이너가 4명 이상이면요?", a: `트레이너 1명당 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원으로 자리를 더할 수 있어요(최대 ${3 + MAX_EXTRA_SEATS}명). 구독 관리에서 결제하면 바로 열려요.` },
-  { q: "AI를 다 쓰면 어떻게 되나요?", a: `센터 전체가 함께 쓰는 한도예요(음성일지 월 ${PLANS.center.ai.voice}건 · OT · 재등록 대본 월 ${PLANS.center.ai.prep}번 · 자리 1개 추가마다 +100건 · +20번). 다 쓰면 그달만 추가 팩(대본 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 음성일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)을 살 수 있어요. 산 팩은 7일 안에 한 번도 안 썼을 때만 전액 환불돼요(한 번이라도 쓰면 환불 안 돼요).` },
+  { q: "AI를 다 쓰면 어떻게 되나요?", a: `센터 전체가 함께 쓰는 한도예요(음성일지 월 ${PLANS.center.ai.voice}건 · OT · 재등록 대본 월 ${PLANS.center.ai.prep}번 · 자리 1개 추가마다 +100건 · +20번). 다 쓰면 그달만 추가 팩(대본 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 음성일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)을 살 수 있어요. 산 팩은 7일 안에 한 번도 안 썼을 때만 전액 환불돼요.` },
   { q: "트레이너들이 싫어하지 않을까요?", a: "트레이너의 일지·OT 준비·재등록 챙기기를 덜어주는 앱이라, 트레이너가 먼저 편해집니다." },
   { q: "다른 센터와 데이터가 섞이지 않나요?", a: "센터별로 완전히 분리되고, 매출·정산 화면은 대표만 봅니다." },
   { q: "기존 PT 회원은 어떻게 옮기나요?", a: "회원을 등록할 때 '인계받은 PT'로 남은 세션을 이어서 등록할 수 있습니다." },
