@@ -166,7 +166,7 @@ export default function OtDashboard({ member, info }) {
 
         {unknown.length > 0 && (
           <p className="mt-3 rounded-lg bg-elevate px-3 py-2 text-[13px] leading-relaxed text-sub">
-            <b className="font-semibold text-ink">아직 몰라요</b> · {unknown.join(" · ")}. 1차 OT 준비 리포트가 첫 5분에 물어볼 말을 넣어 줘요.
+            <b className="font-semibold text-ink">아직 몰라요</b> · {unknown.join(" · ")}. 1차 OT 대본이 첫 5분에 물어볼 말을 넣어 줘요.
           </p>
         )}
 

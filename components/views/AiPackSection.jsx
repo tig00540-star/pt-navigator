@@ -94,7 +94,7 @@ export default function AiPackSection({ showToast }) {
           {packs.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
               <span className="text-sub">
-                {dayKo(c.created_at)} · {c.kind === "prep" ? "준비" : "음성일지"} {c.amount}{c.kind === "prep" ? "번" : "건"}
+                {dayKo(c.created_at)} · {c.kind === "prep" ? "대본" : "음성일지"} {c.amount}{c.kind === "prep" ? "번" : "건"}
                 {c.refunded ? " · 환불함" : c.used ? ` · ${c.used} 사용` : " · 아직 안 씀"}
               </span>
               {c.refundable && (

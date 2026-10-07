@@ -131,12 +131,12 @@ export default function SceneQr({ onReset }) {
       </Card>
       <Card>
         <Title><span className="inline-flex items-center gap-1.5"><ClipboardList className="h-4 w-4 text-primary-strong" aria-hidden="true" />아직 몰라요</span></Title>
-        <p className="m-0 text-[13.5px] text-sub">운동 경험 · 그만둔 이유 → 1차 OT 준비 리포트가 첫마디 질문으로 넣어 줘요.</p>
+        <p className="m-0 text-[13.5px] text-sub">운동 경험 · 그만둔 이유 → 1차 OT 대본이 첫마디 질문으로 넣어 줘요.</p>
       </Card>
       {view === "booked" ? (
         <Card className="try-in border-l-[3px] border-l-primary">
           <p className="m-0 text-[15px] font-bold text-ink">1차 OT를 잡았어요</p>
-          <p className="m-0 mt-0.5 text-[13.5px] text-sub">{DAY_LABELS[(firstDay || 1) - 1]}요일 {firstHour || 19}시 · 회원이 원한 시간이에요. 수업 전에 준비 리포트가 만들어져요.</p>
+          <p className="m-0 mt-0.5 text-[13.5px] text-sub">{DAY_LABELS[(firstDay || 1) - 1]}요일 {firstHour || 19}시 · 회원이 원한 시간이에요. 수업 전에 대본이 만들어져요.</p>
         </Card>
       ) : (
         <Tap pulse onClick={() => { setView("booked"); setAt(3); }}><span className="inline-flex items-center gap-1.5"><CalendarPlus className="h-4 w-4" aria-hidden="true" />1차 OT 잡기 · {DAY_LABELS[(firstDay || 1) - 1]} {firstHour || 19}시</span></Tap>

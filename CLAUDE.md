@@ -62,6 +62,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
   - 수업 기록 = **운동일지**(❌수업일지). 회원앱 확인도 "운동일지 확인". (트레이너 탭 헤더 "수업 확인서 · 운동일지"는 서명 대체 성격을 설명하는 것이라 유지)
   - OT 후 등록 비율 = **등록률**(❌클로징률·전환율). **행동은 '클로징'**(클로징 멘트·클로징 시퀀스·클로징 결과) — "클로징으로 등록률을 올린다". 재등록 비율은 **재등록률**(❌'전환').
   - 띄어쓰기: 이탈 위험 · 만료 임박 · OT 회원 · PT 회원.
+  - AI가 만드는 OT · 재등록 준비 문서 = **대본**(❌사전 준비 리포트 · 2026-10-07 대표): '오늘의 OT 대본' · '재등록 상담 대본' · 'OT 대본 만들기' · 한도 'OT · 재등록 대본'. 탭 이름 'OT 준비하기'는 행동이라 그대로. (코드 이름 `PrepReport` · phase `first`/`second`/`reregister` · 한도 그룹 `prep`은 그대로)
 - **금액은 `lib/format.js`만** — `won`(반올림 포함)·`wonApprox`(추정치 1,000원 단위)·`manwon`(좁은 칸 만원 축약). 화면에 로컬 WON/manwon 만들지 말 것. **추정치는 반드시 `wonApprox`**, 실제 계약·지출·급여는 `won`.
 - **'진행 수업' = voided·노쇼 제외**(`sessionsCount`·`sessionsThisMonthByTrainer` 동일). 수업 수를 보여줄 땐 OT(`ot_log` 1·2차)+PT를 같이 — 한쪽만 세면 옆 화면과 숫자가 달라진다. ⚠️ 급여용 `sessionCountByTrainer`만 별개 기준(노쇼 포함).
 - **좌석:** `lib/plans.js` `trainerSeats`(solo 0 · center 3 · 관리자 제외) — 관문은 `app/api/create-trainer`(409 `seat_limit`).

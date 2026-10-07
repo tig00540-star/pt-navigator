@@ -277,7 +277,7 @@ export default function SubscriptionCard() {
           )}>
           <ul className="m-0 list-none space-y-2 p-0 text-[14px] leading-relaxed text-ink">
             {change.action === "upgrade" && <>
-              <li>· <b>지금 바로 프로</b>로 바뀌어요. 음성일지 월 {PLANS.solo.ai.voice}건 · OT · 재등록 준비 월 {PLANS.solo.ai.prep}번을 쓸 수 있어요.</li>
+              <li>· <b>지금 바로 프로</b>로 바뀌어요. 음성일지 월 {PLANS.solo.ai.voice}건 · OT · 재등록 대본 월 {PLANS.solo.ai.prep}번을 쓸 수 있어요.</li>
               <li>· {change.amount ? <>남은 기간({dateKo(st.end)}까지) 차액 <b>{won(change.amount)}</b>만 지금 결제돼요.</> : <>{change.trial ? "체험 중이라" : "남은 기간이 짧아"} 지금 결제는 없어요.</>}</li>
               <li>· {dateKo(st.end)}부터 매달 {won(PLANS.solo.amount)}이 결제돼요.</li>
             </>}
@@ -288,7 +288,7 @@ export default function SubscriptionCard() {
             </>}
             {change.action === "keep" && <li>· 베이직으로 바꾸려던 예약을 취소하고 프로를 그대로 써요.</li>}
             {change.action === "seat_add" && <>
-              <li>· 결제가 끝나면 <b>바로 트레이너를 한 명 더</b> 추가할 수 있어요. 센터 AI 한도도 음성일지 100건 · 준비 20번 늘어나요.</li>
+              <li>· 결제가 끝나면 <b>바로 트레이너를 한 명 더</b> 추가할 수 있어요. 센터 AI 한도도 음성일지 100건 · 대본 20번 늘어나요.</li>
               <li>· {change.amount ? <>남은 기간({dateKo(st.end)}까지) 금액 <b>{won(change.amount)}</b>이 지금 결제돼요.</> : <>{change.trial ? "체험 중이라" : "남은 기간이 짧아"} 지금 결제는 없어요.</>}</li>
               <li>· {dateKo(st.end)}부터 매달 {won(planAmount("center", st.seats + 1))}이 결제돼요.</li>
             </>}
