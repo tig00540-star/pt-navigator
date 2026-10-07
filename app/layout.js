@@ -36,17 +36,17 @@ const handwriting = localFont({
 
 // 공유 미리보기(카톡 · 문자 · 검색) — 2026-10-07. 페이지별(/lp · /center · /try · /download)은 각자 layout · page에서 덮어쓴다.
 const SITE = "https://www.onlytrainer.co.kr";
-const DESC = "트레이너는 말만 하세요. 운동일지 · OT 대본 · 재등록 자료 · 회원 전용 페이지까지, 앱이 기록하고 앱이 정리해요.";
+const DESC = "트레이너만을 위한 앱. 운동일지 · OT 대본 · 재등록 자료 · 회원 관리 · 스케줄 · 실적 · 급여까지, 수업 밖 업무를 앱이 자동으로 해 드려요.";
 export const metadata = {
   metadataBase: new URL(SITE),
   applicationName: "오직 트레이너",
-  title: "오직 트레이너 · 트레이너는 말만 하세요",
+  title: "오직 트레이너 · 트레이너만을 위한 앱",
   description: DESC,
   openGraph: {
     type: "website", locale: "ko_KR", siteName: "오직 트레이너", url: "/",
-    title: "오직 트레이너 · 트레이너는 말만 하세요",
+    title: "오직 트레이너 · 트레이너만을 위한 앱",
     description: DESC,
-    images: [{ url: "/og/trainer.png", width: 1200, height: 630, alt: "오직 트레이너: 트레이너는 말만 하세요. 기록하고 정리하는 건 앱이." }],
+    images: [{ url: "/og/trainer.png", width: 1200, height: 630, alt: "오직 트레이너: 트레이너만을 위한 앱. 수업 밖 일은 앱이 알아서." }],
   },
   twitter: { card: "summary_large_image", images: ["/og/trainer.png"] },
   appleWebApp: {
