@@ -458,7 +458,7 @@ export default function LandingPage() {
               <span className="block">오늘 수업 끝나고</span>
               <span className="block">바로 써보세요.</span>
             </h2>
-            <div className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
+            <div data-nosnippet="" className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
               <a href="/signup" className={BTN_PRIMARY}>지금 시작하기 <Arrow /></a>
               <span className="text-[14px] text-sub">월 {basic.amount.toLocaleString("ko-KR")}원부터</span>
             </div>

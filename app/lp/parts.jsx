@@ -610,7 +610,7 @@ export function Footer() {
           <Sym size={24} />
           <Wordmark size="text-[17px]" />
         </div>
-        <p className="m-0 text-[14px] leading-[1.6] text-sub">
+        <p data-nosnippet="" className="m-0 text-[14px] leading-[1.6] text-sub">
           오직 트레이너는 운동 지도·세일즈·회원관리 도구입니다. 의료기관이 아니며 치료·진단을 제공하지 않습니다.
         </p>
         <nav className="-ml-2.5 flex flex-wrap gap-x-1.5" aria-label="바닥글">
@@ -620,7 +620,7 @@ export function Footer() {
           <a href="#faq" className={link}>자주 묻는 질문</a>
           <Link href="/download" className={link}>설치 안내</Link>
         </nav>
-        <div className="border-t border-line pt-5">
+        <div data-nosnippet="" className="border-t border-line pt-5">
           <CompanyInfo />
           <p className="mt-4 text-[12px] text-muted">© 2026 오직 트레이너</p>
         </div>

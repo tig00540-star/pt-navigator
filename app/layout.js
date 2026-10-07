@@ -36,7 +36,7 @@ const handwriting = localFont({
 
 // 공유 미리보기(카톡 · 문자 · 검색) — 2026-10-07. 페이지별(/lp · /center · /try · /download)은 각자 layout · page에서 덮어쓴다.
 const SITE = "https://www.onlytrainer.co.kr";
-const DESC = "트레이너만을 위한 앱. 운동일지 · OT 대본 · 재등록 자료 · 회원 관리 · 스케줄 · 실적 · 급여까지, 수업 밖 업무를 앱이 자동으로 해 드려요.";
+const DESC = "오직 트레이너는 트레이너만을 위한 앱이에요. 운동일지 · OT 대본 · 재등록 자료 · 회원 관리 · 실적까지, 수업 밖 업무를 앱이 알아서 해 드려요.";
 export const metadata = {
   metadataBase: new URL(SITE),
   applicationName: "오직 트레이너",
@@ -60,6 +60,10 @@ export const metadata = {
     statusBarStyle: "default",
   },
   icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
     apple: "/icons/apple-touch-icon.png",
   },
   // ⚠️ Next 16은 appleWebApp.capable에 대해 `mobile-web-app-capable`(크롬 표준)만 내보내고
@@ -68,6 +72,12 @@ export const metadata = {
   //    → 빠지면 iOS에서 스플래시가 무시되고 흰 화면이 뜬다. 수동으로 되살린다.
   other: { "apple-mobile-web-app-capable": "yes" },
 };
+
+// 검색 결과의 사이트 이름 · 로고(2026-10-07) — 공개 정보만.
+const SITE_LD = JSON.stringify([
+  { "@context": "https://schema.org", "@type": "WebSite", name: "오직 트레이너", alternateName: ["오직트레이너", "Only Trainer"], url: `${SITE}/` },
+  { "@context": "https://schema.org", "@type": "Organization", name: "오직 트레이너", url: `${SITE}/`, logo: `${SITE}/icons/icon-512.png` },
+]);
 
 export const viewport = {
   themeColor: "#ffffff",
@@ -83,6 +93,7 @@ export default function RootLayout({ children }) {
       className={`${pretendard.variable} ${geistMono.variable} ${handwriting.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_LD }} />
         <AuthGate>{children}</AuthGate>
       </body>
     </html>
