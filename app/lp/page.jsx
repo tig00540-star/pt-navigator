@@ -249,6 +249,7 @@ export default function LandingPage() {
                 label="앱처럼 설치"
               />
             </div>
+            <a href="/check?who=trainer" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary-soft px-5 text-[16px] font-extrabold text-primary-strong no-underline transition-colors hover:bg-primary/15">회원이 없는 이유, 1분 무료 진단 <Arrow /></a>
             <p className="m-0 text-[14px] text-sub">설치 없이 폰에서 바로 · 7일 안에 전액 환불</p>
           </div>
         </section>

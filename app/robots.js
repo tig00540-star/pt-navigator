@@ -3,7 +3,7 @@ export default function robots() {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/lp", "/center", "/try", "/download", "/legal/"],
+      allow: ["/", "/lp", "/center", "/try", "/check", "/download", "/legal/"],
       disallow: ["/api/", "/m/", "/join/", "/join-center/", "/leave-center", "/admin", "/billing/", "/settings", "/login", "/signup"],
     },
     sitemap: "https://www.onlytrainer.co.kr/sitemap.xml",

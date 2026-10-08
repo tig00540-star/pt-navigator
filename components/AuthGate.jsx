@@ -128,7 +128,8 @@ export default function AuthGate({ children }) {
   const isPublicMarketing =
     pathname === "/lp" || pathname === "/center" || pathname === "/download" || pathname.startsWith("/legal")
     || pathname.startsWith("/join/")   // OT 신청서(QR · 링크 · 로그인 없음 · 2026-10-06)
-    || pathname === "/try";              // 기능 체험(로그인 없음 · 이 화면 안에서만 움직임 · 2026-10-06)
+    || pathname === "/try"               // 기능 체험(로그인 없음 · 이 화면 안에서만 움직임 · 2026-10-06)
+    || pathname === "/check";            // 1분 진단(로그인 없음 · 답은 화면 안에서만 · 2026-10-08)
   if (isPublicMarketing) return <>{children}</>;
 
   // 초기 세션 조회 전 — 깜빡임 방지용 최소 화면

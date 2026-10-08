@@ -177,6 +177,7 @@ export default function CenterLandingPage() {
               <a href={contact} className={BTN_PRIMARY}>센터 도입 문의 <Arrow /></a>
               <a href={SIGNUP_CENTER} className={BTN_OUTLINE}>센터로 시작하기</a>
             </div>
+            <a href="/check?who=owner" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary-soft px-5 text-[16px] font-extrabold text-primary-strong no-underline transition-colors hover:bg-primary/15">매출이 새는 곳, 1분 무료 진단 <Arrow /></a>
             <p className="m-0 text-[14px] text-sub">트레이너 3인 + 대표 1인 · 7일 안 전액 환불</p>
           </div>
         </section>
