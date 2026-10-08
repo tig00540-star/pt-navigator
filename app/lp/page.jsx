@@ -21,7 +21,7 @@ import { PLANS, PACKS, SEAT_PRICE } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, GroupLabel, WhoDoes, Faq, Arrow, LP_CSS, Bundle, FeatureGallery, PhoneShot,
+  Pill, Checks, GroupLabel, WorkFlow, Faq, Arrow, LP_CSS, Bundle, FeatureGallery, PhoneShot,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -36,14 +36,18 @@ const FACTS = [
 // 실제 후기(이름·지역/센터·한 줄) — 허락받은 것만. 3개 모이기 전까지 구간 자체를 숨긴다.
 const REVIEWS = [];
 
-// 트레이너가 하는 일 | 앱이 하는 일(2026-10-07) — 실제 동작만. 인바디는 결과지 숫자를 넣는다(대표: 1분이면 충분 · 정직하게).
-const WHO = [
-  { task: "운동일지", me: "\"벤치프레스 20kg 12개씩 5세트\" **말 한 마디**", app: "표로 정리 · 회원 폰으로 · 무게 그래프" },
-  { task: "인바디", me: "결과지 숫자 입력(**1분**)", app: "처음과 비교 · 변화 그래프 · 회원 폰에" },
-  { task: "OT", me: "**버튼 한 번**(신청서는 회원이 QR로)", app: "할 말 대본 · 시킬 운동 · 망설일 때 대답" },
-  { task: "재등록", me: "없음", app: "남은 수업 알림 · 변화 정리 · 상담 대본" },
-  { task: "회원 관리", me: "없음", app: "남은 수업 · 운동 기록 · 몸의 변화를 회원 폰에" },
-  { task: "실적 · 급여", me: "등록할 때 **계약 금액**만 입력", app: "매출 · 급여 · 클로징률 · 성적표" },
+// 트레이너가 할 일 — 회원이 들어와서 등록 · 재등록하기까지 순서대로(2026-10-08 대표). 실제 동작만.
+//   app = 앱이 하는 것 · me = 트레이너가 하는 것(빨강).
+const FLOW = [
+  { step: "OT 신청", app: "회원이 QR로 신청하면 내 OT 회원으로 바로 들어와요.", me: "알림 확인" },
+  { step: "OT 수업", app: "신청서를 보고 할 말을 대본으로 쓰고, 세일즈 맞춤 인바디 분석 · 세일즈북 PPT 자료 · 가격표를 준비해요.", me: "읽고 들어가서 등록 제안" },
+  { step: "PT 수업", app: "말 한마디를 운동일지로 정리해요. 운동일지는 회원 폰으로 자동으로 전송돼요.", me: "말 한마디" },
+  { step: "재등록", app: "남은 수업 10회 아래면 알리고, 그동안의 운동일지와 변화로 상담 대본 · 세일즈북 PPT 자료를 만들어요.", me: "상담에서 제안" },
+  { step: "실적 · 급여", app: "매출 · 클로징률 · 재등록률 · 급여를 자동으로 계산하고, 매달 성적표를 보내요.", me: "계약 금액만 입력" },
+];
+const FLOW_SIDE = [
+  { head: "회원은 스스로", body: "운동일지 · 개인운동 루틴 · 몸의 변화 · 수업 신청을 회원 전용 페이지에서 직접 챙겨요." },
+  { head: "트레이너는 이것만 더", me: "이벤트 열기", body: "출석 챌린지로 회원이 재미를 잃지 않게 해요." },
 ];
 
 // 오직 트레이너가 다른 점 4가지(2026-10-06 대표) — 기능 설명 전에 먼저. 사진은 '결과 장면', 아래 묶음은 '과정 장면'.
@@ -286,7 +290,11 @@ export default function LandingPage() {
               <span className="block">트레이너가 할 일은,</span>
               <span className="block text-primary">이게 다예요.</span>
             </h2>
-            <div className="mt-2 flex w-full justify-center"><WhoDoes rows={WHO} /></div>
+            <p className="rv m-0 text-[clamp(16px,2.4vw,19px)] leading-[1.6] text-sub" style={stagger(1)}>수업만 잘하세요. 준비와 정리는 앱이 해요.</p>
+            <div className="mt-2 flex w-full justify-center"><WorkFlow steps={FLOW} side={FLOW_SIDE} /></div>
+            <p className="rv m-0 mt-2 text-[clamp(18px,3.4vw,22px)] font-extrabold leading-[1.5] tracking-[-0.02em] [text-wrap:balance]">
+              트레이너는 <span className="text-primary">수업하고, 제안해요.</span> 나머지 준비와 정리는 앱이 해요.
+            </p>
           </div>
         </section>
 

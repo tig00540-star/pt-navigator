@@ -596,6 +596,44 @@ export function WhoDoes({ rows, meLabel = "트레이너가 하는 것", meShort 
   );
 }
 
+/* 트레이너가 할 일 — 흐름(2026-10-08 · 트레이너용 랜딩). 표(WhoDoes) 대신 순서대로 읽히게.
+   steps: [{ step, app, me }] · 숫자 점 + 세로 선 · 'me'(트레이너 몫)만 빨강. side: 아래 한 칸의 줄들 [{ head, me?, body }]. */
+export function WorkFlow({ steps, side = [] }) {
+  return (
+    <div className="flex w-full max-w-[640px] flex-col gap-4 text-left">
+      <ol className="m-0 list-none rounded-2xl border border-line bg-card px-5 py-2 shadow-sm sm:px-7">
+        {steps.map((s, i) => (
+          <li key={s.step} className="rv relative flex gap-4 py-4" style={stagger(i)}>
+            {i < steps.length - 1 && <span aria-hidden="true" className="absolute bottom-[-16px] left-[15px] top-[52px] w-[2px] bg-line" />}
+            <span className="relative flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary text-[15px] font-black text-white">{i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <p className="m-0 text-[17px] font-black tracking-[-0.02em] text-ink">{s.step}</p>
+              <p className="m-0 mt-1 text-[15px] leading-[1.55] text-sub [text-wrap:pretty]">{s.app}</p>
+              <p className="m-0 mt-2 inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 text-[14px] font-extrabold text-primary-strong">
+                <span className="text-[12px] font-bold text-muted">트레이너</span>{s.me}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {side.length > 0 && (
+        /* 아래 한 칸(2026-10-08 대표: 두 칸 → 한 칸) — 줄마다 머리 + 설명 */
+        <div className="rv rounded-2xl bg-elevate px-5 py-1 sm:px-7">
+          {side.map((c, i) => (
+            <div key={c.head} className={`py-3.5 ${i ? "border-t border-line" : ""}`}>
+              <p className="m-0 flex flex-wrap items-center gap-2 text-[16px] font-black text-ink">
+                {c.head}
+                {c.me && <span className="rounded-full bg-primary-soft px-3 py-0.5 text-[14px] font-extrabold text-primary-strong">{c.me}</span>}
+              </p>
+              <p className="m-0 mt-1 text-[15px] leading-[1.55] text-sub [text-wrap:pretty]">{c.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // 전 → 후 줄(취소선 → 굵게).
 export function BeforeAfter({ rows }) {
   return (
