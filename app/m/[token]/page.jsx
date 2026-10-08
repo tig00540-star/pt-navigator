@@ -21,6 +21,7 @@ import SignaturePad from "@/components/member/SignaturePad";
 import RoutineSection from "@/components/member/RoutineSection";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
+import PortfolioConsent from "@/components/member/PortfolioConsent";
 import { CONSENT_VERSION, latestConsent } from "@/lib/consent";
 import { INBODY_FIELDS } from "@/lib/labels";
 import { holidayName } from "@/lib/holidays";
@@ -299,7 +300,7 @@ function CardioSection({ me, cardio, onReload, mode, readOnly = false }) {
 
 // 비포애프터 사진 자가입력(M2) — 압축→비공개버킷 업로드→member_photo insert. 열람은 서명 URL(1h).
 // 회원은 본인 폴더만(스토리지 RLS). 업로드 전 반드시 compressImage(원본 금지).
-function PhotoSection({ me, photos, onReload, mode, readOnly = false }) {
+function PhotoSection({ me, photos, onReload, mode, readOnly = false, consent = null, onConsentRows }) {
   const [label, setLabel] = useState("progress");
   const [takenOn, setTakenOn] = useState(() => todayStr());
   const [busy, setBusy] = useState(false);
@@ -415,6 +416,8 @@ function PhotoSection({ me, photos, onReload, mode, readOnly = false }) {
           <ImagePlus className="h-5 w-5" /> {busy ? "올리는 중…" : "사진 올리기"}
           <input type="file" accept="image/*" onChange={onPick} disabled={busy} className="hidden" />
         </label>
+        {/* 트레이너 포트폴리오 활용 동의(선택 · 2026-10-08) — 사진을 올리는 자리에서 미리 고른다 */}
+        <PortfolioConsent consent={consent} onChanged={onConsentRows} place="photo" trainerName={me?.trainer_name} />
       </Card>
       )}
 
@@ -1310,7 +1313,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         <CardioSection me={me} cardio={cardio} onReload={onReloadCardio} mode="form" />
 
         {/* 비포애프터 사진(M2) — 폼만. */}
-        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="form" />
+        <PhotoSection me={me} photos={photos} onReload={onReloadPhotos} mode="form" consent={consent} onConsentRows={(rows) => onConsentRows?.(rows)} />
           </div>
         )}
 

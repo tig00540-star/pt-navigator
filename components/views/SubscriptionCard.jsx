@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CreditCard, Download } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
+import { downloadMyData } from "@/lib/exportDownload";
 import { useAccount } from "@/lib/useAccount";
 import { PLANS, SEAT_PRICE, MAX_EXTRA_SEATS, planAmount } from "@/lib/plans";
 import { useAiQuota, refreshAiQuota, KIND_LABEL } from "@/lib/useAiQuota";
@@ -39,23 +40,8 @@ const dateKo = (iso) => {
 };
 const plusDays = (iso, n) => (iso ? new Date(Date.parse(iso) + n * 86400000).toISOString() : null);
 
-/** 데이터 내려받기 — 화면 어디서든(읽기 전용 띠에서도) */
-export async function downloadMyData() {
-  const res = await fetch("/api/export", { method: "POST", headers: await authHeader() });
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({}));
-    throw new Error(j.error || "내려받지 못했어요. 다시 시도해 주세요.");
-  }
-  const blob = await res.blob();
-  const cd = res.headers.get("content-disposition") || "";
-  const m = /filename\*=UTF-8''([^;]+)/.exec(cd);
-  const name = m ? decodeURIComponent(m[1]) : "오직트레이너_데이터.zip";
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = name;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
+/** 데이터 내려받기 — 화면 어디서든(읽기 전용 띠에서도) · 사진 파일까지 한 ZIP(2026-10-08 · lib/exportDownload) */
+export { downloadMyData };
 
 /** 이번 달 AI 사용량(베이직 = 기능 5개 · 프로/센터 = 음성일지 · 준비) */
 function AiUsage({ quota }) {
@@ -95,7 +81,6 @@ export default function SubscriptionCard() {
   const [ask, setAsk] = useState(false);    // 해지 확인 창
   const [reason, setReason] = useState("");
   const [memo, setMemo] = useState("");
-  const [allowLeave, setAllowLeave] = useState(true);   // 센터 해지 — 트레이너들이 개인 계정으로 이어 쓰게(기본 켬)
   const [change, setChange] = useState(null);           // { action, amount, trial } — 요금제 · 자리 바꾸기 확인 창
   const [refund, setRefund] = useState(null);           // 첫 결제 7일 안 전액 환불 { eligible, until, amount } (2026-10-07)
   const [askRefund, setAskRefund] = useState(false);
@@ -144,7 +129,10 @@ export default function SubscriptionCard() {
 
   const exportData = async () => {
     setBusy("export");
-    try { await downloadMyData(); showToast("내려받기를 시작했어요"); }
+    try {
+      const r = await downloadMyData();
+      showToast(r.missed ? `내려받았어요. 사진 ${r.missed}장은 받지 못했어요.` : `내려받았어요${r.photos ? ` · 사진 ${r.photos}장 포함` : ""}`);
+    }
     catch (e) { console.error("내려받기 실패", e); showToast(e.message || "내려받지 못했어요. 다시 시도해 주세요."); }
     finally { setBusy(""); }
   };
@@ -155,7 +143,7 @@ export default function SubscriptionCard() {
       const res = await fetch("/api/billing/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ action, reason: action === "cancel" ? [reason, memo.trim()].filter(Boolean).join(" · ") : undefined, allowLeave: action === "cancel" && acc.isCenter ? allowLeave : undefined }),
+        body: JSON.stringify({ action, reason: action === "cancel" ? [reason, memo.trim()].filter(Boolean).join(" · ") : undefined }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { showToast(j.error || "저장하지 못했어요. 다시 시도해 주세요."); return; }
@@ -280,7 +268,7 @@ export default function SubscriptionCard() {
           <Button variant="ghost" size="md" fullWidth onClick={exportData} disabled={busy !== ""}>
             <Download className="h-4 w-4" aria-hidden="true" /> {busy === "export" ? "준비하는 중…" : "내 데이터 내려받기"}
           </Button>
-          <p className="m-0 text-[12.5px] leading-relaxed text-muted">회원 · 계약 · 운동일지 · OT 기록 · 인바디 · 장부를 엑셀에서 열리는 파일로 묶어 드려요. 회원 개인정보가 들어 있으니 안전한 곳에 보관해 주세요.</p>
+          <p className="m-0 text-[12.5px] leading-relaxed text-muted">회원 · 계약 · 운동일지 · OT 기록 · 인바디 · 장부 · 회원별 변화 요약을 엑셀 파일로, 비포 · 애프터와 사례 사진은 사진 파일로 한 번에 묶어 드려요. 회원 개인정보가 들어 있으니 안전한 곳에 보관해 주세요.</p>
           {st.mode === "full" && st.end && st.cancel && (
             <Button variant="primary" size="md" fullWidth onClick={() => call("resume")} disabled={busy !== ""}>
               {busy === "resume" ? "처리하는 중…" : "해지 예약 취소하고 계속 쓰기"}
@@ -385,12 +373,6 @@ export default function SubscriptionCard() {
             <li>· 그다음 회원 · 기록이 <b className="text-danger-text">지워져요</b>. 회원 전용 페이지도 닫혀요.</li>
             <li>· 기간이 끝나기 전엔 언제든 해지 예약을 취소할 수 있어요.</li>
           </ul>
-          {acc.isCenter && (
-            <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl bg-elevate px-3.5 py-3 text-[14px] leading-relaxed text-ink">
-              <input type="checkbox" checked={allowLeave} onChange={(e) => setAllowLeave(e.target.checked)} className="mt-1 h-4 w-4 accent-red-600" />
-              <span><b>트레이너들이 개인 계정으로 이어 쓸 수 있게 할게요.</b> 담당 회원이 동의하면 그 회원 기록도 트레이너와 함께 가요. 센터에는 정산용 기록(금액 · 날짜)만 남아요.</span>
-            </label>
-          )}
           <p className="m-0 mt-4 text-[13px] font-semibold text-sub">그만두시는 이유를 알려 주시면 고치는 데 써요(선택)</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {REASONS.map((r) => (

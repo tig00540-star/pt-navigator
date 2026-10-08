@@ -9,7 +9,8 @@
 import { useMemo, useState } from "react";
 import { X, Search, ArrowLeftRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { viewFor, activeContract, remainingSessions, buildContract } from "@/lib/memberStatus";
+import { viewFor, activeContract, remainingSessions } from "@/lib/memberStatus";
+import { handoverMember } from "@/lib/handover";
 import { personName } from "@/lib/format";
 import Modal from "@/components/ui/Modal";
 import NumberInput from "@/components/ui/NumberInput";
@@ -62,33 +63,10 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
 
     setSaving(true); setErr("");
     try {
-      // ① B 이월계약(잔여 있을 때만) — buildContract가 counts_as_revenue=false, trainer_id는 바깥에서.
-      if (n > 0) {
-        const payload = {
-          ...buildContract({ userId: member.id, origin: "handover", sessions_total: n, price_per_session: p, amount_total: null, service_sessions: 0 }),
-          trainer_id: trainerId,
-        };
-        const { data, error } = await supabase.from("session_log").insert(payload).select();
-        if (error || !data || data.length === 0) { setErr("① 이월계약을 만들지 못했어요. 아직 아무것도 바뀌지 않았으니 다시 시도해 주세요."); setSaving(false); return; }
-        // ② A 잔여>0 계약 전부 닫기(보통 1건).
-        const toClose = memberContracts.filter((c) => remainingSessions(c, logs).total > 0);
-        for (const c of toClose) {
-          const { data: u, error: e2 } = await supabase.from("session_log").update({ handed_over: true }).eq("id", c.id).select();
-          if (e2 || !u || u.length === 0) { setErr("② 기존 계약을 닫지 못했어요. 이월계약은 만들어졌으니 다시 실행하지 말고 잔여를 확인한 뒤 마무리해 주세요."); setSaving(false); return; }
-        }
-      }
-      // ③ 담당 이전.
-      const { data: um, error: e3 } = await supabase.from("user_table").update({ trainer_id: trainerId }).eq("id", member.id).select();
-      if (e3 || !um || um.length === 0) { setErr("③ 담당을 옮기지 못했어요. 계약은 옮겨졌으니 이 회원 담당만 다시 지정해 주세요."); setSaving(false); return; }
-      // ④ (옵션) 미완료 예약 이전 — 0행은 정상(예약 없음)이라 error만 체크.
-      if (moveAppts) {
-        const { error: e4 } = await supabase.from("appointment").update({ trainer_id: trainerId }).eq("user_id", member.id).eq("status", "booked").select();
-        if (e4) { setErr("④ 예약을 옮기지 못했어요. 담당·계약은 옮겨졌으니 예약은 스케줄에서 직접 옮겨 주세요."); setSaving(false); return; }
-      }
-      setSaving(false);
+      const r = await handoverMember(supabase, { member, toTrainerId: trainerId, contracts, logs, sessions: n, price: p, moveAppts });
+      if (!r.ok) { setErr(`${r.step ? `${["", "①", "②", "③", "④"][r.step]} ` : ""}${r.msg}`); return; }
     } catch {
       setErr("인계 중에 문제가 생겼어요. 상태를 확인하고 남은 단계만 마무리해 주세요.");
-      setSaving(false);
       return;
     } finally {
       setSaving(false);

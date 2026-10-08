@@ -3,7 +3,7 @@
 // 센터가 개인정보처리자(동의받는 쪽)라 센터명 칸을 비워 둔다. ⚠️ 법률 자문이 아님 · 실제 운영 전 전문가 검토 권장.
 import { Title, P } from "@/components/legal/ui";
 import PrintButton from "@/components/legal/PrintButton";
-import { CONSENT_VERSION, GENERAL_CONSENT, HEALTH_CONSENT, LOG_CONFIRM_NOTICE } from "@/lib/consent";
+import { CONSENT_VERSION, GENERAL_CONSENT, HEALTH_CONSENT, LOG_CONFIRM_NOTICE, PORTFOLIO_CONSENT } from "@/lib/consent";
 
 export const metadata = { title: "개인정보 · 건강정보 동의서 · 오직 트레이너" };
 
@@ -52,6 +52,7 @@ export default function ConsentFormPage() {
       <Box c={GENERAL_CONSENT} />
       <Box c={LOG_CONFIRM_NOTICE} />
       <Box c={HEALTH_CONSENT} />
+      <Box c={PORTFOLIO_CONSENT} />
 
       <p className="mt-5 text-[12.5px] leading-relaxed text-muted">
         AI 처리를 위한 국외 이전 등 자세한 내용은 개인정보처리방침(onlytrainer.co.kr/legal/privacy)에서 볼 수 있어요. 문구 버전 {CONSENT_VERSION}.

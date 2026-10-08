@@ -9,6 +9,7 @@
 // ⚠️ account 컬럼은 실제 존재하는 것만 select(id·type·name·subscription_status·current_period_end).
 //    billing_plan·cancel_at_period_end·created_at 는 스키마에 없어서 사용 안 함.
 // -----------------------------------------------------------------------------
+import { bearerOk } from "@/lib/bearerOk";
 import { createClient } from "@supabase/supabase-js";
 import { isDemoAccount } from "@/lib/demo";
 import {
@@ -26,7 +27,7 @@ const DB_ID = process.env.NOTION_CUSTOMER_DB_ID;
 function authorized(req) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false; // 시크릿 미설정 = fail-closed
-  return (req.headers.get("authorization") || "") === `Bearer ${secret}`;
+  return bearerOk(req, secret);
 }
 
 // 구독 필드 → 노션 '단계'. ⚠️ 매핑 규칙은 여기 한 곳에서만 조정하세요.

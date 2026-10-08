@@ -57,7 +57,7 @@ export async function POST(req) {
     const { error: de } = await sb.auth.admin.deleteUser(member.member_auth_id);
     if (de && !/not.*found/i.test(de.message || "")) {
       console.error(`[member-revoke] auth 유저 삭제 실패 memberId=${memberId}:`, de.message);
-      return Response.json({ error: "세션 차단 실패: " + de.message }, { status: 500 });
+      return Response.json({ error: "회원 페이지를 끄지 못했어요. 다시 시도해 주세요." }, { status: 500 });
     }
   }
 
@@ -69,7 +69,7 @@ export async function POST(req) {
     .select("id");
   if (upe || !upd || upd.length === 0) {
     console.error(`[member-revoke] 링크 폐기 실패 memberId=${memberId}:`, upe?.message || "0행");
-    return Response.json({ error: "링크 폐기 실패: " + (upe?.message || "0행") }, { status: 500 });
+    return Response.json({ error: "회원 페이지를 끄지 못했어요. 다시 시도해 주세요." }, { status: 500 });
   }
 
   return Response.json({ ok: true });

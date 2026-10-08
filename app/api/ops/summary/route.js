@@ -5,6 +5,7 @@
 // 달 = KST. 결제 = payment.status DONE(구독 · 올리기 · 자리 · 팩) · 환불 = CANCELED 음수 행(종류별) · 환불 실패 = REFUND_FAILED(수동 처리 필요).
 // 시연 계정(lib/demo) 결제는 뺀다. 라이브 키 전 결제는 모두 토스 시험 결제라는 점은 화면이 안내한다.
 // -----------------------------------------------------------------------------
+import { bearerOk } from "@/lib/bearerOk";
 import { serviceClient } from "@/lib/serverCaller";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { isDemoAccount } from "@/lib/demo";
@@ -35,7 +36,7 @@ function refundKind(p) {
 export async function GET(req) {
   const secret = process.env.OPS_SECRET;
   if (!secret) return Response.json({ error: "OPS_SECRET 미설정" }, { status: 503 });
-  if ((req.headers.get("authorization") || "") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!bearerOk(req, secret)) return Response.json({ error: "unauthorized" }, { status: 401 });
   const sb = serviceClient();
   if (!sb) return Response.json({ error: "서버 키 미설정" }, { status: 503 });
 

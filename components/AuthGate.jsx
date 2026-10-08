@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import Wordmark, { Slogan } from "@/components/ui/Wordmark";
 import { PLANS, planAmount, SEAT_AI } from "@/lib/plans";
 import LandingPage from "@/app/lp/page";
+import { trainerCloseAt, kstDay } from "@/lib/trainerClose";
 
 export default function AuthGate({ children }) {
   const [ready, setReady] = useState(false);   // 초기 세션 조회 완료 여부
@@ -75,10 +76,15 @@ export default function AuthGate({ children }) {
     (async () => {
       setAcctReady(false);
       try {
-        const { data, error } = await supabase.rpc("my_account_status");
+        const [{ data, error }, { data: me }] = await Promise.all([
+          supabase.rpc("my_account_status"),
+          // 대표가 끈 트레이너 아이디(2026-10-08) — 데이터는 RLS가 이미 막지만 빈 앱 대신 안내를 보인다
+          supabase.from("trainer").select("*").eq("id", session.user.id).maybeSingle(),
+        ]);
         if (!alive) return;
         // 에러/0행 → 계정 미확인으로 보고 잠금(접근 차단이 안전측). 정상 행이면 그 상태 사용.
-        setAcct(error ? { has_account: false, access: false } : (data?.[0] ?? { has_account: false, access: false }));
+        const st = error ? { has_account: false, access: false } : (data?.[0] ?? { has_account: false, access: false });
+        setAcct(me?.active === false ? { ...st, access: false, mode: "off", offAt: me.deactivated_at || null } : st);
       } catch {
         if (alive) setAcct({ has_account: false, access: false }); // 에러 → 잠금(안전측)
       } finally {
@@ -180,6 +186,8 @@ export default function AuthGate({ children }) {
           불러오는 중…
         </div>
       );
+    } else if (gating && acct && acct.mode === "off") {
+      inner = <TrainerOff onSignOut={signOut} offAt={acct.offAt} />;
     } else if (gating && acct && acct.access === false && acct.mode === "read_only" && !payOpen) {
       // 기간이 끝난 뒤 30일 — 볼 수만(2026-10-07 · 쓰기는 DB가 막음) · 위에 띠 · 내려받기 · 카드 다시 등록
       inner = <ReadOnlyShell status={acct} uid={session.user?.id} onPay={() => setPayOpen(true)}>{children}</ReadOnlyShell>;
@@ -242,6 +250,27 @@ export default function AuthGate({ children }) {
           트레이너는 대표 초대로 참여합니다 ·{" "}
           <a href="/signup" className="font-semibold text-primary-strong hover:underline">새 계정 만들기</a>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// 대표가 끈 센터 트레이너 아이디(2026-10-08 · 분리 방식) — 아이디 · 기록은 센터 것. 개인으로 계속하려면 새 아이디.
+function TrainerOff({ onSignOut, offAt }) {
+  const end = trainerCloseAt(offAt);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-bg px-6">
+      <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-sm">
+        <div className="text-lg font-semibold text-ink">센터에서 이 아이디를 껐어요</div>
+        <ul className="m-0 mt-3 list-none space-y-2 p-0 text-[14px] leading-relaxed text-sub">
+          <li>· 센터 아이디와 회원 기록은 센터에 남아요.</li>
+          <li>· 개인으로 계속 쓰려면 다른 이메일로 개인 가입한 뒤 <b className="text-ink">설정 › 내 정보 › 다른 아이디에서 내 자료 가져오기</b>에 이 아이디를 넣어 주세요. 가격표 · 라이브러리 · 회원이 포트폴리오에 동의한 사례를 가져올 수 있어요.</li>
+          {end && <li>· 이 아이디는 <b className="text-ink">{kstDay(end)}</b>까지만 남아요. 그 뒤엔 로그인할 수 없고, 같은 이메일로 새로 가입할 수 있어요.</li>}
+          <li>· 잘못 꺼졌다면 센터 대표에게 알려 주세요.</li>
+        </ul>
+        <button type="button" onClick={async () => { await onSignOut(); window.location.href = "/signup"; }}
+          className="mt-5 flex min-h-[44px] w-full items-center justify-center rounded-xl bg-primary px-4 text-[15px] font-bold text-white">개인으로 가입하기</button>
+        <button type="button" onClick={onSignOut} className="mt-2 flex min-h-[44px] w-full items-center justify-center rounded-xl border border-line bg-card text-[14px] font-semibold text-sub">로그아웃</button>
       </div>
     </div>
   );
@@ -333,8 +362,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
         <div className="mb-4 flex flex-col items-center text-center">
           <Image src="/icons/icon-192.png" alt="오직 트레이너" width={56} height={56} priority className="mb-3 h-14 w-14 rounded-2xl shadow-sm" />
           <div className="text-lg font-semibold text-ink">{staff ? "센터 이용 기간이 끝났어요" : noTrial && !expired ? "개인 계정 카드 등록" : title}</div>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{staff ? "센터의 오직 트레이너 구독이 끝나서 지금은 쓸 수 없어요. 대표에게 알려 주세요. 같은 로그인으로 개인 계정을 이어 쓸 수도 있어요." : noTrial && !expired ? "센터에서 독립한 개인 계정이에요. 카드를 등록하면 바로 쓸 수 있어요." : desc}</p>
-          {staff && <a href="/leave-center" className="mt-3 inline-flex min-h-[40px] items-center text-[14px] font-bold text-primary-strong underline-offset-2 hover:underline">개인 계정으로 이어 쓰기 →</a>}
+          <p className="mt-2 text-sm leading-relaxed text-muted">{staff ? "센터의 오직 트레이너 구독이 끝나서 지금은 쓸 수 없어요. 대표에게 알려 주세요." : noTrial && !expired ? "센터에서 독립한 개인 계정이에요. 카드를 등록하면 바로 쓸 수 있어요." : desc}</p>
         </div>
 
         {!noAccount && !staff && (
@@ -400,8 +428,9 @@ function ReadOnlyShell({ status, uid, onPay, children }) {
   const download = async () => {
     setBusy(true); setMsg("");
     try {
-      const { downloadMyData } = await import("@/components/views/SubscriptionCard");
-      await downloadMyData();
+      const { downloadMyData } = await import("@/lib/exportDownload");
+      const r = await downloadMyData((t) => setMsg(t));
+      setMsg(r.missed ? `내려받았어요. 사진 ${r.missed}장은 받지 못했어요.` : "내려받았어요.");
     } catch (e) {
       console.error("내려받기 실패", e);
       setMsg(e.message || "내려받지 못했어요. 다시 시도해 주세요.");
@@ -415,9 +444,6 @@ function ReadOnlyShell({ status, uid, onPay, children }) {
             <b>이용 기간이 끝났어요.</b> {until ? `${until}까지 ` : ""}볼 수만 있고, 새 기록은 저장되지 않아요.
             {owner === false ? " 센터 대표에게 알려 주세요." : " 그 뒤엔 기록이 지워져요."}
           </span>
-          {owner === false && (
-            <a href="/leave-center" className="inline-flex min-h-[36px] shrink-0 items-center rounded-lg border border-rose-300 bg-card px-3 text-[13px] font-bold text-danger-text no-underline">개인 계정으로 이어 쓰기</a>
-          )}
           {owner && (
             <span className="flex shrink-0 gap-1.5">
               <button type="button" onClick={download} disabled={busy}

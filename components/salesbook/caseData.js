@@ -6,7 +6,8 @@ export async function signCaseUrls(cases) {
   if (!supabase) return {};
   const photo = [], review = [];
   for (const c of cases || []) {
-    if (c.kind === "photo") { if (c.data?.before?.path) photo.push(c.data.before.path); if (c.data?.after?.path) photo.push(c.data.after.path); }
+    // 다른 아이디에서 가져온 사진 사례(2026-10-08)는 파일째 복사돼 sales-cases에 있다(bucket 표시)
+    if (c.kind === "photo") for (const k of ["before", "after"]) { const f = c.data?.[k]; if (f?.path) (f.bucket === "sales-cases" ? review : photo).push(f.path); }
     if (c.kind === "review" && c.data?.path) review.push(c.data.path);
   }
   const map = {};

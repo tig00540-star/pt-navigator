@@ -57,7 +57,7 @@ export async function POST(req) {
     console.warn("[member-confirm] 401 세션무효:", ue?.message || "no uid");
     return Response.json({ error: "세션 무효" }, { status: 401 });
   }
-  const { data: me } = await sb.from("user_table").select("id, status, account_id").eq("member_auth_id", u.user.id).maybeSingle();
+  const { data: me } = await sb.from("user_table").select("id, status, account_id, hidden").eq("member_auth_id", u.user.id).maybeSingle();
   if (!me?.id) {
     console.warn(`[member-confirm] 403 회원 미매핑 uid=${u.user.id}`);
     return Response.json({ error: "권한 없음" }, { status: 403 });
@@ -67,6 +67,12 @@ export async function POST(req) {
     console.warn(`[member-confirm] 403 지난 회원 member_id=${me.id}`);
     return Response.json({ error: "PT가 끝나서 기록을 볼 수만 있어요." }, { status: 403 });
   }
+  // 환불 · 삭제(숨김) 회원, 센터 이용이 끝난 계정은 새로 확인 · 서명할 수 없다(2026-10-08 · DB 회원 쓰기 규칙과 같게)
+  if (me.hidden) return Response.json({ error: "이 페이지는 닫혔어요." }, { status: 403 });
+  const { data: acct } = await sb.from("account").select("plan, subscription_status, current_period_end").eq("id", me.account_id).maybeSingle();
+  const open = acct?.plan === "premium" && acct.subscription_status === "active"
+    && (!acct.current_period_end || Date.parse(acct.current_period_end) > Date.now());
+  if (!open) return Response.json({ error: "지금은 기록을 볼 수만 있어요." }, { status: 403 });
   const memberId = me.id;
 
   // ② 대상 일지 재조회(RLS 우회 · 소유·상태 검증). 남의 일지/존재X → 403, voided/noshow → 400.

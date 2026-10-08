@@ -25,11 +25,10 @@ import { supabase } from "@/lib/supabaseClient";
 import { closingApproachStats, reregisterReasonStats, closingReasonStats } from "@/lib/memberStatus";
 import { labelOf, CLOSING_APPROACH_OPTS, REG_REASON_OPTS, CLOSING_REASON_OPTS } from "@/lib/labels";
 import AddTrainerForm from "@/components/AddTrainerForm";
-import JoinInviteCard from "@/components/admin/JoinInviteCard";
-import LeaveAllowCard from "@/components/admin/LeaveAllowCard";
 import { ledgerAsContracts } from "@/lib/movedOut";
 import { trainerSeatLimit } from "@/lib/plans";
 import MemberForm from "@/components/MemberForm";
+import TrainerOffboard from "@/components/admin/TrainerOffboard";
 import MemberReassign from "@/components/admin/MemberReassign";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -132,6 +131,12 @@ function ledgerStart() {
    ADMIN PAGE
    ========================================================================= */
 
+// 트레이너 목록 — 끈 날 · 정리한 날(2026-10-08 SQL) 포함. SQL 전이면 칸이 없어 실패 → 옛 칸만 다시.
+async function loadTrainers() {
+  const r = await supabase.from("trainer").select("id, name, role, active, deactivated_at, closed_at");
+  return r.error ? supabase.from("trainer").select("id, name, role, active") : r;
+}
+
 export default function AdminDashboard() {
   const [rows, setRows] = useState([]);
   const [dbNote, setDbNote] = useState("");
@@ -203,7 +208,7 @@ export default function AdminDashboard() {
           //    나머지(user_table·ot_log·trainer·pay_scheme·payroll_run)는 증가가 느려 당장 무관.
           fetchAllRows(() => supabase.from("session_log").select("*")),
           fetchAllRows(() => supabase.from("daily_workout_log").select("*")),
-          supabase.from("trainer").select("id, name, role, active"), // role·active = 좌석 표시용
+          loadTrainers(), // role·active = 좌석 표시용 · 끈 날 · 정리(2026-10-08)
           supabase.from("pay_scheme").select("*"),
           supabase.from("payroll_run").select("*"),
           supabase.from("trainer_goal").select("*"),   // 매출 탭 게이지용 목표. 원장 RLS가 계정 전체 SELECT 허용.
@@ -260,7 +265,7 @@ export default function AdminDashboard() {
     if (!supabase) return;
     const cutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
     const [u, c, ap] = await Promise.all([
-      supabase.from("user_table").select("*"),
+      fetchAllRows(() => supabase.from("user_table").select("*")),
       fetchAllRows(() => supabase.from("session_log").select("*")),
       fetchAllRows(() => supabase.from("appointment").select("*").gte("start_at", cutoff)),
     ]);
@@ -520,14 +525,15 @@ export default function AdminDashboard() {
             seatLimit={trainerSeatLimit(planKey, extraSeats)}
             seatUsed={trainers.filter((t) => t.role === "trainer" && t.active !== false).length}
             onCreated={(row) => setTrainers((p) => [...p, row])} />
-          {planKey === "center" && (
-            <div className="mt-4">
-              <JoinInviteCard seatFull={trainers.filter((t) => t.role === "trainer" && t.active !== false).length >= trainerSeatLimit(planKey, extraSeats)} />
-            </div>
-          )}
-          {planKey === "center" && (
-            <div className="mt-4"><LeaveAllowCard trainers={trainers} /></div>
-          )}
+          <div className="mt-4">
+            <TrainerOffboard trainers={trainers} members={rows} contracts={contracts} logs={logs}
+              onTrainersChanged={async () => {
+                const { data, error } = await loadTrainers();
+                if (error) { console.error("트레이너 다시 읽기 실패", error); return; }
+                setTrainers(data || []);
+              }}
+              onMembersChanged={handleReassigned} />
+          </div>
         </section>
         )}
 

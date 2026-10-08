@@ -8,7 +8,7 @@
 // 쓰는 순서 = 기본 한도 먼저, 넘친 만큼 팩(산 순서대로). 그래서 '썼는지' = 그 팩까지 사용량이 닿았는지.
 // -----------------------------------------------------------------------------
 import { serviceClient, callerOf } from "@/lib/serverCaller";
-import { confirmPayment, cancelPayment, tossReady } from "@/lib/toss";
+import { confirmPayment, cancelPayment, getPayment, tossReady } from "@/lib/toss";
 import { PACKS, REFUND_DAYS } from "@/lib/plans";
 
 export const runtime = "nodejs";
@@ -47,11 +47,22 @@ async function listCredits(sb, accountId, ym) {
   return data || [];
 }
 
+// 지난달(달이 바뀌어 사라진) 팩 — 산 지 7일 안이면 환불 대상이라 같이 보여 준다(2026-10-08 · 월말에 산 팩도 7일 약속 지키기)
+async function prevMonth(sb, accountId, ym) {
+  const [y, m] = ym.split("-").map(Number);
+  const pym = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  const credits = (await listCredits(sb, accountId, pym)).filter((c) => Date.now() - Date.parse(c.created_at) < REFUND_DAYS * 86400000);
+  if (!credits.length) return { credits: [], use: new Map() };
+  const { data: pq } = await sb.rpc("ai_quota_for", { p_account: accountId, p_ym: pym });
+  return { credits, use: pq ? packUse(pq, credits) : new Map() };
+}
+
 export async function GET(req) {
   const g = await guard(req);
   if (g.res) return g.res;
-  const credits = await listCredits(g.sb, g.me.account_id, g.q.ym);
-  const use = packUse(g.q, credits);
+  const prev = await prevMonth(g.sb, g.me.account_id, g.q.ym);
+  const credits = [...prev.credits, ...(await listCredits(g.sb, g.me.account_id, g.q.ym))];
+  const use = new Map([...prev.use, ...packUse(g.q, credits.filter((c) => c.ym === g.q.ym))]);
   const now = Date.now();
   return Response.json({
     tier: g.q.tier,
@@ -79,13 +90,18 @@ export async function POST(req) {
     const { data: dup } = await sb.from("payment").select("id, status").eq("order_id", body.orderId).maybeSingle();
     if (dup?.status === "DONE") return Response.json({ ok: true, already: true });
 
-    const r = await confirmPayment({ paymentKey: String(body.paymentKey || ""), orderId: body.orderId, amount: pack.price });
-    const done = r.ok && r.data?.status === "DONE";
-    const { data: pay } = await sb.from("payment").insert({
+    let r = await confirmPayment({ paymentKey: String(body.paymentKey || ""), orderId: body.orderId, amount: pack.price });
+    let done = r.ok && r.data?.status === "DONE";
+    // 승인은 됐는데 응답 전에 끊겨 다시 들어온 경우(2026-10-08) — 토스에 실제 상태를 물어 이어 처리(예전엔 돈만 나가고 팩이 안 들어갔다)
+    if (!done && r.error?.code === "ALREADY_PROCESSED_PAYMENT") {
+      const g2 = await getPayment(String(body.paymentKey || ""));
+      if (g2.ok && g2.data?.status === "DONE" && g2.data.orderId === body.orderId && Number(g2.data.totalAmount) === pack.price) { r = g2; done = true; }
+    }
+    const { data: pay } = await sb.from("payment").upsert({
       account_id: me.account_id, order_id: body.orderId, toss_payment_key: done ? r.data.paymentKey : null, amount: pack.price,
       status: done ? "DONE" : "FAILED", plan: `pack_${pack.kind}`,
       raw: done ? { approvedAt: r.data.approvedAt ?? null, method: r.data.method ?? null } : { error: r.error ?? null, status: r.status ?? null },
-    }).select("id").maybeSingle();
+    }, { onConflict: "order_id" }).select("id").maybeSingle();
     if (!done) { console.error("[billing/pack] 승인 실패", r.status, r.error?.code || r.error?.message); return Response.json({ error: "결제를 승인하지 못했어요. 카드 정보를 확인하고 다시 시도해 주세요." }, { status: 402 }); }
     const { error: ce } = await sb.from("ai_credit").insert({ account_id: me.account_id, kind: pack.kind, amount: pack.amount, ym: q.ym, payment_id: pay?.id ?? null });
     if (ce) { console.error("[billing/pack] 팩 넣기 실패(결제됨 · 수동 보정)", ce.message); return Response.json({ error: "결제는 됐지만 팩을 넣지 못했어요. 고객센터로 알려 주세요." }, { status: 500 }); }
@@ -93,12 +109,16 @@ export async function POST(req) {
   }
 
   if (body.action === "refund") {
-    const credits = await listCredits(sb, me.account_id, q.ym);
+    // 이번 달 팩 또는 7일 안에 산 지난달 팩(2026-10-08)
+    const prev = await prevMonth(sb, me.account_id, q.ym);
+    const cur = await listCredits(sb, me.account_id, q.ym);
+    const inPrev = prev.credits.some((x) => x.id === body.creditId);
+    const credits = inPrev ? prev.credits : cur;
     const c = credits.find((x) => x.id === body.creditId);
     if (!c) return Response.json({ error: "환불할 팩을 찾지 못했어요." }, { status: 404 });
     if (c.refunded_at) return Response.json({ error: "이미 환불한 팩이에요." }, { status: 409 });
     if (Date.now() - Date.parse(c.created_at) >= REFUND_DAYS * 86400000) return Response.json({ error: "산 지 7일이 지나 환불할 수 없어요." }, { status: 409 });
-    if ((packUse(q, credits).get(c.id) || 0) > 0) return Response.json({ error: "이미 쓴 팩은 환불할 수 없어요." }, { status: 409 });
+    if (((inPrev ? prev.use : packUse(q, credits)).get(c.id) || 0) > 0) return Response.json({ error: "이미 쓴 팩은 환불할 수 없어요." }, { status: 409 });
     const { data: pay } = await sb.from("payment").select("id, toss_payment_key, amount").eq("id", c.payment_id).maybeSingle();
     if (!pay?.toss_payment_key) return Response.json({ error: "결제 정보를 찾지 못했어요. 고객센터로 알려 주세요." }, { status: 404 });
     // 먼저 팩을 막고(그 사이 쓰이지 않게) 환불 — 환불이 실패하면 되돌린다

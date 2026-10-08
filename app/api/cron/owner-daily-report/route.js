@@ -7,6 +7,7 @@
 // 인증: Authorization: Bearer <CRON_SECRET>. 수동 실행(점검): ?account=<id> 로 한 센터만.
 // 데모 센터도 만든다(대표 화면 시연용 · 운영 지표와 무관).
 // -----------------------------------------------------------------------------
+import { bearerOk } from "@/lib/bearerOk";
 import { createClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { ownerReportData } from "@/lib/memberStatus";
@@ -20,7 +21,7 @@ export const maxDuration = 300;
 
 function authorized(req) {
   const s = process.env.CRON_SECRET;
-  return Boolean(s) && (req.headers.get("authorization") || "") === `Bearer ${s}`;
+  return bearerOk(req, s);
 }
 
 const kstYm = (ms) => new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 7);

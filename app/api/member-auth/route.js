@@ -23,7 +23,7 @@ function genPassword() {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FAIL = () =>
-  Response.json({ error: "링크가 유효하지 않거나 정보가 일치하지 않습니다." }, { status: 401 });
+  Response.json({ error: "링크가 맞지 않거나 휴대폰 번호가 달라요. 다시 확인해 주세요." }, { status: 401 });
 
 export async function POST(req) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -44,10 +44,28 @@ export async function POST(req) {
 
   if (!throttle(token)) {
     console.warn("[member-auth] 429 스로틀 — 끝4 브루트포스 의심(토큰 미로깅)");
-    return Response.json({ error: "시도가 많습니다. 잠시 후 다시 시도하세요." }, { status: 429 });
+    return Response.json({ error: "시도가 많아요. 잠시 뒤 다시 시도해 주세요." }, { status: 429 });
   }
 
   const svc = createClient(url, svcKey, { auth: { autoRefreshToken: false, persistSession: false } });
+
+  // 실패 기록(DB · 서버 여러 대가 같이 센다 · 2026-10-08) — 표(member_auth_fail)가 아직 없으면 세지 않고 지나간다(로그인을 막지 않음).
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim().slice(0, 64) || null;
+  const since = new Date(Date.now() - 600000).toISOString();
+  const failCount = async (col, val) => {
+    if (!val) return 0;
+    const { count, error } = await svc.from("member_auth_fail").select("id", { count: "exact", head: true }).eq(col, val).gte("created_at", since);
+    return error ? 0 : count || 0;
+  };
+  const recordFail = async (memberId) => {
+    const { error } = await svc.from("member_auth_fail").insert({ member_id: memberId, ip });
+    if (error) console.warn("[member-auth] 실패 기록 안 됨(표 없음?)", error.message);
+  };
+  const LOCKED = () => Response.json({ error: "여러 번 틀려서 잠시 막아 뒀어요. 10분 뒤 다시 시도해 주세요." }, { status: 429 });
+  if ((await failCount("ip", ip)) >= 30) {
+    console.warn("[member-auth] 429 같은 곳에서 실패가 많음");
+    return LOCKED();
+  }
 
   // 1) 토큰으로 회원 조회(service_role = RLS 우회)
   const { data: member } = await svc
@@ -57,13 +75,19 @@ export async function POST(req) {
     .maybeSingle();
   if (!member) {
     console.warn("[member-auth] 401 인증실패 — 토큰 매칭 회원 없음"); // 토큰 값 미로깅
+    await recordFail(null);
     return FAIL();
+  }
+  if ((await failCount("member_id", member.id)) >= 8) {
+    console.warn(`[member-auth] 429 이 회원 링크로 실패가 많음 member_id=${member.id}`);
+    return LOCKED();
   }
 
   // 2) 휴대 끝4 대조(숫자만 추출)
   const digits = String(member.phone_number || "").replace(/\D/g, "");
   if (digits.length < 4 || digits.slice(-4) !== last4) {
     console.warn(`[member-auth] 401 인증실패 — 끝4 불일치 member_id=${member.id}`); // 끝4 값 미로깅
+    await recordFail(member.id);
     return FAIL();
   }
 

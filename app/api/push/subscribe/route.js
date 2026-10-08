@@ -13,6 +13,12 @@ export async function POST(req) {
   const s = b.subscription || {};
   const endpoint = String(s.endpoint || "");
   if (!/^https:\/\/[^\s]{10,1000}$/.test(endpoint) || !s.keys?.p256dh || !s.keys?.auth) return Response.json({ error: "bad" }, { status: 400 });
+  // 알려진 푸시 서비스 주소만(2026-10-08 · 아무 주소나 넣어 우리 서버가 거기로 요청을 보내게 하는 것 막기)
+  let host = "";
+  try { host = new URL(endpoint).hostname; } catch { host = ""; }
+  if (!/(^|\.)(fcm\.googleapis\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)$/i.test(host)) {
+    return Response.json({ error: "bad" }, { status: 400 });
+  }
   const row = {
     endpoint, keys: { p256dh: String(s.keys.p256dh), auth: String(s.keys.auth) }, account_id: who.account_id,
     trainer_id: who.kind === "trainer" ? who.id : null, member_id: who.kind === "member" ? who.id : null,

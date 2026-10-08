@@ -5,6 +5,7 @@
 // 지표는 앱의 순수 함수(lib/memberStatus)를 그대로 재사용 → admin 대시보드와 정의 일치.
 // 인증: Authorization: Bearer <CRON_SECRET>.
 // -----------------------------------------------------------------------------
+import { bearerOk } from "@/lib/bearerOk";
 import { createClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { createNotionPage } from "@/lib/notion";
@@ -26,7 +27,7 @@ const METRICS_DB_ID = process.env.NOTION_METRICS_DB_ID;
 
 function authorized(req) {
   const s = process.env.CRON_SECRET;
-  return Boolean(s) && (req.headers.get("authorization") || "") === `Bearer ${s}`;
+  return bearerOk(req, s);
 }
 
 const kstShift = (ms) => new Date(ms + 9 * 3600 * 1000).toISOString();

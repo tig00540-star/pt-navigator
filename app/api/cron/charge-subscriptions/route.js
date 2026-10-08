@@ -12,10 +12,12 @@
 // ⚠️ access 판정(my_account_status)= subscription_status='active' AND period_end>now.
 //    그래서 성공 시 반드시 active 유지 + period_end 연장.
 // -----------------------------------------------------------------------------
+import { bearerOk } from "@/lib/bearerOk";
 import { createClient } from "@supabase/supabase-js";
 import { chargeBilling, tossReady } from "@/lib/toss";
 import { PLANS, planAmount } from "@/lib/plans";
 import { sendPush, ownerIds } from "@/lib/pushServer";
+import { trainerCloseAt, kstDay } from "@/lib/trainerClose";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,7 +27,7 @@ const DAY = 86400000;
 function authorized(req) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false; // 시크릿 미설정 = fail-closed
-  return (req.headers.get("authorization") || "") === `Bearer ${secret}`;
+  return bearerOk(req, secret);
 }
 
 // 만료일 + 1개월(말일 오버플로 보정: 1/31 → 2/28).
@@ -194,5 +196,36 @@ export async function GET(req) {
     purgeNotified++;
   }
 
-  return Response.json({ ok: true, total: (accounts || []).length, charged, canceled, failed, skipped, repaired, stopped, errors, purgeNotified, purgeDue });
+  // ── 끈 트레이너 아이디 한 달 보관(2026-10-08 · lib/trainerClose) — 7일 전 대표 알림 · 지나면 정리 ──
+  //   정리 = 로그인 영구 차단 + 이메일을 '정리됨' 주소로(같은 이메일로 새로 가입 가능) + 폰 알림 구독 삭제 + closed_at.
+  //   트레이너 행 · 이름은 지난 수업 · 매출 · 급여 기록 때문에 남긴다. 회원은 센터에 그대로(넘기기는 기한 없음).
+  let trainerClosed = 0, trainerReminded = 0;
+  const { data: offs } = await sb.from("trainer").select("id, name, account_id, deactivated_at, close_notified_at")
+    .eq("active", false).is("closed_at", null).not("deactivated_at", "is", null).limit(500);
+  for (const t of offs || []) {
+    try {
+      const end = trainerCloseAt(t.deactivated_at);
+      const { count: left } = await sb.from("user_table").select("id", { count: "exact", head: true })
+        .eq("account_id", t.account_id).eq("trainer_id", t.id).or("hidden.is.null,hidden.eq.false").neq("status", "inactive");
+      const leftTxt = left ? ` 담당 회원 ${left}명을 아직 넘기지 않았어요.` : "";
+      if (end <= now) {
+        const { error: ue } = await sb.auth.admin.updateUserById(t.id, { email: `closed-${t.id}@closed.onlytrainer.invalid`, email_confirm: true, ban_duration: "876000h" });
+        if (ue) { errors.push({ trainer: t.id, error: `정리 실패: ${ue.message}` }); continue; }
+        await sb.from("push_subscription").delete().eq("trainer_id", t.id);
+        await sb.from("trainer").update({ closed_at: new Date(now).toISOString() }).eq("id", t.id);
+        await sendPush(sb, { trainerIds: await ownerIds(sb, t.account_id), type: "account", url: "/admin?tab=ops",
+          title: "트레이너 아이디를 정리했어요", body: `${t.name || "트레이너"} 아이디를 정리했어요. 다시 오면 새 아이디로 추가해 주세요.${leftTxt}` });
+        trainerClosed++;
+      } else if (!t.close_notified_at && end - now <= 7 * DAY) {
+        await sendPush(sb, { trainerIds: await ownerIds(sb, t.account_id), type: "account", url: "/admin?tab=ops",
+          title: "트레이너 아이디가 곧 정리돼요", body: `${t.name || "트레이너"} 아이디가 ${kstDay(end)}에 정리돼요. 그 뒤엔 다시 켤 수 없어요.${leftTxt}` });
+        await sb.from("trainer").update({ close_notified_at: new Date(now).toISOString() }).eq("id", t.id);
+        trainerReminded++;
+      }
+    } catch (e) {
+      errors.push({ trainer: t.id, error: String(e?.message || e) });
+    }
+  }
+
+  return Response.json({ ok: true, total: (accounts || []).length, charged, canceled, failed, skipped, repaired, stopped, errors, purgeNotified, purgeDue, trainerClosed, trainerReminded });
 }

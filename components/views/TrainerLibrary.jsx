@@ -64,6 +64,7 @@ export default function TrainerLibrary() {
     if (saving) return;
     if (!title.trim()) return showToast("제목을 입력해 주세요");
     if (!url.trim()) return showToast("링크를 입력해 주세요");
+    if (!/^https?:\/\//i.test(url.trim())) return showToast("https:// 로 시작하는 링크를 넣어 주세요");   // 2026-10-08 · javascript: 같은 주소 막기
     const payload = {
       category: category.trim() || null,
       title: title.trim(),
@@ -206,7 +207,7 @@ export default function TrainerLibrary() {
                           <li key={r.id} className="rounded-xl border border-line bg-elevate p-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0 flex-1">
-                                <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-semibold text-ink hover:text-primary-strong">
+                                <a href={/^https?:\/\//i.test(r.url || "") ? r.url : undefined} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-semibold text-ink hover:text-primary-strong">
                                   <span className="truncate">{r.title}</span><ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
                                 </a>
                                 <div className="mt-1 flex flex-wrap items-center gap-2">

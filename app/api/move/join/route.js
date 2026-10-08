@@ -13,6 +13,10 @@ import { after } from "next/server";
 
 export const runtime = "nodejs";
 
+// 2026-10-08 분리 방식(아이디는 처음 만든 곳 것)으로 바뀌어 끈다. 코드 · DB 함수는 남겨 둔다(되살릴 때 RETIRED=false).
+const RETIRED = true;
+const retired = () => Response.json({ error: "아이디는 옮기지 않아요. 설정 › 내 정보에서 다른 아이디의 내 자료를 가져와 주세요.", code: "retired" }, { status: 410 });
+
 const ERR = {
   invalid: "초대 링크가 올바르지 않아요. 대표에게 새 링크를 받아 주세요.",
   used: "이미 쓴 초대 링크예요. 대표에게 새 링크를 받아 주세요.",
@@ -46,6 +50,7 @@ async function preview(sb, me, code) {
 }
 
 export async function GET(req) {
+  if (RETIRED) return retired();
   const sb = serviceClient();
   if (!sb) return Response.json({ error: "서버 설정을 확인해 주세요." }, { status: 503 });
   const me = await callerOf(sb, req);
@@ -57,6 +62,7 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  if (RETIRED) return retired();
   const sb = serviceClient();
   if (!sb) return Response.json({ error: "서버 설정을 확인해 주세요." }, { status: 503 });
   const me = await callerOf(sb, req);

@@ -67,7 +67,9 @@ export default function TransferAsk({ supabase, onMoved }) {
           <ul className="m-0 mt-3 list-none space-y-1.5 p-0 text-[14px] leading-relaxed text-sub">
             <li>· 운동일지 · 인바디 · 사진 · 수업 기록과 남은 수업을 그대로 옮겨요.</li>
             <li>· 이 링크는 그대로 쓸 수 있어요.</li>
-            <li>· {dateKo(t.deadline)}까지 답이 없으면 옮기지 않아요. 옮기지 않은 기록은 30일 뒤 지워져요.</li>
+            {t.kind === "import"
+              ? <li>· 옮기지 않으면 지금처럼 {who} 개인 기록으로 남아요. {dateKo(t.deadline)}까지 답이 없으면 옮기지 않아요.</li>
+              : <li>· {dateKo(t.deadline)}까지 답이 없으면 옮기지 않아요. 옮기지 않은 기록은 30일 뒤 지워져요.</li>}
           </ul>
           {msg && <p className="m-0 mt-3 text-[13.5px] font-semibold text-danger-text">{msg}</p>}
         </Modal>

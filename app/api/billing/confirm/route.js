@@ -143,6 +143,7 @@ export async function POST(req) {
   const { data: up2, error: ue3 } = await sb.from("account").update({
     subscription_status: "active", plan: "premium", current_period_end: end, last_payment_at: nowIso,
     billing_provider: "toss", billing_key: billingKey, billing_customer_key: customerKey, billing_plan: planKey, next_billing_plan: null, cancel_at_period_end: false,
+    next_extra_seats: null, purge_notified_at: null,   // 다시 시작 = 지난번 줄이기 예약 · 파기 알림 기록은 지움(2026-10-08)
   }).eq("id", me.account_id).select();
   await sb.from("payment").insert({ account_id: me.account_id, order_id: orderId, toss_payment_key: res.data.paymentKey || null, amount, status: "DONE",
     plan: planKey, period_start: nowIso, period_end: end, raw: { approvedAt: res.data.approvedAt ?? null } });

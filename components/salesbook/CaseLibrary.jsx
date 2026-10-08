@@ -30,6 +30,7 @@ import ImageLightbox from "@/components/ui/ImageLightbox";
 import { Input } from "@/components/ui/Field";
 import CaseCard from "@/components/salesbook/CaseCard";
 import { signCaseUrls, loadMyCases } from "@/components/salesbook/caseData";
+import { PORTFOLIO_VERSION } from "@/lib/consent";
 import {
   CASE_KINDS, CASE_CATEGORIES, guessCategory, anonLabel, deltaText, improved, inbodyCandidates, liftCandidates, photoCaseData, shortDay, weeksBetween,
 } from "@/lib/salesCase";
@@ -53,6 +54,7 @@ export default function CaseLibrary() {
   const [adding, setAdding] = useState(null); // kind
   const [busy, setBusy] = useState(false);
   const [lightbox, setLightbox] = useState(null);
+  const [pcons, setPcons] = useState([]); // 포트폴리오 활용 동의 행(2026-10-08) — 사례마다 '다른 아이디로 가져갈 수 있나' 표시
 
   // 고를 회원 — 내 회원(없으면 센터 전체 · 대표 계정 폴백). 보관(hidden)은 이미 빠져 있다.
   const scoped = useMemo(() => {
@@ -69,6 +71,13 @@ export default function CaseLibrary() {
       if (error) { console.error("sales_case 불러오기 실패", error); setLoadErr("사례를 불러오지 못했어요. 다시 시도해 주세요."); return; }
       setCases(data || []);
       setUrls(await signCaseUrls(data || []));
+      const ids = [...new Set((data || []).map((c) => c.member_id).filter(Boolean))];
+      if (ids.length) {
+        const { data: cr, error: ce } = await supabase.from("member_consent").select("member_id, trainer_id, agreed, created_at")
+          .eq("kind", "portfolio").in("member_id", ids).order("created_at", { ascending: true });
+        if (ce) console.error("포트폴리오 동의 읽기 실패", ce);
+        setPcons(cr || []);
+      }
     } catch (e) {
       console.error("sales_case 불러오기 실패", e);
       setLoadErr("사례를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
@@ -109,7 +118,10 @@ export default function CaseLibrary() {
     if (!window.confirm("이 사례를 보관함에서 뺄까요?")) return;
     setBusy(true);
     try {
-      if (item.kind === "review" && item.data?.path) await supabase.storage.from("sales-cases").remove([item.data.path]);
+      // 내 계정 폴더의 파일만 지운다(후기 캡처 · 다른 아이디에서 가져온 사진 사례). 회원 사진(member-photos)은 회원 것이라 안 지움.
+      const own = [item.kind === "review" && item.data?.path,
+        ...["before", "after"].map((k) => item.data?.[k]?.bucket === "sales-cases" && item.data[k].path)].filter(Boolean);
+      if (own.length) await supabase.storage.from("sales-cases").remove(own);
       const { data, error } = await supabase.from("sales_case").delete().eq("id", item.id).select("id");
       if (error || !data?.length) { showToast("빼지 못했어요. 다시 시도해 주세요."); return; }
       setCases((cs) => cs.filter((c) => c.id !== item.id));
@@ -119,6 +131,28 @@ export default function CaseLibrary() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // 포트폴리오 동의 — 내 아이디에 묶인 동의(또는 전체 철회) 중 가장 최근 행. 가져온 사례는 원래 회원 동의로 들어온 것.
+  const portfolioOf = (c) => {
+    if (c.data?.portfolio) return "copied";
+    if (!c.member_id) return null;
+    let last = null;
+    for (const r of pcons) if (r.member_id === c.member_id && (r.trainer_id === myUid || r.trainer_id == null)) last = r;
+    return last?.agreed ? "agreed" : "none";
+  };
+  const paperConsent = async (c) => {
+    if (busy || !supabase) return;
+    if (!window.confirm("이 회원에게 '트레이너 포트폴리오 활용' 종이 동의서를 받으셨나요? 받은 경우에만 눌러 주세요.")) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.from("member_consent")
+        .insert({ member_id: c.member_id, kind: "portfolio", agreed: true, method: "trainer_check", version: PORTFOLIO_VERSION, trainer_id: myUid })
+        .select("member_id, trainer_id, agreed, created_at");
+      if (error || !data?.length) { console.error("포트폴리오 동의 저장 실패", error); showToast("저장하지 못했어요. 다시 시도해 주세요."); return; }
+      setPcons((p) => [...p, ...data]);
+      showToast("동의 받은 것으로 남겼어요");
+    } finally { setBusy(false); }
   };
 
   const shown = cases
@@ -134,7 +168,7 @@ export default function CaseLibrary() {
         <p className="m-0 mt-1 text-[13px] leading-relaxed text-sub">
           내가 만든 회원 변화와 후기를 모아 두는 곳이에요. 세일즈북에 넣어 새 회원에게 <b className="font-semibold text-primary-strong">이런 변화를 만들어요</b>라고 보여줄 수 있어요.
         </p>
-        <p className="m-0 mt-1 text-[12px] text-muted">화면엔 이름 대신 &lsquo;30대 여성 · 12주&rsquo;처럼 보여요. 회원 동의는 트레이너가 받아 주세요.</p>
+        <p className="m-0 mt-1 text-[12px] text-muted">화면엔 이름 대신 &lsquo;30대 여성 · 12주&rsquo;처럼 보여요. 회원 동의는 트레이너가 받아 주세요. 회원이 회원 페이지에서 &lsquo;트레이너 포트폴리오 활용&rsquo;에 동의한 사례는 나중에 아이디를 옮겨도 가져갈 수 있어요.</p>
       </div>
 
       {!supabase && (
@@ -183,7 +217,17 @@ export default function CaseLibrary() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((c) => (
-            <CaseCard key={c.id} item={c} urls={urls} onOpenImage={setLightbox} onDelete={removeCase} onCategory={setCategory} busy={busy} />
+            <div key={c.id} className="flex min-w-0 flex-col gap-1.5">
+              <CaseCard item={c} urls={urls} onOpenImage={setLightbox} onDelete={removeCase} onCategory={setCategory} busy={busy} />
+              {portfolioOf(c) === "agreed" && <p className="m-0 px-1 text-[12px] text-sub">포트폴리오 동의 있음 · 아이디를 옮겨도 가져갈 수 있어요</p>}
+              {portfolioOf(c) === "copied" && <p className="m-0 px-1 text-[12px] text-sub">다른 아이디에서 가져온 사례예요(회원 동의)</p>}
+              {portfolioOf(c) === "none" && (
+                <p className="m-0 px-1 text-[12px] text-muted">
+                  포트폴리오 동의 없음 · 아이디를 옮기면 못 가져가요.{" "}
+                  <button type="button" onClick={() => paperConsent(c)} disabled={busy} className="font-semibold text-sub underline underline-offset-2 disabled:opacity-50">종이로 받았어요</button>
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}

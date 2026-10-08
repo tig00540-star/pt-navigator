@@ -6,6 +6,7 @@
 // 인증: Authorization: Bearer <CRON_SECRET>.
 // 수동(점검): ?force=1(1일이 아니어도) · ?ym=YYYY-MM(결산 달) · ?account=<id>(한 계정만) · ?redo=1(이미 있어도 다시)
 // -----------------------------------------------------------------------------
+import { bearerOk } from "@/lib/bearerOk";
 import { createClient } from "@supabase/supabase-js";
 import { buildMonthlyForAccount } from "@/lib/monthlyReportBuild";
 import { lastMonthYm } from "@/lib/monthlyReport";
@@ -16,7 +17,7 @@ export const maxDuration = 300;
 
 function authorized(req) {
   const s = process.env.CRON_SECRET;
-  return Boolean(s) && (req.headers.get("authorization") || "") === `Bearer ${s}`;
+  return bearerOk(req, s);
 }
 
 export async function GET(req) {

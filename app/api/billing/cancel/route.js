@@ -22,7 +22,7 @@ export async function POST(req) {
   if (action !== "cancel" && action !== "resume") return Response.json({ error: "잘못된 요청이에요." }, { status: 400 });
 
   const { data: acc, error: ae } = await sb.from("account")
-    .select("id, subscription_status, current_period_end, cancel_at_period_end")
+    .select("id, subscription_status, current_period_end, cancel_at_period_end, cancel_requested_at")
     .eq("id", me.account_id).maybeSingle();
   if (ae || !acc) { console.error("[billing/cancel] 계정 조회 실패", ae?.message); return Response.json({ error: "계정을 찾지 못했어요." }, { status: 404 }); }
 
@@ -46,15 +46,16 @@ export async function POST(req) {
     .select("cancel_at_period_end, current_period_end");
   if (ue || !up?.length) { console.error("[billing/cancel] 저장 실패", ue?.message); return Response.json({ error: "저장하지 못했어요. 다시 시도해 주세요." }, { status: 500 }); }
 
-  // 센터 해지 — '트레이너들이 개인 계정으로 이어 쓸 수 있게'(담당 회원 함께 · 계획서 3단계 · 2026-10-07)
-  let allowed = 0;
-  if (action === "cancel" && body.allowLeave === true) {
-    const { data: ts } = await sb.from("trainer").select("id").eq("account_id", acc.id).eq("role", "trainer").eq("active", true);
-    for (const t of ts || []) {
-      await sb.from("leave_allow").update({ canceled_at: new Date(now).toISOString() }).eq("trainer_id", t.id).eq("account_id", acc.id).is("used_at", null).is("canceled_at", null);
-      const { error: le } = await sb.from("leave_allow").insert({ account_id: acc.id, trainer_id: t.id, with_members: true, created_by: me.id });
-      if (le) console.error("[billing/cancel] 독립 허락 실패", le.message); else allowed++;
-    }
+  // (옛 '해지하며 트레이너 독립 허락'은 2026-10-08 분리 방식으로 바뀌며 뺐다 · 아이디는 센터 것)
+  const allowed = 0;
+  // 해지를 되돌리면 — 해지하면서 준 '회원과 함께 독립' 허락도 거둔다(2026-10-08 · 예전엔 그대로 남아 60일 동안 회원을 데리고 나갈 수 있었다)
+  //   대표가 운영 탭에서 따로 준 허락(해지 전)은 그대로.
+  let revoked = 0;
+  if (action === "resume" && acc.cancel_requested_at) {
+    const { data: rv } = await sb.from("leave_allow").update({ canceled_at: new Date(now).toISOString() })
+      .eq("account_id", acc.id).eq("with_members", true).is("used_at", null).is("canceled_at", null)
+      .gte("created_at", acc.cancel_requested_at).select("id");
+    revoked = rv?.length || 0;
   }
-  return Response.json({ ok: true, cancelAtPeriodEnd: up[0].cancel_at_period_end, periodEnd: up[0].current_period_end, allowed });
+  return Response.json({ ok: true, cancelAtPeriodEnd: up[0].cancel_at_period_end, periodEnd: up[0].current_period_end, allowed, revoked });
 }

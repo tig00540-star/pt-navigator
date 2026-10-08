@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { CONSENT_VERSION, SAFETY_NOTE } from "@/lib/consent";
 import { operatorName } from "@/lib/format";
+import PortfolioConsent from "@/components/member/PortfolioConsent";
 
 export default function MemberFooter({ supabase, me, consent, onChanged }) {
   const [busy, setBusy] = useState(false);
@@ -45,6 +46,7 @@ export default function MemberFooter({ supabase, me, consent, onChanged }) {
         </p>
       )}
       {err && <p className="mt-1 text-danger-text">{err}</p>}
+      <PortfolioConsent consent={consent} onChanged={onChanged} trainerName={me?.trainer_name} />
       <p className="mt-3">
         운영: {operatorName(me) || "담당 센터"}<span className="mx-1.5">·</span>서비스 제공: 오직 트레이너
       </p>

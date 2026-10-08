@@ -1618,9 +1618,9 @@ export async function POST(request) {
     : phase === "roadmap" ? roadmapPrompt(member, ptContext)
     : posturePrompt(member, posture);
   // 장비 등록됐으면 '우선 활용(소프트)'로 앞에 붙임. 0개(미등록)면 안 붙여 종전대로. salesbook 제외(회원 대면엔 불필요).
-  const centerMachines = (phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture" || phase === "roadmap") ? [] : await fetchCenterMachines(request);
+  const centerMachines = (phase === "salesbook" || phase === "reg_salesbook" || phase === "first_salesbook" || phase === "inbody" || phase === "posture" || phase === "roadmap") ? [] : await fetchCenterMachines(request).catch(() => []);   // 실패해도 대본은 만든다(자리만 잡고 멈추지 않게 · 2026-10-08)
   // 대표 피드백 — 리포트 3종(first · second · reregister)만.
-  const fbBlock = REPORT_PHASES.has(phase) ? ownerFeedbackBlock(await fetchOwnerFeedback(request, member?.id)) : "";
+  const fbBlock = REPORT_PHASES.has(phase) ? ownerFeedbackBlock(await fetchOwnerFeedback(request, member?.id).catch(() => [])) : "";
   const withFb = fbBlock ? `${basePrompt}\n\n${fbBlock}` : basePrompt;
   const prompt =
     (centerMachines.length === 0)
