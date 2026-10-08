@@ -85,7 +85,6 @@ const BUNDLES = [
       { name: "OT에서 등록까지", desc: "단계마다 몇 명이 남는지", img: "/lp/shots/2026-10/C08b.webp", alt: "대표 화면의 신규 OT에서 PT 등록까지 깔때기" },
       { name: "달마다 클로징률", desc: "그 달에 들어온 회원 중 몇 %가 등록했는지", img: "/lp/shots/2026-10/C10.webp", alt: "달마다 클로징률 막대 그래프" },
     ],
-    href: "/try#qr",
   },
   {
     id: "b-team", nav: "트레이너 관리",
@@ -113,7 +112,6 @@ const BUNDLES = [
     items: [
       { name: "회원 이벤트", desc: "센터 전체 출석 챌린지 · 참여 명단 · 상품", img: "/lp/shots/2026-10/C13.webp", alt: "대표 운영 탭의 회원 이벤트: 이벤트 만들기와 진행 중 이벤트" },
     ],
-    href: "/try#sign",
   },
 ];
 
@@ -322,6 +320,8 @@ export default function CenterLandingPage() {
               <a href={contact} className={BTN_PRIMARY}>센터 도입 문의 <Arrow /></a>
               <a href={SIGNUP_CENTER} className={BTN_OUTLINE}>센터로 시작하기</a>
             </div>
+            {/* '가입 없이 눌러 보기'는 페이지에서 여기 한 번만(2026-10-08 대표) */}
+            <a href="/try" className="rv text-[15px] font-bold text-primary-strong underline-offset-2 hover:underline" style={stagger(2)}>가입 없이 먼저 눌러 보기 →</a>
           </div>
         </section>
       </main>

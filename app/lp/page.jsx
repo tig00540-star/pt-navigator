@@ -48,7 +48,6 @@ const WHO = [
 
 // 오직 트레이너가 다른 점 4가지(2026-10-06 대표) — 기능 설명 전에 먼저. 사진은 '결과 장면', 아래 묶음은 '과정 장면'.
 //   '우리만'이라고 쓰지 않는다(경쟁사 확인 전). 문구는 실제 동작만.
-const TRY_LINKS = [["/try#qr", "QR로 OT 신청"], ["/try#event", "회원 이벤트"], ["/try#booking", "수업 예약 요청"], ["/try#sign", "운동일지 · 서명"]];
 
 // 운동일지 예시(2026-10-07) — ① 이 문장을 음성으로 실제 음성일지 기능에 넣었다(데모 회원 나개근) ② 앱이 정리한 트레이너 화면 ③ 회원 폰. 결과는 실제 출력(지어내지 않음).
 const LOG_STEPS = [
@@ -81,7 +80,6 @@ const BUNDLES = [
       { name: "망설일 때 대답 5가지", desc: "'생각해볼게요' · '비싸요' · '효과 있을까요' · '시간이 없어요' · '다른 데랑 비교'", img: "/lp/shots/2026-10/T10.webp", alt: "OT 대본의 거절 대응 5가지" },
       { name: "OT 결과 남기기", desc: "등록 · 다음 OT · 그만 중에 누르면 다음 준비로", img: "/lp/shots/2026-10/T13.webp", alt: "OT 피드백: 등록했어요 · 다음 OT 이어가요 · 그만하기로 했어요" },
     ],
-    href: "/try#qr",
   },
   {
     id: "b-renew", nav: "재등록",
@@ -131,7 +129,6 @@ const BUNDLES = [
       { name: "오운완 랭킹", desc: "이번 달 운동 많이 한 회원 순위(오운완 = 오늘 운동 완료)", img: "/lp/shots/2026-10/T24.webp", alt: "트레이너 홈의 오운완 랭킹" },
       { name: "운동일지 고쳐 달라는 요청", desc: "회원이 '내용이 달라요'를 누르면 바로", img: "/lp/shots/2026-10/T25.webp", alt: "회원이 '내용이 달라요'를 누른 운동일지와 회원 메모" },
     ],
-    href: "/try#booking",
   },
   {
     id: "b-member", nav: "회원 전용 페이지",
@@ -248,7 +245,7 @@ export default function LandingPage() {
                 label="앱처럼 설치"
               />
             </div>
-            <p className="m-0 text-[14px] text-sub">설치 없이 폰에서 바로 · 7일 안에 전액 환불 · <a href="/try" className="font-bold text-primary-strong underline-offset-2 hover:underline">가입 없이 먼저 눌러 보기</a></p>
+            <p className="m-0 text-[14px] text-sub">설치 없이 폰에서 바로 · 7일 안에 전액 환불</p>
           </div>
         </section>
 
@@ -339,19 +336,6 @@ export default function LandingPage() {
             <div className="rv mt-1.5 flex flex-col items-center gap-3" style={stagger(2)}>
               <PhoneShot src="/lp/shots/2026-10/N01.webp" w={884} h={1920} alt="잠금화면의 오직 트레이너 알림 7개: 아침 보고서 · OT 신청 · 새 OT 회원 · 수업 요청 2건 · 이벤트 참여 · 운동일지 내용이 달라요" />
               <p className="m-0 text-[13px] text-muted [text-wrap:balance]">대표 겸 트레이너 계정에 실제로 온 알림이에요. 종류마다 켜고 끌 수 있어요.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* 체험 띠 — 가입 전에 직접(2026-10-06) */}
-        <section className="border-t border-line bg-card px-5 py-[clamp(48px,8vw,80px)]">
-          <div className="rv mx-auto flex max-w-[760px] flex-col items-center gap-5 text-center">
-            <h2 className={`${H2} ${H2_MD}`}>가입 전에,<br /><span className="text-primary">직접 눌러 보세요.</span></h2>
-            <p className="m-0 max-w-[480px] text-[16px] leading-[1.6] text-sub">트레이너 폰과 회원 폰을 나란히 두고 한쪽에서 누르면 다른 폰에 바로 도착해요.</p>
-            <div className="flex max-w-[560px] flex-wrap justify-center gap-2">
-              {TRY_LINKS.map(([href, label]) => (
-                <a key={href} href={href} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-line-strong bg-card px-4 text-[15px] font-semibold text-ink no-underline transition-colors hover:bg-elevate">{label} <Arrow /></a>
-              ))}
             </div>
           </div>
         </section>
@@ -448,8 +432,12 @@ export default function LandingPage() {
               <span className="block">오늘 수업 끝나고</span>
               <span className="block">바로 써보세요.</span>
             </h2>
-            <div data-nosnippet="" className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
-              <a href="/signup" className={BTN_PRIMARY}>지금 시작하기 <Arrow /></a>
+            {/* '가입 없이 눌러 보기'는 페이지에서 여기 한 번만(2026-10-08 대표) */}
+            <div data-nosnippet="" className="rv flex w-full max-w-[420px] flex-col items-center gap-2.5" style={stagger(1)}>
+              <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:justify-center">
+                <a href="/signup" className={BTN_PRIMARY}>지금 시작하기 <Arrow /></a>
+                <a href="/try" className={BTN_OUTLINE}>가입 없이 먼저 눌러 보기</a>
+              </div>
               <span className="text-[14px] text-sub">월 {basic.amount.toLocaleString("ko-KR")}원부터</span>
             </div>
           </div>
