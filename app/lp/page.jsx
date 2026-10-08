@@ -21,7 +21,7 @@ import { PLANS, PACKS, SEAT_PRICE } from "@/lib/plans";
 import { wonApprox } from "@/lib/format";
 import {
   H2, H2_MD, H2_LG, BTN_PRIMARY, BTN_OUTLINE, BTN_WHITE, Header, Footer, useReveal, stagger,
-  Pill, Checks, GroupLabel, WhoDoes, Faq, Arrow, LP_CSS, Bundle, FeatureGallery,
+  Pill, Checks, GroupLabel, WhoDoes, Faq, Arrow, LP_CSS, Bundle, FeatureGallery, PhoneShot,
 } from "./parts";
 
 /* ───────── 데이터 ───────── */
@@ -157,8 +157,6 @@ const BUNDLES = [
   },
 ];
 
-// 회원 전용 페이지에 실제로 뜨는 문구 — 후기가 아니라 제품 화면이다(실제 폰 알림 사진이 오면 바꾼다).
-const MEMBER_NOTICES = ["오늘 운동일지가 도착했어요", "이번 달 출석 8회, 오운완 챌린지 진행 중"];
 
 // 태블릿 · PC 버전 — 같은 계정이 넓은 배치로(2026-10-06 · 데모 센터 실제 화면 · 넓은 홈은 1024px부터)
 const WIDE = [
@@ -172,7 +170,7 @@ const WIDE = [
 ];
 
 // 사진 없이 이름만 — 묶음 아래 한 줄
-const MORE = ["매달 내 성적표", "인바디 분석", "비포 · 애프터 사례 모음", "폰 알림", "급여 자동계산", "프리랜서 장부"];
+const MORE = ["매달 내 성적표", "인바디 분석", "비포 · 애프터 사례 모음", "급여 자동계산", "프리랜서 장부"];
 
 // 요금제 3장(2026-10-07 개편 · 금액 = 부가세 포함 실제 결제 · lib/plans 한 곳)
 const TIERS = [
@@ -313,17 +311,7 @@ export default function LandingPage() {
             </div>
 
             {BUNDLES.map((b) => (
-              <Bundle key={b.id} {...b}>
-                {b.id === "b-member" && (
-                  /* 회원 전용 페이지 알림 — 제품 화면(후기 아님) */
-                  <div className="flex w-full max-w-[400px] flex-col items-start gap-2.5 text-left">
-                    <span className="text-[13px] font-bold text-sub">회원 전용 페이지 알림</span>
-                    {MEMBER_NOTICES.map((t) => (
-                      <div key={t} className="rounded-[20px_20px_20px_6px] bg-elevate px-[18px] py-3.5 text-[16px] font-semibold leading-[1.45]">{t}</div>
-                    ))}
-                  </div>
-                )}
-              </Bundle>
+              <Bundle key={b.id} {...b} />
             ))}
 
             <div className="rv flex flex-col items-center gap-3.5">
@@ -335,6 +323,26 @@ export default function LandingPage() {
               </div>
             </div>
             <p className="m-0 text-[13px] text-muted">앱 화면은 모두 시연용 회원으로 찍은 실제 화면이에요.</p>
+          </div>
+        </section>
+
+        {/* 폰 알림 — 실제 잠금화면 한 장(2026-10-08 · 데모 센터 기록으로 앱 서버가 보낸 알림 · 대표 겸 트레이너 계정) */}
+        <section className="border-t border-line bg-card px-5 py-[clamp(56px,10vw,104px)]">
+          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-[18px] text-center">
+            <div className="rv flex flex-col items-center gap-3.5">
+              <Pill>폰 알림</Pill>
+              <h2 className={`m-0 ${H2} ${H2_LG}`}>
+                <span className="block">챙길 일은,</span>
+                <span className="block">폰이 먼저 알려 줘요.</span>
+              </h2>
+            </div>
+            <p className="rv m-0 max-w-[480px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] text-sub [text-wrap:balance]" style={stagger(1)}>
+              OT 신청 · 수업 요청 · 이벤트 참여 · 운동일지 수정 요청까지, 생기는 순간 폰으로 와요.
+            </p>
+            <div className="rv mt-1.5 flex flex-col items-center gap-3" style={stagger(2)}>
+              <PhoneShot src="/lp/shots/2026-10/N01.webp" w={884} h={1920} alt="잠금화면의 오직 트레이너 알림 7개: 아침 보고서 · OT 신청 · 새 OT 회원 · 수업 요청 2건 · 이벤트 참여 · 운동일지 내용이 달라요" />
+              <p className="m-0 text-[13px] text-muted [text-wrap:balance]">대표 겸 트레이너 계정에 실제로 온 알림이에요. 종류마다 켜고 끌 수 있어요.</p>
+            </div>
           </div>
         </section>
 

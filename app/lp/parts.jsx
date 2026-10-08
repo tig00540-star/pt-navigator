@@ -298,6 +298,18 @@ export function StepShots({ steps }) {
   );
 }
 
+/* 폰 틀 안의 실제 화면 한 장(2026-10-08) — 잘라 내지 않은 폰 화면 전체(상태 표시줄 · 홈 막대까지). */
+export function PhoneShot({ src, alt, w, h }) {
+  return (
+    <div className="mx-auto w-[min(70vw,290px)] rounded-[44px] bg-ink p-[9px] shadow-[0_24px_48px_-16px_rgb(19_21_27/0.35)]">
+      <div className="overflow-hidden rounded-[36px] bg-black">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} width={w} height={h} loading="lazy" decoding="async" className="block h-auto w-full" />
+      </div>
+    </div>
+  );
+}
+
 /* 사진 아래 '직접 눌러 보기' 한 줄 — 사진이 있는 칸은 TryCard 대신 이것만(2026-10-06). */
 export function TryLink({ href, dark }) {
   return (
