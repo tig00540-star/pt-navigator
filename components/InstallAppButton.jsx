@@ -95,8 +95,10 @@ function InstallGuide({ onClose }) {
     : inApp && android
       ? `intent://${here.replace(/^https?:\/\//, "")}#Intent;scheme=https;package=com.android.chrome;end`
       : null;
-  const browser = ios ? "사파리" : "크롬";
-  const browserRo = ios ? "사파리로" : "크롬으로";   // 받침 있으면 '으로'
+  // 아이폰의 '바깥 브라우저'는 그 폰의 기본 브라우저(사파리 · 크롬 등)로 열린다(2026-10-08 대표 폰 · 크롬 기본) → 이름을 못 박지 않는다.
+  const iosOther = ios && /CriOS|EdgiOS|FxiOS/i.test(ua);   // 아이폰 크롬 · 엣지 · 파이어폭스(홈 화면 추가는 공유 버튼에서)
+  const browser = ios ? "브라우저" : "크롬";
+  const browserRo = ios ? "브라우저로" : "크롬으로";   // 받침 있으면 '으로'
   const copy = async () => {
     try { await navigator.clipboard.writeText(here); setCopied(true); } catch { setCopied(false); }
   };
@@ -104,9 +106,15 @@ function InstallGuide({ onClose }) {
   const steps = inApp
     ? [
         { icon: MoreHorizontal, t: "화면 위나 아래의 ⋯ 를 누르세요", d: `${IN_APP_NAME[inApp]} 안 화면의 메뉴예요.` },
-        { icon: Share, t: `'다른 브라우저로 열기'를 고르세요`, d: `'${browserRo} 열기'처럼 보일 수도 있어요.` },
+        { icon: Share, t: `'다른 브라우저로 열기'를 고르세요`, d: ios ? "'Safari로 열기'처럼 보일 수도 있어요." : `'${browserRo} 열기'처럼 보일 수도 있어요.` },
         { icon: Check, t: "열린 화면에서 '앱처럼 설치'를 다시 누르세요", d: "그다음부터는 바로 설치돼요." },
       ]
+    : iosOther
+      ? [
+          { icon: Share, t: "주소창 오른쪽 공유 버튼을 누르세요", d: "네모에 위쪽 화살표가 있는 모양이에요." },
+          { icon: Plus, t: "'홈 화면에 추가'를 고르세요", d: "안 보이면 목록을 아래로 내려 보세요." },
+          { icon: Check, t: "'추가'를 누르세요", d: "홈 화면에 아이콘이 생기고, 앱처럼 열려요." },
+        ]
     : ios
       ? [
           { icon: MoreHorizontal, t: "주소창 옆 ⋯ 를 누르고 '공유'를 고르세요", d: "사파리 주소창 오른쪽의 점 세 개예요." },
@@ -133,7 +141,7 @@ function InstallGuide({ onClose }) {
             <h2 className="text-[19px] font-extrabold tracking-[-0.02em] text-ink">{inApp ? `${browser}에서 열어 주세요` : "홈 화면에 추가하기"}</h2>
             <p className="mt-1.5 text-[14px] leading-relaxed text-sub">
               {inApp
-                ? `${IN_APP_NAME[inApp]} 안에서는 설치가 안 돼요. ${browserRo} 열면 바로 설치할 수 있어요.`
+                ? `${IN_APP_NAME[inApp]} 안에서는 설치가 안 돼요. ${ios ? "사파리나 크롬으로" : browserRo} 열면 바로 설치할 수 있어요.`
                 : ios
                   ? "아래 순서대로 하면 홈 화면에 아이콘이 생겨요."
                   : "아래 방법으로 홈 화면에 추가해 주세요."}
