@@ -97,10 +97,15 @@ export async function POST(req) {
   if (action === "upgrade") {
     if (isCenter || tier !== "basic") return Response.json({ error: "베이직에서만 프로로 올릴 수 있어요." }, { status: 409 });
     const amount = quote(ctx, "upgrade");
+    // 먼저 '내가 바꾼다'를 잡고(조건부 저장) 결제 — 두 번 눌러도 한 번만 결제(2026-10-08)
+    const { data: claimed } = await sb.from("account").update({ billing_plan: "solo", next_billing_plan: null })
+      .eq("id", acc.id).eq("billing_plan", "basic").select("id");
+    if (!claimed?.length) return Response.json({ error: "이미 처리 중이에요. 잠시 뒤 새로고침해 주세요." }, { status: 409 });
     const p = await pay(amount, "upgrade", "프로로 올리기(남은 기간)");
-    if (!p.ok) return Response.json({ error: p.error }, { status: 402 });
-    const row = await save({ billing_plan: "solo", next_billing_plan: null });
-    if (!row) return Response.json({ error: p.paid ? "결제는 됐지만 바꾸지 못했어요. 고객센터로 알려 주세요." : "저장하지 못했어요. 다시 시도해 주세요." }, { status: 500 });
+    if (!p.ok) {
+      await sb.from("account").update({ billing_plan: "basic" }).eq("id", acc.id).eq("billing_plan", "solo");   // 결제 실패 = 되돌리기
+      return Response.json({ error: p.error }, { status: 402 });
+    }
     return Response.json({ ok: true, paid: p.paid, plan: "solo" });
   }
 
@@ -115,13 +120,26 @@ export async function POST(req) {
     if (!isCenter) return Response.json({ error: "센터 요금제에서만 트레이너 자리를 바꿀 수 있어요." }, { status: 409 });
     const cur = acc.extra_seats || 0;
     if (action === "seat_add") {
+      // 줄이기를 예약해 둔 상태면 = 예약만 하나 되돌린다(돈 안 냄 · 2026-10-08 · 예전엔 새 자리 값을 또 결제)
+      if (acc.next_extra_seats != null && acc.next_extra_seats < cur) {
+        const back = acc.next_extra_seats + 1;
+        const row = await save({ next_extra_seats: back >= cur ? null : back });
+        if (!row) return Response.json({ error: "저장하지 못했어요. 다시 시도해 주세요." }, { status: 500 });
+        return Response.json({ ok: true, paid: 0, extraSeats: row.extra_seats, nextExtraSeats: row.next_extra_seats });
+      }
       if (cur >= MAX_EXTRA_SEATS) return Response.json({ error: `트레이너는 최대 ${3 + MAX_EXTRA_SEATS}명까지예요. 더 필요하면 고객센터로 알려 주세요.` }, { status: 409 });
       const amount = quote(ctx, "seat_add");
+      // 먼저 자리를 잡고(지금 값이 그대로일 때만) 결제 — 두 번 눌러도 한 번만(2026-10-08)
+      let claimQ = sb.from("account").update({ extra_seats: cur + 1, next_extra_seats: null }).eq("id", acc.id);
+      claimQ = cur === 0 ? claimQ.or("extra_seats.is.null,extra_seats.eq.0") : claimQ.eq("extra_seats", cur);
+      const { data: claimed } = await claimQ.select("extra_seats");
+      if (!claimed?.length) return Response.json({ error: "이미 처리 중이에요. 잠시 뒤 새로고침해 주세요." }, { status: 409 });
       const p = await pay(amount, "seat", "트레이너 자리 추가(남은 기간)");
-      if (!p.ok) return Response.json({ error: p.error }, { status: 402 });
-      const row = await save({ extra_seats: cur + 1, next_extra_seats: null });
-      if (!row) return Response.json({ error: p.paid ? "결제는 됐지만 자리를 열지 못했어요. 고객센터로 알려 주세요." : "저장하지 못했어요. 다시 시도해 주세요." }, { status: 500 });
-      return Response.json({ ok: true, paid: p.paid, extraSeats: row.extra_seats });
+      if (!p.ok) {
+        await sb.from("account").update({ extra_seats: cur }).eq("id", acc.id).eq("extra_seats", cur + 1);   // 결제 실패 = 되돌리기
+        return Response.json({ error: p.error }, { status: 402 });
+      }
+      return Response.json({ ok: true, paid: p.paid, extraSeats: claimed[0].extra_seats });
     }
     const target = Math.max(0, (acc.next_extra_seats ?? cur) - 1);
     const { count: used } = await sb.from("trainer").select("id", { count: "exact", head: true })

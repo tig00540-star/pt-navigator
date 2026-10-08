@@ -73,8 +73,9 @@ export async function POST(req) {
   const { data: stopped, error: se } = await sb.from("account").update({
     subscription_status: "inactive", current_period_end: nowIso, billing_key: null, cancel_at_period_end: false,
     cancel_requested_at: nowIso, cancel_reason: reason ? `[7일 환불] ${reason}` : "[7일 환불]",
-  }).eq("id", me.account_id).select("id");
-  if (se || !stopped?.length) { console.error("[billing/refund] 이용 멈춤 실패", se?.message); return Response.json({ error: "환불하지 못했어요. 다시 시도해 주세요." }, { status: 500 }); }
+  }).eq("id", me.account_id).eq("subscription_status", "active").select("id");   // 이용 중일 때만 = 동시에 두 번 눌러도 한 요청만(2026-10-08)
+  if (se) { console.error("[billing/refund] 이용 멈춤 실패", se?.message); return Response.json({ error: "환불하지 못했어요. 다시 시도해 주세요." }, { status: 500 }); }
+  if (!stopped?.length) return Response.json({ error: "이미 환불을 처리하고 있어요. 잠시 뒤 새로고침해 주세요." }, { status: 409 });
 
   // 2) 결제마다 전액 취소(멱등 키 = 결제 id)
   let done = 0, refunded = 0; const failed = [];

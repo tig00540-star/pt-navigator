@@ -6,7 +6,7 @@
 // -----------------------------------------------------------------------------
 import { requireTrainer } from "@/lib/requireTrainer";
 import { generateOwnerAI } from "@/lib/ownerReportAI";
-import { adminClient, reserveAi, finishAi } from "@/lib/aiQuota"; // 프롬프트 · 파싱은 lib(9시 예약 작업과 공유 · 2026-10-03)
+import { adminClient, reserveAi, finishAi, quotaResponse } from "@/lib/aiQuota"; // 프롬프트 · 파싱은 lib(9시 예약 작업과 공유 · 2026-10-03)
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -56,7 +56,13 @@ export async function POST(request) {
 
   try {
     const admin = adminClient();
+    // 대표만(2026-10-08 · 트레이너가 이 주소를 반복 호출해 원가를 쓰지 못하게)
+    if (admin && auth.user?.id) {
+      const { data: me } = await admin.from("trainer").select("role").eq("id", auth.user.id).maybeSingle();
+      if (me?.role !== "owner") return Response.json({ error: "대표만 볼 수 있어요.", fallback: "rule" }, { status: 403 });
+    }
     const slot = await reserveAi(admin, { userId: auth.user?.id, kind: "owner", unitKey: `owner:${crypto.randomUUID()}` });
+    if (!slot.ok) return quotaResponse(slot);
     const parsed = await generateOwnerAI(d, apiKey, (model, usage) => finishAi(admin, slot.id, { ok: true, model, usage }));
     if (!parsed) return Response.json({ error: "AI 응답 파싱 실패.", fallback: "rule" }, { status: 502 });
     return Response.json(parsed);

@@ -1698,6 +1698,7 @@ export async function POST(request) {
     const anthropic = new Anthropic({ apiKey });
     const isFirst = phase === "first";
     const sbSlot = await reserveAi(admin, { userId: auth.user?.id, kind: "salesbook", unitKey: `sb:follow:${once}`, memberId: mid });
+    if (!sbSlot.ok) return;   // 하루 상한 · 남의 회원(2026-10-08) — 이어 만들기는 조용히 건너뛴다(화면이 처음 열 때 다시 만든다)
     const msg = await anthropic.messages.create({
       model: MODEL_FAST, max_tokens: 4096, system: SALESBOOK_PREAMBLE, thinking: thinkingFor(MODEL_FAST),
       messages: [{ role: "user", content: isFirst

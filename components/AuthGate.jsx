@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import PasswordChange from "@/components/views/PasswordChange";
 import Button from "@/components/ui/Button";
 import Wordmark, { Slogan } from "@/components/ui/Wordmark";
-import { PLANS } from "@/lib/plans";
+import { PLANS, planAmount, SEAT_AI } from "@/lib/plans";
 import LandingPage from "@/app/lp/page";
 
 export default function AuthGate({ children }) {
@@ -265,6 +265,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
   // 센터 소속 트레이너는 결제할 수 없다(서버가 거절) → 카드 등록 대신 '대표에게 알려 주세요'(2026-10-06 점검)
   const [staff, setStaff] = useState(false);
   const [noTrial, setNoTrial] = useState(false);   // 센터에서 독립한 개인 계정 = 체험 없이 바로 첫 결제(2026-10-07)
+  const [extraSeats, setExtraSeats] = useState(0);  // 센터 추가 자리 — 결제 금액에 들어간다(2026-10-08 · 화면 = 결제 금액)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -296,6 +297,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
       setPlan(pick);
       setStaff(Boolean(data.role) && data.role !== "owner");
       setNoTrial(Boolean(data?.account?.no_trial));
+      setExtraSeats(Math.max(0, Number(info.extraSeats) || 0));
     })();
     return () => { alive = false; };
   }, [uid]);
@@ -349,12 +351,12 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-[15px] font-bold text-ink">{p.name}{p.key === "solo" && <span className="ml-1.5 text-[12px] font-bold text-primary-strong">추천</span>}</span>
-                    <span className="text-[15px] font-black tabular-nums text-ink">{p.amount.toLocaleString("ko-KR")}<span className="text-[12px] font-semibold text-muted">원/월</span></span>
+                    <span className="text-[15px] font-black tabular-nums text-ink">{(planAmount(p.key, extraSeats) ?? p.amount).toLocaleString("ko-KR")}<span className="text-[12px] font-semibold text-muted">원/월</span></span>
                   </div>
                   <div className="mt-1 text-[12.5px] leading-snug text-sub">
                     {p.key === "basic" ? "기록 · 회원 관리 · 회원 전용 페이지 · AI는 기능마다 매달 3번"
                       : p.key === "solo" ? `베이직 전부 + 음성일지 월 ${p.ai.voice}건 · OT · 재등록 대본 월 ${p.ai.prep}번`
-                      : `트레이너 3명 + 대표 · 센터 공용 음성일지 월 ${p.ai.voice}건 · 대본 월 ${p.ai.prep}번`}
+                      : `트레이너 ${3 + extraSeats}명 + 대표${extraSeats ? `(추가 ${extraSeats}명 포함)` : ""} · 센터 공용 음성일지 월 ${p.ai.voice + SEAT_AI.voice * extraSeats}건 · 대본 월 ${p.ai.prep + SEAT_AI.prep * extraSeats}번`}
                   </div>
                 </button>
               ))}
@@ -364,7 +366,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
               {busy ? "결제창 여는 중…" : expired ? "카드 등록하고 이어서 이용하기" : "카드 등록하고 시작하기"}
             </Button>
             <p className="mt-2 text-center text-[12px] leading-relaxed text-muted">
-              {`부가세 포함 · 오늘 ${plan && PLANS[plan] ? PLANS[plan].amount.toLocaleString("ko-KR") + "원" : "첫 달"} 결제 · 이후 매달 같은 날 자동결제 · ${expired ? "" : "7일 안 전액 환불 · "}언제든 해지`}
+              {`부가세 포함 · 오늘 ${plan && PLANS[plan] ? planAmount(plan, extraSeats).toLocaleString("ko-KR") + "원" : "첫 달"} 결제 · 이후 매달 같은 날 자동결제 · ${expired ? "" : "7일 안 전액 환불 · "}언제든 해지`}
             </p>
           </>
         )}

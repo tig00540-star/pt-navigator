@@ -4,7 +4,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tidyDeep, NO_DASH_RULE } from "@/lib/tidyText";
 import { requireTrainer } from "@/lib/requireTrainer";
-import { adminClient, reserveAi, finishAi } from "@/lib/aiQuota";
+import { adminClient, reserveAi, finishAi, quotaResponse } from "@/lib/aiQuota";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // Sonnet 호출. Hobby+fluid compute 300s 내 여유 + 업스트림 무응답 폭주 상한.
@@ -31,14 +31,19 @@ export async function POST(request) {
   let name = "", brand = "", kind = "", spec = "";
   try {
     const b = await request.json();
-    name = (b?.name || "").toString().trim();
-    brand = (b?.brand || "").toString().trim();
-    kind = (b?.kind || "").toString().trim();
-    spec = (b?.spec || "").toString().trim();
+    // 칸마다 길이 상한(2026-10-08 · 긴 글로 원가를 키우지 못하게)
+    name = (b?.name || "").toString().trim().slice(0, 80);
+    brand = (b?.brand || "").toString().trim().slice(0, 60);
+    kind = (b?.kind || "").toString().trim().slice(0, 30);
+    spec = (b?.spec || "").toString().trim().slice(0, 200);
   } catch { return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 }); }
   if (!name) return Response.json({ error: "장비 이름이 필요합니다." }, { status: 400 });
 
   const info = [`이름: ${name}`, brand ? `브랜드: ${brand}` : null, `종류: ${KIND_LABEL[kind] || kind || "미상"}`, spec ? `규격: ${spec}` : null].filter(Boolean).join("\n");
+
+  const admin = adminClient();   // 원가 기록 + 하루 상한(세지 않음 · 2026-10-08 부르기 전에 자리부터)
+  const slot = await reserveAi(admin, { userId: auth.user?.id, kind: "cues", unitKey: `cues:${crypto.randomUUID()}` });
+  if (!slot.ok) return quotaResponse(slot);
 
   try {
     const anthropic = new Anthropic({ apiKey: anthropicKey });
@@ -50,8 +55,6 @@ export async function POST(request) {
 ${NO_DASH_RULE}`,
       messages: [{ role: "user", content: `다음 기구의 실행 큐 초안을 만들어 주세요.\n\n${info}` }],
     });
-    const admin = adminClient();   // 원가 기록만(세지 않음 · 2026-10-07)
-    const slot = await reserveAi(admin, { userId: auth.user?.id, kind: "cues", unitKey: `cues:${crypto.randomUUID()}` });
     await finishAi(admin, slot.id, { ok: true, model: CUE_MODEL, usage: msg.usage });
     const out = msg.content.filter((x) => x.type === "text").map((x) => x.text).join("");
     const s = out.indexOf("{"), e = out.lastIndexOf("}");
@@ -60,6 +63,7 @@ ${NO_DASH_RULE}`,
     const cues = Array.isArray(obj.cues) ? obj.cues.filter((c) => typeof c === "string" && c.trim()).map((c) => c.trim()) : [];
     return Response.json({ cues: tidyDeep(cues) });
   } catch (err) {
+    await finishAi(admin, slot.id, { ok: false, model: CUE_MODEL });
     console.error("[machine-cues] 생성 실패:", err?.message || err);
     return Response.json({ error: "AI 초안 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }

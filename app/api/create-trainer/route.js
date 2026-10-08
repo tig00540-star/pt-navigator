@@ -42,9 +42,11 @@ export async function POST(req) {
   // 좌석 — 센터 플랜은 트레이너 3인(관리자 제외), 솔로는 추가 없음.
   // 결제 전(체험·파일럿)이면 billing_plan이 비어 있어 account.type으로 판단한다.
   // ⚠️ 이게 유일한 관문이다(트레이너 추가 경로는 이 라우트뿐). 화면 표시는 안내용.
-  const { data: acct } = await sb.from("account").select("type, billing_plan, extra_seats").eq("id", me.account_id).maybeSingle();
+  const { data: acct } = await sb.from("account").select("type, billing_plan, extra_seats, next_extra_seats").eq("id", me.account_id).maybeSingle();
   const planKey = acct?.billing_plan || acct?.type || "solo";
-  const seatLimit = trainerSeatLimit(planKey, acct?.extra_seats);   // 센터 3 + 결제한 추가 좌석(2026-10-07)
+  // 자리 줄이기를 예약했으면 줄어든 수 기준(2026-10-08 · 예약해 두고 트레이너를 늘려 다음 결제에서 자리 값을 덜 내던 구멍)
+  const seatsPaid = Math.min(acct?.extra_seats ?? 0, acct?.next_extra_seats ?? acct?.extra_seats ?? 0);
+  const seatLimit = trainerSeatLimit(planKey, seatsPaid);   // 센터 3 + 결제한 추가 좌석(2026-10-07)
   const { count: used, error: cErr } = await sb
     .from("trainer")
     .select("id", { count: "exact", head: true })

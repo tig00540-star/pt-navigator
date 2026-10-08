@@ -61,11 +61,11 @@ function Confirm() {
         )}
         {state === "done" && (
           <>
-            <div className="text-lg font-semibold text-ink">{paid ? "결제가 완료됐어요" : "카드 등록이 완료됐어요"}</div>
+            <div className="text-lg font-semibold text-ink">{paid ? "결제가 완료됐어요" : "카드를 바꿨어요"}</div>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               {paid
                 ? `첫 달 결제가 끝났어요. 다음 달부터 같은 날 등록하신 카드로 자동 결제돼요(언제든 해지 가능).${refundable ? " 7일 안에는 써 봤어도 설정 › 구독 관리에서 전액 환불받을 수 있어요." : ""}`
-                : "카드가 등록됐고, 체험 기간 동안은 청구되지 않아요. 기간이 끝나면 등록하신 카드로 자동 결제돼요(언제든 해지 가능)."}
+                : "결제 카드를 바꿨어요. 이번 이용 기간은 그대로이고, 다음 결제일부터 새 카드로 결제돼요."}
             </p>
             <Link href="/" className="mt-5 inline-block w-full">
               <Button variant="primary" size="md" fullWidth>앱 시작하기</Button>

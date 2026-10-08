@@ -20,7 +20,7 @@ const ERR = {
   expired: "초대 링크 기간(7일)이 지났어요. 대표에게 새 링크를 받아 주세요.",
   not_solo: "개인 계정으로 쓰던 트레이너만 합류할 수 있어요.",
   same: "이미 이 센터 소속이에요.",
-  seat_limit: "센터의 트레이너 자리(3명)가 꽉 찼어요. 대표에게 알려 주세요.",
+  seat_limit: "센터의 트레이너 자리가 꽉 찼어요. 대표에게 알려 주세요.",
   no_trainer: "트레이너 정보를 찾지 못했어요. 다시 로그인해 주세요.",
 };
 
@@ -28,7 +28,11 @@ async function lastPaid(sb, accountId) {
   const { data } = await sb.from("payment").select("id, order_id, toss_payment_key, amount, status, period_start, period_end, paid_at")
     .eq("account_id", accountId).eq("status", "DONE").in("plan", ["basic", "solo", "center"])   // 월 구독 결제만(차액 · 팩 결제 제외 · 2026-10-07)
     .order("paid_at", { ascending: false }).limit(1);
-  return data?.[0] || null;
+  const p = data?.[0] || null;
+  if (!p) return null;
+  // 이미 환불한 결제(7일 환불 · 앞선 합류 환불)면 다시 환불하지 않는다(2026-10-08)
+  const { data: r } = await sb.from("payment").select("id").eq("account_id", accountId).in("order_id", [`refund7_${p.id}`, `refund_${p.id}`]).limit(1);
+  return r?.length ? null : p;
 }
 
 async function preview(sb, me, code) {
@@ -61,6 +65,15 @@ export async function POST(req) {
   if (typeof code !== "string" || !code) return Response.json({ error: ERR.invalid }, { status: 400 });
 
   const from = me.account_id;
+  // 자리 미리 확인 — 센터가 '자리 줄이기'를 예약했으면 줄어든 수 기준(2026-10-08 · DB 함수는 지금 자리만 본다)
+  const { data: inv } = await sb.from("account_invite").select("account_id").eq("code", code).maybeSingle();
+  if (inv?.account_id) {
+    const { data: ca } = await sb.from("account").select("extra_seats, next_extra_seats").eq("id", inv.account_id).maybeSingle();
+    const seatsPaid = Math.min(ca?.extra_seats ?? 0, ca?.next_extra_seats ?? ca?.extra_seats ?? 0);
+    const { count: used } = await sb.from("trainer").select("id", { count: "exact", head: true })
+      .eq("account_id", inv.account_id).eq("role", "trainer").eq("active", true);
+    if ((used ?? 0) >= 3 + seatsPaid) return Response.json({ error: ERR.seat_limit, code: "seat_limit" }, { status: 409 });
+  }
   const paid = await lastPaid(sb, from);           // 닫기 전에 읽어 둔다(환불 근거)
   const { data: res, error } = await sb.rpc("_join_center", { p_trainer: me.id, p_code: code });
   if (error) { console.error("[move/join] 합류 실패", error.message); return Response.json({ error: "합류하지 못했어요. 다시 시도해 주세요." }, { status: 500 }); }

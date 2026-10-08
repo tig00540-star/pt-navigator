@@ -50,8 +50,11 @@ export async function GET(req) {
   if (ue || !u?.user?.id) return Response.json({ error: "세션 무효" }, { status: 401 });
   const { data: me } = await sb.from("trainer").select("role, account_id").eq("id", u.user.id).maybeSingle();
   if (!me?.account_id) return Response.json({ role: me?.role ?? null, type: null, noTrial: false });
-  const { data: acct } = await sb.from("account").select("type, no_trial").eq("id", me.account_id).maybeSingle();
-  return Response.json({ role: me.role, type: acct?.type ?? null, noTrial: Boolean(acct?.no_trial) });
+  const { data: acct } = await sb.from("account").select("type, no_trial, extra_seats").eq("id", me.account_id).maybeSingle();
+  // 센터 = 추가 자리까지 더한 실제 결제 금액(2026-10-08 · 화면 149,000원인데 자리 값까지 결제되던 것 막기)
+  const extraSeats = acct?.type === "center" ? Math.max(0, Number(acct?.extra_seats) || 0) : 0;
+  return Response.json({ role: me.role, type: acct?.type ?? null, noTrial: Boolean(acct?.no_trial), extraSeats,
+    centerAmount: acct?.type === "center" ? planAmount("center", extraSeats) : null });
 }
 
 export async function POST(req) {
@@ -87,7 +90,7 @@ export async function POST(req) {
   const customerKey = (body.customerKey || "").trim();
   // 요금제 = 계정 종류가 정하는 범위 안에서(서버가 검증). 센터 계정 = center · 개인 계정 = basic | solo(프로 · 기본값).
   //   2026-10-07 요금제 개편 — 개인은 화면에서 베이직/프로를 고른다. 그 밖의 값은 무시.
-  const { data: acct } = await sb.from("account").select("type, extra_seats").eq("id", me.account_id).maybeSingle();
+  const { data: acct } = await sb.from("account").select("type, extra_seats, subscription_status, current_period_end").eq("id", me.account_id).maybeSingle();
   const planKey = acct?.type === "center" ? "center" : body.plan === "basic" ? "basic" : "solo";
   const plan = PLANS[planKey];
   if (!authKey || !customerKey || !plan) {
@@ -109,6 +112,18 @@ export async function POST(req) {
   if (!billingKey) {
     console.error("[billing/confirm] 응답에 billingKey 없음");
     return Response.json({ error: "카드 등록 응답이 올바르지 않습니다." }, { status: 400 });
+  }
+
+  // 1.5) 이미 이용 중인 계정 = 카드만 바꾼다(2026-10-08 · 예전엔 한 달 치를 또 결제하고 남은 기간이 사라졌다 · 두 탭 · 뒤로 가기)
+  const activeNow = acct?.subscription_status === "active" && acct?.current_period_end && Date.parse(acct.current_period_end) > Date.now();
+  if (activeNow) {
+    const { data: upc, error: uec } = await sb.from("account").update({ billing_provider: "toss", billing_key: billingKey, billing_customer_key: customerKey })
+      .eq("id", me.account_id).select("id");
+    if (uec || !upc?.length) {
+      console.error("[billing/confirm] 카드 변경 저장 실패:", uec?.message);
+      return Response.json({ error: "카드를 바꾸지 못했어요. 다시 시도해 주세요." }, { status: 500 });
+    }
+    return Response.json({ ok: true, paid: false, cardUpdated: true, periodEnd: acct.current_period_end, plan: planKey });
   }
 
   // 2) 바로 첫 달 결제(2026-10-07 · 무료 체험 없음) — 결제 이력이 없던 계정이면 7일 안 전액 환불 대상(화면 안내용 · 판정은 /api/billing/refund)
