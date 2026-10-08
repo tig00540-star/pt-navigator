@@ -142,7 +142,7 @@ export function DeckPanel({ deck, allKeys, memberCategory, onChange, onClose }) 
                     <li key={c.id}>
                       <button type="button" onClick={() => toggleCase(c.id)} aria-pressed={on}
                         className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left ${on ? "border-primary bg-primary-soft" : "border-line bg-card"}`}>
-                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[11px] font-bold ${on ? "border-primary bg-primary text-white" : "border-line-strong"}`}>{on ? chosen.indexOf(c.id) + 1 : ""}</span>
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[12px] font-bold ${on ? "border-primary bg-primary text-white" : "border-line-strong"}`}>{on ? chosen.indexOf(c.id) + 1 : ""}</span>
                         <span className="min-w-0">
                           <span className="block truncate text-[13px] font-semibold">{c.label || "회원"}</span>
                           <span className="block truncate text-[12px] text-muted">{caseKindLabel(c.kind)}{c.data?.category ? ` · ${c.data.category}` : ""} · {caseSummary(c)}</span>

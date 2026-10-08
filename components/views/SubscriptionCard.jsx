@@ -133,7 +133,7 @@ export default function SubscriptionCard() {
       const r = await downloadMyData();
       showToast(r.missed ? `내려받았어요. 사진 ${r.missed}장은 받지 못했어요.` : `내려받았어요${r.photos ? ` · 사진 ${r.photos}장 포함` : ""}`);
     }
-    catch (e) { console.error("내려받기 실패", e); showToast(e.message || "내려받지 못했어요. 다시 시도해 주세요."); }
+    catch (e) { console.error("내려받기 실패", e); showToast(e?.message && /[가-힣]/.test(e.message) ? e.message : "내려받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."); }
     finally { setBusy(""); }
   };
 

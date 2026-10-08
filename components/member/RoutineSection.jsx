@@ -32,7 +32,7 @@ function MiniStep({ label, value, unit, onDec, onInc, decOff, incOff, wide }) {
   return (
     <span className="inline-flex shrink-0 items-center">
       <button type="button" onClick={onDec} disabled={decOff} aria-label={`${label} 줄이기`} className="flex h-8 w-7 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
-      <span className={`${wide ? "w-[3.3rem]" : "w-[2.2rem]"} text-center text-[14px] font-bold tabular-nums text-ink`}>{value}<span className="text-[11px] font-semibold text-sub">{unit}</span></span>
+      <span className={`${wide ? "w-[3.3rem]" : "w-[2.2rem]"} text-center text-[14px] font-bold tabular-nums text-ink`}>{value}<span className="text-[12px] font-semibold text-sub">{unit}</span></span>
       <button type="button" onClick={onInc} disabled={incOff} aria-label={`${label} 늘리기`} className="flex h-8 w-7 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
     </span>
   );

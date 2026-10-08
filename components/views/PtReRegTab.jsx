@@ -430,7 +430,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             ? `이번 계약 ${cur.sessions_total ?? 0}회${cur.service_sessions ? ` + 서비스 ${cur.service_sessions}회` : ""} 중 ${usedOnCur}회 진행 · 남은 ${rem.total}회`
             : `${String(cur.started_at ?? "").slice(0, 10).replaceAll("-", ".")} 시작한 계약 · ${cur.sessions_total ?? 0}회`}
         </span>
-        {due && <span className="rounded-full bg-pt-soft px-2 py-0.5 text-[11.5px] font-semibold text-pt-text">재등록 타이밍</span>}
+        {due && <span className="rounded-full bg-pt-soft px-2 py-0.5 text-[12px] font-semibold text-pt-text">재등록 타이밍</span>}
       </div>
       {queued.length > 0 && !savedResult && (
         <p className="rounded-xl bg-elevate px-3.5 py-2.5 text-[13px] leading-relaxed text-sub">

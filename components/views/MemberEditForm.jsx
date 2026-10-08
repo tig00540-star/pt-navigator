@@ -156,7 +156,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {FIELDS.filter((f) => prior?.error?.code === "42P01" || !HEALTH_KEYS.has(f.k)).map((f) => (
                   <div key={f.k} className={f.k === "name" ? "sm:col-span-2" : ""}>
-                    <label className="mb-1 block text-[11px] font-medium text-muted">
+                    <label className="mb-1 block text-[12px] font-medium text-muted">
                       {f.label}{f.k === "name" && <span className="text-primary-strong"> *</span>}
                     </label>
                     <input
@@ -179,7 +179,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
                   <HealthConsentBlock checked={healthOk} onChange={setHealthOk} prior={prior}>
                     {FIELDS.filter((f) => HEALTH_KEYS.has(f.k)).map((f) => (
                       <div key={f.k}>
-                        <label className="mb-1 block text-[11px] font-medium text-muted">{f.label}</label>
+                        <label className="mb-1 block text-[12px] font-medium text-muted">{f.label}</label>
                         <input type="text" value={form[f.k]} onChange={setF(f.k)} placeholder={f.ph} list={f.opts ? `mle-${f.k}` : undefined}
                           className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary" />
                         {f.opts && <datalist id={`mle-${f.k}`}>{f.opts.map((o) => <option key={o} value={o} />)}</datalist>}

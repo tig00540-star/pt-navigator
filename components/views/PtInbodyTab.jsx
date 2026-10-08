@@ -145,7 +145,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
     if (!supabase) {
       setRows((p) => [{ ...payload, id: `demo-${Date.now()}` }, ...p].sort((a, b) => (a.measured_at < b.measured_at ? 1 : -1)));
       resetForm();
-      showToast("인바디 저장됨(데모)");
+      showToast("인바디를 저장했어요(데모)");
       setSaving(false);
       return;
     }
@@ -174,7 +174,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
     if (!supabase) {
       setRows((p) => p.filter((r) => r.id !== id));
       setConfirmId(null);
-      showToast("삭제됨(데모)");
+      showToast("삭제했어요(데모)");
       return;
     }
     const { data, error } = await supabase.from("inbody_log").delete().eq("id", id).select();
@@ -232,13 +232,13 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
         <SectionTitle icon={Scale}>인바디 기록</SectionTitle>
         <div className="mt-3 space-y-3">
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">측정일</span>
+            <span className="mb-1 block text-[12px] font-medium text-muted">측정일</span>
             <input type="date" value={measuredAt} onChange={(e) => setMeasuredAt(e.target.value)} disabled={saving} className={inputCls} />
           </label>
           <div className="grid grid-cols-2 gap-3">
             {INBODY_FIELDS.map((f) => (
               <label key={f.key} className="block">
-                <span className="mb-1 block text-[11px] font-medium text-muted">{f.label} <span className="text-muted">({f.unit})</span></span>
+                <span className="mb-1 block text-[12px] font-medium text-muted">{f.label} <span className="text-muted">({f.unit})</span></span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -252,7 +252,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
             ))}
           </div>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-muted">메모 <span className="text-muted">(선택)</span></span>
+            <span className="mb-1 block text-[12px] font-medium text-muted">메모 <span className="text-muted">(선택)</span></span>
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} disabled={saving} placeholder="측정 조건·특이사항" className={inputCls} />
           </label>
           <Button variant="primary" size="md" fullWidth onClick={save} disabled={saving} className="gap-2">
@@ -267,7 +267,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
         <Card as="section">
           <div className="flex items-center justify-between">
             <SectionTitle icon={Scale}>최근 측정</SectionTitle>
-            <span className="font-mono text-[11px] text-muted">{latest.measured_at}</span>
+            <span className="font-mono text-[12px] text-muted">{latest.measured_at}</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {INBODY_FIELDS.map((f) => {
@@ -278,13 +278,13 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
               const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
               return (
                 <div key={f.key} className="rounded-xl border border-line bg-elevate p-3">
-                  <div className="text-[10px] tracking-label-ko text-muted">{f.label}</div>
+                  <div className="text-[12px] tracking-label-ko text-muted">{f.label}</div>
                   <div className="mt-1 font-mono text-lg font-bold text-ink">
                     {cur == null ? "–" : cur}
                     <span className="ml-1 text-xs font-normal text-muted">{f.unit}</span>
                   </div>
                   {tone && (
-                    <div className={`mt-0.5 flex items-center gap-1 text-[11px] font-semibold ${DELTA_TONE[tone]}`}>
+                    <div className={`mt-0.5 flex items-center gap-1 text-[12px] font-semibold ${DELTA_TONE[tone]}`}>
                       <Icon className="h-3 w-3" /> {fmtDelta(d)}{f.unit}
                     </div>
                   )}
@@ -309,7 +309,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
           </div>
           {!shownAnalysis && <AiLockCard kind="inbody" className="mt-3" />}
           {!shownAnalysis && <AiQuotaNote kind="inbody" className="mt-2" />}
-          <p className="mt-1 text-[11px] leading-relaxed text-muted">
+          <p className="mt-1 text-[12px] leading-relaxed text-muted">
             최근 측정({latest.measured_at}) 기준. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
           </p>
           {anaNotice && <p className="mt-2 text-[12px] text-danger-text">{anaNotice}</p>}
@@ -332,7 +332,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="font-mono text-xs font-semibold text-sub">{row.measured_at}</div>
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-sub">
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-sub">
                       {INBODY_FIELDS.map((f) => (
                         <span key={f.key}>
                           {f.label} <b className="text-ink">{row[f.key] == null ? "–" : row[f.key]}</b>
@@ -340,12 +340,12 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
                         </span>
                       ))}
                     </div>
-                    {row.note && <div className="mt-1 text-[11px] text-muted">{row.note}</div>}
+                    {row.note && <div className="mt-1 text-[12px] text-muted">{row.note}</div>}
                   </div>
                   {confirmId === row.id ? (
                     <div className="flex shrink-0 items-center gap-1">
-                      <button onClick={() => remove(row.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
-                      <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[10px] font-medium text-sub transition hover:text-ink">취소</button>
+                      <button onClick={() => remove(row.id)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[12px] font-bold text-rose-700 transition hover:bg-rose-500/20">삭제?</button>
+                      <button onClick={() => setConfirmId(null)} className="rounded-md border border-line px-2 py-1 text-[12px] font-medium text-sub transition hover:text-ink">취소</button>
                     </div>
                   ) : (
                     <button onClick={() => setConfirmId(row.id)} className="shrink-0 text-muted transition hover:text-rose-600">

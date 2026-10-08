@@ -178,7 +178,7 @@ export default function AppChrome({ children }) {
 
       {dbNote && (
         <div className="mx-auto max-w-5xl px-4 pt-3 sm:px-6">
-          <div className="rounded-lg border border-line bg-card px-3 py-2 text-[11px] text-sub shadow-sm">
+          <div className="rounded-lg border border-line bg-card px-3 py-2 text-[12px] text-sub shadow-sm">
             {dbNote}
           </div>
         </div>

@@ -93,7 +93,7 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
   return (
     <div className="space-y-3">
       {list.length === 0 && (
-        <p className="text-[11px] leading-relaxed text-muted">
+        <p className="text-[12px] leading-relaxed text-muted">
           종목·세트를 입력하면 종목별 무게 그래프에 반영됩니다.
         </p>
       )}
@@ -123,7 +123,7 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
           <div className="mt-2 space-y-1.5">
             {(ex.sets || []).map((s, setIdx) => (
               <div key={setIdx} className="flex items-center gap-2">
-                <span className="w-6 shrink-0 text-center font-mono text-[10px] font-bold text-muted">{setIdx + 1}</span>
+                <span className="w-6 shrink-0 text-center font-mono text-[12px] font-bold text-muted">{setIdx + 1}</span>
                 <label className="flex flex-1 items-center gap-1">
                   <input
                     type="number"
@@ -134,7 +134,7 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
                     placeholder="무게"
                     className={inputCls}
                   />
-                  <span className="text-[11px] text-muted">kg</span>
+                  <span className="text-[12px] text-muted">kg</span>
                 </label>
                 <span className="text-muted">×</span>
                 <label className="flex flex-1 items-center gap-1">
@@ -147,7 +147,7 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
                     placeholder="횟수"
                     className={inputCls}
                   />
-                  <span className="text-[11px] text-muted">회</span>
+                  <span className="text-[12px] text-muted">회</span>
                 </label>
                 <button
                   onClick={() => removeSet(exIdx, setIdx)}
@@ -164,7 +164,7 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
           <button
             onClick={() => addSet(exIdx)}
             disabled={disabled}
-            className="mt-2 inline-flex items-center gap-1 rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] font-medium text-sub transition hover:border-primary hover:text-primary-strong disabled:opacity-50"
+            className="mt-2 inline-flex items-center gap-1 rounded-lg border border-line bg-card px-2.5 py-1 text-[12px] font-medium text-sub transition hover:border-primary hover:text-primary-strong disabled:opacity-50"
           >
             <Plus className="h-3 w-3" /> 세트
           </button>

@@ -178,7 +178,7 @@ export default function RoutineCard({ member, logs = [] }) {
                   {GROUP_KEYS.map((g) => <option key={g} value={g}>{GROUP_LABEL[g]}</option>)}
                 </select>
                 <span className="text-[12px] text-muted">{it.light ? "가벼운 고반복" : ""}{it.source !== "pt" ? `${it.light ? " · " : ""}PT 기록 없음` : ""}</span>
-                {it.painHint && <span className="rounded-md bg-ot-soft px-1.5 py-0.5 text-[11.5px] font-semibold text-ot-text">불편 부위 관련</span>}
+                {it.painHint && <span className="rounded-md bg-ot-soft px-1.5 py-0.5 text-[12px] font-semibold text-ot-text">불편 부위 관련</span>}
                 <span className="ml-auto flex items-center">
                   <button type="button" onClick={() => move(k, -1)} disabled={k === 0} aria-label="위로" className="flex h-8 w-8 items-center justify-center text-sub disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
                   <button type="button" onClick={() => move(k, 1)} disabled={k === day.items.length - 1} aria-label="아래로" className="flex h-8 w-8 items-center justify-center text-sub disabled:opacity-30"><ArrowDown className="h-4 w-4" /></button>

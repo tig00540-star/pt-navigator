@@ -195,12 +195,12 @@ export default function RoadmapCard({ member, contracts = [], logs = [] }) {
       <ol className="m-0 list-none space-y-1.5 p-0">
         {stages.map((s, i) => (
           <li key={i} className="flex items-start gap-2.5">
-            <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${i < cur ? "bg-primary text-white" : i === cur ? "border-2 border-primary bg-card text-primary-strong" : "border border-line bg-card text-muted"}`}>
+            <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${i < cur ? "bg-primary text-white" : i === cur ? "border-2 border-primary bg-card text-primary-strong" : "border border-line bg-card text-muted"}`}>
               {i < cur ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
             </span>
             <span className="min-w-0">
               <span className={`text-[14px] ${i === cur ? "font-bold text-ink" : "text-sub"}`}>{s.title}</span>
-              {i === cur && <span className="ml-1.5 rounded-full bg-primary-soft px-2 py-0.5 text-[11.5px] font-semibold text-primary-strong">지금</span>}
+              {i === cur && <span className="ml-1.5 rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-semibold text-primary-strong">지금</span>}
               {i === cur && s.detail && <span className="mt-0.5 block text-[12.5px] text-sub">{s.detail}</span>}
             </span>
           </li>

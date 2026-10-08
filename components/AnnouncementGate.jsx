@@ -110,7 +110,7 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
         <div className="mb-3 flex items-center gap-2">
           <Megaphone className="h-4 w-4 text-primary-strong" />
           <h2 className="text-sm font-bold text-ink">필수 확인 공지</h2>
-          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary-strong">{gateList.length}</span>
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-semibold text-primary-strong">{gateList.length}</span>
         </div>
         <div className="max-h-[60vh] space-y-3 overflow-y-auto">
           {gateList.map((a) => (
@@ -118,7 +118,7 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
               <div className="flex flex-wrap items-center gap-1.5">
                 {a.pinned && <Pin className="h-3.5 w-3.5 text-primary-strong" />}
                 <span className="text-sm font-semibold text-ink">{a.title}</span>
-                <span className="ml-auto text-[10px] text-muted">{fmtDate(a.created_at)}</span>
+                <span className="ml-auto text-[12px] text-muted">{fmtDate(a.created_at)}</span>
               </div>
               <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-sub">{a.body}</p>
             </div>
@@ -153,7 +153,7 @@ export default function AnnouncementGate({ uid, onUnreadCount, reviewOpen, onClo
                   {a.pinned && <Pin className="h-3.5 w-3.5 text-primary-strong" />}
                   <span className="text-sm font-semibold text-ink">{a.title}</span>
                   {a.must_ack && <Badge tone="primary">필수확인</Badge>}
-                  <span className="ml-auto text-[10px] text-muted">{fmtDate(a.created_at)}</span>
+                  <span className="ml-auto text-[12px] text-muted">{fmtDate(a.created_at)}</span>
                 </div>
                 <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-sub">{a.body}</p>
               </div>

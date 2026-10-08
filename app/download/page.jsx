@@ -110,7 +110,7 @@ export default function DownloadPage() {
             트레이너·센터를 위한 AI 운영 파트너입니다. 신규등록·재등록 세일즈, 음성 운동일지 자동작성, 회원 셀프관리, 급여·정산, 대표 대시보드까지 수업을 뺀 대부분의 업무를 한 앱에서 처리합니다.
           </p>
           <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
-            {["말로 30초, 운동일지 자동 작성", "OT·재등록 세일즈 서포트", "회원 전용 페이지(성과 그래프·비포애프터)", "매출·전환·리텐션 대시보드"].map((x) => (
+            {["말로 30초, 운동일지 자동 작성", "OT·재등록 세일즈 서포트", "회원 전용 페이지(성과 그래프·비포애프터)", "매출 · 클로징 · 재등록 대시보드"].map((x) => (
               <li key={x} className="flex gap-2 text-[14px] text-ink">
                 <Check size={17} strokeWidth={3} className="mt-0.5 flex-none text-primary" />{x}
               </li>

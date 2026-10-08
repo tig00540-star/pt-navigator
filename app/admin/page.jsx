@@ -222,7 +222,8 @@ export default function AdminDashboard() {
         ]);
         const firstErr = u.error || o.error || c.error || l.error;
         if (firstErr) {
-          setDbNote("불러오지 못했어요: " + firstErr.message);
+          console.error("대표 화면 불러오기 실패", firstErr);
+          setDbNote("기록을 불러오지 못했어요. 새로고침해 주세요. 계속되면 인터넷 연결을 확인해 주세요.");
           return;
         }
         setRows(u.data || []);

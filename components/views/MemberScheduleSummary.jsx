@@ -79,8 +79,8 @@ export default function MemberScheduleSummary({ member }) {
               <span
                 className={
                   s.kind === "personal"
-                    ? "shrink-0 rounded-md bg-primary-soft px-1.5 py-0.5 text-[11px] font-semibold text-primary-strong"
-                    : "shrink-0 rounded-md bg-elevate px-1.5 py-0.5 text-[11px] font-semibold text-sub"
+                    ? "shrink-0 rounded-md bg-primary-soft px-1.5 py-0.5 text-[12px] font-semibold text-primary-strong"
+                    : "shrink-0 rounded-md bg-elevate px-1.5 py-0.5 text-[12px] font-semibold text-sub"
                 }
               >
                 {SCHEDULE_KINDS[s.kind] || s.kind}

@@ -21,7 +21,7 @@ import { UserPlus, X, ChevronDown, ChevronRight } from "lucide-react";
 function FieldCell({ f, value, onChange }) {
   return (
     <div className={f.k === "name" ? "sm:col-span-2" : ""}>
-      <label className="mb-1 block text-[11px] font-medium text-muted">
+      <label className="mb-1 block text-[12px] font-medium text-muted">
         {f.label}
         {f.k === "name" && <span className="text-primary-strong"> *</span>}
       </label>
@@ -224,7 +224,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
         {/* 담당 트레이너 — admin 배정 모드만(트레이너 앱은 로그인 트레이너로 자동). */}
         {assignTrainers && (
           <div className="mb-3">
-            <label className="mb-1 block text-[11px] font-medium text-muted">
+            <label className="mb-1 block text-[12px] font-medium text-muted">
               담당 트레이너<span className="text-primary-strong"> *</span>
             </label>
             <select
@@ -247,7 +247,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
           ))}
           {/* 성별 — AI가 동작을 성별에 맞춰 제시하는 재료(선택) */}
           <div>
-            <label className="mb-1 block text-[11px] font-medium text-muted">성별 (선택)</label>
+            <label className="mb-1 block text-[12px] font-medium text-muted">성별 (선택)</label>
             <select
               value={form.gender}
               onChange={set("gender")}
@@ -277,7 +277,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
             className="flex w-full items-center gap-1.5 rounded-lg border border-line bg-elevate px-3 py-2 text-left text-[12px] font-semibold text-sub transition-colors hover:text-ink"
           >
             {showDetail ? <ChevronDown className="h-4 w-4 text-muted" /> : <ChevronRight className="h-4 w-4 text-muted" />}
-            OT 사전 문진 <span className="text-[10px] font-normal text-muted">(선택 · 비워도 됨 · 채우면 AI 근거↑)</span>
+            OT 사전 문진 <span className="text-[12px] font-normal text-muted">(선택 · 비워도 됨 · 채우면 AI 근거↑)</span>
           </button>
           {showDetail && (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -290,7 +290,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
 
         {/* ② 진입 문(origin) — status는 여기서 파생. status 드롭다운은 만들지 않음(§7). */}
         <div className="mt-3">
-          <label className="mb-1 block text-[11px] font-medium text-muted">등록 유형</label>
+          <label className="mb-1 block text-[12px] font-medium text-muted">등록 유형</label>
           <select
             value={form.origin}
             onChange={set("origin")}
@@ -300,7 +300,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
             <option value="handover">인계받은 PT</option>
             <option value="external">외부 PT 등록</option>
           </select>
-          <p className="mt-1 text-[10px] leading-relaxed text-muted">
+          <p className="mt-1 text-[12px] leading-relaxed text-muted">
             인계·외부 PT는 OT 없이 바로 PT 뷰로 시작합니다. 상태는 자동 결정.
           </p>
         </div>
@@ -309,7 +309,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
         {form.origin !== "ot_funnel" && (
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">남은 세션수 *</span>
+              <span className="mb-1 block text-[12px] font-medium text-muted">남은 세션수 *</span>
               <NumberInput
                 value={form.carrySessions}
                 onValueChange={(v) => setForm((f) => ({ ...f, carrySessions: v }))}
@@ -318,7 +318,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">회당단가(원) *</span>
+              <span className="mb-1 block text-[12px] font-medium text-muted">회당단가(원) *</span>
               <NumberInput
                 value={form.carryPrice}
                 onValueChange={(v) => setForm((f) => ({ ...f, carryPrice: v }))}
@@ -326,7 +326,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
                 className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
               />
             </label>
-            <p className="sm:col-span-2 text-[10px] text-muted">
+            <p className="sm:col-span-2 text-[12px] text-muted">
               인계·외부 PT는 이월 계약으로 잔여가 잡힙니다(매출 제외).
             </p>
           </div>

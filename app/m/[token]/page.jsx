@@ -111,20 +111,17 @@ function fmtDay(iso) {
 }
 const fmtDelta = (d) => (d > 0 ? "+" : "") + (Math.round(d * 10) / 10);
 
-// 오늘(로컬) YYYY-MM-DD — date input 기본값. 클라 마운트 후 계산(lazy init)이라 hydration 무관.
+// 오늘(한국 시간) YYYY-MM-DD — date input 기본값. 클라 마운트 후 계산(lazy init)이라 hydration 무관.
+//   폰 시간대가 한국이 아니어도 DB(kst_today)와 같은 날이 되게 KST로 계산한다(2026-10-08).
 // 기록 날짜는 그제까지만(오운완 몰아 채우기 방지 · 대표 결정 2026-10-06 · DB 정책도 같은 조건).
 function dayStr(offset = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const d = new Date(Date.now() + 9 * 3600000 + offset * 86400000);
+  return d.toISOString().slice(0, 10);
 }
 const EARLIEST_DAYS = -2;
 
 function todayStr() {
-  const d = new Date();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${m}-${day}`;
+  return dayStr(0);
 }
 
 function ScreenMsg({ children }) {
@@ -161,7 +158,7 @@ function LoginCard({ last4, setLast4, onSubmit, busy, err }) {
             {busy ? "확인 중…" : "확인"}
           </Button>
         </div>
-        <p className="mt-4 text-center text-[11px] leading-relaxed text-muted">
+        <p className="mt-4 text-center text-[12px] leading-relaxed text-muted">
           담당 트레이너가 보내준 링크로 접속하셨어요. 본인 기록만 안전하게 열람됩니다.
         </p>
       </div>
@@ -445,11 +442,11 @@ function PhotoSection({ me, photos, onReload, mode, readOnly = false, consent = 
                 )}
               </div>
               {p.label && (
-                <span className="absolute left-2 top-2 rounded-md bg-card/85 px-2 py-0.5 text-[11px] font-semibold text-sub">
+                <span className="absolute left-2 top-2 rounded-md bg-card/85 px-2 py-0.5 text-[12px] font-semibold text-sub">
                   {PHOTO_LABELS[p.label] || p.label}
                 </span>
               )}
-              <span className="absolute bottom-2 left-2 rounded-md bg-card/85 px-2 py-0.5 text-[11px] text-sub">
+              <span className="absolute bottom-2 left-2 rounded-md bg-card/85 px-2 py-0.5 text-[12px] text-sub">
                 {fmtDay(p.taken_on)}
               </span>
               {!readOnly && (
@@ -629,7 +626,7 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
           </button>
         </div>
         {/* 요일 — 일(빨강)·토(파랑) */}
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted">
+        <div className="grid grid-cols-7 gap-1 text-center text-[12px] text-muted">
           {WEEKDAYS.map((w, i) => <div key={w} className={`py-1 ${i === 0 ? "text-rose-600" : i === 6 ? "text-sky-500" : ""}`}>{w}</div>)}
         </div>
         {/* 날짜 그리드 */}
@@ -666,7 +663,7 @@ function MemberActivityCalendar({ logs, cardio, schedule }) {
           })}
         </div>
         {/* 범례 */}
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-muted">
           {MARK_ORDER.map((t) => (
             <span key={t} className="flex items-center gap-1">
               <span className={`h-2 w-2 rounded-full ${ACTIVITY_MARKS[t].dot}`} /> {ACTIVITY_MARKS[t].label}
@@ -744,15 +741,15 @@ function OunwanCard({ stats, todayDone, onGoWrite }) {
 
       <div className="mt-4 flex items-center gap-4 border-t border-line pt-4">
         <div>
-          <div className="text-[11px] text-muted">이번 달</div>
+          <div className="text-[12px] text-muted">이번 달</div>
           <div className="text-xl font-extrabold text-ink">{monthCount}<span className="ml-0.5 text-sm font-bold text-muted">회</span></div>
         </div>
         <div>
-          <div className="text-[11px] text-muted">누적</div>
+          <div className="text-[12px] text-muted">누적</div>
           <div className="text-xl font-extrabold text-ink">{total}<span className="ml-0.5 text-sm font-bold text-muted">회</span></div>
         </div>
         <div>
-          <div className="text-[11px] text-muted">연속</div>
+          <div className="text-[12px] text-muted">연속</div>
           <div className="text-xl font-extrabold text-ink">{streak}<span className="ml-0.5 text-sm font-bold text-muted">일</span></div>
         </div>
       </div>
@@ -764,8 +761,8 @@ function OunwanCard({ stats, todayDone, onGoWrite }) {
             key={b.key}
             className={
               earned(b)
-                ? "inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-bold text-primary-strong ring-1 ring-primary/30"
-                : "inline-flex items-center gap-1 rounded-full bg-elevate px-2.5 py-1 text-[11px] font-medium text-muted"
+                ? "inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-[12px] font-bold text-primary-strong ring-1 ring-primary/30"
+                : "inline-flex items-center gap-1 rounded-full bg-elevate px-2.5 py-1 text-[12px] font-medium text-muted"
             }
           >
             {earned(b) && <Sparkles className="h-3 w-3" />}
@@ -859,7 +856,7 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
       <span className="flex-1 text-sm font-semibold text-primary-strong">
         확인 안 한 운동일지 {pending.length}건
       </span>
-      <span className="shrink-0 text-[11px] font-bold text-primary-strong">확인하기 ›</span>
+      <span className="shrink-0 text-[12px] font-bold text-primary-strong">확인하기 ›</span>
     </button>
   );
 
@@ -1074,10 +1071,10 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         <div className="min-w-0 flex-1"><Sparkline values={ex.points.map((p) => p.topWeight)} /></div>
         <div className="shrink-0 text-right">
           <div className="font-mono text-base font-bold leading-none text-ink">
-            {cur == null ? "–" : cur}<span className="ml-0.5 text-[10px] font-normal text-muted">kg</span>
+            {cur == null ? "–" : cur}<span className="ml-0.5 text-[12px] font-normal text-muted">kg</span>
           </div>
           {before != null && cur != null && (
-            <div className={`mt-0.5 flex items-center justify-end gap-0.5 text-[11px] font-semibold ${DELTA_TONE[tone]}`}>
+            <div className={`mt-0.5 flex items-center justify-end gap-0.5 text-[12px] font-semibold ${DELTA_TONE[tone]}`}>
               <Icon className="h-3 w-3" />{fmtDelta(d)}
             </div>
           )}
@@ -1202,7 +1199,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                       <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-primary-strong">{fmtDay(l.session_at ?? l.created_at)}</span>
-                          <span className="rounded-full bg-elevate px-2 py-0.5 text-[11px] font-semibold text-sub">{round}회차</span>
+                          <span className="rounded-full bg-elevate px-2 py-0.5 text-[12px] font-semibold text-sub">{round}회차</span>
                           {/* 확인 상태 뱃지 — 뷰의 confirmed_at 파생. 확정=숨김(깔끔), 미확인=neutral(이의 제거). */}
                           {l.confirmed_at ? (
                             l.confirm_method === "auto" ? <Badge tone="neutral">{l.signed_at ? "자동 확인 · 서명" : "자동 확인 · 서명 전"}</Badge> : null
@@ -1257,7 +1254,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
                   const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
                   return (
                     <div key={f.key} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
-                      <div className="text-[11px] tracking-label-ko text-muted">{f.label}</div>
+                      <div className="text-[12px] tracking-label-ko text-muted">{f.label}</div>
                       <div className="mt-1 font-mono text-2xl font-bold text-ink">
                         {cur == null ? "–" : cur}
                         <span className="ml-1 text-xs font-normal text-muted">{f.unit}</span>

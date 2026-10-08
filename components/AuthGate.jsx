@@ -246,7 +246,7 @@ export default function AuthGate({ children }) {
             {busy ? "로그인 중…" : "로그인"}
           </Button>
         </div>
-        <div className="mt-4 text-center text-[11px] text-muted">
+        <div className="mt-4 text-center text-[12px] text-muted">
           트레이너는 대표 초대로 참여합니다 ·{" "}
           <a href="/signup" className="font-semibold text-primary-strong hover:underline">새 계정 만들기</a>
         </div>
@@ -433,7 +433,7 @@ function ReadOnlyShell({ status, uid, onPay, children }) {
       setMsg(r.missed ? `내려받았어요. 사진 ${r.missed}장은 받지 못했어요.` : "내려받았어요.");
     } catch (e) {
       console.error("내려받기 실패", e);
-      setMsg(e.message || "내려받지 못했어요. 다시 시도해 주세요.");
+      setMsg(e?.message && /[가-힣]/.test(e.message) ? e.message : "내려받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally { setBusy(false); }
   };
   return (

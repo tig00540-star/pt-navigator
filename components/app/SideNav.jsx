@@ -32,7 +32,7 @@ export default function SideNav({ tab, onTab, trainerName, unreadCount = 0, onBe
               key={id}
               onClick={() => onTab(id)}
               aria-current={on ? "page" : undefined}
-              className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl text-[11px] transition xl:min-h-[44px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px] ${
+              className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl text-[12px] transition xl:min-h-[44px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px] ${
                 on ? "bg-primary-soft font-semibold text-primary-strong" : "text-sub hover:bg-elevate hover:text-ink"
               }`}
             >
@@ -44,7 +44,7 @@ export default function SideNav({ tab, onTab, trainerName, unreadCount = 0, onBe
       </nav>
 
       <div className="flex flex-col gap-1 border-t border-line px-2 py-3 xl:px-3">
-        {showBell && <button onClick={onBell} className="relative flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[11px] text-sub transition hover:bg-elevate hover:text-ink xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
+        {showBell && <button onClick={onBell} className="relative flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[12px] text-sub transition hover:bg-elevate hover:text-ink xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
           <Bell className="h-5 w-5 shrink-0" />
           공지
           {unreadCount > 0 && (
@@ -54,7 +54,7 @@ export default function SideNav({ tab, onTab, trainerName, unreadCount = 0, onBe
           )}
         </button>}
         {showAdmin && (
-          <a href="/admin" className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[11px] text-fuchsia-700 transition hover:bg-fuchsia-500/10 xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
+          <a href="/admin" className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[12px] text-fuchsia-700 transition hover:bg-fuchsia-500/10 xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
             <ShieldCheck className="h-5 w-5 shrink-0" />
             대표 화면
           </a>

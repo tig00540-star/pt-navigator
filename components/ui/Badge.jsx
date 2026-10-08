@@ -37,7 +37,7 @@ const BADGE_TONE = {
 export default function Badge({ tone = "primary", className = "", children }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-[9px] py-1 text-[11.5px] font-bold leading-none ${
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-[9px] py-1 text-[12px] font-bold leading-none ${
         BADGE_TONE[tone] || BADGE_TONE.primary
       } ${className}`}
     >

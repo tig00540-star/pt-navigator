@@ -210,10 +210,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             return (
               <div key={i} className="space-y-2 border-t border-line pt-3">
                 <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold text-white">{i + 1}</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[12px] font-bold text-white">{i + 1}</span>
                   <span className="text-[15px] font-bold text-ink">{name}</span>
                   {ex.slot && <span className="text-[12px] text-muted">{ex.slot}</span>}
-                  {ex.proof && <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10.5px] font-bold text-white">증명</span>}
+                  {ex.proof && <span className="rounded-full bg-primary px-1.5 py-0.5 text-[12px] font-bold text-white">증명</span>}
                 </p>
                 <Say strong={ex.proof}>{ex.cue}</Say>
                 <More>
@@ -248,7 +248,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
           {moves.map((mv, i) => (
             <div key={i} className="space-y-2 border-t border-line pt-3">
               <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10.5px] font-bold text-white">증명 {i + 1}</span>
+                <span className="rounded-full bg-primary px-1.5 py-0.5 text-[12px] font-bold text-white">증명 {i + 1}</span>
                 <span className="text-[15px] font-bold text-ink">{splitEx(mv).name}</span>
               </p>
               <Say strong>{mv.point_it_out}</Say>
@@ -343,7 +343,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
             {lines.map((t, i) => (
               <li key={i} className="flex gap-2.5 text-[15px] font-medium leading-[1.55] text-ink">
                 {derived ? (
-                  <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card text-[11px] font-semibold text-primary-strong">{i + 1}</span>
+                  <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card text-[12px] font-semibold text-primary-strong">{i + 1}</span>
                 ) : (
                   <span className="mt-[3px] w-[46px] shrink-0 text-[12px] font-semibold text-primary-strong">{["이 회원", "오늘 꼭", "요청"][i]}</span>
                 )}
@@ -351,7 +351,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
               </li>
             ))}
           </ol>
-          {derived && <p className="m-0 mt-2 text-[11.5px] text-sub">리포트를 다시 만들면 더 짧은 요약으로 바뀌어요.</p>}
+          {derived && <p className="m-0 mt-2 text-[12px] text-sub">리포트를 다시 만들면 더 짧은 요약으로 바뀌어요.</p>}
           {fillIn && <p className="m-0 mt-2.5 rounded-lg bg-card px-3 py-2 text-[12.5px] leading-relaxed text-ink"><b className="font-semibold text-primary-strong">○○</b>에는 수업 중 회원이 말한 목표를 넣어 말해요. 첫마디에서 목표를 먼저 물어보세요.</p>}
         </div>
       )}

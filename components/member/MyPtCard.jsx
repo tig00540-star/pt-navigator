@@ -108,14 +108,14 @@ export default function MyPtCard({ supabase, children = null }) {
               return (
                 <li key={i} className="relative pb-1 pl-8 last:pb-0">
                   {i < rm.stages.length - 1 && <span aria-hidden="true" className={`absolute left-[11px] top-6 h-[calc(100%-12px)] w-0.5 ${i < cur ? "bg-primary" : "bg-line"}`} />}
-                  <span aria-hidden="true" className={`absolute left-0 top-1 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                  <span aria-hidden="true" className={`absolute left-0 top-1 flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-bold ${
                     state === "done" ? "bg-primary text-white" : state === "now" ? "border-2 border-primary bg-card text-primary-strong" : "border border-line bg-card text-muted"}`}>
                     {state === "done" ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
                   </span>
                   <button type="button" onClick={() => setOpenStage(shown === i ? -1 : i)} aria-expanded={Boolean(open)}
                     className="flex min-h-[36px] w-full items-center gap-2 text-left">
                     <span className={`text-[15px] ${state === "now" ? "font-bold text-ink" : state === "done" ? "font-medium text-sub" : "text-sub"}`}>{s.title}</span>
-                    {state === "now" && <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11.5px] font-semibold text-primary-strong">지금</span>}
+                    {state === "now" && <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-semibold text-primary-strong">지금</span>}
                     {s.detail && <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />}
                   </button>
                   {open && <p className="mb-2 rounded-lg bg-elevate px-3 py-2 text-[13px] leading-relaxed text-ink">{s.detail}</p>}

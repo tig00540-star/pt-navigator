@@ -30,7 +30,7 @@ export default function CaseCard({ item, urls = {}, onOpenImage, onDelete, onCat
     <article className="flex min-w-0 flex-col rounded-2xl border border-line bg-card p-3.5 shadow-sm">
       <header className="mb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <span className="text-[11px] font-semibold text-sub">
+          <span className="text-[12px] font-semibold text-sub">
             {caseKindLabel(item.kind)}{!onCategory && d.category ? ` · ${d.category}` : ""}
           </span>
           <p className="m-0 truncate text-[15px] font-bold tracking-[-0.02em] text-ink">{item.label || "회원"}</p>

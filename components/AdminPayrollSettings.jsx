@@ -132,7 +132,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false, free
     if (!supabase) {
       const row = { ...(existing || {}), ...payload, id: existing?.id || `demo-${Date.now()}` };
       setSchemes((p) => (existing ? p.map((s) => (s.id === existing.id ? row : s)) : [...p, row]));
-      showToast("저장됨(데모)");
+      showToast("저장했어요(데모)");
       setSaving(false);
       return;
     }
@@ -181,7 +181,7 @@ export default function AdminPayrollSettings({ trainers = [], solo = false, free
     if (!supabase) {
       setSchemes((p) => p.filter((s) => s.id !== row.id));
       selectScope(null);
-      showToast("삭제됨(데모)");
+      showToast("삭제했어요(데모)");
       setSaving(false);
       return;
     }

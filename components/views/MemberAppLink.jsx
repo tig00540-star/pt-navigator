@@ -129,13 +129,13 @@ export default function MemberAppLink({ member, onMemberPatch, readOnly = false 
           {member.name} 회원의 회원 페이지를 끌까요? 회원은 지금부터 기록을 볼 수 없어요. (기록은 지워지지 않아요)
         </p>
       ) : token ? (
-        <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">
           {readOnly
             ? "PT가 끝나서 회원은 기록을 볼 수만 있어요. 끄면 회원이 이 링크로 더 이상 들어올 수 없어요."
             : "끄면 회원이 이 링크로 더 이상 들어올 수 없어요. 기록은 그대로 남고, 다시 보내면 다시 켜져요."}
         </p>
       ) : readOnly ? (
-        <p className="mt-1 text-[11.5px] leading-relaxed text-muted">회원 페이지가 꺼져 있어요. 다시 PT를 시작하면 링크를 새로 만들 수 있어요.</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">회원 페이지가 꺼져 있어요. 다시 PT를 시작하면 링크를 새로 만들 수 있어요.</p>
       ) : null}
       <Toast message={toast} />
     </div>

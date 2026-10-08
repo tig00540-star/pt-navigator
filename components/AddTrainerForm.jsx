@@ -30,12 +30,13 @@ export default function AddTrainerForm({ seatLimit = null, seatUsed = 0, onCreat
         body: JSON.stringify({ email: email.trim(), name: name.trim() }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { setErr(d.error || "추가 실패"); return; }
+      if (!res.ok) { setErr(d.error || "트레이너를 추가하지 못했어요. 다시 시도해 주세요."); return; }
       setResult({ email: d.email, pw: d.tempPassword });
       onCreated?.({ id: d.id, name: name.trim(), role: "trainer", active: true }); // 좌석 표시 즉시 반영
       setEmail(""); setName("");
     } catch (e) {
-      setErr("문제가 생겼어요: " + (e?.message || "알 수 없는 오류"));
+      console.error("트레이너 추가 실패", e);
+      setErr("트레이너를 추가하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally { setBusy(false); }
   };
 

@@ -21,7 +21,7 @@ export function viewMeta(view) {
 export default function MemberBadge({ view, className = "" }) {
   const meta = viewMeta(view);
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${meta.badge} ${className}`}>
+    <span className={`rounded px-1.5 py-0.5 text-[12px] font-semibold ${meta.badge} ${className}`}>
       {meta.label}
     </span>
   );

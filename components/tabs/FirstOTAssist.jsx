@@ -193,12 +193,12 @@ export default function FirstOTAssist({ member, onSaved }) {
       {data && (
         <div className="space-y-3">
           {legacyCache && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
               이전 형식 리포트예요. &lsquo;다시 생성&rsquo;을 누르면 새 형식으로 바뀌어요.
             </div>
           )}
           <PrepReport kind="first" data={data} packages={packages} favorites={favorites} />
-          <p className="text-[11px] leading-relaxed text-muted">
+          <p className="text-[12px] leading-relaxed text-muted">
             ※ 1차도 목표는 <strong className="font-semibold text-primary-strong">오늘 PT 등록</strong>이에요. 클로징의 요청까지 꼭 가세요. 운동 부분은 관찰 전 &lsquo;가설&rsquo;이라 회원 반응을 보며 조정하세요.
           </p>
         </div>

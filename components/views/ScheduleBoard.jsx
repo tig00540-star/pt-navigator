@@ -206,7 +206,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     const day = addDays(weekStart, dayIdx);
     return occs.filter((o) => o.ev.all_day && sameDay(o.start, day));
   };
-  const occChip = (o, first) => `block w-full truncate rounded border border-dashed px-1.5 py-0.5 text-left text-[11px] font-semibold ${colorOf(o.ev.color).chip}${first ? "" : " opacity-70"}`;
+  const occChip = (o, first) => `block w-full truncate rounded border border-dashed px-1.5 py-0.5 text-left text-[12px] font-semibold ${colorOf(o.ev.color).chip}${first ? "" : " opacity-70"}`;
 
   const apptAt = (dayIdx, hour) => {
     const day = addDays(weekStart, dayIdx);
@@ -384,7 +384,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
   ];
 
   const chipCls = (a) =>
-    `block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold ${
+    `block w-full truncate rounded px-1.5 py-0.5 text-left text-[12px] font-semibold ${
       a.status === "done"
         ? "bg-elevate text-muted line-through"
         : isOwnerView ? trainerTone(a.trainer_id).chip : "bg-primary-soft text-primary-strong"
@@ -459,7 +459,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
                   return (
                     <div key={i} className="flex-1 border-l border-line px-2 py-2 text-center">
                       <div className={`text-xs font-semibold ${labelTone}`}>{d}</div>
-                      <div className={`font-mono text-[10px] ${dateTone}`}>{day.getMonth() + 1}/{day.getDate()}</div>
+                      <div className={`font-mono text-[12px] ${dateTone}`}>{day.getMonth() + 1}/{day.getDate()}</div>
                       {hol && <div className="mt-0.5 truncate text-[9px] font-medium text-rose-600" title={hol}>{hol}</div>}
                       {allDayAt(i).map((o) => (
                         <button key={`${o.ev.id}-${o.ymd}`} type="button" onClick={() => setEvEdit({ occ: o })} className={`mt-1 ${occChip(o, true)}`}>{o.ev.title}</button>
@@ -470,7 +470,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
               </div>
               {hours.map((h) => (
                 <div key={h} className="flex border-b border-line">
-                  <div className="sticky left-0 z-10 w-12 shrink-0 border-r border-line bg-card px-1 py-2 text-right font-mono text-[10px] text-muted">{h}시</div>
+                  <div className="sticky left-0 z-10 w-12 shrink-0 border-r border-line bg-card px-1 py-2 text-right font-mono text-[12px] text-muted">{h}시</div>
                   {DAY_LABELS.map((_, i) => {
                     const list = apptAt(i, h);
                     const evs = occAt(i, h);
@@ -537,7 +537,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
                 <li key={r.key}>
                   <button type="button" onClick={() => setEvEdit({ occ: r.o })}
                     className={`flex min-h-[48px] w-full items-center gap-3 rounded-xl border border-dashed px-3 text-left ${colorOf(r.o.ev.color).chip}`}>
-                    <span className="font-mono text-[14px] font-semibold">{r.o.ev.all_day ? "종일" : `${hhmm(r.o.start.toISOString())}–${hhmm(r.o.end.toISOString())}`}</span>
+                    <span className="font-mono text-[14px] font-semibold">{r.o.ev.all_day ? "종일" : `${hhmm(r.o.start.toISOString())}~${hhmm(r.o.end.toISOString())}`}</span>
                     <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{r.o.ev.title}</span>
                     {isOwnerView && <span className="shrink-0 text-[12.5px] opacity-80">{trainerName(r.o.ev.trainer_id)}</span>}
                   </button>
@@ -637,7 +637,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
           ) : (
             <div className={`rounded-xl border border-dashed p-3 ${colorOf(evEdit.occ.ev.color).chip}`}>
               <p className="text-[15px] font-bold">{evEdit.occ.ev.title}</p>
-              <p className="mt-1 text-[13px]">{evEdit.occ.ev.all_day ? "하루 종일" : `${hhmm(evEdit.occ.start.toISOString())}–${hhmm(evEdit.occ.end.toISOString())}`} · {trainerName(evEdit.occ.ev.trainer_id)}</p>
+              <p className="mt-1 text-[13px]">{evEdit.occ.ev.all_day ? "하루 종일" : `${hhmm(evEdit.occ.start.toISOString())}~${hhmm(evEdit.occ.end.toISOString())}`} · {trainerName(evEdit.occ.ev.trainer_id)}</p>
             </div>
           )}
         </Modal>

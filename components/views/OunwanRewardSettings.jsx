@@ -55,7 +55,7 @@ export default function OunwanRewardSettings() {
     setSaving(true);
     if (!supabase) {
       setRows((p) => [...p, { ...payload, id: `demo-${Date.now()}`, active: true }].sort((a, b) => a.milestone - b.milestone));
-      setMilestone(""); setRewardText(""); showToast("추가됨(데모)"); setSaving(false); return;
+      setMilestone(""); setRewardText(""); showToast("추가했어요(데모)"); setSaving(false); return;
     }
     try {
       const { data, error } = await supabase.from("trainer_reward").insert(payload).select();

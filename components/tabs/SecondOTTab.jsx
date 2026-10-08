@@ -371,7 +371,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   const renderDemo = (note) => (
     <div className="space-y-8">
       {note && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
           {note}
         </div>
       )}
@@ -382,7 +382,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
 
         <div>
           <div className="rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-muted">
+            <div className="mb-1.5 flex items-center gap-2 text-[12px] font-semibold tracking-label-ko text-muted">
               <MessageSquareQuote className="h-3.5 w-3.5" /> 1차 OT 직후 · 회원의 말
             </div>
             <p className="text-sm italic leading-relaxed text-ink">“{RAW_FEEDBACK}”</p>
@@ -446,7 +446,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
               <div key={r.id} className="flex flex-col rounded-xl border border-line bg-card shadow-sm p-4">
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="text-sm font-semibold text-ink">{r.name}</h4>
-                  <span className="shrink-0 rounded-md border border-line bg-elevate px-2 py-0.5 font-mono text-[10px] font-semibold text-sub">
+                  <span className="shrink-0 rounded-md border border-line bg-elevate px-2 py-0.5 font-mono text-[12px] font-semibold text-sub">
                     {r.machine}
                   </span>
                 </div>
@@ -458,7 +458,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
                   <span className="text-muted">·</span>
                   <div className="flex flex-wrap gap-1">
                     {r.muscles.map((m) => (
-                      <span key={m} className="rounded bg-elevate px-1.5 py-0.5 text-[10px] text-sub">
+                      <span key={m} className="rounded bg-elevate px-1.5 py-0.5 text-[12px] text-sub">
                         #{m}
                       </span>
                     ))}
@@ -495,7 +495,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
         >
 
         {legacyCache && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
             이전 형식 리포트예요. &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀌어요.
           </div>
         )}

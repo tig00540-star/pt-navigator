@@ -95,17 +95,17 @@ export default function AIBriefBlock({
       {/* 상태 뱃지 — 제목 아래 별도 줄 */}
       {(status === "stale" || status === "demo") && (
         <div className="mt-2">
-          {status === "stale" && <Badge tone="amber">기록 변경됨 · 재생성 권장</Badge>}
+          {status === "stale" && <Badge tone="amber">기록이 바뀌었어요 · 다시 만들어 주세요</Badge>}
           {status === "demo" && <Badge tone="zinc">데모</Badge>}
         </div>
       )}
 
       {meta && !loading && (
-        <div className={`leading-relaxed text-muted ${flat ? "mt-1 text-[12px]" : "mt-2 text-[10px]"}`}>{meta}</div>
+        <div className={`leading-relaxed text-muted ${flat ? "mt-1 text-[12px]" : "mt-2 text-[12px]"}`}>{meta}</div>
       )}
 
       {notice && !loading && (
-        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
+        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
           {notice}
         </div>
       )}

@@ -84,7 +84,7 @@ export default function RefundMember({ member, contracts, onDone }) {
           </div>
         )}
         <label className="block">
-          <span className="mb-1 block text-[11px] font-medium text-muted">환불 금액</span>
+          <span className="mb-1 block text-[12px] font-medium text-muted">환불 금액</span>
           <NumberInput
             value={amount}
             onValueChange={setAmount}

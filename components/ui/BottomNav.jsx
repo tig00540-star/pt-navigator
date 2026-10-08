@@ -33,7 +33,7 @@ export default function BottomNav({ tab, onTab }) {
               onClick={() => onTab(id)}
               aria-current={on ? "page" : undefined}
               /* 터치 영역 최소 52px — 수업 중 한 손으로 누르는 자리라 작으면 오탭이 난다. */
-              className={`flex min-h-[52px] flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-semibold transition active:scale-95 ${
+              className={`flex min-h-[52px] flex-col items-center justify-center gap-1 py-1.5 text-[12px] font-semibold transition active:scale-95 ${
                 on ? "text-primary-strong" : "text-muted hover:text-ink"
               }`}
             >

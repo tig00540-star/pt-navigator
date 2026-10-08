@@ -325,7 +325,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
                   <button key={p.id} type="button" onClick={() => toggle(p)} aria-pressed={idx >= 0}
                     className={`relative overflow-hidden rounded-lg border-2 ${idx >= 0 ? "border-primary" : "border-transparent"}`}>
                     <div className="aspect-[3/4] bg-elevate">{urls[p.storage_path] && <img src={urls[p.storage_path]} alt={`${shortDay(p.taken_on)} 사진`} className="h-full w-full object-cover" />}</div>
-                    <span className="absolute inset-x-0 bottom-0 bg-black/45 px-1.5 py-0.5 text-[11px] text-white">{shortDay(p.taken_on)}{p.uploaded_by === "member" ? " · 회원" : ""}</span>
+                    <span className="absolute inset-x-0 bottom-0 bg-black/45 px-1.5 py-0.5 text-[12px] text-white">{shortDay(p.taken_on)}{p.uploaded_by === "member" ? " · 회원" : ""}</span>
                     {idx >= 0 && <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>}
                   </button>
                 );

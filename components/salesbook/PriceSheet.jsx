@@ -90,8 +90,8 @@ export default function PriceSheet({ packages = [], recommended = null, trainerN
                       <td className="py-2 pr-3 align-middle">
                         <span className="flex flex-wrap items-center gap-1.5">
                           <span className="text-[clamp(14px,1.7vw,16px)] font-bold text-ink">{pk.name}</span>
-                          {rec && <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">추천</span>}
-                          {low && <span className="rounded-full border border-primary/40 bg-card px-1.5 py-0.5 text-[10px] font-bold text-primary-strong">회당 최저</span>}
+                          {rec && <span className="rounded-full bg-primary px-1.5 py-0.5 text-[12px] font-bold text-white">추천</span>}
+                          {low && <span className="rounded-full border border-primary/40 bg-card px-1.5 py-0.5 text-[12px] font-bold text-primary-strong">회당 최저</span>}
                         </span>
                         {/* 폰: 회차·기간 칸이 없어서 이름 아래로 */}
                         <span className="block text-[12px] text-muted sm:hidden">{[pk.sessions ? `${pk.sessions}회` : "기간제", pk.duration_label].filter(Boolean).join(" · ")}</span>
@@ -121,8 +121,8 @@ export default function PriceSheet({ packages = [], recommended = null, trainerN
                 return (
                   <li key={p.id || i} className={`relative flex flex-col rounded-2xl border p-4 sm:p-5 ${rec ? "border-primary bg-primary-soft" : "border-line bg-elevate"}`}>
                     <div className="mb-1 flex flex-wrap gap-1.5">
-                      {rec && <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-white">추천</span>}
-                      {cheapest != null && per === cheapest && <span className="rounded-full border border-primary/40 bg-card px-2 py-0.5 text-[11px] font-bold text-primary-strong">회당 최저</span>}
+                      {rec && <span className="rounded-full bg-primary px-2 py-0.5 text-[12px] font-bold text-white">추천</span>}
+                      {cheapest != null && per === cheapest && <span className="rounded-full border border-primary/40 bg-card px-2 py-0.5 text-[12px] font-bold text-primary-strong">회당 최저</span>}
                     </div>
                     <p className="m-0 text-[clamp(17px,2vw,20px)] font-extrabold text-ink">{p.name}</p>
                     <p className="m-0 mt-0.5 text-[13px] text-sub">
@@ -144,7 +144,7 @@ export default function PriceSheet({ packages = [], recommended = null, trainerN
               })}
             </ul>
           )}
-          <p className="m-0 mt-4 text-right text-[11px] text-muted">{today.getFullYear()}년 {today.getMonth() + 1}월 {today.getDate()}일 기준</p>
+          <p className="m-0 mt-4 text-right text-[12px] text-muted">{today.getFullYear()}년 {today.getMonth() + 1}월 {today.getDate()}일 기준</p>
         </div>
       </div>
     </div>,

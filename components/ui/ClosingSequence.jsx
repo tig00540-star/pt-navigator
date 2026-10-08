@@ -16,7 +16,7 @@ import Emph, { plainText } from "@/components/ui/Emph";
 function SpeechBit({ label, text, strong = false }) {
   return (
     <div>
-      <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">{label}</span>
+      <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[12px] font-semibold text-primary-strong">{label}</span>
       <p className={`mt-1 leading-relaxed text-ink ${strong ? "text-base font-semibold" : "text-[13px]"}`}>&ldquo;<Emph>{text}</Emph>&rdquo;</p>
     </div>
   );
@@ -94,7 +94,7 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
     <div className="rounded-xl border border-primary/40 bg-primary-soft p-4">
       <div className="flex items-center gap-2">
         {icon}
-        <span className="text-[11px] font-semibold tracking-label-ko text-primary-strong">
+        <span className="text-[12px] font-semibold tracking-label-ko text-primary-strong">
           {has || hasMetaphor ? "이유 → 플랜 → 요청" : "클로징 한마디"}
         </span>
       </div>
@@ -106,9 +106,9 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           {seq.stakes && <SpeechBit label="① 왜 PT가 필요한지" text={seq.stakes} />}
           {hasMetaphor && (
             <div>
-              <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">쉽게 비유하면</span>
+              <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[12px] font-semibold text-primary-strong">쉽게 비유하면</span>
               <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;<Emph>{mp.metaphor}</Emph>&rdquo;</p>
-              {mp.bridge && <p className="mt-0.5 text-[11px] leading-relaxed text-muted">{plainText(mp.bridge)}</p>}
+              {mp.bridge && <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{plainText(mp.bridge)}</p>}
             </div>
           )}
           {seq.trial_close && <SpeechBit label="② 확인 질문" text={seq.trial_close} />}
@@ -125,16 +125,16 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           {fb && (fb.next_line || hw.length > 0) && (
             /* OT 전용 — 오늘 결정이 안 될 때: 붙잡지 않고 다음 OT를 잡고, 다음 수업 전까지 부탁할 것. */
             <div className="rounded-lg border border-line bg-card p-3">
-              <span className="inline-block rounded-md bg-elevate px-1.5 py-0.5 text-[10px] font-semibold text-sub">⑥ 오늘 결정이 어려우면</span>
+              <span className="inline-block rounded-md bg-elevate px-1.5 py-0.5 text-[12px] font-semibold text-sub">⑥ 오늘 결정이 어려우면</span>
               {fb.next_line && <p className="mt-1 text-[13px] leading-relaxed text-ink">&ldquo;<Emph>{fb.next_line}</Emph>&rdquo;</p>}
               {hw.length > 0 && (
                 <>
-                  <p className="mt-2 text-[11px] font-medium text-sub">다음 수업 전까지 회원에게 부탁할 것</p>
+                  <p className="mt-2 text-[12px] font-medium text-sub">다음 수업 전까지 회원에게 부탁할 것</p>
                   <ul className="mt-1 space-y-1.5">
                     {hw.map((h, i) => (
                       <li key={i} className="text-[13px] leading-relaxed text-ink">
                         <span className="mr-1 text-primary-strong">{i + 1}.</span>&ldquo;<Emph>{h.do}</Emph>&rdquo;
-                        {h.why && <span className="block text-[11px] text-muted">{plainText(h.why)}</span>}
+                        {h.why && <span className="block text-[12px] text-muted">{plainText(h.why)}</span>}
                       </li>
                     ))}
                   </ul>

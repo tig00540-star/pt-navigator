@@ -11,19 +11,19 @@ export default function ContractAmountFields({
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="block">
-        <span className="mb-1 block text-[11px] font-medium text-muted">세션수 *</span>
+        <span className="mb-1 block text-[12px] font-medium text-muted">세션수 *</span>
         <NumberInput value={sessions} onValueChange={(v) => onChange("sessions", v)} disabled={disabled} placeholder="24" />
       </label>
       <label className="block">
-        <span className="mb-1 block text-[11px] font-medium text-muted">회당단가(원) *</span>
+        <span className="mb-1 block text-[12px] font-medium text-muted">회당단가(원) *</span>
         <NumberInput value={price} onValueChange={(v) => onChange("price", v)} disabled={disabled} placeholder="60000" />
       </label>
       <label className="block">
-        <span className="mb-1 block text-[11px] font-medium text-muted">총액(원) · 자동</span>
+        <span className="mb-1 block text-[12px] font-medium text-muted">총액(원) · 자동</span>
         <NumberInput value={amountEdited !== "" ? amountEdited : autoAmount ? String(autoAmount) : ""} onValueChange={(v) => onChange("amountEdited", v)} disabled={disabled} placeholder="자동 계산" />
       </label>
       <label className="block">
-        <span className="mb-1 block text-[11px] font-medium text-muted">서비스 세션</span>
+        <span className="mb-1 block text-[12px] font-medium text-muted">서비스 세션</span>
         <NumberInput value={svc} onValueChange={(v) => onChange("svc", v)} disabled={disabled} placeholder="0" />
       </label>
     </div>

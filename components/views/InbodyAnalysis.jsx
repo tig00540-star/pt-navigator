@@ -31,7 +31,7 @@ export default function InbodyAnalysis({ data, title = "인바디 분석" }) {
   const metrics = Array.isArray(data.metrics) ? data.metrics.filter(Boolean) : [];
   return (
     <div className="space-y-4 rounded-2xl border border-line bg-card p-5">
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary-strong">
+      <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary-strong">
         <Sparkles className="h-3.5 w-3.5" /> {title} · 앱이 분석한 결과예요
       </div>
 
@@ -55,7 +55,7 @@ export default function InbodyAnalysis({ data, title = "인바디 분석" }) {
 
       {data.why_now && (
         <div className="rounded-xl border border-primary/30 bg-primary-soft p-4">
-          <div className="text-[11px] font-semibold tracking-label-ko text-primary-strong">그래서 지금부터</div>
+          <div className="text-[12px] font-semibold tracking-label-ko text-primary-strong">그래서 지금부터</div>
           <p className="mt-1 text-[14px] font-medium leading-relaxed text-ink">{data.why_now}</p>
         </div>
       )}

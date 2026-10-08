@@ -404,13 +404,13 @@ export default function VoiceLogTab({ member, onResult }) {
 
         {phase === "idle" && !voiceLocked && <AiQuotaNote kind="voice" className="mt-3" />}
         {phase === "recording" && (
-          <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-red-400">
+          <div className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-red-400">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> 녹음 중
           </div>
         )}
 
         {notice && (
-          <div className="mx-auto mt-4 max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
+          <div className="mx-auto mt-4 max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
             {notice}
           </div>
         )}
@@ -437,7 +437,7 @@ export default function VoiceLogTab({ member, onResult }) {
       {phase === "done" && report && (
         <section className="rounded-2xl border border-primary/30 bg-card shadow-sm p-5">
           <div className="mb-4 flex items-center gap-2">
-            <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary-strong">
+            <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[12px] font-bold text-primary-strong">
               AI 요약 완료
             </span>
             <span className="text-sm font-semibold text-ink">
@@ -447,7 +447,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
           {/* 1. 머신 */}
           <div className="rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-primary-strong">
+            <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold tracking-label-ko text-primary-strong">
               <Dumbbell className="h-3.5 w-3.5" /> 1. 오늘 진행한 머신 & 중량/세트
             </div>
             {report.machines.length > 0 ? (
@@ -478,7 +478,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
           {/* 2. 피드백 */}
           <div className="mt-3 rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-primary-strong">
+            <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold tracking-label-ko text-primary-strong">
               <MessageSquareQuote className="h-3.5 w-3.5" /> 2. 트레이너 핵심 피드백
             </div>
             <p className="text-sm leading-relaxed text-ink">{report.feedback}</p>
@@ -486,7 +486,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
           {/* 3. 개인운동시 주의사항 */}
           <div className="mt-3 rounded-xl border border-line bg-card shadow-sm p-4">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-label-ko text-primary-strong">
+            <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold tracking-label-ko text-primary-strong">
               <Target className="h-3.5 w-3.5" /> 3. 개인운동시 주의사항
             </div>
             <ul className="space-y-1.5">
@@ -504,7 +504,7 @@ export default function VoiceLogTab({ member, onResult }) {
             이 내용으로 일지 채우기
           </Button>
 
-          <p className="mt-3 text-[10px] leading-relaxed text-muted">
+          <p className="mt-3 text-[12px] leading-relaxed text-muted">
             ※ 실제 마이크 녹음 → 음성인식(STT) → AI 요약으로 생성됩니다. 키 미설정·오류·미지원
             브라우저 시 데모 리포트로 자동 폴백합니다.
           </p>

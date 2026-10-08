@@ -374,7 +374,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
                     <Chip key={t.value} tone="primary" on={m.tags.includes(t.value)} onClick={() => toggleMoveTag(i, t.value)}>{t.label}</Chip>
                   ))}
                 </div>
-                {m.legacy && <p className="mt-1.5 text-[11px] text-muted">예전 기록: {m.legacy}</p>}
+                {m.legacy && <p className="mt-1.5 text-[12px] text-muted">예전 기록: {m.legacy}</p>}
               </div>
             ))}
           </div>
@@ -419,7 +419,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
                   className={`flex min-h-[48px] items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-left transition ${
                     on ? "border-ink bg-ink text-white" : "border-line bg-card hover:border-line-strong"}`}>
                   <span>
-                    <span className="block text-[14px] font-semibold">{o.label}{o.value === suggestedPush && <span className={`ml-1.5 text-[11px] font-semibold ${on ? "text-white/70" : "text-primary-strong"}`}>추천</span>}</span>
+                    <span className="block text-[14px] font-semibold">{o.label}{o.value === suggestedPush && <span className={`ml-1.5 text-[12px] font-semibold ${on ? "text-white/70" : "text-primary-strong"}`}>추천</span>}</span>
                     <span className={`block text-[12px] ${on ? "text-white/70" : "text-muted"}`}>{o.hint}</span>
                   </span>
                 </button>

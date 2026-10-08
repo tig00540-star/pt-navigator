@@ -49,8 +49,8 @@ const payText = (t) => (t.run?.final_total != null ? won(t.run.final_total) : t.
 // 라벨에 '순'을 붙여 버튼만 보고도 뭘 하는지 알게 한다('정렬'이라는 말은 쓰지 않는다).
 const SORTS = [
   { key: "rev",   label: "매출 순" },
-  { key: "r1",    label: "1차 등록 순" },
-  { key: "r2",    label: "2차 등록 순" },
+  { key: "r1",    label: "1차 클로징 순" },
+  { key: "r2",    label: "2차 클로징 순" },
   { key: "rereg", label: "재등록 순" },
   { key: "burn",  label: "출석 순" },
   { key: "churn", label: "이탈 위험 순" },

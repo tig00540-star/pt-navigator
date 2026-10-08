@@ -202,14 +202,14 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     setLogBusy(true);
     if (!supabase) {
       setLogs((p) => p.map((x) => (x.id === log.id ? { ...x, voided } : x)));
-      setVoidTarget(null); showToast(voided ? "삭제됨(데모)" : "복구됨(데모)"); setLogBusy(false); return;
+      setVoidTarget(null); showToast(voided ? "삭제했어요(데모)" : "되돌렸어요(데모)"); setLogBusy(false); return;
     }
     try {
       const { data, error } = await supabase
         .from("daily_workout_log").update({ voided }).eq("id", log.id).select();
       if (error || !data || data.length === 0) { showToast(voided ? "삭제하지 못했어요. 다시 시도해 주세요." : "되돌리지 못했어요. 다시 시도해 주세요."); return; }
       setLogs((p) => p.map((x) => (x.id === data[0].id ? data[0] : x)));
-      setVoidTarget(null); showToast(voided ? "삭제됨 · 출석·차감에서 제외" : "복구됨");
+      setVoidTarget(null); showToast(voided ? "삭제했어요. 출석 · 차감에서 빠져요" : "되돌렸어요");
     } catch {
       showToast(voided ? "삭제하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요." : "되돌리지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
@@ -287,10 +287,10 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       if (source !== "noshow") clearForm();
       showToast(
         source === "noshow"
-          ? "노쇼 저장됨(데모) · 차감 반영"
+          ? "노쇼를 저장했어요(데모) · 수업 1회 차감"
           : copied
-          ? "저장됨(데모) · 차감 · 카톡 복사됨"
-          : "저장됨(데모) · 차감됨 (복사가 안 됐어요. 길게 눌러 복사해 주세요)"
+          ? "저장했어요(데모) · 수업 1회 차감 · 카톡 문구 복사"
+          : "저장했어요(데모) · 수업 1회 차감. 복사가 안 됐어요. 길게 눌러 복사해 주세요"
       );
       setSaving(false);
       return;
@@ -326,10 +326,10 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     if (source !== "noshow") clearForm();
     showToast(
       source === "noshow"
-        ? "노쇼 저장됨 · 차감 반영"
+        ? "노쇼를 저장했어요 · 수업 1회 차감"
         : copied
-        ? "저장됨 · 차감 · 카톡 복사됨"
-        : "저장됨 · 차감됨 (복사가 안 됐어요. 길게 눌러 복사해 주세요)"
+        ? "저장했어요 · 수업 1회 차감 · 카톡 문구 복사"
+        : "저장했어요 · 수업 1회 차감. 복사가 안 됐어요. 길게 눌러 복사해 주세요"
     );
       setSaving(false);
     } catch {
@@ -460,7 +460,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                     const Icon = d > 0 ? TrendingUp : d < 0 ? TrendingDown : Minus;
                     return (
                       <div key={s.exercise} className="rounded-xl border border-line bg-elevate p-3">
-                        <div className="truncate text-[11px] font-medium text-muted" title={s.exercise}>
+                        <div className="truncate text-[12px] font-medium text-muted" title={s.exercise}>
                           {s.exercise}
                         </div>
                         <div className="mt-1 font-mono text-xl font-bold text-ink">
@@ -532,17 +532,17 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[13px] font-semibold text-ink">{fmtDT(log.session_at ?? log.created_at)}</span>
                         {log.source && (
-                          <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
+                          <span className={`rounded-md border px-1.5 py-0.5 text-[12px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
                             {labelOf(SOURCE_OPTS, log.source)}
                           </span>
                         )}
                         {log.sent_at && (
-                          <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-strong">
+                          <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[12px] font-medium text-primary-strong">
                             카톡 전송
                           </span>
                         )}
                         {log.voided && (
-                          <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                          <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[12px] font-semibold text-amber-700">
                             취소됨
                           </span>
                         )}
@@ -588,7 +588,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                         /* §1 인라인 편집 — ai_summary만. */
                         <div className="mt-2">
                           {confirmByLog.get(log.id)?.result === "confirm" && (
-                            <p className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] leading-relaxed text-amber-700">
+                            <p className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[12px] leading-relaxed text-amber-700">
                               ⚠️ 이미 회원이 확인한 수업이에요. 수정하면 회원 화면에 &lsquo;변경됨&rsquo;으로 표시됩니다.
                             </p>
                           )}
@@ -613,7 +613,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                             <span className="text-sm text-sub line-clamp-3">
                               {log.ai_summary}
                             </span>
-                            <span className="mt-1 block text-[10px] font-medium text-muted">더 보기</span>
+                            <span className="mt-1 block text-[12px] font-medium text-muted">더 보기</span>
                           </summary>
                           <p className={`hidden whitespace-pre-wrap text-sm text-sub group-open:block ${log.voided ? "line-through" : ""}`}>
                             {log.ai_summary}
@@ -625,7 +625,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                       {Array.isArray(log.sets_structured) && log.sets_structured.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {log.sets_structured.map((ex, i) => (
-                            <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] text-sub">
+                            <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[12px] text-sub">
                               {ex.exercise} {(Array.isArray(ex.sets) ? ex.sets : []).map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
                             </span>
                           ))}
@@ -843,7 +843,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <span className="font-mono text-xs text-muted">{fmtDT(voidTarget.session_at ?? voidTarget.created_at)}</span> 수업이 목록에서 흐려지고,
             <b className="text-ink"> 오운완 출석·세션 차감에서 제외</b>됩니다. 기록은 남아 있어 <b className="text-ink">언제든 무르기</b>로 되돌릴 수 있어요.
             {confirmByLog.get(voidTarget.id)?.result === "confirm" && (
-              <span className="mt-2 block rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-700">
+              <span className="mt-2 block rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[12px] text-amber-700">
                 ⚠️ 이미 회원이 확인한 수업이에요. 삭제해도 회원의 확인·서명 기록은 보존됩니다.
               </span>
             )}

@@ -138,7 +138,7 @@ export default function SignupPage() {
           </Button>
         </div>
 
-        <div className="mt-4 text-center text-[11px] text-muted">
+        <div className="mt-4 text-center text-[12px] text-muted">
           이미 계정이 있으신가요? <Link href="/" className="font-semibold text-primary-strong hover:underline">로그인</Link>
         </div>
       </div>

@@ -103,7 +103,7 @@ export default function PtPricingSettings() {
         setRows((p) => sortRows([...p, { ...payload, id: `demo-${Date.now()}`, created_at: new Date().toISOString() }]));
       }
       resetForm();
-      showToast("저장됨(데모)");
+      showToast("저장했어요(데모)");
       setSaving(false);
       return;
     }
@@ -151,7 +151,7 @@ export default function PtPricingSettings() {
     if (!supabase) {
       setRows((p) => p.filter((r) => r.id !== id));
       setConfirmId(null);
-      showToast("삭제됨(데모)");
+      showToast("삭제했어요(데모)");
       return;
     }
     const { data, error } = await supabase.from("pt_package").delete().eq("id", id).select();

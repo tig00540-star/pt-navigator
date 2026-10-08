@@ -112,7 +112,7 @@ export default function AttestSheet({ member, logs = [], confirms = [], sigs = n
                         <>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={s.url} alt="회원 서명" className="h-10 w-auto" />
-                          <span className="block text-[11.5px] text-sub tabular-nums">{stamp(s.signed_at)}</span>
+                          <span className="block text-[12px] text-sub tabular-nums">{stamp(s.signed_at)}</span>
                         </>
                       ) : <span className="text-[12px] text-muted">—</span>}
                     </td>

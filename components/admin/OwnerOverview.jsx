@@ -164,7 +164,7 @@ export default function OwnerOverview({ members = [], otRows = [], contracts = [
                   <span className="font-mono text-[13px] font-bold text-ink">{kstHM(a.start_at)}</span>
                   <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{memberName(a.user_id)}</span>
                   <span className="truncate text-[12px] text-muted">{trainerName(a.trainer_id)}</span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11.5px] font-semibold ${a.status === "canceled" ? "bg-danger/10 text-danger-text" : a.status === "done" ? "bg-cyan-50 text-cyan-700" : "bg-elevate text-sub"}`}>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold ${a.status === "canceled" ? "bg-danger/10 text-danger-text" : a.status === "done" ? "bg-cyan-50 text-cyan-700" : "bg-elevate text-sub"}`}>
                     {STATUS_KO[a.status] || a.status}
                   </span>
                 </li>

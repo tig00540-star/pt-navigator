@@ -30,7 +30,7 @@ export default function AdminSideNav({ groups, activeGroup, onPick, centerName }
               key={g.id}
               onClick={() => onPick(g.tabs[0])}
               aria-current={on ? "page" : undefined}
-              className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 text-center text-[11px] leading-tight transition xl:min-h-[44px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-left xl:text-[14px] ${
+              className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 text-center text-[12px] leading-tight transition xl:min-h-[44px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-left xl:text-[14px] ${
                 on ? "bg-admin-soft font-semibold text-admin-text" : "text-sub hover:bg-elevate hover:text-ink"
               }`}
             >
@@ -42,7 +42,7 @@ export default function AdminSideNav({ groups, activeGroup, onPick, centerName }
       </nav>
 
       <div className="border-t border-line px-2 py-3 xl:px-3">
-        <Link href="/" className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[11px] text-sub transition hover:bg-elevate hover:text-ink xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
+        <Link href="/" className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl text-[12px] text-sub transition hover:bg-elevate hover:text-ink xl:min-h-[40px] xl:flex-row xl:justify-start xl:gap-3 xl:px-3 xl:text-[14px]">
           <ArrowLeft className="h-5 w-5 shrink-0" />
           트레이너 화면
         </Link>

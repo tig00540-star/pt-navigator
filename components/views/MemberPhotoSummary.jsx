@@ -130,7 +130,7 @@ export default function MemberPhotoSummary({ member, mode }) {
       {mode !== "list" && (
       <div className="mt-2 rounded-xl border border-line bg-elevate p-3">
         <div className="grid grid-cols-2 gap-2">
-          <label className="text-[11px] font-medium text-muted">
+          <label className="text-[12px] font-medium text-muted">
             분류
             <select value={label} onChange={(e) => setLabel(e.target.value)} disabled={busy} className={inputCls}>
               <option value="before">비포</option>
@@ -138,7 +138,7 @@ export default function MemberPhotoSummary({ member, mode }) {
               <option value="after">애프터</option>
             </select>
           </label>
-          <label className="text-[11px] font-medium text-muted">
+          <label className="text-[12px] font-medium text-muted">
             날짜
             <input type="date" value={takenOn} onChange={(e) => setTakenOn(e.target.value)} disabled={busy} className={inputCls} />
           </label>
@@ -171,17 +171,17 @@ export default function MemberPhotoSummary({ member, mode }) {
                     className="h-full w-full cursor-pointer object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] text-muted">…</div>
+                  <div className="flex h-full w-full items-center justify-center text-[12px] text-muted">…</div>
                 )}
               </div>
               <div className="absolute left-1 top-1 flex items-center gap-1">
                 {p.label && (
-                  <span className="rounded bg-card/85 px-1.5 py-0.5 text-[10px] font-semibold text-sub">
+                  <span className="rounded bg-card/85 px-1.5 py-0.5 text-[12px] font-semibold text-sub">
                     {PHOTO_LABELS[p.label] || p.label}
                   </span>
                 )}
               </div>
-              <div className="absolute bottom-1 left-1 rounded bg-card/85 px-1.5 py-0.5 text-[10px] text-sub">
+              <div className="absolute bottom-1 left-1 rounded bg-card/85 px-1.5 py-0.5 text-[12px] text-sub">
                 {fmtDay(p.taken_on)}
               </div>
               {p.uploaded_by === "trainer" && (

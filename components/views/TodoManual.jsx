@@ -139,7 +139,7 @@ export default function TodoManual() {
               <div className="min-w-0 flex-1">
                 <span className={`text-[14px] ${t.done ? "text-muted line-through" : "text-ink"}`}>{t.body}</span>
                 {t.due_date && (
-                  <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[11.5px] font-medium text-sub">~{t.due_date}</span>
+                  <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[12px] font-medium text-sub">~{t.due_date}</span>
                 )}
               </div>
               {confirmId === t.id ? (

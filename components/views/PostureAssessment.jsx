@@ -141,7 +141,7 @@ export default function PostureAssessment({ member }) {
     catch { setBusySlot(""); setMsg("이 사진을 읽지 못했어요. 다른 사진으로 시도해 주세요."); return; }
     const path = `${memberId}/posture/${crypto.randomUUID()}.jpg`;
     const { error: upErr } = await supabase.storage.from("member-photos").upload(path, blob, { contentType: "image/jpeg" });
-    if (upErr) { setBusySlot(""); setMsg("업로드하지 못했어요: " + upErr.message); return; }
+    if (upErr) { setBusySlot(""); console.error("체형 사진 업로드 실패", upErr); setMsg("사진을 올리지 못했어요. 다시 시도해 주세요."); return; }
     const next = { ...photos, [slot]: path };
     setPhotos(next);
     await signPaths(SLOTS.map((s) => next[s.key]));
@@ -173,7 +173,7 @@ export default function PostureAssessment({ member }) {
       .select();
     setSaving(false);
     if (error || !data || data.length === 0) {
-      setMsg("저장하지 못했어요. 다시 시도해 주세요. " + (error?.message || ""));
+      console.error("체형평가 저장 실패", error); setMsg("저장하지 못했어요. 다시 시도해 주세요.");
       return;
     }
     // 새 평가가 기준이 된다 — 이전 평가로 만든 분석 캐시는 이 시점부터 안 쓴다.
@@ -212,7 +212,7 @@ export default function PostureAssessment({ member }) {
       if (merged) setOtRow((r) => ({ ...r, report: merged }));
       else if (otRow) setAnaNotice("분석은 나왔지만 저장하지 못했어요. 이 화면에서만 보여요. 권한이 없거나 구독이 만료됐을 수 있어요.");
     } catch (e) {
-      setAnaNotice("네트워크 오류: " + (e?.message || "알 수 없는 오류"));
+      console.error("체형 분석 요청 실패", e); setAnaNotice("분석하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       setAnaLoading(false);
     }
@@ -223,15 +223,15 @@ export default function PostureAssessment({ member }) {
       {/* 사진 + 그리드 — 시각 측정(회원에게 보여주기) */}
       <Card as="section">
         <Eyebrow icon={PersonStanding}>체형 사진 · 가로세로 측정</Eyebrow>
-        <p className="mt-1 text-[11px] leading-relaxed text-muted">정면·측면·후면 사진을 올리면 그리드가 겹쳐져 어긋난 정렬이 눈에 보여요. 회원에게 그대로 보여주며 짚어주세요.</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">정면·측면·후면 사진을 올리면 그리드가 겹쳐져 어긋난 정렬이 눈에 보여요. 회원에게 그대로 보여주며 짚어주세요.</p>
         <div className="mt-3 grid grid-cols-3 gap-2">
           {SLOTS.map((s) => (
             <div key={s.key}>
-              <div className="mb-1 text-center text-[11px] font-semibold text-sub">{s.label}</div>
+              <div className="mb-1 text-center text-[12px] font-semibold text-sub">{s.label}</div>
               {photos[s.key] && urls[photos[s.key]] ? (
                 <GridPhoto url={urls[photos[s.key]]} onOpen={() => setViewAt(SLOTS.findIndex((x) => x.key === s.key))} onRemove={removeSlot(s.key)} />
               ) : (
-                <label className={`flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line-strong bg-elevate text-[11px] font-semibold text-muted ${busySlot === s.key ? "opacity-60" : ""}`}>
+                <label className={`flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line-strong bg-elevate text-[12px] font-semibold text-muted ${busySlot === s.key ? "opacity-60" : ""}`}>
                   <ImagePlus className="h-5 w-5" />
                   {busySlot === s.key ? "올리는 중…" : "사진"}
                   <input type="file" accept="image/*" onChange={onPick(s.key)} disabled={Boolean(busySlot)} className="hidden" />
@@ -252,7 +252,7 @@ export default function PostureAssessment({ member }) {
 
       {/* 소견 체크(보조 · AI 분석 입력) */}
       <Card as="section">
-        <Eyebrow icon={PersonStanding}>소견 체크 <span className="text-[10px] font-normal text-muted">(AI 분석 근거)</span></Eyebrow>
+        <Eyebrow icon={PersonStanding}>소견 체크 <span className="text-[12px] font-normal text-muted">(AI 분석 근거)</span></Eyebrow>
         <div className="mt-3 space-y-2">
           {POSTURE_ITEMS.map((it) => (
             <div key={it.key} className="flex items-center gap-2">
@@ -285,7 +285,7 @@ export default function PostureAssessment({ member }) {
             {anaLoading ? "분석 중…" : shownAnalysis ? "다시 분석" : "AI 분석"}
           </Button>
         </div>
-        <p className="mt-1 text-[11px] leading-relaxed text-muted">
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">
           업로드한 <b className="text-sub">사진을 AI가 직접 관찰</b>하고 소견 체크도 함께 반영해요. 트레이너가 아니라 &lsquo;앱이 분석&rsquo;하는 톤이라 회원 부담이 적어요.
         </p>
         {anaNotice && <p className="mt-2 text-[12px] text-danger-text">{anaNotice}</p>}
