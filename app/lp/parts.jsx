@@ -286,7 +286,7 @@ export function StepShots({ steps }) {
                   {s.next && <p className="m-0 mt-auto text-[13px] font-semibold text-primary-strong">{s.next} →</p>}
                 </figure>
               ) : (
-                <Shot src={s.img} alt={s.alt} badge="실제 앱 화면" />
+                <Shot src={s.img} alt={s.alt} wide={s.wide} />
               )}
             </li>
           ))}
@@ -361,7 +361,6 @@ export function FeatureGallery({ items, dark, label = "그 밖의 기능 화면"
                 </span>
               </span>
               <span className={`mt-3 block text-[16px] font-extrabold tracking-[-0.01em] ${dark ? "text-white" : "text-ink"}`}>{it.name}</span>
-              <span className={`mt-1 block text-[14px] leading-[1.5] ${dark ? "text-white/65" : "text-sub"}`}>{it.desc}</span>
             </button>
           </li>
         ))}
@@ -463,7 +462,7 @@ export function FeatureRow({ pill, title, flow, checks, note, visual, dark, chil
 }
 
 /* 기능 묶음 — 한 기능 한 장(2026-10-07 · 아우라핏 구성 참고 · 색 · 문장은 우리 것).
-   이름표 → 제목 2줄 → 설명 2줄 → '· 한 줄 포인트' → 큰 사진 1장(또는 트레이너 → 앱 → 회원 단계) → '기능 더 보기'(접힘: 효과 줄 · 나머지 화면).
+   이름표 → 제목 2줄 → 설명 한 줄(2026-10-08 글 줄임 · 포인트 줄 · 사진 아래 설명 카드는 안 씀) → 큰 사진 1장(또는 트레이너 → 앱 → 회원 단계) → '기능 더 보기'(접힘: 효과 줄 · 나머지 화면).
    desc가 없는 묶음(대표 랜딩)은 예전처럼 효과 줄 · 설명을 위에 펼쳐 둔다. */
 export function Bundle({ id, pill, title, desc, point, checks, note, core, hero, items, label, href, dark, children }) {
   const simple = Boolean(desc);
@@ -479,7 +478,7 @@ export function Bundle({ id, pill, title, desc, point, checks, note, core, hero,
         <div className="rv flex flex-col items-center gap-2.5" style={stagger(1)}>
           {simple ? (
             <>
-              <p className={`m-0 max-w-[520px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] ${dark ? "text-white/70" : "text-sub"}`}>{desc}</p>
+              <p className={`m-0 max-w-[520px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] [text-wrap:balance] ${dark ? "text-white/70" : "text-sub"}`}>{desc}</p>
               {point && <p className={`m-0 text-[15px] font-bold ${dark ? "text-white" : "text-primary-strong"}`}>· {point}</p>}
             </>
           ) : (
@@ -490,7 +489,7 @@ export function Bundle({ id, pill, title, desc, point, checks, note, core, hero,
           )}
         </div>
         <div className="rv mt-1.5 flex w-full flex-col items-center gap-6" style={stagger(2)}>
-          {main?.steps ? <StepShots steps={main.steps} /> : main ? <Visual {...main} badge="실제 앱 화면" dark={dark} /> : null}
+          {main?.steps ? <StepShots steps={main.steps} /> : main ? <Visual {...main} dark={dark} /> : null}
           {children}
           {simple ? (items?.length > 0 || checks?.length > 0) && (
             <details className="lp-more w-full max-w-[640px] text-left">

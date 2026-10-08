@@ -221,6 +221,7 @@ export default function CenterLandingPage() {
                 )}
               </Bundle>
             ))}
+            <p className="m-0 text-[13px] text-muted">앱 화면은 모두 시연용 회원으로 찍은 실제 화면이에요.</p>
           </div>
         </section>
 
