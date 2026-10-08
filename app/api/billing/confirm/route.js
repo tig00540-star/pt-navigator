@@ -9,6 +9,7 @@ import { createClient } from "@supabase/supabase-js";
 import { issueBillingKey, chargeBilling, tossReady } from "@/lib/toss";
 import { PLANS, planAmount } from "@/lib/plans";
 import { sendPush } from "@/lib/pushServer";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 // 달 더하기 — 말일 넘침 보정(크론 charge-subscriptions와 같은 규칙).
 function addOneMonth(d) {
@@ -26,7 +27,7 @@ async function notifyWaitingMembers(sb, accountId) {
   try {
     const { data: mt } = await sb.from("member_transfer").select("member_id, to_name").eq("to_account", accountId).eq("status", "pending");
     if (!mt?.length) return;
-    const { data: ms } = await sb.from("user_table").select("id, member_token").in("id", mt.map((m) => m.member_id));
+    const { data: ms } = await fetchByIds(sb, "user_table", "id, member_token", "id", mt.map((m) => m.member_id));
     for (const m of ms || []) {
       if (!m.member_token) continue;
       await sendPush(sb, { memberIds: [m.id], type: "transfer", url: `/m/${m.member_token}`,

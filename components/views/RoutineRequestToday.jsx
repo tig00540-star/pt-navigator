@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 const daysAgo = (iso) => { const d = Math.floor((Date.now() - Date.parse(iso)) / 86400000); return d <= 0 ? "오늘 요청" : `${d}일째 기다림`; };
 
@@ -23,7 +24,8 @@ export default function RoutineRequestToday({ members = [], onSelect }) {
       if (!supabase) return;
       const ids = key ? key.split(",") : [];
       if (!ids.length) { if (!cancelled) setRows([]); return; }
-      const { data, error } = await supabase.from("member_routine_request").select("id, user_id, created_at").eq("status", "open").in("user_id", ids).order("created_at");
+      const { data: raw, error } = await fetchByIds(supabase, "member_routine_request", "id, user_id, created_at", "user_id", ids, (q) => q.eq("status", "open"));
+      const data = (raw || []).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       if (error) { console.error("루틴 요청 조회 실패", error); return; }
       const seen = new Set(); const out = [];
       for (const r of data || []) if (!seen.has(r.user_id)) { seen.add(r.user_id); out.push(r); }

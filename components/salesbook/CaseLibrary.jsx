@@ -18,7 +18,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookImage, Check, Dumbbell, ImagePlus, MessageSquareQuote, Plus, Scale } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
-import { fetchAllRows } from "@/lib/fetchAllRows";
 import { compressImage } from "@/lib/image";
 import { useMembers } from "@/components/app/MembersProvider";
 import { useToast } from "@/hooks/useToast";
@@ -31,6 +30,7 @@ import { Input } from "@/components/ui/Field";
 import CaseCard from "@/components/salesbook/CaseCard";
 import { signCaseUrls, loadMyCases } from "@/components/salesbook/caseData";
 import { PORTFOLIO_VERSION } from "@/lib/consent";
+import { fetchByIds } from "@/lib/fetchByIds";
 import {
   CASE_KINDS, CASE_CATEGORIES, guessCategory, anonLabel, deltaText, improved, inbodyCandidates, liftCandidates, photoCaseData, shortDay, weeksBetween,
 } from "@/lib/salesCase";
@@ -73,8 +73,7 @@ export default function CaseLibrary() {
       setUrls(await signCaseUrls(data || []));
       const ids = [...new Set((data || []).map((c) => c.member_id).filter(Boolean))];
       if (ids.length) {
-        const { data: cr, error: ce } = await supabase.from("member_consent").select("member_id, trainer_id, agreed, created_at")
-          .eq("kind", "portfolio").in("member_id", ids).order("created_at", { ascending: true });
+        const { data: cr, error: ce } = await fetchByIds(supabase, "member_consent", "member_id, trainer_id, agreed, created_at", "member_id", ids, (q) => q.eq("kind", "portfolio"));
         if (ce) console.error("포트폴리오 동의 읽기 실패", ce);
         setPcons(cr || []);
       }
@@ -138,7 +137,7 @@ export default function CaseLibrary() {
     if (c.data?.portfolio) return "copied";
     if (!c.member_id) return null;
     let last = null;
-    for (const r of pcons) if (r.member_id === c.member_id && (r.trainer_id === myUid || r.trainer_id == null)) last = r;
+    for (const r of pcons) if (r.member_id === c.member_id && (r.trainer_id === myUid || r.trainer_id == null) && (!last || r.created_at > last.created_at)) last = r;
     return last?.agreed ? "agreed" : "none";
   };
   const paperConsent = async (c) => {
@@ -258,9 +257,8 @@ function PhotoPicker({ members, onClose, onAdd }) {
     (async () => {
       const ids = members.map((m) => m.id);
       if (!ids.length) { setRows([]); return; }
-      const { data } = await supabase.from("member_photo").select("id, user_id, storage_path, label, taken_on, uploaded_by")
-        .in("user_id", ids).order("taken_on", { ascending: true });
-      setRows(data || []);
+      const { data } = await fetchByIds(supabase, "member_photo", "id, user_id, storage_path, label, taken_on, uploaded_by", "user_id", ids);
+      setRows((data || []).sort((a, b) => String(a.taken_on).localeCompare(String(b.taken_on))));
     })();
   }, [members]);
 
@@ -354,8 +352,7 @@ function InbodyPicker({ members, cases, onClose, onAdd }) {
     (async () => {
       const ids = members.map((m) => m.id);
       if (!ids.length) { setRows([]); return; }
-      const { data } = await fetchAllRows(() => supabase.from("inbody_log")
-        .select("id, user_id, measured_at, weight, skeletal_muscle, body_fat_pct, body_fat_mass").in("user_id", ids));
+      const { data } = await fetchByIds(supabase, "inbody_log", "id, user_id, measured_at, weight, skeletal_muscle, body_fat_pct, body_fat_mass", "user_id", ids);
       setRows(data || []);
     })();
   }, [members]);
@@ -403,8 +400,7 @@ function LiftPicker({ members, cases, onClose, onAdd }) {
     (async () => {
       const ids = members.map((m) => m.id);
       if (!ids.length) { setRows([]); return; }
-      const { data } = await fetchAllRows(() => supabase.from("daily_workout_log")
-        .select("id, user_id, session_at, created_at, sets_structured, voided, source").in("user_id", ids).eq("voided", false));
+      const { data } = await fetchByIds(supabase, "daily_workout_log", "id, user_id, session_at, created_at, sets_structured, voided, source", "user_id", ids, (q) => q.eq("voided", false));
       setRows(data || []);
     })();
   }, [members]);

@@ -99,9 +99,9 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
         ids.length ? fetchByIds(supabase, "daily_workout_log", "id, user_id, session_at, created_at, voided, source", "user_id", ids, (q) => q.gte("created_at", since30)) : { data: [] },
         // 확인은 최근 30일 것만 — 회원 전체 확인 이력을 부르면 1000행에서 잘렸다(2026-10-06).
         ids.length ? fetchByIds(supabase, "workout_log_confirmation", "log_id", "member_id", ids, (q) => q.eq("result", "confirm").gte("confirmed_at", since30)) : { data: [] },
-        ids.length ? supabase.from("cardio_log").select("user_id, kind, minutes, created_at").in("user_id", ids).gte("created_at", since3) : { data: [] },
-        ids.length ? supabase.from("member_photo").select("user_id, label, created_at").in("user_id", ids).gte("created_at", since3) : { data: [] },
-        ids.length ? supabase.from("schedule_check").select("user_id, kind, created_at").in("user_id", ids).gte("created_at", since3) : { data: [] },
+        ids.length ? fetchByIds(supabase, "cardio_log", "user_id, kind, minutes, created_at", "user_id", ids, (q) => q.gte("created_at", since3)) : { data: [] },
+        ids.length ? fetchByIds(supabase, "member_photo", "user_id, label, created_at", "user_id", ids, (q) => q.gte("created_at", since3)) : { data: [] },
+        ids.length ? fetchByIds(supabase, "schedule_check", "user_id, kind, created_at", "user_id", ids, (q) => q.gte("created_at", since3)) : { data: [] },
       ]);
       if (cancelled) return;
       setAppts(ap.data || []);

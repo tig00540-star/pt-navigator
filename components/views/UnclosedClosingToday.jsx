@@ -11,6 +11,7 @@ import { unclosedClosings, viewFor } from "@/lib/memberStatus";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 export default function UnclosedClosingToday({ members, onSelect }) {
   const [rows, setRows] = useState([]);
@@ -21,11 +22,7 @@ export default function UnclosedClosingToday({ members, onSelect }) {
     const ids = otKey.split(",");
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("ot_log")
-        .select("user_id, ot_round, closing_result")
-        .gte("ot_round", 2)
-        .in("user_id", ids);
+      const { data } = await fetchByIds(supabase, "ot_log", "user_id, ot_round, closing_result", "user_id", ids, (q) => q.gte("ot_round", 2));
       if (cancelled) return;
       setRows(unclosedClosings(data || [], new Set(ids)));
     })();

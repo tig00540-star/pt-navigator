@@ -12,6 +12,7 @@ import { reregisterReapproachToday, viewFor } from "@/lib/memberStatus";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 function todayISOLocal() {
   const n = new Date();
@@ -36,10 +37,7 @@ export default function RegisterReapproachToday({ members, onSelect }) {
     let cancelled = false;
     (async () => {
       // 회원별 최신 계약 판정 위해 reg 필터 없이 계약 전부 당김(hold가 최신인지 알아야 함).
-      const { data } = await supabase
-        .from("session_log")
-        .select("user_id, started_at, reg_result, reg_reapproach_at")
-        .in("user_id", ptIds);
+      const { data } = await fetchByIds(supabase, "session_log", "user_id, started_at, reg_result, reg_reapproach_at", "user_id", ptIds);
       if (cancelled) return;
       setRows(reregisterReapproachToday(data || [], today));
     })();

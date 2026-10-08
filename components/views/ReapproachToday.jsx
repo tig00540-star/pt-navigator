@@ -15,6 +15,7 @@ import { reapproachToday, viewFor } from "@/lib/memberStatus";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 // 오늘(로컬 달력일) ISO. 컴포넌트는 now 읽어도 됨(순수 모듈 아님) — 순수 판정엔 이 값을 주입.
 function todayISOLocal() {
@@ -43,10 +44,7 @@ export default function ReapproachToday({ members, onSelect }) {
       // both round의 hold 행만 당겨오고, 날짜(도래·null) 판정은 reapproachToday에 위임.
       const ids = memberKey.split(",");
       // 회원별 최신 차수를 가려야 해서 결과와 무관하게 다 가져온다(2026-10-06) · OT 회원만 넘긴다.
-      const { data } = await supabase
-        .from("ot_log")
-        .select("user_id, ot_round, closing_result, closing_reapproach_at, created_at")
-        .in("user_id", ids); // ★ 내 회원만
+      const { data } = await fetchByIds(supabase, "ot_log", "user_id, ot_round, closing_result, closing_reapproach_at, created_at", "user_id", ids); // ★ 내 회원만 · 1000행 잘림 방지
       if (cancelled) return;
       setRows(reapproachToday(data || [], today, new Set(otKey ? otKey.split(",") : [])));
     })();

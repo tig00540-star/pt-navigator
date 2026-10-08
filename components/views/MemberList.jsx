@@ -18,6 +18,7 @@ import Chip from "@/components/ui/Chip";
 import FilterChip from "@/components/ui/FilterChip";
 import { viewFor } from "@/lib/memberStatus";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 export default function MemberList({ members, selectedId, onSelect, onAdd, uid, initialSegment = "all", compact = false }) {
   const [q, setQ] = useState("");
@@ -49,7 +50,7 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
     let cancelled = false;
     (async () => {
       if (!endedKey || !supabase) return;
-      const { data, error } = await supabase.from("session_log").select("user_id").in("user_id", endedKey.split(","));
+      const { data, error } = await fetchByIds(supabase, "session_log", "user_id", "user_id", endedKey.split(","));
       if (error) { console.error("종료 회원 계약 조회 실패", error); return; }
       if (!cancelled) setPtEnded(new Set((data || []).map((r) => r.user_id)));
     })();

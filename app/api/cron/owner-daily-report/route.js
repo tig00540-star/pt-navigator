@@ -32,7 +32,7 @@ async function buildFor(sb, account, nowMs, apiKey) {
   const ym = kstYm(nowMs);
   const apptCutoff = new Date(nowMs - 90 * 86400000).toISOString(); // 대표 화면과 같은 창(최근 90일)
   const [mR, oR, cR, lR, aR, gR, tR] = await Promise.all([
-    sb.from("user_table").select("*").eq("account_id", aid),
+    fetchAllRows(() => sb.from("user_table").select("*").eq("account_id", aid)),
     fetchAllRows(() => sb.from("ot_log").select("*").eq("account_id", aid)),
     fetchAllRows(() => sb.from("session_log").select("*").eq("account_id", aid)),
     fetchAllRows(() => sb.from("daily_workout_log").select("*").eq("account_id", aid)),

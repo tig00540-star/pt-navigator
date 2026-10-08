@@ -254,7 +254,7 @@ export default function AdminDashboard() {
   const handleMemberCreated = async () => {
     setShowMemberCreate(false);
     if (!supabase) return;
-    const { data, error } = await supabase.from("user_table").select("*");
+    const { data, error } = await fetchAllRows(() => supabase.from("user_table").select("*"));
     if (error) { console.error("회원 다시 읽기 실패", error); setDbNote("목록을 새로 불러오지 못했어요. 새로고침해 주세요."); return; } // 실패로 화면이 0이 되지 않게
     setRows(data || []);
   };

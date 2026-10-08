@@ -16,6 +16,7 @@ import { createClient } from "@supabase/supabase-js";
 import { serviceClient, callerOf } from "@/lib/serverCaller";
 import { sendPush } from "@/lib/pushServer";
 import { caseOwner, caseFiles, portfolioAgreed } from "@/lib/portfolio";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -83,9 +84,8 @@ export async function POST(req) {
   const memberMove = srcAcc?.type === "solo" && src.role === "owner" && dstAcc?.type === "center";
   let members = [];
   if (memberMove) {
-    const { data: ms } = await sb.from("user_table").select("id, name, status, hidden, member_token")
-      .eq("account_id", src.account_id).limit(5000);
-    const { data: pend } = await sb.from("member_transfer").select("member_id").eq("from_account", src.account_id).eq("status", "pending");
+    const { data: ms } = await fetchAllRows(() => sb.from("user_table").select("id, name, status, hidden, member_token").eq("account_id", src.account_id));
+    const { data: pend } = await fetchAllRows(() => sb.from("member_transfer").select("id, member_id").eq("from_account", src.account_id).eq("status", "pending"));
     const pendSet = new Set((pend || []).map((p) => p.member_id));
     members = (ms || []).filter((m) => !m.hidden && m.status !== "inactive" && !pendSet.has(m.id));
   }

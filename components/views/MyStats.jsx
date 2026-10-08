@@ -22,6 +22,7 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 import SettlementPanel from "@/components/admin/SettlementPanel";
 import Button from "@/components/ui/Button";
 import { inputCls } from "@/components/ui/Field";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 // 'M월 D일'(KST) — 매출 내역 날짜.
 const dayKo = (iso) => { const t = Date.parse(iso || ""); if (Number.isNaN(t)) return ""; const d = new Date(t + 9 * 3600 * 1000); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`; };
@@ -113,7 +114,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         //    수업 로그는 트레이너 1인도 하루 15~16건이면 두 달여에 1000 도달한다.
         fetchAllRows(() => supabase.from("session_log").select("*")),        // RLS: 본인 계약
         fetchAllRows(() => supabase.from("daily_workout_log").select("*")),
-        supabase.from("ot_log").select("*"),
+        fetchAllRows(() => supabase.from("ot_log").select("*")),   // 센터 OT 기록 전체(본인 회원으로 거름) · 1000행 잘림 방지
         supabase.from("pay_scheme").select("*"),
         supabase.from("payroll_run").select("*"),
         // trainer RLS(id = auth.uid())로 본인 행 select 허용 · maybeSingle은 행 없어도 에러 아님.
@@ -127,7 +128,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
       const uids = [...new Set((c.data || []).map((r) => r.user_id).filter(Boolean))];
       let names = new Map();
       if (uids.length) {
-        const { data: nrows } = await supabase.from("user_table").select("id, name").in("id", uids);
+        const { data: nrows } = await fetchByIds(supabase, "user_table", "id, name", "id", uids);
         names = new Map((nrows || []).map((r) => [r.id, r.name]));
       }
       if (cancelled) return;

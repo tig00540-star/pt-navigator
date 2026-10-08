@@ -8,6 +8,8 @@
 import { serviceClient, callerOf } from "@/lib/serverCaller";
 import { sendPush } from "@/lib/pushServer";
 import { personName } from "@/lib/format";
+import { fetchAllRows } from "@/lib/fetchAllRows";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 export const runtime = "nodejs";
 
@@ -87,11 +89,13 @@ export async function POST(req) {
   } else if (type === "event_new" && who.kind === "trainer") {
     const { data: e } = await sb.from("member_event").select("account_id, created_by, scope, target_trainer, title, reward_text, active").eq("id", id).maybeSingle();
     if (e?.account_id === who.account_id && e.active && (e.created_by === who.id || who.role === "owner")) {
-      let q = sb.from("user_table").select("id, member_token").eq("account_id", e.account_id).neq("status", "inactive").eq("hidden", false);
-      if (e.scope === "trainer") q = q.eq("trainer_id", e.target_trainer);
-      const { data: ms } = await q;
+      const { data: ms } = await fetchAllRows(() => {   // 회원 1000명 넘어도 다 받게
+        let q = sb.from("user_table").select("id, member_token").eq("account_id", e.account_id).neq("status", "inactive").eq("hidden", false);
+        if (e.scope === "trainer") q = q.eq("trainer_id", e.target_trainer);
+        return q;
+      });
       // 회원마다 자기 페이지 주소가 달라 한 명씩 보낸다(알림 켠 회원만 실제로 감).
-      const { data: subs } = await sb.from("push_subscription").select("member_id").in("member_id", (ms || []).map((m) => m.id));
+      const { data: subs } = await fetchByIds(sb, "push_subscription", "id, member_id", "member_id", (ms || []).map((m) => m.id));
       const withSub = new Set((subs || []).map((s) => s.member_id));
       let sent = 0;
       for (const m of (ms || []).filter((x) => withSub.has(x.id))) {

@@ -13,6 +13,7 @@ import { viewFor } from "@/lib/memberStatus";
 import ToneCard from "@/components/ui/ToneCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ListRow from "@/components/ui/ListRow";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 const KEY = "ot.inbodyInterval";
 const listeners = new Set();
@@ -34,7 +35,7 @@ export default function InbodyDueToday({ members = [], onSelect }) {
       if (!supabase) return;
       const ids = ptKey ? ptKey.split(",") : [];
       if (!ids.length) { if (!cancelled) setLast(new Map()); return; }
-      const { data, error } = await supabase.from("inbody_log").select("user_id, measured_at").in("user_id", ids);
+      const { data, error } = await fetchByIds(supabase, "inbody_log", "user_id, measured_at", "user_id", ids);
       if (error) { console.error("인바디 측정일 조회 실패", error); return; }
       const m = new Map(ids.map((id) => [id, null]));
       for (const r of data || []) {
