@@ -206,7 +206,13 @@ export function Shot({ src, alt, zoom = true, wide = false, badge = null }) {
 }
 
 // 앱 화면 자리 — 스크린샷(img) 또는 실제 화면 데모(demo). 4:5 틀 안에 담는다.
-export function Visual({ img, demo, alt, dark, wide, caption, who, badge }) {
+export function Visual({ img, demo, alt, dark, wide, caption, who, badge, phone }) {
+  if (phone) return (
+    <div className="mx-auto flex w-full max-w-[480px] flex-col gap-3">
+      <PhoneShot src={img} alt={alt} w={780} h={1688} zoom size="lg" dark={dark} />
+      {caption && <ShotCaption who={who}>{caption}</ShotCaption>}
+    </div>
+  );
   return (
     <div className={`mx-auto flex w-full flex-col gap-3 ${wide ? "max-w-[680px]" : "max-w-[480px]"}`}>
       <div className={`rounded-[24px] border p-1.5 sm:p-3 ${dark ? "border-white/10 bg-white/5" : "border-line bg-bg"}`}>
@@ -298,15 +304,30 @@ export function StepShots({ steps }) {
   );
 }
 
-/* 폰 틀 안의 실제 화면 한 장(2026-10-08) — 잘라 내지 않은 폰 화면 전체(상태 표시줄 · 홈 막대까지). */
-export function PhoneShot({ src, alt, w, h }) {
-  return (
-    <div className="mx-auto w-[min(70vw,290px)] rounded-[44px] bg-ink p-[9px] shadow-[0_24px_48px_-16px_rgb(19_21_27/0.35)]">
-      <div className="overflow-hidden rounded-[36px] bg-black">
+/* 폰 틀 안의 실제 화면 한 장(2026-10-08) — 잘라 내지 않은 폰 화면 전체(상단 머리 · 아래 메뉴까지).
+   글씨가 작아지니 누르면 크게(zoom). size: "md"(알림 구간) | "lg"(기능마다 큰 화면). dark = 먹색 구간(틀을 밝게). */
+export function PhoneShot({ src, alt, w, h, zoom = false, size = "md", dark = false }) {
+  const [open, setOpen] = useState(false);
+  const frame = (
+    <span className={`mx-auto block rounded-[44px] p-[9px] ${dark ? "bg-[#2b303b] ring-1 ring-white/20" : "bg-ink shadow-[0_24px_48px_-16px_rgb(19_21_27/0.35)]"} ${size === "lg" ? "w-[min(76vw,310px)]" : "w-[min(70vw,290px)]"}`}>
+      <span className="block overflow-hidden rounded-[36px] bg-black">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} width={w} height={h} loading="lazy" decoding="async" className="block h-auto w-full" />
-      </div>
-    </div>
+      </span>
+    </span>
+  );
+  if (!zoom) return frame;
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} 크게 보기`}
+        className={`group relative mx-auto block cursor-zoom-in rounded-[44px] p-0 ${FOCUS}`}>
+        {frame}
+        <span className="pointer-events-none absolute bottom-4 right-4 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[12px] font-bold text-white">
+          <ZoomIn size={13} strokeWidth={2.6} aria-hidden="true" /> 크게 보기
+        </span>
+      </button>
+      {open && createPortal(<ImageLightbox src={src} alt={alt} onClose={() => setOpen(false)} />, document.body)}
+    </>
   );
 }
 
