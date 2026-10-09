@@ -1,7 +1,8 @@
 "use client";
 import { useEffect } from "react";
+import { reportError } from "@/lib/reportError";
 export default function GlobalError({ error, reset }) {
-  useEffect(() => { console.error(error); }, [error]);
+  useEffect(() => { console.error(error); reportError(error?.message || "화면 오류", { digest: error?.digest || null }); }, [error]);
   return (
     <html lang="ko">
       <body style={{ display: "flex", minHeight: "100vh", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "sans-serif", padding: 24, textAlign: "center" }}>

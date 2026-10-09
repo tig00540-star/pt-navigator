@@ -18,6 +18,8 @@ import { chargeBilling, tossReady } from "@/lib/toss";
 import { PLANS, planAmount } from "@/lib/plans";
 import { sendPush, ownerIds } from "@/lib/pushServer";
 import { trainerCloseAt, kstDay } from "@/lib/trainerClose";
+import { runOpsChecks } from "@/lib/opsCheck";
+import { recordError } from "@/lib/opsLog";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -227,5 +229,12 @@ export async function GET(req) {
     }
   }
 
-  return Response.json({ ok: true, total: (accounts || []).length, charged, canceled, failed, skipped, repaired, stopped, errors, purgeNotified, purgeDue, trainerClosed, trainerReminded });
+  // ── 앱 운영(2026-10-08 · lib/opsCheck) — 결제 대조 · 환불 실패 다시 시도 · 카드 실패 알림 · 이상은 회사 업무 사이트로 ──
+  let ops = null;
+  try { ops = await runOpsChecks(sb, { now }); } catch (e) { ops = { errors: [String(e?.message || e)] }; }
+  for (const m of [...errors.map((x) => (typeof x === "string" ? x : `${x.trainer || ""} ${x.error || ""}`)), ...(ops?.errors || [])]) {
+    await recordError(sb, { source: "cron", path: "charge-subscriptions", message: m });
+  }
+
+  return Response.json({ ok: true, total: (accounts || []).length, charged, canceled, failed, skipped, repaired, stopped, errors, purgeNotified, purgeDue, trainerClosed, trainerReminded, ops });
 }

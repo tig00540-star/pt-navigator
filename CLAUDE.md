@@ -227,6 +227,15 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **내려받기 개선:** `/api/export`에 사례 보관함 · 회원별 변화 요약(인바디 처음 → 마지막 · 종목 처음 → 최고 · 변화는 ▲▼) · 세트를 읽는 글로 · `?images=1` = 사진 목록(1시간 링크) → 브라우저 `lib/exportDownload`가 사진을 받아 같은 ZIP의 '사진/회원/' · '사례/' 폴더로(서버 응답 크기 제한 때문 · store ZIP 읽기 · 쓰기).
 - 옛 2026-10-07 합류 · 독립의 기록(`member_transfer` join · leave · `moved_out_ledger` · `ledgerAsContracts`)은 그대로 읽힌다.
 
+### 앱 운영(결제 대조 · 오류 수집) · 보안 규칙 속도 (2026-10-08~09 · SQL `2026-10-08-ops.sql` · `2026-10-09-rls-speed.sql`)
+
+- **오류 수집 `app_error`**(서버만 · 정책 없음): 화면 = `components/ErrorReporter`(layout · `lib/reportError` · 잡음 거름 · 같은 메시지 한 번) + error 화면 → `/api/client-error`(로그인 없음 · IP당 1분 30건) · 서버 = `instrumentation.js` `onRequestError` · 예약 작업 오류 = charge-subscriptions가 기록. `lib/opsLog` `recordError`가 주소 토큰 · id · 숫자를 지우고 fingerprint로 묶음 · 90일 뒤 정리.
+- **결제 대조 `lib/opsCheck` `runOpsChecks`**(매일 결제 작업 끝 · `dry` 미리 보기): 자동 = 환불 실패(REFUND_FAILED) → 토스에 실제 취소됐는지 먼저 확인 · 아니면 하루 1번 3번까지 재시도 / 정기결제 실패 계정 → 대표 폰 '카드 바꿔 주세요'(기간마다 1번). 사람이 볼 것 `ops_alert` open = 20일 안 구독 2번 · 요금표와 다른 금액(2026-10-08 이후 결제만) · 3일째 결제 실패 · 토스엔 있고 기록 없음(`lib/toss` `listTransactions`) · 환불 3번 실패. 시연 계정 제외.
+- **회사 업무 사이트**(`Only-for-Trainer-Company/office` · 로컬 전용 · 깃 안 올림) '회사 › 앱 운영' 탭 ← `/api/ops/alerts`(OPS_SECRET · GET 목록 / POST check · done · ignore · reopen · retry_refund · refund_payment) · 15분마다 새 건 카카오톡 · '직원에게 맡기기'(정산하 · 나무결 · 구현서).
+- **보안 규칙 속도(대량 시험 · 회원 16,000 · 일지 11만에서 8초 시간 초과 발견):** public 표 전부 `account_id` 색인 + 규칙의 `auth_account_id()` 등은 `(SELECT …)`로 감싸 조회마다 한 번만 계산. ⚠️ **새 정책을 만들 때도 `(select auth_account_id())`처럼 감싸고, account_id 칸이 있는 새 표엔 색인.** 결제 기록 `payment`는 대표만(`auth_is_owner`).
+- **대량 시험 환경:** Supabase 시험용 프로젝트 `ojik-loadtest`(연결 = `.env.loadtest.local` · 깃 제외) · PostgreSQL 17 명령줄 도구(`C:/Program Files/PostgreSQL/17/bin`) · 실제 DB 구조만 pg_dump로 복사 · 가짜 데이터(센터 50 · 개인 200 · 회원 16,000).
+- **월간 결산 1~3일 이어 만들기**(남은 계정만 · 동시 6) · 계정 · 결제 목록 1000건 잘림 정리(결산 · 아침 보고서 · 노션 · 주간 지표). Vercel Pro 뒤 1일 0:30~8:50 10분마다로 바꿀 예정(무료 플랜은 하루 1번만 허용).
+
 ### 요금제 · AI 월 한도 · 추가 팩 (2026-10-07 · SQL `docs/migrations/2026-10-07-pricing.sql` · 계획서 `docs/v2-계획-요금제-개편.md`)
 
 - **요금제 3개(금액 = 부가세 포함 실제 결제 · `lib/plans` 한 곳):** 베이직 19,900(AI 기능마다 매달 3번) · 프로 59,000(키 `solo` · 음성일지 120 · 준비 25) · 센터 149,000(3인 + 대표 · 센터 공용 음성일지 300 · 준비 60) · 트레이너 추가 39,900(+100 · +20 · **최대 7자리 = 트레이너 10명** · 한 번 결제 최고 428,300 = 토스 신고값 · `MAX_EXTRA_SEATS` + DB 제약 `2026-10-07-seat-cap.sql`) · 팩 준비 10번 14,900 · 음성일지 50건 9,900(2026-10-07 대표 조정). 요금 등급 = **`account.billing_plan`**(basic | solo | center) · ⚠️ **`account.plan='premium'`은 회원 전용 페이지 관문이라 세 등급 모두 그대로**(베이직도 회원 페이지 씀).

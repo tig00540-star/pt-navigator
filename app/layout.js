@@ -2,6 +2,7 @@ import { Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import AuthGate from "@/components/AuthGate";
+import ErrorReporter from "@/components/ErrorReporter";
 
 /* 본문 서체 — Pretendard Variable 한 벌(가변, 45~920).
    ⚠️ Geist를 걷어낸 이유: Geist에는 한글 글리프가 없다. 스택이
@@ -94,6 +95,7 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_LD }} />
+        <ErrorReporter />
         <AuthGate>{children}</AuthGate>
       </body>
     </html>

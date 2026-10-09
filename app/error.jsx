@@ -1,8 +1,9 @@
 "use client";
 import { useEffect } from "react";
+import { reportError } from "@/lib/reportError";
 export default function Error({ error, reset }) {
   // 서버 로그와 대조할 열쇠 확보 — 프로덕션은 메시지가 마스킹되고 digest만 남는다.
-  useEffect(() => { console.error(error); }, [error]);
+  useEffect(() => { console.error(error); reportError(error?.message || "화면 오류", { digest: error?.digest || null }); }, [error]);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg px-6 text-center">
       <p className="text-lg font-bold text-ink">문제가 발생했어요</p>

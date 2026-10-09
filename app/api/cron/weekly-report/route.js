@@ -52,7 +52,7 @@ export async function GET(req) {
     fetchAllRows(() => sb.from("ot_log").select("*")),
     fetchAllRows(() => sb.from("session_log").select("*")),
     fetchAllRows(() => sb.from("daily_workout_log").select("*")),
-    sb.from("account").select("id, type, billing_plan, extra_seats, subscription_status, current_period_end"),
+    fetchAllRows(() => sb.from("account").select("id, type, billing_plan, extra_seats, subscription_status, current_period_end")),
   ]);
   const firstErr = membersR.error || otR.error || contractsR.error || logsR.error || accountsR.error;
   if (firstErr) return Response.json({ error: `조회 실패: ${firstErr.message}` }, { status: 500 });

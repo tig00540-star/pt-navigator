@@ -11,6 +11,8 @@ import { createClient } from "@supabase/supabase-js";
 import { buildMonthlyForAccount } from "@/lib/monthlyReportBuild";
 import { lastMonthYm } from "@/lib/monthlyReport";
 import { sendPush } from "@/lib/pushServer";
+import { fetchAllRows } from "@/lib/fetchAllRows";
+import { fetchByIds } from "@/lib/fetchByIds";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -29,18 +31,19 @@ export async function GET(req) {
   const q = new URL(req.url).searchParams;
   const nowMs = Date.now();
   const kstDay = Number(new Date(nowMs + 9 * 3600000).toISOString().slice(8, 10));
-  if (kstDay !== 1 && !q.get("force")) return Response.json({ ok: true, skipped: "not_first_day" });
+  // 1~3일(2026-10-09 · 대량 시험): 계정이 많으면 5분 안에 다 못 끝낸다 → 다음 날 남은 계정만 이어서(이미 만든 계정은 아래에서 건너뜀)
+  if (kstDay > 3 && !q.get("force")) return Response.json({ ok: true, skipped: "not_first_days" });
   const ym = /^\d{4}-\d{2}$/.test(q.get("ym") || "") ? q.get("ym") : lastMonthYm(nowMs);
   const only = q.get("account");
 
   let aq = sb.from("account").select("id, type, plan, subscription_status, current_period_end").in("type", ["center", "solo"]).eq("subscription_status", "active");
   if (only) aq = aq.eq("id", only);
-  const { data: accounts, error } = await aq;
+  const { data: accounts, error } = await fetchAllRows(() => aq);   // 계정 1000개 넘어도 다
   if (error) return Response.json({ error: `계정 조회 실패: ${error.message}` }, { status: 500 });
   let list = (accounts || []).filter((a) => !a.current_period_end || Date.parse(a.current_period_end) > nowMs);
 
   if (!q.get("redo") && list.length) {
-    const { data: have } = await sb.from("monthly_report").select("account_id").eq("ym", ym).in("kind", ["owner", "solo"]).in("account_id", list.map((a) => a.id));
+    const { data: have } = await fetchByIds(sb, "monthly_report", "id, account_id", "account_id", list.map((a) => a.id), (x) => x.eq("ym", ym).in("kind", ["owner", "solo"]));
     const done = new Set((have || []).map((r) => r.account_id));
     list = list.filter((a) => !done.has(a.id));
   }
@@ -60,6 +63,6 @@ export async function GET(req) {
       } catch (e) { console.error("[monthly-report] 실패", a.id, e?.message || e); failed.push(a.id); }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(4, list.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(6, list.length) }, worker));
   return Response.json({ ok: true, ym, done, failed, skipped });
 }

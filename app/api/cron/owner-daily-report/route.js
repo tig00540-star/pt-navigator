@@ -77,7 +77,7 @@ export async function GET(req) {
   const only = new URL(req.url).searchParams.get("account");
   let q = sb.from("account").select("id, type, plan, subscription_status, current_period_end").eq("type", "center");
   if (only) q = q.eq("id", only);
-  const { data: accounts, error } = await q;
+  const { data: accounts, error } = await fetchAllRows(() => q);   // 센터 1000곳 넘어도 다
   if (error) return Response.json({ error: `계정 조회 실패: ${error.message}` }, { status: 500 });
 
   const nowMs = Date.now();

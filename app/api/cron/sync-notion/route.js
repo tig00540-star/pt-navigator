@@ -12,6 +12,7 @@
 import { bearerOk } from "@/lib/bearerOk";
 import { createClient } from "@supabase/supabase-js";
 import { isDemoAccount } from "@/lib/demo";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import {
   notionReady,
   fetchNotionRowsByAccount,
@@ -64,9 +65,9 @@ export async function GET(req) {
 
   // 1) 계정 + 트레이너(좌석수·원장명) + 결제(유료 여부)
   const [{ data: accounts, error: ae }, { data: trainers }, { data: payments }] = await Promise.all([
-    sb.from("account").select("id, type, name, subscription_status, current_period_end"),
-    sb.from("trainer").select("account_id, role, name, active"),
-    sb.from("payment").select("account_id, amount, status"),
+    fetchAllRows(() => sb.from("account").select("id, type, name, subscription_status, current_period_end")),   // 1000줄 잘림 방지(2026-10-09)
+    fetchAllRows(() => sb.from("trainer").select("id, account_id, role, name, active")),
+    fetchAllRows(() => sb.from("payment").select("id, account_id, amount, status")),
   ]);
   if (ae) return Response.json({ error: `account 조회 실패: ${ae.message}` }, { status: 500 });
 
