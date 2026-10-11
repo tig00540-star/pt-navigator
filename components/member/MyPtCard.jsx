@@ -7,10 +7,13 @@
    표시(대표 결정 2026-10-03): 합계는 크게, 유료/서비스 나눔은 작게. 남은 회수 재촉 문구는 넣지 않는다.
    표가 아직 없거나(SQL 전) 실패하면 카드가 조용히 숨는다(회원 화면을 막지 않는다).
    2026-10-06 홈 정리: children(= 수업 예약 · BookingCard embedded)을 받으면 '다음 수업' 줄 대신 그걸 넣는다(카드 하나로).
-   로드맵은 접어 둔다(한 줄 '지금 N단계' → 누르면 펼침). */
+   로드맵은 접어 둔다(한 줄 '지금 N단계' → 누르면 펼침).
+   2026-10-11 나의 목표(숫자 목표) — member_goal_view(트레이너가 '회원에게 보이기' 켠 것만 · 표 없으면 숨김) + 지금 값은
+   회원 안전 뷰(member_inbody · 운동 무게면 member_workout_log)에서 lib/ptGoal로 계산(트레이너 화면과 같은 규칙). */
 
 import { useEffect, useState } from "react";
-import { CalendarClock, Check, ChevronDown, Dumbbell, Flag } from "lucide-react";
+import { CalendarClock, Check, ChevronDown, Dumbbell, Flag, Target } from "lucide-react";
+import { describeGoal, goalProgress } from "@/lib/ptGoal";
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 function apptLabel(iso) {
@@ -34,13 +37,25 @@ export default function MyPtCard({ supabase, children = null }) {
     let cancelled = false;
     (async () => {
       if (!supabase) return;
-      const [c, a, r] = await Promise.all([
+      const [c, a, r, g] = await Promise.all([
         supabase.from("member_contract").select("*"),
         supabase.from("member_next_appt").select("start_at"),
         supabase.from("member_roadmap_view").select("*").maybeSingle(),
+        supabase.from("member_goal_view").select("pt_goal").maybeSingle(),
       ]);
       if (c.error) { console.error("내 PT 계약 조회 실패", c.error); return; }
-      if (!cancelled) setData({ contracts: c.data || [], appts: a.error ? [] : a.data || [], roadmap: r.error ? null : r.data || null });
+      // 나의 목표 — 보이기 켜진 숫자 목표가 있을 때만 지금 값을 읽는다.
+      let goal = null;
+      const pg = g.error ? null : g.data?.pt_goal || null;
+      if (pg) {
+        const src = pg.metric === "lift"
+          ? await supabase.from("member_workout_log").select("session_at, created_at, sets_structured")
+          : await supabase.from("member_inbody").select("measured_at, weight, skeletal_muscle, body_fat_mass, body_fat_pct").order("measured_at", { ascending: true });
+        const rows = src.error ? [] : src.data || [];
+        const prog = pg.metric === "lift" ? goalProgress(pg, [], rows) : goalProgress(pg, rows, []);
+        goal = { g: pg, prog };
+      }
+      if (!cancelled) setData({ contracts: c.data || [], appts: a.error ? [] : a.data || [], roadmap: r.error ? null : r.data || null, goal });
     })();
     return () => { cancelled = true; };
   }, [supabase]);
@@ -52,7 +67,7 @@ export default function MyPtCard({ supabase, children = null }) {
   const queued = active ? withRem.filter((c) => c.id !== active.id && c.rem.total > 0 && String(c.started_at) > String(active.started_at)) : [];
   const queuedTotal = queued.reduce((s, c) => s + c.rem.total, 0);
   const rm = data.roadmap && Array.isArray(data.roadmap.stages) && data.roadmap.stages.length ? data.roadmap : null;
-  if (!active && !rm && !data.appts.length && !children) return null;
+  if (!active && !rm && !data.goal && !data.appts.length && !children) return null;
 
   const total = active ? (active.sessions_total ?? 0) + (active.service_sessions ?? 0) : 0;
   const done = active ? Math.min(total, active.used ?? 0) : 0;
@@ -90,6 +105,16 @@ export default function MyPtCard({ supabase, children = null }) {
           <CalendarClock className="h-4 w-4 shrink-0 text-primary-strong" aria-hidden="true" />
           <span className="text-[13px] text-sub">다음 수업</span>
           <span className="ml-auto text-[14px] font-semibold text-ink">{next ? apptLabel(next) : "트레이너와 잡아 주세요"}</span>
+        </div>
+      )}
+
+      {data.goal && (
+        <div className="mt-4 border-t border-line pt-3">
+          <p className="m-0 flex items-center gap-1.5 text-[14px] font-bold text-ink">
+            <Target className="h-4 w-4 shrink-0 text-primary-strong" aria-hidden="true" /> 이번 목표
+          </p>
+          <p className="m-0 mt-1 text-[15px] font-semibold text-ink">{describeGoal(data.goal.g)}</p>
+          <p className="m-0 mt-1.5 text-[13px] text-sub">{data.goal.prog?.line}</p>
         </div>
       )}
 

@@ -22,6 +22,9 @@ import { remainingSessions, reregisterDue, reregRound } from "@/lib/memberStatus
 import { buildExerciseSeries } from "@/lib/workout";
 import { INBODY_FIELDS, REG_REASON_OPTS } from "@/lib/labels";
 import RegSalesbookView from "@/components/views/RegSalesbookView";
+import ReRegReadiness from "@/components/pt/ReRegReadiness";
+import { goalContext } from "@/lib/ptGoal";
+import RegistrationHistory from "@/components/pt/RegistrationHistory";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
@@ -44,7 +47,7 @@ const SAT_OPTS = [
 const RESULTS = [
   { value: "success", label: "재등록했어요", hint: "새 계약은 자료남기기에서 등록해요" },
   { value: "hold", label: "생각해 본대요", hint: "다시 물어볼 날을 정하면 '오늘'에 떠요" },
-  { value: "fail", label: "이번엔 안 하기로 했어요", hint: "이유를 남기면 다음 리포트가 참고해요" },
+  { value: "fail", label: "이번엔 안 하기로 했어요", hint: "이유를 남기면 다음 대본이 참고해요" },
   { value: "none", label: "아직 이야기 안 했어요", hint: "" },
 ];
 
@@ -88,7 +91,7 @@ const weightChange = (logs) => buildExerciseSeries(logs)
   .filter((e) => e.first != null && e.latest != null && e.first !== e.latest)
   .slice(0, 5);
 
-export default function PtReRegTab({ member, contracts, setContracts, logs }) {
+export default function PtReRegTab({ member, contracts, setContracts, logs, onMemberPatch }) {
   const { toast, showToast } = useToast();
   const [packages, setPackages] = useState([]); // 본인 active PT 패키지(recommended_program 재료)
   const [favorites, setFavorites] = useState([]); // 내 라이브러리에서 별표한 운동자료(대본이 다음 단계 운동에 우선 반영 · lib_refs)
@@ -318,30 +321,38 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
         satisfaction,
         this_period: thisPeriod,
         prev_rereg: prevRereg,
+        // 숫자 목표(2026-10-11) — 다음 목표로 넘어갔으면 그때 남긴 결과, 아니면 지금 진행. 다음 목표 = 재등록 탭에서 정한 글.
+        //   다음 목표가 이미 반영됐는데 결과가 없으면(전엔 숫자 목표가 없었음) 지금 pt_goal은 '다음' 목표라 넘기지 않는다.
+        goal: cur?.report?.goal_result || (!cur?.report?.next_goal?.applied_at && member.pt_goal?.confirmed_at ? goalContext(member.pt_goal, inbodyRows, logs) : null),
+        next_goal: cur?.report?.next_goal?.text ? { text: cur.report.next_goal.text, goal: cur.report.next_goal.goal || null } : null,
       };
+      // 세일즈북은 서버가 대본 저장 뒤 이어서 만든다(2026-10-11) — 숫자(change) · 사진 장 재료를 같이 보낸다.
+      const photoLabels = await loadPhotoLabels();
+      const sbSince = new Date().getTime();
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "reregister", member, ptContext, packages, favorites, ...(cur?.id ? { save: { kind: "contract", contractId: cur.id, satisfaction } } : {}) }),
+        body: JSON.stringify({ phase: "reregister", member, ptContext, packages, favorites, change: changeData, photoLabels, ...(cur?.id ? { save: { kind: "contract", contractId: cur.id, satisfaction } } : {}) }),
       });
       // 서버가 답을 준 순간에만 '만드는 중' 표시를 지운다 — 끊긴 경우엔 남겨 두고 돌아왔을 때 이어 받는다.
       if (pendingKey) clearPending(pendingKey);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         console.error("재등록 리포트 실패", d);
-        setRegAiError(d.error || "리포트를 만들지 못했어요. 다시 시도해 주세요.");
+        setRegAiError(d.error || "대본을 만들지 못했어요. 다시 시도해 주세요.");
         return;
       }
       const data = await res.json();
       setRegBrief(data);
       setRegBriefMeta({ generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "" });
       if (supabase && cur?.id) {
-        if (!res.headers.get("x-saved-row")) setRegAiError("리포트를 저장하지 못했어요. 지금은 이 화면에서만 보여요.");
+        if (!res.headers.get("x-saved-row")) setRegAiError("대본을 저장하지 못했어요. 지금은 이 화면에서만 보여요.");
         const { data: row } = await supabase.from("session_log").select("*").eq("id", cur.id).maybeSingle();
         if (row) setContracts((p) => p.map((c) => (c.id === row.id ? row : c)));
+        if (res.headers.get("x-saved-row")) waitSalesbook(cur.id, sbSince);
       }
     } catch {
-      setRegAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
+      setRegAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 대본은 이어서 저장돼요)");
     } finally {
       setRegGenerating(false);
       refreshAiQuota();
@@ -358,17 +369,73 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
     setRegBriefMeta(row.report.regBriefMeta);
   });
 
+  const loadPhotoLabels = async () => {
+    if (!supabase || !member?.id) return [];
+    const { data: ph } = await supabase.from("member_photo").select("label").eq("user_id", member.id);
+    return [...new Set((ph || []).map((p) => p.label).filter(Boolean))];
+  };
+
+  // 서버가 이어서 만드는 세일즈북 받기 — 대본 응답 뒤 약 20초. 8초마다 최대 2분 다시 읽는다(화면을 떠나면 멈춤 ·
+  //   돌아오면 계약 행에 이미 저장돼 있어 그대로 보인다).
+  //   (2026-10-11 점검) 화면을 떠나면 멈추고 · 기다리는 사이 다른 회차를 고르면 그 회차엔 안 넣는다 · 돌아오면 아래 effect가 이어 기다린다.
+  const [sbFollowing, setSbFollowing] = useState(false);
+  const sbPoll = useRef(null);
+  const alive = useRef(true);
+  const curIdRef = useRef(null);
+  useEffect(() => { curIdRef.current = cur?.id ?? null; }, [cur?.id]);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; clearTimeout(sbPoll.current); }; }, []);
+  const waitSalesbook = (contractId, since) => {
+    clearTimeout(sbPoll.current);
+    setSbFollowing(true);
+    let tries = 0;
+    const tick = async () => {
+      if (!alive.current) return;
+      tries += 1;
+      const { data: row } = await supabase.from("session_log").select("*").eq("id", contractId).maybeSingle();
+      if (!alive.current) return;
+      if (row && isNewerThan(row.report?.regSalesbookMeta?.generatedAt, since)) {
+        setContracts((p) => p.map((c) => (c.id === row.id ? row : c)));
+        if (curIdRef.current === contractId) setRegSb(row.report.reg_salesbook);
+        setSbFollowing(false);
+        return;
+      }
+      if (tries >= 15 || curIdRef.current !== contractId) { setSbFollowing(false); return; }
+      sbPoll.current = setTimeout(tick, 8000);
+    };
+    sbPoll.current = setTimeout(tick, 8000);
+  };
+  // 돌아왔을 때 — 대본을 만든 지 3분이 안 됐고 세일즈북이 그보다 옛것(또는 없음)이면 이어 기다린다(버튼 두 번 만들기 방지).
+  useEffect(() => {
+    if (!supabase || !isCurrent || !cur?.id) return;
+    const made = Date.parse(cur.report?.regBriefMeta?.generatedAt || "");
+    if (!made || new Date().getTime() - made > 180000) return;
+    const sbAt = Date.parse(cur.report?.regSalesbookMeta?.generatedAt || "") || 0;
+    if (sbAt >= made) return;
+    waitSalesbook(cur.id, made);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur?.id, isCurrent]);
+  // 클로징의 '세일즈북 열기' — 아직이면 한 번 더 읽어 보고, 그래도 없으면 안내.
+  const openBook = async () => {
+    if (regSb) { setSbOpen(true); return; }
+    if (supabase && cur?.id) {
+      const { data: row } = await supabase.from("session_log").select("*").eq("id", cur.id).maybeSingle();
+      if (row?.report?.reg_salesbook) {
+        setContracts((p) => p.map((c) => (c.id === row.id ? row : c)));
+        setRegSb(row.report.reg_salesbook);
+        setSbOpen(true);
+        return;
+      }
+    }
+    showToast(sbFollowing ? "세일즈북을 아직 만드는 중이에요. 조금만 기다려 주세요." : "아래 '재등록 세일즈북'에서 세일즈북을 먼저 만들어 주세요.");
+  };
+
   // 재등록 세일즈북 — phase:"reg_salesbook". 숫자는 changeData(앱 계산)로 렌더 · AI는 텍스트만.
   const generateRegSalesbook = async () => {
     if (sbGenerating || !cur || !isCurrent) return;
     setSbGenerating(true); setSbErr("");
     try {
       const rp = regBrief?.recommended_program || null;
-      let photoLabels = [];
-      if (supabase && member?.id) {
-        const { data: ph } = await supabase.from("member_photo").select("label").eq("user_id", member.id);
-        photoLabels = [...new Set((ph || []).map((p) => p.label).filter(Boolean))];
-      }
+      const photoLabels = await loadPhotoLabels();
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
@@ -438,10 +505,14 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
         </p>
       )}
 
+      {/* 재등록 재료 — 계약 내내 모아 둔 할 말(2026-10-11 대시보드에서 옮김 · 9칸 목록은 접혀 있음). 지금 회차만. */}
+      {isCurrent && <ReRegReadiness member={member} contracts={contracts} logs={logs} inbody={inbodyRows} active={cur}
+        onTasted={async () => { if (!supabase) return true; const row = await patchReport({ next_step_tasted: new Date().toISOString() }); if (!row) showToast("저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return Boolean(row); }} />}
+
       {/* 1. 회원 만족도 — 리포트의 근거. 누르면 바로 저장. */}
       <Card as="section">
         <SectionTitle icon={Heart} aside={satSaving ? "저장 중…" : null}>회원 만족도</SectionTitle>
-        <p className="-mt-1.5 mb-3 text-[13px] text-sub">리포트가 이걸 근거로 &lsquo;왜 더 해야 하는지&rsquo;를 짜요.</p>
+        <p className="-mt-1.5 mb-3 text-[13px] text-sub">대본이 이걸 근거로 &lsquo;왜 더 해야 하는지&rsquo;를 짜요.</p>
         <div className="flex flex-wrap gap-1.5">
           {SAT_OPTS.map((o) => (
             <Chip key={o.value} on={satLevel === o.value} disabled={satSaving}
@@ -468,8 +539,8 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
           title="재등록 상담 대본"
           quotaKind="rereg"
           generateLabel="재등록 대본 만들기"
-          idleDescription={`${member.name} 회원의 ${curIdx >= 1 ? "지난 재등록 이후 이번 계약 기간과 " : ""}첫 수업부터 지금까지의 변화(인바디 · 운동 무게 · 출석)와 위 만족도를 근거로, 오늘 수업에서 재등록까지 잇는 리포트를 만들어요. 맨 위 30초 요약, 그다음 변화 · 오늘 수업 흐름 · 클로징 · 거절 대응 순서예요.`}
-          waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
+          idleDescription={`${member.name} 회원의 ${curIdx >= 1 ? "지난 재등록 이후 이번 계약 기간과 " : ""}첫 수업부터 지금까지의 변화(인바디 · 운동 무게 · 출석)와 위 만족도 · 다음 목표를 근거로, 오늘 수업에서 재등록까지 잇는 대본을 만들어요. 맨 위 30초 요약, 그다음 오늘 수업 흐름 · 클로징 · 거절 대응 순서예요.`}
+          waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 대본은 저장돼 있다가 돌아오면 바로 떠요."
           onGenerate={isCurrent ? generateReReg : undefined}
           onRegenerate={isCurrent ? generateReReg : undefined}
           notice={regAiError || undefined}
@@ -477,12 +548,12 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
             <span>{new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요</span>
           )}
         >
-          {regBrief && <PrepReport kind="reregister" data={regBrief} packages={packages} favorites={favorites} highlightReason={regReason} />}
+          {regBrief && <PrepReport kind="reregister" data={regBrief} packages={packages} favorites={favorites} highlightReason={regReason} onOpenBook={regSb || isCurrent ? openBook : null} />}
         </AIBriefBlock>
       )}
 
       {!isCurrent && !regBrief && !regSb && (
-        <p className="px-1 text-[13px] text-muted">이 회차엔 만든 리포트 · 세일즈북이 없어요.</p>
+        <p className="px-1 text-[13px] text-muted">이 회차엔 만든 대본 · 세일즈북이 없어요.</p>
       )}
 
       {/* 3. 재등록 세일즈북(회원에게 보여주기) */}
@@ -491,6 +562,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
           <SectionTitle icon={BookOpen} aside={regSb ? "준비됐어요" : null}>재등록 세일즈북</SectionTitle>
           <p className="-mt-1.5 text-[13px] leading-relaxed text-sub">
             {sbGenerating ? "그동안의 변화를 정리하고 있어요…"
+              : sbFollowing && !regSb ? "재등록 대본에 맞춰 세일즈북도 이어서 만들고 있어요. 20초쯤 걸려요."
               : regSb ? "수업 중이나 끝나고 회원에게 그대로 보여 주세요. 홈의 세일즈북에서도 열 수 있어요."
               : hasChange ? "인바디 · 운동 기록을 근거로 회원에게 보여 줄 세일즈북을 만들어요."
               : "아직 변화 기록(인바디 · 종목 세트)이 적어요. 그래도 만들 수 있지만, 인바디를 한 번 기록하면 표가 확 살아나요."}
@@ -503,9 +575,9 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
               </Button>
             )}
             {isCurrent && (
-              <Button variant={regSb ? "ghost" : "primary"} size="sm" onClick={generateRegSalesbook} disabled={sbGenerating}>
+              <Button variant={regSb ? "ghost" : "primary"} size="sm" onClick={generateRegSalesbook} disabled={sbGenerating || (sbFollowing && !regSb)}>
                 <RefreshCw className={`h-3.5 w-3.5 ${sbGenerating ? "animate-spin" : ""}`} />
-                {sbGenerating ? "만드는 중…" : regSb ? "다시 만들기" : "세일즈북 만들기"}
+                {sbGenerating || (sbFollowing && !regSb) ? "만드는 중…" : regSb ? "다시 만들기" : "세일즈북 만들기"}
               </Button>
             )}
           </div>
@@ -554,6 +626,9 @@ export default function PtReRegTab({ member, contracts, setContracts, logs }) {
           </Button>
         </div>
       </Card>
+
+      {/* 등록 이력 — 처음 계약부터 지금까지(2026-10-06 대표 요청 · 2026-10-11 대시보드에서 옮김) */}
+      <RegistrationHistory contracts={contracts} logs={logs} />
 
       {sbOpen && regSb && (
         <RegSalesbookView

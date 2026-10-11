@@ -1,7 +1,7 @@
 "use client";
 
-/* PT 회원 화면 탭(2026-10-02 · OT 회원 화면과 같은 모양) — 화면 안 알약 탭: 대시보드 | 자료남기기 | 재등록.
-   주소·탭 번호 계약은 그대로(logs=10 · write=12 · renewal=11 · lib/nav PT_STEPS). 헤더의 작은 하늘색 탭은 없앴다. */
+/* PT 회원 화면 탭(2026-10-02 · OT 회원 화면과 같은 모양) — 화면 안 알약 탭: 대시보드 | 자료남기기 | 케어 | 재등록.
+   주소·탭 번호 계약은 그대로(logs=10 · write=12 · care=13(2026-10-11) · renewal=11 · lib/nav PT_STEPS). 헤더의 작은 하늘색 탭은 없앴다. */
 
 import Link from "next/link";
 import { PT_STEPS } from "@/lib/nav";

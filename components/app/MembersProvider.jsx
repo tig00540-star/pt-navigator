@@ -70,6 +70,7 @@ export function mapMemberRow(r) {
     status: r.status ?? "ot_active",
     origin: r.origin ?? "ot_funnel",
     pt_direction: r.pt_direction ?? "",
+    pt_goal: r.pt_goal ?? null,                   // 숫자 목표(2026-10-11 · lib/ptGoal · 트레이너가 [맞아요]로 확인한 것만)
     status_changed_at: r.status_changed_at ?? null,
     status_note: r.status_note ?? null,
     pt_end_snooze_until: r.pt_end_snooze_until ?? null,

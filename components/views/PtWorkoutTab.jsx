@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { ChevronDown, ClipboardList, Compass, Dumbbell, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { ChevronDown, ClipboardList, Dumbbell, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { notifyPush } from "@/lib/pushClient";
@@ -70,6 +70,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [editText, setEditText] = useState("");
   const [logBusy, setLogBusy] = useState(false);      // 수정/void 진행 중(버튼 잠금)
   const [voidTarget, setVoidTarget] = useState(null); // 삭제 확인 모달 대상 log(null=닫힘)
+  const [actionLogId, setActionLogId] = useState(null); // 수정 · 삭제 버튼을 펼친 일지(2026-10-11 · 카드마다 늘 보이던 버튼을 ⋯ 뒤로)
   // 계약 등록 회복 모달(①/② 실패 회복 · ③ 재등록 씨앗) — 금액 4칸은 ContractAmountFields 재사용.
   const [showContract, setShowContract] = useState(false);
   const [cSessions, setCSessions] = useState("");
@@ -79,9 +80,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [cErr, setCErr] = useState("");
   const [cSaving, setCSaving] = useState(false);
   // 현재 방향/목표(③ 작업3-2) — goal(OT 스냅샷)과 별개, PT 관리 중 갱신되는 살아있는 축.
-  const [direction, setDirection] = useState(member.pt_direction ?? "");
-  const [editingDir, setEditingDir] = useState(false);
-  const [dirSaving, setDirSaving] = useState(false);
   const { toast, showToast } = useToast();
   // 센터 보유 머신 이름(세트 그리드 자동완성용). 데모면 빈 목록 = 기존처럼 자유 타이핑.
   const [machineOptions, setMachineOptions] = useState([]);
@@ -171,7 +169,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
 
   // 지난 수업 편집 시작 — 현재 ai_summary를 textarea로. 확정된 로그면 카드에서 경고를 이미 보여준다.
   const startEdit = (log) => { setEditLogId(log.id); setEditText(log.ai_summary ?? ""); };
-  const cancelEdit = () => { setEditLogId(null); setEditText(""); };
+  const cancelEdit = () => { setEditLogId(null); setEditText(""); setActionLogId(null); };
 
   // §1 수정 — ai_summary만 update. 교훈1: .select() 0행이면 실패. 데모는 로컬 갱신.
   const saveEdit = async (log) => {
@@ -382,43 +380,9 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     }
   };
 
-  // 현재 방향/목표 저장 — user_table UPDATE + .select() 하드닝(교훈1). 성공 시 page.jsx 회원배열도 반영.
-  const saveDirection = async () => {
-    if (dirSaving) return;
-    setDirSaving(true);
-    const next = direction.trim();
-    if (!supabase) {
-      onMemberPatch?.(member.id, { pt_direction: next });
-      setEditingDir(false);
-      setDirSaving(false);
-      showToast("방향 저장됨(데모)");
-      return;
-    }
-    try {
-    const { data, error } = await supabase
-      .from("user_table")
-      .update({ pt_direction: next || null })
-      .eq("id", member.id)
-      .select();
-    if (error || !data || data.length === 0) {
-      showToast("방향을 저장하지 못했어요. 다시 시도해 주세요.");
-      setDirSaving(false);
-      return;
-    }
-    onMemberPatch?.(member.id, { pt_direction: next });
-    setEditingDir(false);
-    setDirSaving(false);
-    showToast("현재 방향을 저장했어요");
-    } catch {
-      showToast("방향을 저장하지 못했어요. 다시 시도해 주세요.");
-    } finally {
-      setDirSaving(false);
-    }
-  };
-
   const goalSet = hasVal(member.goal) && member.goal !== "미설정";
 
-  // 자료남기기 순서(2026-10-02 · 수업 끝나고 적는 순서): 운동일지 → 인바디·사진 → 현재 방향. flex order로 배치(급한불은 2026-10-06 대표 결정으로 제거).
+  // 자료남기기 순서(2026-10-02 · 수업 끝나고 적는 순서): 운동일지 → 인바디·사진(현재 방향은 2026-10-11 케어 탭 DirectionCard로). flex order로 배치(급한불은 2026-10-06 대표 결정으로 제거).
   return (
     <div className="flex flex-col gap-6">
       {/* ═══ 회원자료(열람) ═══ */}
@@ -562,6 +526,13 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                           if (openDispute(log, (confirms || []).filter((x) => x.log_id === log.id))) return <Badge tone="danger"><AlertTriangle className="h-3 w-3" />회원: 내용이 달라요</Badge>;
                           return <Badge tone="neutral">미확인</Badge>;
                         })()}
+                        {!log.voided && editLogId !== log.id && (
+                          <button type="button" onClick={() => setActionLogId((v) => (v === log.id ? null : log.id))}
+                            aria-label="수정 · 삭제" aria-expanded={actionLogId === log.id}
+                            className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-card hover:text-ink">
+                            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        )}
                       </div>
                       {sigs.get(log.id) && (
                         <div className="mt-1.5 flex items-center gap-2">
@@ -632,7 +603,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                         </div>
                       )}
                       {/* §1·§2 수정/삭제 — 편집 중엔 자체 버튼이 있어 숨김. voided면 무르기(하드 DELETE 금지 — 서명 cascade). */}
-                      {editLogId !== log.id && (
+                      {editLogId !== log.id && (log.voided || actionLogId === log.id || openDispute(log, (confirms || []).filter((x) => x.log_id === log.id))) && (
                         <div className="mt-2.5 flex justify-end gap-1.5 border-t border-line pt-2">
                           {log.voided ? (
                             <Button variant="ghost" size="sm" onClick={() => setVoided(log, false)} disabled={logBusy}>
@@ -671,47 +642,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
 
       {/* ═══ 자료남기기(기록) ═══ */}
 
-      {/* 현재 방향/목표 — PT 살아있는 상태축(③ 작업3-2). goal(OT 스냅샷)과 별개. */}
-      {mode !== "view" && (
-      <Card as="section" className="order-3">
-        <div className="flex items-center justify-between">
-          <SectionTitle icon={Compass} className="mb-0">현재 방향 · 목표</SectionTitle>
-          {!editingDir && (
-            <button
-              onClick={() => setEditingDir(true)}
-              className="text-xs font-medium text-sub transition hover:text-primary-strong"
-            >
-              {direction ? "수정" : "설정"}
-            </button>
-          )}
-        </div>
-        {editingDir ? (
-          <div className="mt-3">
-            <textarea
-              value={direction}
-              onChange={(e) => setDirection(e.target.value)}
-              disabled={dirSaving}
-              rows={3}
-              placeholder="이 회원 PT의 현재 방향·목표 (관리하며 갱신)"
-              className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary disabled:opacity-50"
-            />
-            <div className="mt-2 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setDirection(member.pt_direction ?? ""); setEditingDir(false); }} disabled={dirSaving}>
-                취소
-              </Button>
-              <Button variant="primary" size="sm" onClick={saveDirection} disabled={dirSaving}>
-                {dirSaving ? "저장 중…" : "저장"}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-sub">
-            {direction || <span className="text-muted">아직 방향을 정하지 않았어요.</span>}
-          </p>
-        )}
-      </Card>
-      )}
-
       {/* 수업권 · 재등록 — 운동일지 카드에서 빼서 따로(2026-10-06 대표: 찾기 헷갈림) · 자료남기기 맨 위 */}
       {mode !== "view" && (
       <Card as="section" className="order-0">
@@ -729,7 +659,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             )}
           </div>
           <Button variant="primary" size="md" onClick={() => setShowContract(true)} className="shrink-0">
-            <RefreshCw className="h-4 w-4" /> {isReReg ? "재등록 (새 계약)" : "계약 등록"}
+            <RefreshCw className="h-4 w-4" /> {isReReg ? "새 계약 등록" : "계약 등록"}
           </Button>
         </div>
       </Card>
@@ -787,11 +717,11 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
           <div>
             <div className="mb-3 flex items-center gap-2">
               <Dumbbell className="h-5 w-5 shrink-0 text-primary-strong" />
-              <h3 className="text-base font-bold text-ink">{isReReg ? "재등록" : "계약 등록"}</h3>
+              <h3 className="text-base font-bold text-ink">{isReReg ? "새 계약 등록" : "계약 등록"}</h3>
             </div>
-            <p className="mb-4 text-xs text-muted">
-              세션수·회당단가를 입력하면 총액이 자동 계산됩니다(할인이면 총액 수정).
-              {isReReg && " 기존 잔여를 먼저 소진한 뒤 이 계약이 적용됩니다(FIFO)."}
+            <p className="mb-4 text-[12px] text-muted">
+              수업 횟수와 회당 금액을 넣으면 총액이 자동으로 계산돼요. 할인했으면 총액을 고쳐 주세요.
+              {isReReg && " 남은 수업을 먼저 쓰고, 다 쓰면 이 계약으로 이어져요."}
             </p>
 
             <div className="mb-3">
@@ -814,7 +744,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                 취소
               </Button>
               <Button variant="primary" size="md" onClick={saveContract} disabled={cSaving}>
-                {cSaving ? (isReReg ? "재등록 중…" : "등록 중…") : (isReReg ? "재등록" : "등록")}
+                {cSaving ? "등록 중…" : "등록"}
               </Button>
             </div>
           </div>

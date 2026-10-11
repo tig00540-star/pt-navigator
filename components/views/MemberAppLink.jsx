@@ -13,7 +13,7 @@ import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { copyText } from "@/lib/clipboard";
 
-export default function MemberAppLink({ member, onMemberPatch, readOnly = false }) {
+export default function MemberAppLink({ member, onMemberPatch, readOnly = false, plain = false }) {
   const token = member?.member_token || null;
   const linked = Boolean(member?.member_auth_id); // 회원이 최소 1회 로그인함
   const [busy, setBusy] = useState(false);
@@ -88,10 +88,12 @@ export default function MemberAppLink({ member, onMemberPatch, readOnly = false 
   };
 
   return (
-    <div className="rounded-xl border border-line bg-card px-3 py-2.5 shadow-sm">
+    // plain = 바깥 카드가 제목을 가진 곳(PT 케어 탭 · 2026-10-11)에서 테두리 · 제목 없이.
+    <div className={plain ? "" : "rounded-xl border border-line bg-card px-3 py-2.5 shadow-sm"}>
       <div className="flex flex-wrap items-center gap-2">
-        <Link2 className="h-4 w-4 shrink-0 text-primary-strong" />
-        <span className="text-xs font-semibold text-ink">회원 전용 페이지 링크</span>
+        {!plain && <Link2 className="h-4 w-4 shrink-0 text-primary-strong" />}
+        {!plain && <span className="text-xs font-semibold text-ink">회원 전용 페이지 링크</span>}
+        {plain && !token && <span className="text-[13px] text-sub">아직 링크를 만들지 않았어요</span>}
         {token && (
           <Badge tone={linked ? "sky" : "primary"} className="ml-0.5">
             {linked ? "연결됨" : "발급됨"}

@@ -1,7 +1,7 @@
 "use client";
 
 /* 루틴 요청 — 회원이 회원 전용 페이지에서 '루틴 요청하기'를 누른 것(2026-10-04). 트레이너가 루틴을 만들어 보이기를 켜면 처리됨(사라짐).
-   보이는 곳: '오늘' 탭 · 폰 홈(오늘 카드 아래 · 있을 때만) · 넓은 홈. 누르면 그 회원 PT 대시보드(개인운동 루틴 카드).
+   보이는 곳: '오늘' 탭 · 폰 홈(오늘 카드 아래 · 있을 때만) · 넓은 홈. 누르면 그 회원 PT 케어 탭(개인운동 루틴 카드 · 2026-10-11).
    받은 members(내 담당 · 호출부가 거름) 안에서만. 표 없거나(SQL 전) 없으면 숨김. */
 
 import { useEffect, useState } from "react";
@@ -42,7 +42,7 @@ export default function RoutineRequestToday({ members = [], onSelect }) {
       <SectionHeader tone="brand" icon={Hand} title="루틴 요청" count={rows.length} hint="회원이 개인운동 루틴을 요청했어요. 만들어서 보이기를 켜면 사라져요." />
       <div className="grid gap-2">
         {rows.map((r) => (
-          <ListRow key={r.id} tone="brand" name={nameOf(r.user_id)} onClick={() => onSelect?.(r.user_id, 10)}>
+          <ListRow key={r.id} tone="brand" name={nameOf(r.user_id)} onClick={() => onSelect?.(r.user_id, 13)}>
             <div className="mt-0.5 text-[12.5px] text-sub">{daysAgo(r.created_at)}</div>
           </ListRow>
         ))}

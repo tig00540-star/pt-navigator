@@ -191,7 +191,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
           <ApptRequestToday members={members} uid={uid} />
           <OwnerFeedbackToday members={members} uid={uid} />
           <PayrollConfirmedToday uid={uid} />
-          <RoutineRequestToday members={scoped} onSelect={(id) => go(id, 10)} />
+          <RoutineRequestToday members={scoped} onSelect={(id) => go(id, 13)} />
           <ReapproachToday members={scoped} onSelect={(id) => go(id, 1)} />
           <RegisterDueToday members={scoped} onSelect={(id) => go(id, 11)} />
           <RegisterReapproachToday members={scoped} onSelect={(id) => go(id, 11)} />

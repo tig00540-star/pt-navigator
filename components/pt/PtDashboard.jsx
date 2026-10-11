@@ -2,8 +2,10 @@
 
 /* =========================================================================
    PtDashboard — PT 회원을 누르면 처음 뜨는 화면의 윗부분(2026-10-02 · OT 대시보드와 같은 틀).
-   한눈에: 누구인지(몇 번째 계약) → 숫자 6칸 → 이번 계약 진행 → 지금 할 일(버튼 하나) → 달라진 것.
+   한눈에: 누구인지(몇 번째 계약) → 숫자 6칸 → 이번 계약 진행 → 지금 할 일(버튼 하나) → 재등록 재료 한 줄.
    아래 '지난 수업'과 '더 보기(무게 그래프·인바디·회원 기록)'는 PtWorkoutTab(mode="view")가 그린다.
+   2026-10-11 탭 나눔(4.5화면 → 약 2화면): 목표 로드맵 · 개인운동 루틴 → 케어 탭 · 재료 9칸 · 등록 이력 → 재등록 탭.
+   대신 루틴 쪽 급한 일(회원이 '아파서 멈췄어요' · 루틴 요청)은 '지금 할 일'이 케어 탭으로 데려간다.
    데이터: 계약·수업 기록은 PTView가 읽어 넘긴다. 예약·인바디·오운완만 여기서 읽는다(회원 1명 소량).
    ========================================================================= */
 
@@ -12,15 +14,13 @@ import Link from "next/link";
 import { ArrowRight, CalendarCheck2, CalendarClock, Flame, Pencil, Scale, Ticket } from "lucide-react";
 import { useAppUi } from "@/components/app/AppChrome";
 import { supabase } from "@/lib/supabaseClient";
-import { activeContract, remainingSessions, reregisterDue } from "@/lib/memberStatus";
-import { buildExerciseSeries } from "@/lib/workout";
+import { activeContract, remainingSessions, reregisterDue, reregRound } from "@/lib/memberStatus";
 import { hasVal } from "@/lib/format";
 import { confirmDue, openDispute } from "@/lib/workoutHash";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import RoadmapCard from "@/components/pt/RoadmapCard";
-import RoutineCard from "@/components/pt/RoutineCard";
-import RegistrationHistory from "@/components/pt/RegistrationHistory";
+import { describeGoal, goalProgress } from "@/lib/ptGoal";
+import ReRegReadiness from "@/components/pt/ReRegReadiness";
 
 const KST_TODAY = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const kstDay = (iso) => (iso ? new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10) : null);
@@ -71,6 +71,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
   const [todayAppt, setTodayAppt] = useState(false);
   const [inbody, setInbody] = useState([]);
   const [ounwan, setOunwan] = useState(null);
+  const [routineAlert, setRoutineAlert] = useState({ pain: false, request: false });   // 케어 탭으로 데려갈 일
   const [nowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -80,21 +81,30 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
       const now = new Date();
       const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
       const endToday = new Date(now); endToday.setHours(23, 59, 59, 999);
-      const [nx, td, ib, ow] = await Promise.all([
+      const [nx, td, ib, ow, rt, rq, rl] = await Promise.all([
         supabase.from("appointment").select("start_at").eq("user_id", member.id).eq("status", "booked")
           .gte("start_at", now.toISOString()).order("start_at", { ascending: true }).limit(1),
         supabase.from("appointment").select("id").eq("user_id", member.id).neq("status", "canceled")
           .gte("start_at", startToday.toISOString()).lte("start_at", endToday.toISOString()).limit(1),
-        supabase.from("inbody_log").select("measured_at, weight, skeletal_muscle, body_fat_pct")
+        supabase.from("inbody_log").select("measured_at, weight, skeletal_muscle, body_fat_mass, body_fat_pct")
           .eq("user_id", member.id).order("measured_at", { ascending: true }),
         // 오운완(개인운동 포함 출석일) — 회원 전용 페이지와 같은 서버 집계. 계정 전체 행에서 이 회원만 고른다.
         supabase.rpc("ounwan_ranking"),
+        // 루틴 — 확정 뒤 회원이 '아파서 멈췄어요'를 남겼나 · 열린 루틴 요청(표 없으면 error → 없음으로).
+        supabase.from("member_routine").select("confirmed_at").eq("member_id", member.id).maybeSingle(),
+        supabase.from("member_routine_request").select("id").eq("user_id", member.id).eq("status", "open").limit(1),
+        supabase.from("member_routine_log").select("created_at, items").eq("user_id", member.id).order("created_at", { ascending: false }).limit(30),
       ]);
       if (cancelled) return;
       setNextAppt(nx.data?.[0] || null);
       setTodayAppt(Boolean(td.data?.length));
       setInbody(ib.data || []);
       setOunwan((ow.data || []).find((r) => r.user_id === member.id) || null);
+      const since = rt.data?.confirmed_at || null;
+      setRoutineAlert({
+        pain: Boolean(since) && (rl.data || []).some((l) => l.created_at > since && Array.isArray(l.items) && l.items.some((it) => it?.pain)),
+        request: Boolean(rq.data?.length),
+      });
     })();
     return () => { cancelled = true; };
   }, [member?.id]);
@@ -118,13 +128,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
     const nth = active ? ordered.findIndex((c) => c.id === active.id) + 1 : ordered.length;
     const total = active ? (active.sessions_total ?? 0) + (active.service_sessions ?? 0) : 0;
     const used = active ? total - rem.total : 0;
-    // 달라진 것 — 운동: 처음과 지금 최고중량이 많이 는 종목 2개.
-    const lifts = buildExerciseSeries(logs)
-      .map((s) => { const p = s.points.filter((x) => x.topWeight != null); return p.length >= 2 ? { name: s.exercise, a: p[0].topWeight, b: p[p.length - 1].topWeight } : null; })
-      .filter((x) => x && x.b !== x.a)
-      .sort((x, y) => (y.b - y.a) - (x.b - x.a))
-      .slice(0, 2);
-    return { active, rem, due, last, month, wroteToday, unconfirmed, disputes, nth, total, used, lifts };
+    return { active, rem, due, last, month, wroteToday, unconfirmed, disputes, nth, total, used };
   }, [contracts, logs, confirms, nowMs]);
 
   // 인바디 — 목표가 근력·벌크면 골격근·체중, 아니면 체중·체지방률.
@@ -137,11 +141,12 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
       label, now: `${latest[k]}${unit}`,
       d: inbody.length > 1 && first[k] != null ? delta(first[k], latest[k], unit === "%" ? "%p" : unit) : null,
     }));
-    const changes = inbody.length > 1 ? [["weight", "체중", "kg"], ["skeletal_muscle", "골격근량", "kg"], ["body_fat_pct", "체지방률", "%"]]
-      .filter(([k]) => first[k] != null && latest[k] != null && first[k] !== latest[k])
-      .map(([k, label, unit]) => ({ label, a: `${first[k]}${unit}`, b: `${latest[k]}${unit}` })) : [];
-    return { date: latest.measured_at, count: inbody.length, parts, changes };
+    return { date: latest.measured_at, count: inbody.length, parts };
   }, [inbody, member.goal]);
+
+  // 숫자 목표(2026-10-11 · 케어 탭에서 [맞아요]로 정한 것) — 계약 막대 아래 한 줄.
+  const goal = member.pt_goal?.confirmed_at ? member.pt_goal : null;
+  const goalProg = useMemo(() => (goal ? goalProgress(goal, inbody, logs) : null), [goal, inbody, logs]);
 
   const showInbody = () => {
     const el = document.getElementById("pt-more");
@@ -152,13 +157,14 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
   const todo = !d.active && !contracts.length ? null
     : todayAppt && !d.wroteToday ? { href: `/pt/${member.id}/write`, title: "오늘 운동일지 쓰기", sub: "오늘 수업이 있어요" }
     : d.disputes > 0 ? { href: null, title: `회원이 '내용이 달라요' ${d.disputes}건`, sub: "아래 지난 수업에서 운동일지를 고치거나, 받지 않은 수업이면 삭제해 주세요" }
+    : routineAlert.pain ? { href: `/pt/${member.id}/care`, title: "개인운동 확인하기", sub: "회원이 '아파서 멈췄어요'를 남겼어요" }
+    : routineAlert.request ? { href: `/pt/${member.id}/care`, title: "개인운동 루틴 만들기", sub: "회원이 루틴을 요청했어요" }
     : d.due || !d.active ? { href: `/pt/${member.id}/renewal`, title: "재등록 준비하기", sub: d.active ? `남은 수업 ${d.rem.total}회` : "진행 중인 계약이 없어요" }
     : d.unconfirmed > 0 ? { href: null, title: `회원 확인 대기 ${d.unconfirmed}개`, sub: "회원 전용 페이지에서 확인해 달라고 알려 주세요" }
     : null;
 
   const facts = [hasVal(member.age) && `${member.age}세`, hasVal(member.job) && member.job, hasVal(member.residence) && member.residence].filter(Boolean);
   const goalSet = hasVal(member.goal) && member.goal !== "미설정";
-  const changes = [...(ib?.changes || []), ...d.lifts.map((l) => ({ label: l.name, a: `${l.a}kg`, b: `${l.b}kg` }))].slice(0, 4);
 
   return (
     <div className="space-y-4 break-keep text-pretty">
@@ -214,6 +220,13 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
             </div>
           </div>
         )}
+
+        {goal && goalProg && (
+          <Link href={`/pt/${member.id}/care`} className="mt-3 block no-underline">
+            <p className="m-0 truncate text-[12px] text-muted">목표 · <span className="font-semibold text-ink">{describeGoal(goal)}</span></p>
+            <p className="m-0 mt-0.5 text-[12px] text-sub">{goalProg.line}</p>
+          </Link>
+        )}
       </Card>
 
       {todo && (todo.href ? (
@@ -231,28 +244,10 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
         </div>
       ))}
 
-      {/* 목표 로드맵 — 회원 전용 페이지 '내 PT'에 보이는 단계(트레이너가 만들고 켤 때만 · 2026-10-03) */}
-      <RoadmapCard member={member} contracts={contracts} logs={logs} />
+      {/* 재등록 재료 한 줄(2026-10-11 · 전체 9칸은 재등록 탭 맨 위) */}
+      {/* 재등록 탭과 같은 회차(끝나 가는 계약 · reregRound)를 넘겨 개수가 같게(2026-10-11 점검) */}
+      {contracts.length > 0 && <ReRegReadiness compact member={member} contracts={contracts} logs={logs} inbody={inbody} active={reregRound(contracts, logs).target} />}
 
-      {/* 개인운동 루틴 — 회원 전용 페이지 '오늘 할 개인운동'(트레이너 확정 · 보이기 켤 때만 · 2026-10-04) */}
-      <RoutineCard member={member} logs={logs} />
-
-      {/* 등록 이력 — 처음 계약부터 지금까지(2026-10-06 대표 요청) */}
-      <RegistrationHistory contracts={contracts} logs={logs} />
-
-      {changes.length > 0 && (
-        <Card padding="none">
-          <h2 className="px-5 pb-1 pt-4 text-[15px] font-bold text-ink">처음보다 달라진 것</h2>
-          <ul className="divide-y divide-line">
-            {changes.map((c) => (
-              <li key={c.label} className="flex items-baseline justify-between gap-3 px-5 py-2.5 text-[14px]">
-                <span className="text-sub">{c.label}</span>
-                <span className="text-ink">{c.a} → <b className="font-semibold">{c.b}</b></span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
     </div>
   );
 }
