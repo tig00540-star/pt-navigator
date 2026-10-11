@@ -17,6 +17,7 @@ import Wordmark from "@/components/ui/Wordmark";
 import Button from "@/components/ui/Button";
 import { GENERAL_CONSENT, LOG_CONFIRM_NOTICE } from "@/lib/consent";
 import IntakeMore from "@/components/intake/IntakeMore";
+import TrainerIntro from "@/components/intro/TrainerIntro";
 import { DAY_LABELS, SLOT_HOURS } from "@/lib/slots";
 
 const inputCls = "w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[16px] text-ink placeholder-muted outline-none focus:border-primary";
@@ -193,7 +194,13 @@ export default function JoinPage() {
 
   return shell(
     <>
-      <h1 className="m-0 mt-4 text-[24px] font-extrabold leading-tight tracking-[-0.03em]">OT 신청서</h1>
+      {/* 트레이너 '내 소개'(2026-10-11 · 트레이너 QR이고 소개를 만들어 둔 경우만) */}
+      {info.intro && (
+        <div className="mt-4">
+          <TrainerIntro intro={info.intro} onApply={() => { try { document.getElementById("ot-apply")?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch { /* 무시 */ } }} />
+        </div>
+      )}
+      <h1 id="ot-apply" className={`m-0 ${info.intro ? "mt-8 scroll-mt-4" : "mt-4"} text-[24px] font-extrabold leading-tight tracking-[-0.03em]`}>OT 신청서</h1>
       <p className="m-0 mt-1.5 text-[15px] leading-relaxed text-sub">
         {info.center && info.center !== info.trainer ? `${info.center} · ` : ""}{who ? `${who}가 받아요.` : "센터에서 담당 트레이너를 정해 연락드려요."}
         {" "}30초면 신청돼요.

@@ -10,6 +10,7 @@ import { WEEKLY_OPTS, LEAD_SOURCES, HEALTH_SCREEN_ITEMS, TRAINER_GENDER_OPTS } f
 import { formatSlots, slotDays } from "@/lib/slots";
 import { after } from "next/server";
 import { sendPush, ownerIds } from "@/lib/pushServer";
+import { loadTrainerIntro } from "@/lib/trainerIntro";
 
 export const runtime = "nodejs";
 
@@ -56,7 +57,15 @@ export async function GET(req) {
   if (!CODE_RE.test(code)) return Response.json({ error: "invalid" }, { status: 404 });
   const { data, error } = await sb.rpc("intake_link_info", { p_code: code });
   if (error) { console.error("[ot-intake] info 실패", error.message); return Response.json({ error: "closed" }, { status: 500 }); }
-  return Response.json(data || { error: "invalid" }, { status: data?.ok ? 200 : 404 });
+  // 트레이너 QR이면 '내 소개'(2026-10-11)를 같이 — 소개를 안 만들었거나 읽기 실패면 그냥 신청서만
+  let intro = null;
+  if (data?.ok) {
+    try {
+      const { data: l } = await sb.from("intake_link").select("trainer_id").eq("code", code).eq("active", true).maybeSingle();
+      if (l?.trainer_id) intro = await loadTrainerIntro(sb, l.trainer_id);
+    } catch (e) { console.error("[ot-intake] 소개 읽기 실패", e?.message || e); }
+  }
+  return Response.json(data ? { ...data, intro } : { error: "invalid" }, { status: data?.ok ? 200 : 404 });
 }
 
 export async function POST(req) {

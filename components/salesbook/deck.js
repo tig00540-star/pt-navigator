@@ -10,21 +10,28 @@ export const CASES_PER_SLIDE = 2;
 
 export const SLIDE_LABELS = {
   cover: "표지",
+  trainer: "트레이너 소개",
   goal: "당신의 목표",
   confirmed: "오늘 함께 확인한 것",
   today: "오늘 해본 운동",
   photo: "사진 기록",
-  roadmap: "로드맵",
+  roadmap: "여기까지 함께 갑니다",
   plans: "추천 플랜",
   benefits: "등록 혜택",
   closing: "약속드릴게요",
 };
-export const slideLabel = (key) => SLIDE_LABELS[key] || (key.startsWith("case-") ? `이런 변화를 만들어요 ${Number(key.slice(5)) + 1}` : key);
+export const slideLabel = (key) => SLIDE_LABELS[key]
+  || (key.startsWith("case-") ? `이런 변화를 만들어요 ${Number(key.slice(5)) + 1}` : key.startsWith("care-") ? `이렇게 관리해요 ${Number(key.slice(5)) + 1}` : key);
 
 // 사례 묶음 키 — case-0, case-1 …
 export function caseKeys(caseIds = []) {
   const n = Math.ceil(caseIds.length / CASES_PER_SLIDE);
   return Array.from({ length: n }, (_, i) => `case-${i}`);
+}
+// 관리 모습 묶음 키 — care-0, care-1 …(1차 OT 변화 모음집 · 2026-10-11) · caseChunk를 같이 쓴다(접두어 길이가 같다)
+export function careKeys(ids = []) {
+  const n = Math.ceil(ids.length / CASES_PER_SLIDE);
+  return Array.from({ length: n }, (_, i) => `care-${i}`);
 }
 export function caseChunk(caseIds = [], key) {
   const i = Number(key.slice(5));

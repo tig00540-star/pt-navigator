@@ -5,6 +5,7 @@
    "세일즈북 탭 → 회원 누르기 → 바로 발표". 세일즈북이 저장된 회원만 최근 순으로 보여 준다.
    - OT 세일즈북(ot_log.report.salesbook · 2차 OT 준비하기에서 만듦): 여기서 바로 발표·편집(장 구성·사례 넣기).
    - 재등록 세일즈북(session_log.report.reg_salesbook · 재등록 준비에서 만듦): 숫자 계산이 그 화면에 있어 그 화면으로 열어 준다.
+   - 1차 OT는 회원별 세일즈북 대신 맨 위 '내 회원님 변화 모음집'(Showcase · 2026-10-11 대표 · 옛 '1차 제안'은 없앰).
    ========================================================================= */
 
 import { useEffect, useMemo, useState } from "react";
@@ -19,8 +20,7 @@ import Badge from "@/components/ui/Badge";
 import FilterChip from "@/components/ui/FilterChip";
 import DeckLauncher, { useSalesbookAssets } from "@/components/salesbook/DeckLauncher";
 import PriceSheet from "@/components/salesbook/PriceSheet";
-import FirstProposalLauncher from "@/components/salesbook/FirstProposalLauncher";
-import { viewFor } from "@/lib/memberStatus";
+import { ShowcaseCard } from "@/components/salesbook/Showcase";
 
 const when = (iso) => {
   if (!iso) return "";
@@ -37,7 +37,7 @@ export default function DeckList() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(null); // { row, member, editable }
   const [priceOpen, setPriceOpen] = useState(false);
-  const { packages, trainer } = useSalesbookAssets();
+  const { packages, trainer, ready } = useSalesbookAssets();
 
   // 목록은 가볍게(2026-10-06): 내 회원(대표는 센터 전체)만 · report 통째가 아니라 날짜 메타만 읽는다.
   //   예전엔 센터 전체 행의 report(리포트 · 세일즈북 전부)를 한 번에 받아 느리고 1000행에서 잘렸다.
@@ -75,11 +75,7 @@ export default function DeckList() {
   const byId = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const list = useMemo(() => {
     const mineOnly = members.some((m) => m.trainer_id === myUid);
-    // 2차 세일즈북이 아직 없는 OT 회원은 '1차 제안'(AI 없이 바로 만드는 짧은 버전)으로 함께 띄운다.
-    const hasOt = new Set((rows || []).filter((r) => r.kind === "ot").map((r) => r.user_id));
-    const firsts = members.filter((m) => viewFor(m) === "ot" && !hasOt.has(m.id))
-      .map((m) => ({ kind: "first", user_id: m.id, at: m.created_at || null }));
-    return [...(rows || []), ...firsts]
+    return [...(rows || [])]
       .map((r) => ({ ...r, member: byId.get(r.user_id) }))
       .filter((r) => r.member && (!mineOnly || r.member.trainer_id === myUid))
       .filter((r) => kind === "all" || r.kind === kind)
@@ -89,7 +85,7 @@ export default function DeckList() {
 
   const openDeck = async (r, editable) => {
     if (r.kind === "reg") { router.push(`/pt/${r.user_id}/renewal?sb=1`); return; }
-    if (r.kind === "first" || !supabase || r.row?.report) { setOpen({ kind: r.kind, row: r.row, member: r.member, editable }); return; }
+    if (!supabase || r.row?.report) { setOpen({ kind: r.kind, row: r.row, member: r.member, editable }); return; }
     const { data, error } = await supabase.from("ot_log").select("id, user_id, ot_round, created_at, report").eq("id", r.row.id).maybeSingle();
     if (error || !data) { console.error("세일즈북 열기 실패", error); showToast("세일즈북을 열지 못했어요. 다시 시도해 주세요."); return; }
     setOpen({ kind: r.kind, row: data, member: r.member, editable });
@@ -111,9 +107,10 @@ export default function DeckList() {
         </button>
       </div>
 
+      <ShowcaseCard packages={packages} trainer={trainer} ready={ready} showToast={showToast} />
+
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip selected={kind === "all"} onClick={() => setKind("all")}>전체</FilterChip>
-        <FilterChip selected={kind === "first"} onClick={() => setKind("first")}>1차 제안</FilterChip>
         <FilterChip selected={kind === "ot"} onClick={() => setKind("ot")}>2차 OT</FilterChip>
         <FilterChip selected={kind === "reg"} onClick={() => setKind("reg")}>재등록</FilterChip>
         <label className="ml-auto flex h-9 min-w-0 items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 text-[13px] text-sub">
@@ -127,7 +124,7 @@ export default function DeckList() {
       ) : list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-8 text-center">
           <p className="m-0 text-[15px] font-semibold text-ink">{q || kind !== "all" ? "맞는 세일즈북이 없어요" : "아직 만든 세일즈북이 없어요"}</p>
-          <p className="m-0 mt-1 text-[13px] text-sub">OT 회원은 1차 제안이 바로 떠요. 2차 OT 대본 · 재등록 대본을 만들면 세일즈북이 여기 모여요.</p>
+          <p className="m-0 mt-1 text-[13px] text-sub">2차 OT 대본 · 재등록 대본을 만들면 회원별 세일즈북이 여기 모여요. 1차 OT엔 위의 변화 모음집을 보여 주세요.</p>
         </div>
       ) : (
         <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-3">
@@ -139,9 +136,9 @@ export default function DeckList() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[15px] font-bold text-ink">{r.member.name}</span>
-                    <Badge tone={r.kind === "reg" ? "pt" : "ot"}>{r.kind === "ot" ? `OT ${r.round || ""}차` : r.kind === "first" ? "1차 제안" : "재등록"}</Badge>
+                    <Badge tone={r.kind === "reg" ? "pt" : "ot"}>{r.kind === "ot" ? `OT ${r.round || ""}차` : "재등록"}</Badge>
                   </span>
-                  <span className="block text-[12px] text-muted">{r.kind === "first" ? "AI 없이 바로 · " : `${when(r.at)} · `}{r.kind === "ot" && (r.row.report?.salesbook?.deck?.cases || []).length ? `사례 ${r.row.report.salesbook.deck.cases.length}개 · ` : ""}눌러서 발표</span>
+                  <span className="block text-[12px] text-muted">{`${when(r.at)} · `}{r.kind === "ot" && (r.row.report?.salesbook?.deck?.cases || []).length ? `사례 ${r.row.report.salesbook.deck.cases.length}개 · ` : ""}눌러서 발표</span>
                 </span>
               </button>
               {r.kind !== "reg" && (
@@ -155,10 +152,7 @@ export default function DeckList() {
         </ul>
       )}
 
-      {open && open.kind === "first" && (
-        <FirstProposalLauncher member={open.member} editable={open.editable} showToast={showToast} onClose={() => setOpen(null)} />
-      )}
-      {open && open.kind !== "first" && (
+      {open && (
         <DeckLauncher
           member={open.member}
           row={open.row}

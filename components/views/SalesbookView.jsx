@@ -21,9 +21,12 @@ import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import PriceSheet from "@/components/salesbook/PriceSheet";
 import { resolvePkg } from "@/lib/pkgRef";
-import { caseKeys, caseChunk, deckOrder } from "@/components/salesbook/deck";
-import { CaseSlideBody, DeckPanel, useDeckCases } from "@/components/salesbook/DeckParts";
+import { caseKeys, careKeys, caseChunk, deckOrder } from "@/components/salesbook/deck";
+import { CaseSlideBody, CareSlideBody, DeckPanel, useDeckCases } from "@/components/salesbook/DeckParts";
 import { guessCategory } from "@/lib/salesCase";
+import useTrainerIntro from "@/components/intro/useTrainerIntro";
+import { INTRO_SLIDE_CASES } from "@/lib/trainerIntro";
+import { IntroHeader, IntroTags, IntroCases, introTitle } from "@/components/intro/TrainerIntro";
 
 const SLIDE_COUNT = 7; // 기본 장 수 — 트레이너가 '신규 등록 혜택 장'을 켜면 +1(benefits prop)
 
@@ -132,6 +135,7 @@ export default function SalesbookView({
   startPresent = false, // 세일즈북 탭에서 회원을 누르면 바로 발표 화면으로(2단계)
   slideKeys = null,     // 기본 장 목록 바꾸기(1차 제안 = 표지·목표·플랜·마무리) · 혜택 장은 알아서 끼운다
   caseAnchor = "roadmap", // 사례 장을 기본으로 끼울 자리(그 장 앞)
+  showcase = false,       // 1차 OT '내 회원님 변화 모음집'(2026-10-11) — 회원 없이 · 트레이너 소개 → 사례 → 관리 모습 → 마무리
 }) {
   // 신규 등록 혜택 장(선택) — 있으면 플랜 다음에 한 장 추가.
   const hasBenefits = Array.isArray(benefits) && benefits.filter(Boolean).length > 0;
@@ -163,14 +167,20 @@ export default function SalesbookView({
   if (salesbook !== prevSb) { setPrevSb(salesbook); setDraft(salesbook || {}); }
   const sb = editable ? draft : (salesbook || {});
   // 장 구성(2단계) — 순서·숨김·사례 장. deck이 없으면 예전 순서 그대로.
-  const coreKeys = slideKeys || ["cover", "goal", "confirmed", "photo", "roadmap", "plans", "closing"];
+  // 트레이너 소개 장(2026-10-11 · 설정 '내 소개 페이지'를 만든 경우만 · 표지 바로 다음)
+  const intro = useTrainerIntro(trainer, personName(me.trainerName));
+  const keys0 = showcase ? ["trainer", ...careKeys(salesbook?.deck?.care || []), "closing"]
+    : slideKeys || ["cover", "goal", "confirmed", "photo", "roadmap", "plans", "closing"];
+  const coreKeys = intro && keys0.includes("cover") ? keys0.flatMap((k) => (k === "cover" ? ["cover", "trainer"] : [k])) : keys0;
   const baseKeys = hasBenefits ? [...coreKeys.filter((k) => k !== "closing"), "benefits", ...(coreKeys.includes("closing") ? ["closing"] : [])] : coreKeys;
-  const deck = deckOrder(baseKeys, sb.deck, caseAnchor);
+  // 모음집: 변화 사례는 관리 모습 앞(관리 모습이 없으면 혜택 앞 · 그것도 없으면 약속 앞)
+  const deck = deckOrder(baseKeys, sb.deck, showcase ? (careKeys(sb.deck?.care || [])[0] || (hasBenefits ? "benefits" : "closing")) : caseAnchor);
   const total = Math.max(1, deck.visible.length);
   const pos = (k) => deck.visible.indexOf(k) + 1;
   const show = (k) => deck.visible.includes(k);
   if (idx > total - 1) setIdx(total - 1); // 장을 숨겨 줄었으면 마지막 장으로(렌더 중 조정)
   const deckCases = useDeckCases(sb.deck?.cases || []);
+  const deckCare = useDeckCases(showcase ? sb.deck?.care || [] : []);
   const memberCategory = guessCategory(member?.goal);
   const [panelOpen, setPanelOpen] = useState(false);
   // 중첩 필드 편집기(editable일 때만 소비). 예: setField("confirmed", "vow"…) 는 slice별로 아래에서.
@@ -251,6 +261,8 @@ export default function SalesbookView({
   const trName = tr.display_name || personName(me.trainerName);
   const trLabel = tr.display_name || (trName ? `${trName} 트레이너` : "담당 트레이너");
   const plans = Array.isArray(sb.plans) ? sb.plans.slice(0, 2) : [];
+  // 모음집은 소개를 안 만들었어도 표지 대신 소개 장이 첫 장(이름 · 자격만이라도)
+  const slideIntro = intro || (showcase ? { name: trName, credentials: tr.credentials || "", intro: "", tags: [], photo: null, cases: [], urls: {} } : null);
 
   return (
     <div ref={sbRootRef} className={`sb-root fixed inset-0 z-[120] flex flex-col bg-[rgb(19_21_27/0.82)] backdrop-blur-sm ${presentMode ? "sb-present" : ""}`} role="dialog" aria-modal="true" aria-label="회원 세일즈북">
@@ -280,7 +292,7 @@ export default function SalesbookView({
       {/* 상단 바 — present 컨트롤(인쇄엔 숨김). editable이면 '저장' 노출. */}
       <div className="sb-chrome flex items-center justify-between px-4 py-2.5">
         <span className="text-[12px] font-semibold text-white/80">
-          {editable ? "세일즈북 편집" : (member?.name ? `${member.name} 님 자료` : "세일즈북")}
+          {editable ? "세일즈북 편집" : showcase ? "내 회원님 변화 모음집" : (member?.name ? `${member.name} 님 자료` : "세일즈북")}
         </span>
         <div className="flex items-center gap-2">
           {editable && (
@@ -341,6 +353,45 @@ export default function SalesbookView({
                     <div className="text-[14px] font-bold text-ink">{trLabel}</div>
                     {tr.credentials && <div className="truncate text-[12px] text-muted">{tr.credentials}</div>}
                   </div>
+                </div>
+              </div>
+            </Slide>}
+
+            {/* 트레이너 소개 — 설정 '내 소개 페이지' 그대로(사례 숫자 · 사진은 보관함 스냅샷). */}
+            {showcase && slideIntro && show("trainer") && <Slide n={pos("trainer")} idx={idx} total={total} editable={editable}>
+              {/* 모음집 첫 장 — 표지처럼 크게(사진 · 이름 · 자격 · 한 줄 소개 · 전문 분야) */}
+              <div className="flex min-h-[min(62vh,520px)] flex-col items-center justify-center gap-5 text-center">
+                <div className="sb-stg flex items-center gap-2" style={{ "--sb-i": 0 }}>
+                  <BrandMark accent="trainer" title="오직 트레이너" className="h-6 w-6 shrink-0 rounded-lg" />
+                  <span className="text-[13px] font-semibold text-sub">내 회원님 변화 모음집</span>
+                </div>
+                {slideIntro.photo
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={slideIntro.photo} alt="" className="sb-stg h-[clamp(96px,14vw,150px)] w-[clamp(96px,14vw,150px)] rounded-full object-cover ring-4 ring-primary/15" style={{ "--sb-i": 1 }} />
+                  : <div aria-hidden="true" className="sb-stg flex h-[clamp(96px,14vw,150px)] w-[clamp(96px,14vw,150px)] items-center justify-center rounded-full bg-primary-soft text-[clamp(40px,6vw,64px)] font-black text-primary-strong" style={{ "--sb-i": 1 }}>{(slideIntro.name || "트").slice(0, 1)}</div>}
+                <div className="sb-stg" style={{ "--sb-i": 2 }}>
+                  <p className="m-0 text-[clamp(30px,4.6vw,52px)] font-extrabold tracking-[-0.03em] text-ink">{introTitle(slideIntro.name)}</p>
+                  {slideIntro.credentials && <p className="m-0 mt-1 text-[clamp(14px,1.7vw,18px)] text-sub">{slideIntro.credentials}</p>}
+                </div>
+                {slideIntro.intro && <p className="sb-stg m-0 max-w-[28ch] break-keep text-pretty text-[clamp(20px,2.8vw,32px)] font-bold leading-snug text-primary-strong" style={{ "--sb-i": 3 }}>{slideIntro.intro}</p>}
+                {slideIntro.tags.length > 0 && <div className="sb-stg flex justify-center" style={{ "--sb-i": 4 }}><IntroTags tags={slideIntro.tags} /></div>}
+              </div>
+            </Slide>}
+            {!showcase && slideIntro && show("trainer") && <Slide n={pos("trainer")} idx={idx} total={total} editable={editable}>
+              <div className="flex h-full flex-col">
+                <SlideHead eyebrow="담당 트레이너를 소개할게요" className="sb-stg" style={{ "--sb-i": 0 }} />
+                <div className={`sb-stg mt-1 grid flex-1 gap-4 ${slideIntro.cases.length ? "sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : ""}`} style={{ "--sb-i": 1 }}>
+                  <div className="flex flex-col justify-center gap-3">
+                    <IntroHeader intro={slideIntro} big />
+                    {slideIntro.intro && <p className="m-0 break-keep text-pretty text-[clamp(16px,2.2vw,22px)] font-bold leading-snug text-ink">{slideIntro.intro}</p>}
+                    <IntroTags tags={slideIntro.tags} />
+                  </div>
+                  {slideIntro.cases.length > 0 && (
+                    <div className="min-w-0">
+                      <p className="m-0 mb-2 text-[13px] font-semibold text-muted">이런 변화를 만들었어요</p>
+                      <IntroCases cases={slideIntro.cases.slice(0, INTRO_SLIDE_CASES)} urls={slideIntro.urls} />
+                    </div>
+                  )}
                 </div>
               </div>
             </Slide>}
@@ -476,7 +527,7 @@ export default function SalesbookView({
               )}
             </Slide>}
 
-            {/* ⑤ 로드맵 + 현재 — 각 단계 '제 방법(how)' + '느낄 변화(feel)'. 카드 full-height 채움. */}
+            {/* ⑤ 로드맵 + 현재 — 각 단계 '어떻게?(how)' + '이렇게!(feel)'(2026-10-11 대표 · 옛 '제 방법' · '느낄 변화'). 카드 full-height 채움. */}
             {show("roadmap") && <Slide n={pos("roadmap")} idx={idx} total={total} editable={editable}>
               <div className="flex h-full flex-col">
                 <SlideHead eyebrow="여기까지 함께 갑니다" aux="지금부터 중장기까지" className="sb-stg" style={{ "--sb-i": 0 }} />
@@ -486,6 +537,7 @@ export default function SalesbookView({
                     {(Array.isArray(sb.roadmap?.steps) ? sb.roadmap.steps.slice(0, 3) : []).map((s, i) => {
                       const here = (sb.roadmap?.current_step ?? 1) === i + 1;
                       const how = s.how || s.desc || ""; // 옛 캐시 폴백(desc)
+                      const feel = String(s.feel || "").replace(/^\s*느낄\s*변화\s*[:：·]\s*/, ""); // 옛 AI 글은 '느낄 변화:'를 앞에 붙여 저장했다
                       return (
                         <div key={i} className={`sb-stg relative flex flex-col rounded-2xl border p-4 ${here ? "border-primary/40 bg-primary-soft" : "border-line bg-elevate"}`} style={{ "--sb-i": i + 1 }}>
                           {here && <span className="absolute -top-2 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">지금 여기</span>}
@@ -493,10 +545,10 @@ export default function SalesbookView({
                           <div className="mt-0.5 text-[15px] font-bold text-ink">{s.title}</div>
                           {how && (
                             <p className="mt-2 text-[12px] leading-relaxed text-sub">
-                              <span className="font-semibold text-ink">제 방법 · </span>{how}
+                              <span className="font-bold text-ink">어떻게? </span>{how}
                             </p>
                           )}
-                          {s.feel && <p className="mt-auto pt-2 text-[12px] font-semibold text-primary-strong">{s.feel}</p>}
+                          {feel && <p className="mt-auto pt-2 text-[12px] font-semibold text-primary-strong"><span className="font-extrabold">이렇게! </span>{feel}</p>}
                         </div>
                       );
                     })}
@@ -563,10 +615,11 @@ export default function SalesbookView({
               <Slide n={pos("benefits")} idx={idx} total={total} editable={editable}>
                 <div className="flex h-full flex-col">
                   <SlideHead eyebrow="PT 등록하시면 함께 드려요" className="sb-stg" style={{ "--sb-i": 0 }} />
-                  <ul className="grid flex-1 content-center gap-3 sm:grid-cols-2">
+                  {/* .sb-fit이 min-height라 flex-1만으론 안 차서 높이를 직접 준다(2026-10-11 · 아래가 비어 보이던 것) */}
+                  <ul className="grid min-h-[min(54vh,450px)] flex-1 content-center gap-3 sm:grid-cols-2 sm:gap-4">
                     {benefits.map((b, i) => (
-                      <li key={i} className="sb-stg flex items-start gap-3 rounded-2xl border border-line bg-elevate p-4 text-[clamp(14px,1.8vw,18px)] leading-snug text-ink" style={{ "--sb-i": i + 1 }}>
-                        <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary-strong" />
+                      <li key={i} className="sb-stg flex items-center gap-3 rounded-2xl border border-line bg-elevate p-[clamp(16px,2.2vw,26px)] text-[clamp(16px,2.2vw,22px)] font-semibold leading-snug text-ink" style={{ "--sb-i": i + 1 }}>
+                        <Check className="h-6 w-6 shrink-0 text-primary-strong" strokeWidth={2.5} />
                         {b}
                       </li>
                     ))}
@@ -591,7 +644,7 @@ export default function SalesbookView({
                     ))}
                   </div>
                 )}
-                <div className="sb-stg mt-3 flex flex-1 flex-col rounded-2xl border border-primary/25 bg-primary-soft p-5" style={{ "--sb-i": 2 }}>
+                <div className={`sb-stg mt-3 flex flex-1 flex-col rounded-2xl border border-primary/25 bg-primary-soft p-5 ${showcase ? "min-h-[min(52vh,440px)]" : ""}`} style={{ "--sb-i": 2 }}>
                   {editable ? (
                     <textarea
                       value={sb.closing?.vow || ""}
@@ -617,6 +670,16 @@ export default function SalesbookView({
             </Slide>}
 
             {/* 사례 장(2단계) — 보관함에서 고른 다른 회원 변화. 2개씩 한 장 · 숫자·사진은 기록 그대로. */}
+            {/* 관리 모습 장(1차 OT 변화 모음집) — 대화 캡처 · 회원 페이지 화면 2개씩 */}
+            {careKeys(showcase ? sb.deck?.care || [] : []).filter(show).map((k) => {
+              const rows = caseChunk(sb.deck?.care || [], k).map((id) => deckCare.rows.find((r) => r.id === id)).filter(Boolean);
+              return (
+                <Slide key={k} n={pos(k)} idx={idx} total={total} editable={editable}>
+                  {rows.length ? <CareSlideBody items={rows} urls={deckCare.urls} SlideHead={SlideHead} />
+                    : <p className="text-[13px] text-muted">캡처를 불러오는 중이거나 보관함에서 빠졌어요.</p>}
+                </Slide>
+              );
+            })}
             {caseKeys(sb.deck?.cases || []).filter(show).map((k) => {
               const rows = caseChunk(sb.deck?.cases || [], k).map((id) => deckCases.rows.find((r) => r.id === id)).filter(Boolean);
               return (

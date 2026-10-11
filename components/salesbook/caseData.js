@@ -8,7 +8,7 @@ export async function signCaseUrls(cases) {
   for (const c of cases || []) {
     // 다른 아이디에서 가져온 사진 사례(2026-10-08)는 파일째 복사돼 sales-cases에 있다(bucket 표시)
     if (c.kind === "photo") for (const k of ["before", "after"]) { const f = c.data?.[k]; if (f?.path) (f.bucket === "sales-cases" ? review : photo).push(f.path); }
-    if (c.kind === "review" && c.data?.path) review.push(c.data.path);
+    if ((c.kind === "review" || c.kind === "care") && c.data?.path) review.push(c.data.path);
   }
   const map = {};
   const sign = async (bucket, paths) => {

@@ -3,14 +3,14 @@
 
 /* =========================================================================
    CaseCard — 사례 한 건 표시(사례 보관함 · 2단계 세일즈북 장에서도 같이 쓴다).
-   종류: photo(비포·애프터 2장) · inbody(전후 숫자) · lift(종목 최고중량 전후 + 추이) · review(후기 캡처).
+   종류: photo(비포·애프터 2장) · inbody(전후 숫자) · lift(종목 최고중량 전후 + 추이) · review(후기 캡처) · care(관리 모습 캡처).
    숫자는 담을 때 스냅샷(data) 그대로 — 여기서 계산하지 않는다(변화량 표기만).
    실명은 쓰지 않는다 — label(익명 라벨)만.
    ========================================================================= */
 
 import { ImageOff, MessageSquareQuote, Trash2 } from "lucide-react";
 import Sparkline from "@/components/ui/Sparkline";
-import { CASE_CATEGORIES, caseKindLabel, deltaText, improved, shortDay } from "@/lib/salesCase";
+import { CASE_CATEGORIES, careSubLabel, caseKindLabel, deltaText, improved, shortDay } from "@/lib/salesCase";
 
 function Photo({ url, cap, onOpen }) {
   return (
@@ -31,11 +31,11 @@ export default function CaseCard({ item, urls = {}, onOpenImage, onDelete, onCat
       <header className="mb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <span className="text-[12px] font-semibold text-sub">
-            {caseKindLabel(item.kind)}{!onCategory && d.category ? ` · ${d.category}` : ""}
+            {item.kind === "care" ? careSubLabel(d.sub) : caseKindLabel(item.kind)}{!onCategory && d.category ? ` · ${d.category}` : ""}
           </span>
           <p className="m-0 truncate text-[15px] font-bold tracking-[-0.02em] text-ink">{item.label || "회원"}</p>
         </div>
-        {onCategory && (
+        {onCategory && item.kind !== "care" && (
           <select value={d.category || ""} onChange={(e) => onCategory(item, e.target.value)} disabled={busy} aria-label="목적"
             className="ml-auto h-8 shrink-0 rounded-lg border border-line bg-elevate px-2 text-[12px] text-sub">
             <option value="">목적 없음</option>
@@ -89,7 +89,7 @@ export default function CaseCard({ item, urls = {}, onOpenImage, onDelete, onCat
         </div>
       )}
 
-      {item.kind === "review" && (
+      {(item.kind === "review" || item.kind === "care") && (
         <>
           {urls[d.path] ? (
             <button type="button" onClick={() => onOpenImage?.(urls[d.path])}

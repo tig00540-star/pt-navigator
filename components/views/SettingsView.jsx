@@ -2,19 +2,18 @@
 /* 설정 탭 — 화면 안 알약 탭(2026-10-03 · PT · OT 회원 화면과 같은 모양 · 예전엔 헤더의 작은 탭) + sub prop으로 내용 분기.
    각 컴포넌트 자기완결. 주소는 그대로(/settings/{me|money|gear|library|reward}). */
 import TrainerGoalSetter from "@/components/views/TrainerGoalSetter";
-import TrainerProfileSettings from "@/components/views/TrainerProfileSettings";
 import TrainerLibrary from "@/components/views/TrainerLibrary";
 import PtPricingSettings from "@/components/views/PtPricingSettings";
 import CenterMachineSettings from "@/components/views/CenterMachineSettings";
 import PasswordChange from "@/components/views/PasswordChange";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import EventManager from "@/components/events/EventManager";
-import MyIntakeCard from "@/components/intake/MyIntakeCard";
 import BookingPrefCard from "@/components/booking/BookingPrefCard";
 import NotifySettings from "@/components/notify/NotifySettings";
 import SoloProfileCard from "@/components/views/SoloProfileCard";
 import SubscriptionCard from "@/components/views/SubscriptionCard";
 import ImportFromIdCard from "@/components/views/ImportFromIdCard";
+import MyProfileCard from "@/components/intro/MyProfileCard";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -49,10 +48,12 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
       {sub === "me" && (
         /* 넓은 화면(lg~): 왼쪽 세일즈북(길다) | 오른쪽 목표·비밀번호·계정. 폰은 순서 그대로 한 줄. */
         <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
-          <TrainerProfileSettings />
+          <div className="space-y-6">
+            {/* 내 소개 · 세일즈북(2026-10-11 · 옛 '세일즈북에 들어갈 내 정보' · '내 소개 페이지' · '내 OT 신청 QR'을 한 카드 · 저장 하나로) */}
+            <MyProfileCard />
+          </div>
           <div className="space-y-6">
           <SoloProfileCard />
-          <MyIntakeCard />
           <BookingPrefCard />
           <TrainerGoalSetter />
           <PasswordChange />

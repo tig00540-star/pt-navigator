@@ -111,14 +111,14 @@ export async function POST(req) {
         if (!d[k]?.path) continue;
         (d[k].bucket === "sales-cases" ? fromCases : fromMember).push({ path: d[k].path, name: uniq(`${base}_${l}.jpg`) });
       }
-      if (c.kind === "review" && d.path) fromCases.push({ path: d.path, name: uniq(`${base}_후기.jpg`) });
+      if ((c.kind === "review" || c.kind === "care") && d.path) fromCases.push({ path: d.path, name: uniq(`${base}_${c.kind === "care" ? "관리" : "후기"}.jpg`) });
     });
     const list = [...(await sign("member-photos", [...mp, ...fromMember])), ...(await sign("sales-cases", fromCases))];
     return Response.json({ images: list });
   }
 
   // 회원별 변화 요약 — 인바디 처음 · 마지막 + 종목별 처음 무게 → 최고 무게
-  const KIND = { photo: "비포 · 애프터", inbody: "인바디 변화", lift: "운동 변화", review: "회원 후기" };
+  const KIND = { photo: "비포 · 애프터", inbody: "인바디 변화", lift: "운동 변화", review: "회원 후기", care: "관리 모습" };
   const change = [];
   const inbBy = new Map();
   for (const r of inb.data || []) { if (!inbBy.has(r.user_id)) inbBy.set(r.user_id, []); inbBy.get(r.user_id).push(r); }

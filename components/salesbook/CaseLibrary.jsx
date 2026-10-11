@@ -9,13 +9,15 @@
    원칙
    - 숫자는 기록에서만(lib/salesCase가 스냅샷) — 손으로 고칠 수 없다.
    - 저장되는 라벨은 익명("30대 여성 · 12주"). 고르는 화면에서만 트레이너가 이름을 본다.
-   - 회원 동의·개인정보는 트레이너 책임(대표 결정). 화면엔 한 줄 안내만 둔다.
+   - 회원 동의·개인정보는 트레이너 책임(대표 결정). 사진 · 후기는 담을 때 '회원님께 동의받았어요'를 체크해야 담긴다
+     (sales_case.consent_confirmed_at/by · 2026-10-11 · 회원 페이지의 포트폴리오 동의는 없앴다). 숫자 사례는 체크 없음(익명 라벨).
+   - '내 소개 페이지'(trainer_profile.intro_cases)에 올린 사례는 카드 아래에서 바로 내릴 수 있다.
    - 사진 사례는 member_photo 경로를 참조만 — 회원이 사진을 지우면 사례에서도 빠진다.
    DB: sales_case(docs/migrations/2026-10-02-sales-case.sql) · 후기 이미지 = 비공개 버킷 sales-cases/{account_id}/…
    ========================================================================= */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookImage, Check, Dumbbell, ImagePlus, MessageSquareQuote, Plus, Scale } from "lucide-react";
+import { BookImage, Check, Dumbbell, HeartHandshake, ImagePlus, MessageSquareQuote, Plus, Scale, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
 import { compressImage } from "@/lib/image";
@@ -29,10 +31,10 @@ import ImageLightbox from "@/components/ui/ImageLightbox";
 import { Input } from "@/components/ui/Field";
 import CaseCard from "@/components/salesbook/CaseCard";
 import { signCaseUrls, loadMyCases } from "@/components/salesbook/caseData";
-import { PORTFOLIO_VERSION } from "@/lib/consent";
 import { fetchByIds } from "@/lib/fetchByIds";
+import { needsConsent } from "@/lib/trainerIntro";
 import {
-  CASE_KINDS, CASE_CATEGORIES, guessCategory, anonLabel, deltaText, improved, inbodyCandidates, liftCandidates, photoCaseData, shortDay, weeksBetween,
+  CASE_KINDS, CASE_CATEGORIES, CARE_SUBS, guessCategory, anonLabel, deltaText, improved, inbodyCandidates, liftCandidates, photoCaseData, shortDay, weeksBetween,
 } from "@/lib/salesCase";
 
 const ADD_BUTTONS = [
@@ -40,6 +42,7 @@ const ADD_BUTTONS = [
   { kind: "inbody", label: "인바디 변화", icon: Scale },
   { kind: "lift", label: "운동 변화", icon: Dumbbell },
   { kind: "review", label: "회원 후기", icon: MessageSquareQuote },
+  { kind: "care", label: "관리 모습", icon: HeartHandshake },   // 대화 캡처 · 회원 페이지 화면(1차 OT 변화 모음집 · 2026-10-11)
 ];
 
 export default function CaseLibrary() {
@@ -54,7 +57,7 @@ export default function CaseLibrary() {
   const [adding, setAdding] = useState(null); // kind
   const [busy, setBusy] = useState(false);
   const [lightbox, setLightbox] = useState(null);
-  const [pcons, setPcons] = useState([]); // 포트폴리오 활용 동의 행(2026-10-08) — 사례마다 '다른 아이디로 가져갈 수 있나' 표시
+  const [introIds, setIntroIds] = useState(null); // 내 소개 페이지에 올린 사례 id(null = 아직 준비 중이거나 못 읽음)
 
   // 고를 회원 — 내 회원(없으면 센터 전체 · 대표 계정 폴백). 보관(hidden)은 이미 빠져 있다.
   const scoped = useMemo(() => {
@@ -71,12 +74,8 @@ export default function CaseLibrary() {
       if (error) { console.error("sales_case 불러오기 실패", error); setLoadErr("사례를 불러오지 못했어요. 다시 시도해 주세요."); return; }
       setCases(data || []);
       setUrls(await signCaseUrls(data || []));
-      const ids = [...new Set((data || []).map((c) => c.member_id).filter(Boolean))];
-      if (ids.length) {
-        const { data: cr, error: ce } = await fetchByIds(supabase, "member_consent", "member_id, trainer_id, agreed, created_at", "member_id", ids, (q) => q.eq("kind", "portfolio"));
-        if (ce) console.error("포트폴리오 동의 읽기 실패", ce);
-        setPcons(cr || []);
-      }
+      const { data: prof, error: pe } = await supabase.from("trainer_profile").select("intro_cases").eq("trainer_id", myUid).maybeSingle();
+      setIntroIds(pe ? null : (Array.isArray(prof?.intro_cases) ? prof.intro_cases : []));
     } catch (e) {
       console.error("sales_case 불러오기 실패", e);
       setLoadErr("사례를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
@@ -90,7 +89,14 @@ export default function CaseLibrary() {
   }, [load]);
 
   const insertCase = async (row) => {
-    const { data, error } = await supabase.from("sales_case").insert(row).select("*");
+    let { data, error } = await supabase.from("sales_case").insert(row).select("*");
+    // 동의 칸이 아직 없는 DB(SQL 전)면 동의 칸 없이 한 번 더(담기 자체는 막지 않는다)
+    if (error && "consent_confirmed_at" in row && /consent_confirmed/.test(error.message || "")) {
+      const rest = { ...row };
+      delete rest.consent_confirmed_at;
+      delete rest.consent_confirmed_by;
+      ({ data, error } = await supabase.from("sales_case").insert(rest).select("*"));
+    }
     if (error || !data?.length) {
       console.error("sales_case 저장 실패", error);
       showToast(error ? "담지 못했어요. 다시 시도해 주세요." : "담지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
@@ -118,7 +124,7 @@ export default function CaseLibrary() {
     setBusy(true);
     try {
       // 내 계정 폴더의 파일만 지운다(후기 캡처 · 다른 아이디에서 가져온 사진 사례). 회원 사진(member-photos)은 회원 것이라 안 지움.
-      const own = [item.kind === "review" && item.data?.path,
+      const own = [(item.kind === "review" || item.kind === "care") && item.data?.path,
         ...["before", "after"].map((k) => item.data?.[k]?.bucket === "sales-cases" && item.data[k].path)].filter(Boolean);
       if (own.length) await supabase.storage.from("sales-cases").remove(own);
       const { data, error } = await supabase.from("sales_case").delete().eq("id", item.id).select("id");
@@ -132,25 +138,29 @@ export default function CaseLibrary() {
     }
   };
 
-  // 포트폴리오 동의 — 내 아이디에 묶인 동의(또는 전체 철회) 중 가장 최근 행. 가져온 사례는 원래 회원 동의로 들어온 것.
-  const portfolioOf = (c) => {
-    if (c.data?.portfolio) return "copied";
-    if (!c.member_id) return null;
-    let last = null;
-    for (const r of pcons) if (r.member_id === c.member_id && (r.trainer_id === myUid || r.trainer_id == null) && (!last || r.created_at > last.created_at)) last = r;
-    return last?.agreed ? "agreed" : "none";
-  };
-  const paperConsent = async (c) => {
+  // 예전에 담은 사진 · 후기 — 지금 동의를 받았으면 체크(누가 · 언제 남김). 체크해야 내 소개에 올릴 수 있다.
+  const confirmConsent = async (c) => {
     if (busy || !supabase) return;
-    if (!window.confirm("이 회원에게 '트레이너 포트폴리오 활용' 종이 동의서를 받으셨나요? 받은 경우에만 눌러 주세요.")) return;
+    if (!window.confirm("회원님께 이 사진을 세일즈북과 내 소개 페이지에 쓴다고 직접 물어보고 동의를 받으셨나요? 받은 경우에만 눌러 주세요.")) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.from("member_consent")
-        .insert({ member_id: c.member_id, kind: "portfolio", agreed: true, method: "trainer_check", version: PORTFOLIO_VERSION, trainer_id: myUid })
-        .select("member_id, trainer_id, agreed, created_at");
-      if (error || !data?.length) { console.error("포트폴리오 동의 저장 실패", error); showToast("저장하지 못했어요. 다시 시도해 주세요."); return; }
-      setPcons((p) => [...p, ...data]);
-      showToast("동의 받은 것으로 남겼어요");
+      const patch = { consent_confirmed_at: new Date().toISOString(), consent_confirmed_by: myUid };
+      const { data, error } = await supabase.from("sales_case").update(patch).eq("id", c.id).select("id, consent_confirmed_at, consent_confirmed_by");
+      if (error || !data?.length) { console.error("동의 체크 저장 실패", error); showToast("저장하지 못했어요. 다시 시도해 주세요."); return; }
+      setCases((cs) => cs.map((x) => (x.id === c.id ? { ...x, ...data[0] } : x)));
+      showToast("동의받은 것으로 남겼어요");
+    } finally { setBusy(false); }
+  };
+  // 내 소개 페이지에서 내리기 — intro_cases에서 뺀다(사례는 보관함에 그대로).
+  const takeDown = async (c) => {
+    if (busy || !supabase || !introIds) return;
+    setBusy(true);
+    try {
+      const next = introIds.filter((id) => id !== c.id);
+      const { data, error } = await supabase.from("trainer_profile").update({ intro_cases: next, updated_at: new Date().toISOString() }).eq("trainer_id", myUid).select("intro_cases");
+      if (error || !data?.length) { console.error("내 소개 내리기 실패", error); showToast("내리지 못했어요. 다시 시도해 주세요."); return; }
+      setIntroIds(next);
+      showToast("내 소개에서 내렸어요");
     } finally { setBusy(false); }
   };
 
@@ -167,7 +177,7 @@ export default function CaseLibrary() {
         <p className="m-0 mt-1 text-[13px] leading-relaxed text-sub">
           내가 만든 회원 변화와 후기를 모아 두는 곳이에요. 세일즈북에 넣어 새 회원에게 <b className="font-semibold text-primary-strong">이런 변화를 만들어요</b>라고 보여줄 수 있어요.
         </p>
-        <p className="m-0 mt-1 text-[12px] text-muted">화면엔 이름 대신 &lsquo;30대 여성 · 12주&rsquo;처럼 보여요. 회원 동의는 트레이너가 받아 주세요. 회원이 회원 페이지에서 &lsquo;트레이너 포트폴리오 활용&rsquo;에 동의한 사례는 나중에 아이디를 옮겨도 가져갈 수 있어요.</p>
+        <p className="m-0 mt-1 text-[12px] leading-relaxed text-muted">화면엔 이름 대신 &lsquo;30대 여성 · 12주&rsquo;처럼 보여요. 사진 · 후기는 회원 개인정보예요. 회원님께 직접 물어보고 동의를 받은 것만 담아 주세요.</p>
       </div>
 
       {!supabase && (
@@ -175,7 +185,7 @@ export default function CaseLibrary() {
       )}
 
       {/* 담기 버튼 4개 */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {ADD_BUTTONS.map(({ kind, label, icon: Icon }) => (
           <button key={kind} type="button" onClick={() => setAdding(kind)} disabled={!supabase}
             className="flex min-h-[64px] items-center gap-2.5 rounded-xl border border-line bg-card px-3.5 text-left shadow-sm transition hover:border-line-strong disabled:opacity-50">
@@ -218,12 +228,18 @@ export default function CaseLibrary() {
           {shown.map((c) => (
             <div key={c.id} className="flex min-w-0 flex-col gap-1.5">
               <CaseCard item={c} urls={urls} onOpenImage={setLightbox} onDelete={removeCase} onCategory={setCategory} busy={busy} />
-              {portfolioOf(c) === "agreed" && <p className="m-0 px-1 text-[12px] text-sub">포트폴리오 동의 있음 · 아이디를 옮겨도 가져갈 수 있어요</p>}
-              {portfolioOf(c) === "copied" && <p className="m-0 px-1 text-[12px] text-sub">다른 아이디에서 가져온 사례예요(회원 동의)</p>}
-              {portfolioOf(c) === "none" && (
+              {needsConsent(c) && introIds && (c.consent_confirmed_at ? (
+                <p className="m-0 flex items-center gap-1 px-1 text-[12px] text-sub"><ShieldCheck className="h-3.5 w-3.5 shrink-0 text-cyan-700" aria-hidden="true" />회원 동의 받음 · {shortDay(c.consent_confirmed_at)}</p>
+              ) : (
                 <p className="m-0 px-1 text-[12px] text-muted">
-                  포트폴리오 동의 없음 · 아이디를 옮기면 못 가져가요.{" "}
-                  <button type="button" onClick={() => paperConsent(c)} disabled={busy} className="font-semibold text-sub underline underline-offset-2 disabled:opacity-50">종이로 받았어요</button>
+                  회원 동의 체크 전이에요. 세일즈북 · 내 소개에 쓰려면{" "}
+                  <button type="button" onClick={() => confirmConsent(c)} disabled={busy} className="min-h-[32px] font-semibold text-sub underline underline-offset-2 disabled:opacity-50">동의받았어요</button>
+                </p>
+              ))}
+              {introIds?.includes(c.id) && (
+                <p className="m-0 flex items-center justify-between gap-2 rounded-lg bg-primary-soft px-2.5 py-1 text-[12px] font-semibold text-primary-strong">
+                  내 소개 페이지에 보이는 중
+                  <button type="button" onClick={() => takeDown(c)} disabled={busy} className="min-h-[32px] shrink-0 font-semibold text-sub underline underline-offset-2 disabled:opacity-50">내리기</button>
                 </p>
               )}
             </div>
@@ -231,10 +247,10 @@ export default function CaseLibrary() {
         </div>
       )}
 
-      {adding === "photo" && <PhotoPicker members={scoped} onClose={() => setAdding(null)} onAdd={insertCase} />}
+      {adding === "photo" && <PhotoPicker uid={myUid} members={scoped} onClose={() => setAdding(null)} onAdd={insertCase} />}
       {adding === "inbody" && <InbodyPicker members={scoped} cases={cases} onClose={() => setAdding(null)} onAdd={insertCase} />}
       {adding === "lift" && <LiftPicker members={scoped} cases={cases} onClose={() => setAdding(null)} onAdd={insertCase} />}
-      {adding === "review" && <ReviewForm uid={myUid} onClose={() => setAdding(null)} onAdd={insertCase} showToast={showToast} />}
+      {(adding === "review" || adding === "care") && <ReviewForm kind={adding} uid={myUid} onClose={() => setAdding(null)} onAdd={insertCase} showToast={showToast} />}
 
       <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
       <Toast message={toast} />
@@ -243,7 +259,7 @@ export default function CaseLibrary() {
 }
 
 /* ── 비포·애프터: 회원 고르기 → 사진 2장 고르기 → 라벨 → 담기 ── */
-function PhotoPicker({ members, onClose, onAdd }) {
+function PhotoPicker({ uid, members, onClose, onAdd }) {
   const [rows, setRows] = useState(null);
   const [memberId, setMemberId] = useState(null);
   const [urls, setUrls] = useState({});
@@ -251,6 +267,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
   const [label, setLabel] = useState("");
   const [note, setNote] = useState("");
   const [category, setCategory] = useState(null);
+  const [agreed, setAgreed] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -287,9 +304,9 @@ function PhotoPicker({ members, onClose, onAdd }) {
     });
   };
   const save = async () => {
-    if (picked.length !== 2 || !group || saving) return;
+    if (picked.length !== 2 || !group || saving || !agreed) return;
     setSaving(true);
-    const ok = await onAdd({ kind: "photo", member_id: group.member.id, label: label.trim() || anonLabel(group.member), note: note.trim() || null, data: { ...photoCaseData(picked[0], picked[1]), category } });
+    const ok = await onAdd({ kind: "photo", member_id: group.member.id, label: label.trim() || anonLabel(group.member), note: note.trim() || null, data: { ...photoCaseData(picked[0], picked[1]), category }, ...consentFields(uid) });
     setSaving(false);
     if (ok) onClose();
   };
@@ -299,7 +316,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
       footer={group ? (
         <div className="flex gap-2">
           <Button variant="ghost" onClick={() => setMemberId(null)}>다른 회원</Button>
-          <Button variant="primary" fullWidth onClick={save} disabled={picked.length !== 2 || saving}>{saving ? "담는 중…" : "보관함에 담기"}</Button>
+          <Button variant="primary" fullWidth onClick={save} disabled={picked.length !== 2 || saving || !agreed}>{saving ? "담는 중…" : "보관함에 담기"}</Button>
         </div>
       ) : null}>
       {rows == null ? <p className="text-[13px] text-muted">불러오는 중…</p>
@@ -336,6 +353,7 @@ function PhotoPicker({ members, onClose, onAdd }) {
                 <CategoryChips value={category} onChange={setCategory} />
                 <Input label="화면에 보일 이름" hint="실명 대신 익명으로 보여요" value={label} onChange={(e) => setLabel(e.target.value)} />
                 <Input label="한 줄 메모" hint="선택" value={note} onChange={(e) => setNote(e.target.value)} placeholder="예) 주 2회, 식단 같이 관리" />
+                <ConsentCheck checked={agreed} onChange={setAgreed} />
               </>
             )}
           </div>
@@ -438,13 +456,16 @@ function LiftPicker({ members, cases, onClose, onAdd }) {
   );
 }
 
-/* ── 회원 후기: 캡처 올리기 + 라벨·메모 ── */
-function ReviewForm({ uid, onClose, onAdd, showToast }) {
+/* ── 회원 후기 · 관리 모습: 캡처 올리기 + 라벨·메모(관리 모습은 목적 대신 종류 = 대화 캡처 · 회원 페이지 화면 · 기타) ── */
+function ReviewForm({ kind = "review", uid, onClose, onAdd, showToast }) {
+  const care = kind === "care";
+  const [sub, setSub] = useState("chat");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [label, setLabel] = useState("");
   const [note, setNote] = useState("");
   const [category, setCategory] = useState(null);
+  const [agreed, setAgreed] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -456,7 +477,7 @@ function ReviewForm({ uid, onClose, onAdd, showToast }) {
     setPreview(URL.createObjectURL(f));
   };
   const save = async () => {
-    if (!file || saving) return;
+    if (!file || saving || !agreed) return;
     setSaving(true);
     try {
       // 경로 첫 폴더 = account_id(버킷 정책). 트레이너 본인 행에서 읽는다.
@@ -466,7 +487,9 @@ function ReviewForm({ uid, onClose, onAdd, showToast }) {
       const path = `${me.account_id}/${crypto.randomUUID()}.jpg`;
       const { error: ue } = await supabase.storage.from("sales-cases").upload(path, blob, { contentType: "image/jpeg" });
       if (ue) { console.error("후기 업로드 실패", ue); showToast("사진을 올리지 못했어요. 다시 시도해 주세요."); return; }
-      const ok = await onAdd({ kind: "review", label: label.trim() || "회원 후기", note: note.trim() || null, data: { path, category } });
+      const ok = await onAdd(care
+        ? { kind: "care", label: label.trim() || "관리 모습", note: note.trim() || null, data: { path, sub }, ...consentFields(uid) }
+        : { kind: "review", label: label.trim() || "회원 후기", note: note.trim() || null, data: { path, category }, ...consentFields(uid) });
       if (ok) onClose();
       else await supabase.storage.from("sales-cases").remove([path]);
     } catch (e) {
@@ -478,19 +501,42 @@ function ReviewForm({ uid, onClose, onAdd, showToast }) {
   };
 
   return (
-    <Modal variant="sheet" title="회원 후기 담기" subtitle="카톡·문자 캡처를 올려 주세요" onClose={onClose}
-      footer={<Button variant="primary" fullWidth onClick={save} disabled={!file || saving}>{saving ? "올리는 중…" : "보관함에 담기"}</Button>}>
+    <Modal variant="sheet" title={care ? "관리 모습 담기" : "회원 후기 담기"} subtitle={care ? "회원님과 나눈 대화나 회원 페이지 화면을 캡처해 올려 주세요. 1차 OT 변화 모음집에 들어가요." : "카톡·문자 캡처를 올려 주세요"} onClose={onClose}
+      footer={<Button variant="primary" fullWidth onClick={save} disabled={!file || saving || !agreed}>{saving ? "올리는 중…" : "보관함에 담기"}</Button>}>
       <div className="space-y-3">
         <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-dashed border-line-strong bg-elevate text-[13px] text-sub">
           {preview ? <img src={preview} alt="후기 미리보기" className="max-h-[360px] w-full object-contain" /> : (<><ImagePlus className="h-6 w-6" aria-hidden="true" /> 캡처 고르기</>)}
           <input type="file" accept="image/*" className="sr-only" onChange={onPick} />
         </label>
-        <p className="m-0 text-[12px] text-muted">이름·프로필 사진이 보이면 잘라서 올려 주세요.</p>
-        <CategoryChips value={category} onChange={setCategory} />
-        <Input label="화면에 보일 이름" hint="선택" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="예) 30대 직장인 회원" />
-        <Input label="한 줄 메모" hint="선택" value={note} onChange={(e) => setNote(e.target.value)} placeholder="예) 3개월 PT 끝나고 보내준 메시지" />
+        <p className="m-0 text-[12px] text-muted">이름 · 프로필 사진 · 번호가 보이면 가리거나 잘라서 올려 주세요.</p>
+        {care ? (
+          <div>
+            <p className="mb-1.5 text-[13px] font-semibold text-sub">무슨 캡처인가요</p>
+            <div className="flex flex-wrap gap-1.5">
+              {CARE_SUBS.map((x) => <FilterChip key={x.value} selected={sub === x.value} onClick={() => setSub(x.value)}>{x.label}</FilterChip>)}
+            </div>
+          </div>
+        ) : <CategoryChips value={category} onChange={setCategory} />}
+        <Input label={care ? "제목" : "화면에 보일 이름"} hint="선택" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={care ? "예) 식단 사진에 매일 답장해요" : "예) 30대 직장인 회원"} />
+        <Input label="한 줄 메모" hint="선택" value={note} onChange={(e) => setNote(e.target.value)} placeholder={care ? "예) 수업 없는 날에도 운동 기록을 같이 봐요" : "예) 3개월 PT 끝나고 보내준 메시지"} />
+        <ConsentCheck checked={agreed} onChange={setAgreed} what={care ? "캡처" : "사진"} />
       </div>
     </Modal>
+  );
+}
+
+/* 사진 · 후기 담기 전 동의 체크(필수 · 2026-10-11 대표: 회원 페이지 동의 대신 트레이너가 직접 받는다). 누가 · 언제 체크했는지 남긴다. */
+const consentFields = (uid) => ({ consent_confirmed_at: new Date().toISOString(), consent_confirmed_by: uid || null });
+function ConsentCheck({ checked, onChange, what = "사진" }) {
+  const [obj, top] = what === "캡처" ? ["캡처를", "캡처는"] : ["사진을", "사진은"];   // 조사
+  return (
+    <div className="rounded-xl border border-primary/30 bg-primary-soft/60 p-3">
+      <label className="flex cursor-pointer items-start gap-2.5">
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary" />
+        <span className="text-[14px] font-semibold leading-snug text-ink">회원님께 이 {obj} 세일즈북과 내 소개 페이지에 쓴다고 직접 물어보고 동의를 받았어요</span>
+      </label>
+      <p className="m-0 mt-1.5 pl-[30px] text-[12px] leading-relaxed text-sub">{top} 회원 개인정보예요. 동의를 받은 {what}만 써 주세요. 얼굴 · 이름이 나오면 가리거나 잘라서 쓰는 걸 권해요. 회원님이 내려 달라고 하면 바로 빼 주세요.</p>
+    </div>
   );
 }
 

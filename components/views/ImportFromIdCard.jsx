@@ -18,7 +18,7 @@ const ITEMS = [
   { k: "packages", label: "PT 가격표" },
   { k: "library", label: "내 라이브러리" },
   { k: "profile", label: "트레이너 프로필" },
-  { k: "cases", label: "포트폴리오 사례" },
+  { k: "cases", label: "사례 보관함" },
 ];
 
 export default function ImportFromIdCard() {
@@ -73,7 +73,7 @@ export default function ImportFromIdCard() {
             {done.packages > 0 && <li>· PT 가격표 {done.packages}개</li>}
             {done.library > 0 && <li>· 라이브러리 {done.library}개</li>}
             {done.profile && <li>· 트레이너 프로필</li>}
-            {done.cases > 0 && <li>· 포트폴리오 사례 {done.cases}개</li>}
+            {done.cases > 0 && <li>· 사례 {done.cases}개</li>}
             {done.members > 0 && <li>· 회원 {done.members}명에게 센터로 옮길지 물었어요. 동의한 회원부터 이 아이디로 들어와요.</li>}
             {done.skipped > 0 && <li>· 이미 있거나 사진을 찾지 못한 사례 {done.skipped}개는 건너뛰었어요.</li>}
             {!done.packages && !done.library && !done.profile && !done.cases && !done.members && <li>· 새로 가져온 것이 없어요(이미 다 있어요).</li>}
@@ -84,7 +84,7 @@ export default function ImportFromIdCard() {
         <>
           <p className="m-0 text-[14px] leading-relaxed text-sub">
             센터를 옮기거나 개인으로 일하게 돼 아이디가 바뀌었을 때 <b className="text-ink">내 것만</b> 복사해 와요. 원래 아이디에도 그대로 남아요.
-            센터 회원 기록은 센터 것이라 가져오지 않고, 회원이 &lsquo;트레이너 포트폴리오 활용&rsquo;에 동의한 사례만 가져와요.
+            센터 회원 기록은 센터 것이라 가져오지 않아요. 사례는 숫자 사례(인바디 · 무게)와, 회원님께 동의받았다고 체크한 사진 · 후기만 가져와요.
           </p>
           {!pv && (
             <div className="mt-4 space-y-2.5">
@@ -100,7 +100,7 @@ export default function ImportFromIdCard() {
                   <label key={it.k} className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl bg-elevate px-3.5 text-[14px] text-ink">
                     <input type="checkbox" checked={pick[it.k]} onChange={(e) => setPick((p) => ({ ...p, [it.k]: e.target.checked }))} className="h-4 w-4 accent-red-600" />
                     <span className="flex-1">{it.label}</span>
-                    <span className="text-[13px] text-sub">{count(it.k)}{it.k === "cases" && pv.casesTotal > pv.cases ? ` · 동의 없는 ${pv.casesTotal - pv.cases}개 제외` : ""}</span>
+                    <span className="text-[13px] text-sub">{count(it.k)}{it.k === "cases" && pv.casesTotal > pv.cases ? ` · 동의 체크 안 한 사진 · 후기 ${pv.casesTotal - pv.cases}개 제외` : ""}</span>
                   </label>
                 ))}
                 {pv.members != null && (
