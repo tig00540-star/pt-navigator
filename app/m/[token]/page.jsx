@@ -19,6 +19,8 @@ import TransferAsk from "@/components/member/TransferAsk";
 import WorkoutLogBody, { gainsByLog, exercisesOf } from "@/components/member/WorkoutLogBody";
 import SignaturePad from "@/components/member/SignaturePad";
 import RoutineSection from "@/components/member/RoutineSection";
+import DietSection, { DietFeedbackHome } from "@/components/member/DietSection";
+import { dietDayOf, dietToday } from "@/lib/diet";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
 import { CONSENT_VERSION, latestConsent } from "@/lib/consent";
@@ -1148,6 +1150,9 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {/* 운동일지 알림 받기 — 꺼져 있을 때만 한 줄(켜지면 맨 아래 '알림 받는 중 · 끄기') */}
         {!ended && <MemberPushCard supabase={memberSupabase} place="home" />}
 
+        {/* 식단 피드백 · 새로 온 식단 답(트레이너가 식단 관리를 켠 회원만 · 2026-10-11) */}
+        {!ended && <DietFeedbackHome supabase={memberSupabase} onGoWrite={readOnly ? null : () => goTab("write")} />}
+
         {/* 내 PT — 남은 수업 + 수업 일정(예약 · 변경 · 취소 요청 · 지난 회원은 '다음 수업' 한 줄) + 목표 로드맵(접힘) */}
         <MyPtCard supabase={memberSupabase}>
           {!ended ? <BookingCard supabase={memberSupabase} readOnly={readOnly} embedded /> : null}
@@ -1297,7 +1302,11 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {/* ── 기록하기(지난 회원 · 남은 수업 0회는 없음) ── */}
         {!readOnly && (
           <div hidden={tab !== "write"}>
-        {/* 오늘 할 개인운동(트레이너가 확정 · 보이기 켠 루틴 · 2026-10-04) — 맨 위 */}
+        {/* 오늘 식단(트레이너가 식단 관리를 켠 회원만 · 2026-10-11) — 맨 위 */}
+        <DietSection supabase={memberSupabase} me={me}
+          trainedToday={logs.some((l) => dietDayOf(l.session_at || l.created_at) === dietToday()) || schedule.some((x) => x.kind === "personal" && x.on_date === dietToday())} />
+
+        {/* 오늘 할 개인운동(트레이너가 확정 · 보이기 켠 루틴 · 2026-10-04) */}
         <RoutineSection supabase={memberSupabase} me={me} ptLogs={logs} healthOk={healthOk} onSaved={() => { onReloadSchedule?.(); onReloadLogs?.(); }} />
 
         {/* 개인운동 기록(M3) — 폼만(목록은 내 기록 탭). */}

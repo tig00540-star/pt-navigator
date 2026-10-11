@@ -11,7 +11,7 @@ import { useAiQuota, KIND_LABEL } from "@/lib/useAiQuota";
 import { useAccount } from "@/lib/useAccount";
 import { PLANS } from "@/lib/plans";
 
-const SOON = { voice: 10, prep: 3, inbody: 5, roadmap: 5 };
+const SOON = { voice: 10, prep: 3, inbody: 5, roadmap: 5, diet: 20 };
 // 받침이 있으면 '을', 없으면 '를'(음성일지를 · 대본을)
 const eulReul = (w) => { const c = (w || "").charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c <= 11171 && c % 28 ? "을" : "를"; };
 

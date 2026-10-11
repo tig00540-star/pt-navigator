@@ -20,6 +20,7 @@ import ApptRequestToday from "@/components/views/ApptRequestToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
+import DietToday from "@/components/diet/DietToday";
 import PtEndToday from "@/components/views/PtEndToday";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { ListChecks } from "lucide-react";
@@ -43,6 +44,8 @@ export default function TodoTab({ members, uid, onSelect }) {
       <OwnerFeedbackToday members={members} uid={uid} />
       <PayrollConfirmedToday uid={uid} />
       <RoutineRequestToday members={scoped} onSelect={(id) => onSelect(id, 13)} />
+      {/* 식단(2026-10-11) — 요청 · 피드백 대기 · AI가 보낸 것 · 기록 끊김 */}
+      <DietToday members={scoped} onSelect={(id) => onSelect(id, 13)} />
 
       {/* 자동 1~3 — 기존 위젯 재사용(회원 탭에서 이관). 탭 목적지만 감싸서 지정. */}
       <ReapproachToday members={scoped} onSelect={(id) => onSelect(id, 1)} />

@@ -8,6 +8,7 @@
    ========================================================================= */
 
 import DirectionCard from "@/components/pt/DirectionCard";
+import DietCard from "@/components/diet/DietCard";
 import RoadmapCard from "@/components/pt/RoadmapCard";
 import RoutineCard from "@/components/pt/RoutineCard";
 import { Smartphone } from "lucide-react";
@@ -19,6 +20,8 @@ export default function PtCareTab({ member, contracts = [], setContracts, logs =
   return (
     <div className="space-y-6">
       <DirectionCard member={member} contracts={contracts} setContracts={setContracts} logs={logs} onMemberPatch={onMemberPatch} />
+      {/* 식단 관리(2026-10-11 · 1단계) — 켜면 회원이 사진을 올리고 하루 한 번 피드백 · 요청 */}
+      <DietCard member={member} />
       {/* 목표 로드맵 — 회원 전용 페이지 '내 PT'에 보이는 단계(트레이너가 만들고 켤 때만 · 2026-10-03) */}
       <RoadmapCard member={member} contracts={contracts} logs={logs} />
       {/* 개인운동 루틴 — 회원 전용 페이지 '오늘 할 개인운동'(트레이너 확정 · 보이기 켤 때만 · 2026-10-04) */}

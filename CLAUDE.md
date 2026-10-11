@@ -179,11 +179,21 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **화면:** 트레이너 설정 **'알림'** 탭(`NotifySettings` · 이 폰 켜기/끄기 · 시험 알림 · 종류별 on/off · 대표 줄은 대표만) · 회원 전용 페이지 홈 **'운동일지 알림 받기'**(`MemberPushCard` · 지난 회원 없음).
 - ⚠️ **아이폰은 홈 화면에 추가한 앱에서만** 알림 가능(iOS 16.4+) → 화면이 안내. 운동일지 자동 확인 24시간 단축은 회원 알림이 충분히 퍼진 뒤(대표 결정 대기).
 
+### 식단 관리 1단계 (2026-10-11 · SQL `docs/migrations/2026-10-11-diet.sql` · 설계 아티팩트 '식단 관리 1단계 설계')
+
+- **켜기 = 트레이너 · PT 회원 · 건강정보 동의(DB 트리거 `_diet_plan_guard` · 철회하면 자동으로 꺼짐):** 케어 탭 `components/diet/DietCard` → 창(목적 = 회원 목표에서 `purposeFromGoal` · 기간 · 목표 kg · 미리 보기 `dietTargets`) → `diet_plan`(회원당 1행). 숫자 규칙 `lib/diet`: 인바디 기초대사량(없으면 체지방률로 제지방 추정) × 1.35 = 유지 · 다이어트 · 바디프로필 = 유지 − 목표 kg × 7,700 ÷ 일수(기초대사량 아래로 안 내림 · 한 주 1% 넘으면 '빠듯해요 · N개월이면 안전해요') · 벌크업 +250 · 건강관리 = 유지 · 대회 준비 = 숫자 직접 · 운동한 날 +150 · 단백질 체중 × 1.4~2.0. 질환이 적힌 회원(`diseaseOf`) = 숫자 없이 기록 관리만(`no_numbers`). 켜면 AI 예시 식단 3가지(`examples` · 회원에게 보임).
+- **하루 = 오전 6시 ~ 다음 날 오전 6시(KST · DB `diet_today()` = `lib/diet dietToday`).** 회원 `components/member/DietSection`(기록하기 맨 위): 끼니 사진(`diet-photos/{회원}/…` · 1024px) · 글 · 먹은 시각 → `diet_meal` · [오늘 식단 끝] = rpc `diet_close_day` · '식단 짜 주세요' = rpc `request_diet`(하루 3번 · 4번째 "오늘은 요청을 다 썼어요…" · 1 · 2번째 "트레이너가 확인하고 답해 드려요. 수업 중엔 조금 늦을 수 있어요 🙏" · 3번째 "트레이너가 바쁘면 늦을 수도 있어요 😅" · 답 전 취소 = 횟수 돌려받음). 홈 `DietFeedbackHome` = 최근 피드백 + 새 식단 답. 회원 쓰기 규칙은 security definer 도우미(`diet_enabled_for` · `diet_day_fed`)로 — 회원 세션은 diet_plan · diet_day를 못 읽는다. 회원은 메모 · 먹은 시각만 고침(분석 칸은 서버만).
+- **AI 표시는 트레이너에게만:** 회원용 화면 `member_diet_plan` · `member_diet_day` · `member_diet_request`엔 `ai` 칸이 없다 · 회원 화면 문구 "트레이너가 AI 분석을 활용해 답할 수 있어요"(법무 확인 대기).
+- **트레이너가 안 하면 AI가 대신(lib/dietAI `runDietAuto`):** 요청 1 · 2번째 = 1시간 뒤 · 하루 피드백 = 그 하루가 끝난 뒤(오전 6시). **예약 작업 없이도 돈다** — 회원이 페이지를 열 때 · 트레이너가 '오늘'을 열 때 `/api/diet {action:'auto'}` + 매일 06:10 `app/api/cron/diet-daily`(+ 종료 6개월 지난 회원 식단 사진 삭제). 두 번 안 만들게 `auto_claim_at`. 트레이너가 연 AI 초안(`diet_day.draft`)이 있고 그 뒤 새 사진이 없으면 그대로 보냄. 끼니 분석은 처음 필요할 때 한 번 저장(`diet_meal.analysis`) → 다음엔 새 사진만.
+- **트레이너 화면:** 케어 탭 식단 카드(목표량 · 주차 · 요청 'N분 뒤 AI' / '직접 답하기' · 최근 7일 '보냈어요 · AI가 보냈어요 · 오전 6시 AI' · 예시 식단 · 숫자 고치기 · 끄기) · 창 `DietDayModal`(사진 · 끼니 분석 · [AI 초안 보고 보내기] [직접 쓰기] · 보낸 뒤 '한마디 덧붙이기') · `DietRequestModal`(3번째는 [넘기기]) · '오늘' 탭 `DietToday`(요청 · 피드백 대기 · 어제 AI가 보낸 것 · 어제 피드백 못 나감 · 사진 없이 3일 = 폰 알림 없이 이 카드로만). 폰 알림: 트레이너 `diet_request` · `diet_done` · 회원 `diet_feedback` · `diet_answer`.
+- **AI 한도 'diet' 묶음:** 베이직 3 · 프로 300 · 센터 900 + 자리마다 300(DB `ai_quota_for` · `lib/plans`) · 단위 `dietfb:{회원}:{하루}` · `dietrq:{요청}` · `dietex:{회원}:{시작일}` · Sonnet 5.5(비전). 한도를 다 쓰면 자동은 건너뛰고 '오늘' 카드에 '어제 식단 피드백이 아직이에요'. 식단 팩(60건 9,900원) · 결제일 기준 한도 · 팩 3개월 이월은 아직(결제 쪽 후속).
+- 남은 것: 사진 768px 비교 시험 · 묶음 처리(Batch) 할인 · 2주 연속 느림 · 기간 끝 카드 · 건강정보 철회 시 사진 삭제(법무 확인).
+
 ### 회원 수업 예약 · 변경 · 취소 요청 (2026-10-06 · SQL `docs/migrations/2026-10-06-appt-request.sql`)
 
 - **회원** `components/member/BookingCard`(회원 전용 페이지 홈 · 지난 회원 없음 · 남은 수업 0회는 보기만): 잡힌 수업(`member_upcoming_appt`) · [시간 바꾸기] [취소하기] · [새 수업 요청하기](이번 주 + 다음 주 · 1시간 칸 6~23시 · 트레이너 바쁜 칸 흐림 = `member_trainer_busy`(다른 회원 수업 · 개인 일정 시각만 · `lib/booking` `busySlots`가 반복 일정 펼침)) · 요청 중 '트레이너 확인 중 · 요청 취소' · 결과(승인/거절 + 한마디) '확인'. **변경 · 취소 · 새 요청 시각은 수업 N시간 전까지**(트레이너가 정함 · 기본 12) — 지나면 "트레이너와 직접 이야기해 주세요".
 - **DB가 관문:** `request_appt`(auth_member_writable · pt_active · 창 · 정각 · 기준 시간 · 같은 예약 중복 요청 · 새 요청 3개까지) · `withdraw_appt_request` · `mark_appt_request_seen` · **`decide_appt_request`**(트레이너/대표 · 승인 = 예약을 실제로 insert/옮기기/취소 · 같은 시각 booked 있으면 conflict). 표 `appt_request`(쓰기 정책 없음 · 함수로만) · 규칙 `trainer_booking_pref`(accept · cutoff_hours 1~72 · 본인만) · 회원용 `member_booking_rule`.
-- **트레이너:** 설정 '내 정보' **'회원 예약 요청'**(`BookingPrefCard` · 받기 on/off · 3/6/12/24/48시간 전) · **'수업 요청' 카드**(`ApptRequestToday` · 폰 홈 · 오늘 · 넓은 홈 · 승인/거절+한마디). 알림: 요청 → 트레이너 `appt_request`(종류 on/off) · 결과 → 회원 `appt_decided`.
+- **트레이너:** 설정 '알림' 탭 **'회원 예약 요청'**(2026-10-11 내 정보에서 옮김)(`BookingPrefCard` · 받기 on/off · 3/6/12/24/48시간 전) · **'수업 요청' 카드**(`ApptRequestToday` · 폰 홈 · 오늘 · 넓은 홈 · 승인/거절+한마디). 알림: 요청 → 트레이너 `appt_request`(종류 on/off) · 결과 → 회원 `appt_decided`.
 - **운동일지 자동 확인 24시간(같은 날 · 폰 알림 뒤):** 동의서 `2026-10-06.2`(24시간 문구) 이상 동의 회원부터 24시간 · 48시간 문구에만 동의한 회원은 48시간(DB 함수 per-member · `lib/workoutHash` `autoConfirmHours(version)`). 버전이 올라 회원 페이지가 한 번 더 묻는다.
 
 ### 회원 이벤트(옛 포상 흡수) · 회원 홈 정리 (2026-10-06 · SQL `docs/migrations/2026-10-06-member-event.sql`)

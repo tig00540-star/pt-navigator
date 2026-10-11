@@ -384,7 +384,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
                   <div className="mt-1 text-[12.5px] leading-snug text-sub">
                     {p.key === "basic" ? "기록 · 회원 관리 · 회원 전용 페이지 · AI는 기능마다 매달 3번"
                       : p.key === "solo" ? `베이직 전부 + 음성일지 월 ${p.ai.voice}건 · OT · 재등록 대본 월 ${p.ai.prep}번`
-                      : `트레이너 ${3 + extraSeats}명 + 대표${extraSeats ? `(추가 ${extraSeats}명 포함)` : ""} · 센터 공용 음성일지 월 ${p.ai.voice + SEAT_AI.voice * extraSeats}건 · 대본 월 ${p.ai.prep + SEAT_AI.prep * extraSeats}번`}
+                      : `트레이너 ${3 + extraSeats}명 + 대표${extraSeats ? `(추가 ${extraSeats}명 포함)` : ""} · 센터 공용 음성일지 월 ${p.ai.voice + SEAT_AI.voice * extraSeats}건 · 대본 월 ${p.ai.prep + SEAT_AI.prep * extraSeats}번 · 식단 AI 월 ${p.ai.diet + SEAT_AI.diet * extraSeats}건`}
                   </div>
                 </button>
               ))}

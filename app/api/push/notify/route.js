@@ -112,6 +112,27 @@ export async function POST(req) {
       r = await sendPush(sb, { trainerIds: [e.created_by, who.trainer_id], type: "event_join", title: "이벤트 참여",
         body: `${await memberName(who.id)} 회원이 '${e.title}'에 참여했어요`, url: "/settings/reward" });
     }
+  } else if (type === "diet_request" && who.kind === "member") {
+    // 식단 요청(2026-10-11) — 회원 → 담당 트레이너
+    const { data: q } = await sb.from("diet_request").select("user_id, seq, scope, situations, status").eq("id", id).maybeSingle();
+    if (q?.user_id === who.id && q.status === "open" && who.trainer_id) {
+      r = await sendPush(sb, { trainerIds: [who.trainer_id], type: "diet_request", title: "식단 요청이 왔어요",
+        body: `${await memberName(who.id)} · ${q.scope === "today" ? "오늘 남은 끼니" : "이번 주"}${q.situations?.length ? ` · ${q.situations.join(", ")}` : ""}${q.seq <= 2 ? " · 1시간 안에 안 보내면 AI가 대신 보내요" : " · 직접 답해 주세요"}`, url: `/pt/${who.id}/care` });
+    }
+  } else if (type === "diet_done" && who.kind === "member") {
+    // 오늘 식단 끝(id = 회원 본인 · 오늘 하루를 닫았는지 서버가 다시 확인)
+    const { data: d } = await sb.from("diet_day").select("closed_at, feedback").eq("user_id", who.id).not("closed_at", "is", null).order("day", { ascending: false }).limit(1).maybeSingle();
+    if (d?.closed_at && !d.feedback && who.trainer_id && id === who.id) {
+      r = await sendPush(sb, { trainerIds: [who.trainer_id], type: "diet_done", title: "식단 피드백 요청",
+        body: `${await memberName(who.id)} 회원이 오늘 식단을 다 올렸어요 · 안 보내면 오전 6시에 AI가 보내요`, url: `/pt/${who.id}/care` });
+    }
+  } else if ((type === "diet_feedback" || type === "diet_answer") && who.kind === "trainer") {
+    // 트레이너가 식단 피드백 · 요청 답을 보냄 → 회원(id = 회원)
+    const { data: m } = await sb.from("user_table").select("id, account_id, member_token, status, hidden").eq("id", id).maybeSingle();
+    if (m?.account_id === who.account_id && !m.hidden && m.status === "pt_active") {
+      r = await sendPush(sb, { memberIds: [m.id], type, title: type === "diet_feedback" ? "식단 피드백이 왔어요" : "식단이 도착했어요",
+        body: type === "diet_feedback" ? "트레이너가 식단 피드백을 보냈어요" : "요청한 식단을 확인해 보세요", url: m.member_token ? `/m/${m.member_token}` : "/" });
+    }
   } else if (type === "log_written" && who.kind === "trainer") {
     const { data: l } = await sb.from("daily_workout_log").select("user_id, session_at, created_at, voided, source").eq("id", id).maybeSingle();
     if (l && !l.voided && l.source !== "noshow") {
