@@ -46,7 +46,7 @@ export { downloadMyData };
 /** 이번 달 AI 사용량(베이직 = 기능 5개 · 프로/센터 = 음성일지 · 준비) */
 function AiUsage({ quota }) {
   if (!quota.q?.groups) return null;
-  const groups = quota.tier === "basic" ? ["voice", "ot", "rereg", "inbody", "roadmap"] : ["voice", "prep"];
+  const groups = quota.tier === "basic" ? ["voice", "ot", "rereg", "inbody", "roadmap", "diet"] : ["voice", "prep", "diet"];
   return (
     <div className="mt-4 rounded-xl bg-elevate px-3.5 py-3">
       <p className="m-0 text-[13px] font-bold text-ink">이번 달 AI{quota.trial ? " · 체험 중엔 프로와 같아요" : ""}</p>
@@ -60,7 +60,7 @@ function AiUsage({ quota }) {
             <li key={g}>
               <div className="flex items-baseline justify-between gap-2 text-[13px]">
                 <span className="text-sub">{KIND_LABEL[g]}</span>
-                <span className="tabular-nums text-ink"><b>{v.used}</b> / {total}{v.extra ? ` (팩 ${v.extra})` : ""}</span>
+                <span className="tabular-nums text-ink"><b>{v.used}</b> / {total}{v.pack_left ? ` (팩 ${v.pack_left} 남음)` : ""}</span>
               </div>
               <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
                 <div className={`h-full rounded-full ${v.left === 0 ? "bg-danger" : "bg-primary"}`} style={{ width: `${pct}%` }} />
@@ -69,7 +69,7 @@ function AiUsage({ quota }) {
           );
         })}
       </ul>
-      <p className="m-0 mt-2 text-[12px] text-muted">매달 1일에 다시 채워져요.{quota.tier === "basic" ? "" : " 인바디 분석 · 로드맵 초안은 따로 세지 않아요."}</p>
+      <p className="m-0 mt-2 text-[12px] text-muted">매달 1일에 다시 채워져요.{quota.tier === "basic" ? "" : " 추가 팩은 산 날부터 1개월 동안 써요. 인바디 분석 · 로드맵 초안은 따로 세지 않아요."}</p>
     </div>
   );
 }

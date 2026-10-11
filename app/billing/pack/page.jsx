@@ -44,7 +44,7 @@ function PackConfirm() {
         {state === "done" && (
           <>
             <p className="m-0 text-[18px] font-bold text-ink">추가 팩을 넣었어요</p>
-            <p className="m-0 mt-2 text-[14px] leading-relaxed text-sub">이번 달 말일까지 바로 쓸 수 있어요. 산 뒤 7일 안에 하나도 안 썼으면 구독 관리에서 환불할 수 있어요.</p>
+            <p className="m-0 mt-2 text-[14px] leading-relaxed text-sub">산 날부터 1개월 동안 쓸 수 있어요. 매달 기본 한도를 먼저 쓰고, 다 쓰면 팩에서 나가요. 산 뒤 7일 안에 하나도 안 썼으면 구독 관리에서 환불할 수 있어요.</p>
           </>
         )}
         {state === "error" && (
