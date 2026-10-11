@@ -71,6 +71,130 @@ function More({ label = "자세히", children }) {
   );
 }
 
+/* 세일즈북을 넘기며 클로징(2026-10-11 시안) — 대본의 클로징 비트를 세일즈북 장에 붙여 보여 준다.
+   숫자 · 사진 · 가격은 세일즈북 화면이, 말은 대본이(book_lines = 장과 장을 잇는 짧은 줄 · AI).
+   book_lines가 없는 옛 대본은 이 화면을 안 쓰고 예전 클로징 그대로.
+   세일즈북이 없으면(onOpenBook 없음 · 지난 회차 등) 장 이름 칸 · 화면 안내는 숨기고 순서 · 대사만. */
+const BOOK_FLOW = {
+  second: [
+    { slide: "표지", label: "시작", from: "open" },
+    { slide: "당신의 목표", label: "되짚기", seq: "echo", alt: "goal" },
+    { slide: "오늘 함께 확인한 것", label: "회원이 말하게", seq: "trial_close" },
+    { slide: "오늘 함께 확인한 것", label: "왜 PT가 필요한지", seq: "stakes" },
+    { slide: "오늘 함께 확인한 것", label: "쉽게 말하면", metaphor: true },
+    { slide: "이런 변화를 만들어요", label: "한마디", from: "cases", act: "숫자는 화면이 말하게 2~3초 두기" },
+    { slide: "여기까지 함께 갑니다", label: "앞으로", seq: "next_goal", alt: "roadmap" },
+    { slide: "추천 플랜", label: "추천 플랜", seq: "plan_pitch", price: true },
+    { slide: "약속드릴게요", label: "약속", promise: true },
+    { slide: "약속드릴게요", label: "요청", seq: "ask", ask: true, hold: true },
+    { slide: "약속드릴게요", label: "웃으며 한마디", seq: "nudge" },
+    { slide: "약속드릴게요", label: "망설이면", seq: "flush" },
+  ],
+  reregister: [
+    { slide: "표지", label: "시작", from: "open" },
+    { slide: "그동안의 여정", label: "인정", from: "journey" },
+    { slide: "그동안의 여정", label: "되짚기", seq: "echo" },
+    { slide: "숫자로 확인된 변화", label: "회원이 말하게", seq: "trial_close", act: "회원이 직접 고르게 하고, 고른 걸 끝까지 짚어요" },
+    { slide: "사진 기록", label: "한마디", from: "photo" },
+    { slide: "지금 어디까지 · 앞으로", label: "다음 목표", seq: "next_goal", alt: "roadmap" },
+    { slide: "지금 멈추면 · 이어가면", label: "왜 지금 이어가야 하나", seq: "stakes" },
+    { slide: "지금 멈추면 · 이어가면", label: "쉽게 말하면", metaphor: true },
+    { slide: "추천 플랜", label: "추천 플랜", seq: "plan_pitch", price: true },
+    { slide: "추천 플랜", label: "혜택(덤)", sweet: true },
+    { slide: "약속드릴게요", label: "약속", promise: true },
+    { slide: "약속드릴게요", label: "요청", seq: "ask", ask: true, hold: true },
+    { slide: "약속드릴게요", label: "망설이면", seq: "flush" },
+  ],
+};
+// 핵심 4줄(2026-10-11 대표 · "클로징이 외울 수 없을 만큼 길다") — 기본 화면은 되짚기 · 왜 · 추천 플랜 · 요청만.
+//   나머지(장마다 한마디 · 회원이 말하게 · 쉽게 말하면 · 앞으로 · 혜택 · 약속 · 망설이면)는 '장 순서대로 전부 보기'에 접는다.
+//   AI 출력은 그대로 · 화면만(옛 대본에도 바로 적용).
+const CORE_SEQ = ["echo", "stakes", "plan_pitch", "ask"];
+const CORE_LABEL = { echo: "되짚기", stakes: "왜 PT가 필요한지", plan_pitch: "추천 플랜", ask: "요청" };
+const coreLabel = (kind, k) => (kind === "reregister" && k === "stakes" ? "왜 지금 이어가야 하나" : CORE_LABEL[k]);   // 재등록 회원은 이미 PT 중
+const HOLD_TEXT = "요청한 뒤엔 먼저 말하지 말고 기다려요.";
+
+function BookClosing({ kind, d, priceLine, onOpenBook }) {
+  const [all, setAll] = useState(false);
+  const seq = d.closing_sequence || {};
+  const bl = d.book_lines || {};
+  const promises = (Array.isArray(seq.promise) ? seq.promise : []).filter(Boolean);
+  const rows = (BOOK_FLOW[kind] || []).map((r) => ({ ...r, text: r.promise ? (promises.length ? promises : null) : r.metaphor ? (d.sales_metaphor?.metaphor || "").replace(/^쉽게 말하면[,\s]*/, "") : r.sweet ? d.sweetener : r.from ? bl[r.from] : seq[r.seq] || (r.alt ? bl[r.alt] : null) })).filter((r) => r.text)
+    .map((r, i, arr) => ({ ...r, newSlide: i === 0 || arr[i - 1].slide !== r.slide }));
+  const core = rows.filter((r) => CORE_SEQ.includes(r.seq));
+  const slidePill = (slide) => onOpenBook && <p className="m-0 inline-flex items-center gap-1.5 rounded-md bg-ink px-2 py-0.5 text-[12px] font-bold text-white"><BookText className="h-3 w-3" aria-hidden="true" />{slide}</p>;
+  const extras = (r) => (
+    <>
+      {r.price && priceLine && <p className="m-0 text-[13px] font-semibold text-ink">{onOpenBook ? "화면의 추천 칸 · " : ""}{priceLine}</p>}
+      {r.hold && seq.hold && <p className="m-0 text-[12px] text-sub">{HOLD_TEXT}</p>}
+    </>
+  );
+  return (
+    <div className="space-y-3">
+      {onOpenBook && (
+        <button type="button" onClick={onOpenBook}
+          className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-[15px] font-bold text-white">
+          <BookText className="h-4 w-4" aria-hidden="true" /> 세일즈북 열기
+        </button>
+      )}
+      {/* 핵심 4줄 — 이것만 외워도 클로징이 된다 */}
+      <ol className="m-0 list-none space-y-3 p-0">
+        {core.map((r, i) => (
+          <li key={r.seq} className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] font-semibold text-primary-strong">{"①②③④"[i]} {coreLabel(kind, r.seq)}</span>
+              {slidePill(r.slide)}
+            </div>
+            <Say strong={r.ask}>{r.text}</Say>
+            {extras(r)}
+          </li>
+        ))}
+      </ol>
+      <div>
+        <button type="button" onClick={() => setAll((v) => !v)} aria-expanded={all}
+          className="inline-flex min-h-[40px] items-center gap-1 text-[13px] font-semibold text-sub transition hover:text-ink">
+          {onOpenBook ? "세일즈북 장 순서대로 전부 보기" : "전체 순서로 보기"} · {rows.length}줄
+          <ChevronDown className={`h-4 w-4 transition-transform ${all ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+        {all && (
+          <ol className="m-0 mt-2 list-none space-y-2.5 border-l-2 border-line p-0 pl-3">
+            {rows.map((r, i) => (
+              <li key={i} className="space-y-1">
+                {r.newSlide && slidePill(r.slide)}
+                <p className="m-0 text-[12px] font-semibold text-muted">{r.label}{CORE_SEQ.includes(r.seq) && <span className="ml-1.5 text-primary-strong">핵심</span>}</p>
+                {Array.isArray(r.text) ? r.text.map((t, j) => <Say key={j}>{t}</Say>) : <Say strong={r.ask}>{r.text}</Say>}
+                {extras(r)}
+                {r.act && onOpenBook && <p className="m-0 text-[12px] text-sub">{r.act}</p>}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+      {(seq.fallback?.next_line || (seq.fallback?.homework || []).length > 0) && (
+        <More label="오늘 안 되면 · 숙제">
+          <Note label="다음 OT">{seq.fallback?.next_line}</Note>
+          {(seq.fallback?.homework || []).filter(Boolean).map((h, i) => <Note key={i} label={`숙제 ${i + 1}`}>{h.do}</Note>)}
+        </More>
+      )}
+    </div>
+  );
+}
+
+// 지시 + 대사가 한 줄로 온 것('…버티는 동작을 넣고 이렇게 말해요: "다리 힘은…"') — 말풍선 안에 따옴표가 또 들어가던 것을
+//   지시(작게)와 대사(말풍선)로 나눈다(2026-10-11). 모양이 안 맞으면 예전처럼 통째로 말풍선.
+function CueSay({ text }) {
+  const t = plainText(text || "");
+  if (!t) return null;
+  const m = t.match(/^([\s\S]{4,}?)[:：]\s*["“]([\s\S]+?)["”]\s*$/);
+  if (!m) return <Say>{text}</Say>;
+  return (
+    <>
+      <p className="m-0 text-[13px] leading-[1.6] text-sub">{m[1].trim()}</p>
+      <Say>{m[2].trim()}</Say>
+    </>
+  );
+}
+
 // 문서 안의 한 칸 — 카드가 아니라 구분선으로 나뉜 줄(리포트가 한 장의 문서로 보이게 · 2026-10-02).
 function Section({ n, icon: Icon, title, preview, open, onToggle, children }) {
   return (
@@ -120,7 +244,7 @@ function cheatLines(kind, d) {
   return { lines: [d.member_read, proofLine, ask && `"${ask}"`].filter(Boolean), derived: true };
 }
 
-export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier, highlightReason = "" }) {
+export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier, highlightReason = "", onOpenBook = null }) {
   const d = data || {};
   const rereg = kind === "reregister";
   const [open, setOpen] = useState({});
@@ -158,7 +282,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   // 재등록 — 그동안의 변화 → 앞으로 · 오늘 수업 흐름(OT의 입장·운동 자리).
   const wn = d.why_now || {};
   const sf = d.session_flow || {};
-  if (rereg && (wn.proven || wn.satisfaction || wn.future_change)) {
+  // 새 클로징(되짚기 · 다음 목표 · 왜 지금이 있는 대본 · 2026-10-11)이면 이 칸은 클로징과 같은 말이라 뺀다(대표: 겹친다).
+  //   옛 대본만 이 칸을 그대로 보여 준다. 내 자료 링크는 '오늘 수업 흐름'으로 옮긴다.
+  const newClose = Boolean(seq.echo || Array.isArray(seq.promise));
+  if (rereg && !newClose && (wn.proven || wn.satisfaction || wn.future_change)) {
     sections.push({
       k: "change", icon: TrendingUp, title: "그동안의 변화 → 앞으로", preview: wn.proven,
       body: (
@@ -182,9 +309,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
         <>
           <Note label="꺼낼 타이밍">{sf.timing}</Note>
           {sf.gap_awareness && <p className="m-0 text-[12px] font-semibold text-muted">아직 남은 부분 알려 주기</p>}
-          <Say>{sf.gap_awareness}</Say>
+          <CueSay text={sf.gap_awareness} />
           {sf.goal_raise && <p className="m-0 text-[12px] font-semibold text-muted">목표 한 단계 올리기</p>}
-          <Say>{sf.goal_raise}</Say>
+          <CueSay text={sf.goal_raise} />
+          {newClose && regLibs.map((lib, i) => <LibLink key={i} lib={lib} />)}
         </>
       ),
     });
@@ -268,10 +396,12 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   }
   if (seq.ask || seq.trial_close || d.closing_line || d.sales_metaphor?.metaphor) {
     sections.push({
-      k: "close", icon: Flag, title: "클로징", preview: seq.ask || d.closing_line,
-      body: (
+      k: "close", icon: Flag, title: d.book_lines && onOpenBook ? "클로징 · 세일즈북 넘기며" : "클로징", preview: seq.ask || d.closing_line,
+      body: d.book_lines && (kind === "second" || rereg) ? (
+        <BookClosing kind={rereg ? "reregister" : "second"} d={d} priceLine={priceLine} onOpenBook={onOpenBook} />
+      ) : (
         <>
-          <ClosingSequence compact sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} />
+          <ClosingSequence compact rereg={rereg} sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} />
           {rereg && d.sweetener && <Note label="혜택(마지막에 덤으로)">{d.sweetener}</Note>}
         </>
       ),
@@ -351,7 +481,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
               </li>
             ))}
           </ol>
-          {derived && <p className="m-0 mt-2 text-[12px] text-sub">리포트를 다시 만들면 더 짧은 요약으로 바뀌어요.</p>}
+          {derived && <p className="m-0 mt-2 text-[12px] text-sub">대본을 다시 만들면 더 짧은 요약으로 바뀌어요.</p>}
           {fillIn && <p className="m-0 mt-2.5 rounded-lg bg-card px-3 py-2 text-[12.5px] leading-relaxed text-ink"><b className="font-semibold text-primary-strong">○○</b>에는 수업 중 회원이 말한 목표를 넣어 말해요. 첫마디에서 목표를 먼저 물어보세요.</p>}
         </div>
       )}

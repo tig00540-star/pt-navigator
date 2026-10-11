@@ -115,7 +115,7 @@ export default function FirstOTAssist({ member, onSaved }) {
       if (pendingKey) clearPending(pendingKey);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setNotice(d.error || "리포트를 만들지 못했어요. 다시 시도해 주세요.");
+        setNotice(d.error || "대본을 만들지 못했어요. 다시 시도해 주세요.");
         return;
       }
       const result = await res.json();
@@ -128,10 +128,10 @@ export default function FirstOTAssist({ member, onSaved }) {
         setRow1Report((r) => ({ ...(r || {}), first_assist: { data: result, meta: newMeta } }));
         onSaved?.();
       } else if (supabase) {
-        setNotice("리포트를 저장하지 못했어요. 지금은 이 화면에서만 보여요. 권한이 없거나 구독이 만료됐을 수 있어요.");
+        setNotice("대본을 저장하지 못했어요. 지금은 이 화면에서만 보여요. 권한이 없거나 구독이 만료됐을 수 있어요.");
       }
     } catch {
-      setNotice("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
+      setNotice("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 대본은 이어서 저장돼요)");
     } finally {
       setLoading(false);
       refreshAiQuota();
@@ -171,13 +171,13 @@ export default function FirstOTAssist({ member, onSaved }) {
       title="오늘의 OT 대본"
       quotaKind="ot"
       generateLabel="OT 대본 만들기"
-      idleDescription="1차 OT도 목표는 오늘 PT 등록이에요. 회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 리포트를 만들어요. 맨 위 30초 요약, 그다음 입장 · 운동 · 클로징 · 거절 대응 순서예요."
-      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
+      idleDescription="1차 OT도 목표는 오늘 PT 등록이에요. 회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 대본을 만들어요. 맨 위 30초 요약, 그다음 입장 · 운동 · 클로징 · 거절 대응 순서예요."
+      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 대본은 저장돼 있다가 돌아오면 바로 떠요."
       onGenerate={generate}
       onRegenerate={generate}
       notice={notice || (sparse && !data ? (
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          목표 한 줄만 적어도 리포트가 훨씬 정확해져요.
+          목표 한 줄만 적어도 대본이 훨씬 정확해져요.
           <button type="button" onClick={() => openMemberEdit(member.id)} className="font-semibold underline underline-offset-2">정보 수정</button>
         </span>
       ) : undefined)}
@@ -194,7 +194,7 @@ export default function FirstOTAssist({ member, onSaved }) {
         <div className="space-y-3">
           {legacyCache && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
-              이전 형식 리포트예요. &lsquo;다시 생성&rsquo;을 누르면 새 형식으로 바뀌어요.
+              이전 형식 대본이에요. &lsquo;다시 생성&rsquo;을 누르면 새 형식으로 바뀌어요.
             </div>
           )}
           <PrepReport kind="first" data={data} packages={packages} favorites={favorites} />

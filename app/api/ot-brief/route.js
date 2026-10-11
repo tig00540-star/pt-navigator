@@ -59,6 +59,15 @@ async function saveResult(token, phase, save, brief, model) {
     if (ie || !data?.length) console.error("[ot-brief] 저장 실패(insert):", ie?.message || "0행(권한)");
     return data?.[0]?.id ?? null;
   }
+  // 재등록 세일즈북 — 재등록 대본 저장 뒤 이어서 만든 것을 같은 계약 행에(2026-10-11 · 화면이 다시 읽어 '세일즈북 열기')
+  if (save.kind === "contract" && phase === "reg_salesbook" && typeof save.contractId === "string") {
+    const { data: row } = await sb.from("session_log").select("id, report").eq("id", save.contractId).maybeSingle();
+    if (!row) return null;
+    const { data, error } = await sb.from("session_log").update({ report: { ...(row.report || {}), reg_salesbook: brief, regSalesbookMeta: meta } })
+      .eq("id", row.id).select("id");
+    if (error || !data?.length) console.error("[ot-brief] 저장 실패(재등록 세일즈북):", error?.message || "0행(권한)");
+    return data?.[0]?.id ?? null;
+  }
   if (save.kind === "contract" && phase === "reregister" && typeof save.contractId === "string") {
     const { data: row } = await sb.from("session_log").select("id, report").eq("id", save.contractId).maybeSingle();
     if (!row) return null;
@@ -94,8 +103,8 @@ const PREAMBLE = `너는 피트니스 트레이너의 파트너다. 도메인에
 - 세일즈 강도 = '근거·책임의 세기'다(정당한 강조). 압박·조작의 세기가 아니다.
 - 허용(강하게 OK): 회원 '본인 데이터'로 말하기 / 사실 기반 손실·가치 프레이밍(회원 목적별로 다르게 —
   진행손실 / 유지·안전 / 효율·정확 / 습관형성. ⚠️"지금 멈추면 원점"은 진행손실형 한 축일 뿐, 기본값 아님) /
-  "혼자서는 이 세팅을 못 잡는다"(사실인 책임의 말) / 확신 있는 단일 추천 · 가정 종결 /
-  ★진짜 긴급성(사실 기반: 습관이 굳기 전 · 오늘 감각이 남아 있을 때 · 목표 날짜까지 남은 기간) /
+  "혼자서는 이 세팅을 못 잡는다"(사실인 책임의 말) / 확신 있는 단일 추천 · 분명한 요청 / 트레이너가 책임질 구체 약속 /
+  ★진짜 긴급성(사실 기반: 목표 날짜까지 남은 기간 · 지금 몸 상태 · 오늘 확인한 것) /
   그대로 두면 생길 수 있는 구체적 결과(가능성 표현 "~수도 있어요" · 2026-10-07 대표).
 - 금지(효과에도 역효과): 허위 긴급성("오늘만 이 가격"), FOMO 남발, 죄책감 유발, 회원 소진
   강요(지쳐서 등록), 의료·완치·치료 표현. — 신뢰가 깨지면 재등록·소개가 무너진다.
@@ -138,11 +147,11 @@ const healthLine = (h) => !h ? "없음" : h.none ? "해당 없음" : `${[...(h.i
 
 // ── 클로징 시퀀스 공용 재료(클로징 재설계) — first/second/reregister 공유해 표현 흔들림 방지. ──
 // ① stakes 손실·가치 축 taxonomy(goal 유형별 · '원점' 일변도 금지 · 3케이스 검증).
-const STAKES_AXIS = `     · 외형/체중감량/바디라인 → 진행손실형: "지금 잡은 리듬 흩어지면 되돌아간다."
-     · 통증개선/재활/교정 → 유지·안전형: "오늘 풀린 감각, 관리 안 하면 다시 굳어요. 예전 습관으로 돌아가면 전보다 불편함과 통증이 더 심해질 수도 있어요."(가능성 표현 · 진단 · 단정 금지)
-     · 기구사용/근력/벌크업 → 효율·정확형: "혼자 하면 힘 쓰는 지점을 못 찾아 시간·부상 낭비, 같은 시간에 제대로 느는 게 PT."(★'원점' 아님 · 헛수고 방지 축)
-     · 건강/체력/활력 → 습관형성형: "이 컨디션을 습관으로 굳히려면 초반이 관건."
-     ⚠️"지금 멈추면 원점"은 진행손실형(외형) 한 축일 뿐 모든 케이스의 기본값이 아니다 — goal에 맞는 축을 골라라.`;
+const STAKES_AXIS = `     · 외형 · 체중감량 · 바디라인 → 진행형: 지금까지 쌓은 리듬이 흩어지면 목표 날짜에 못 맞출 수 있다는 것과, 이어 가면 무엇이 보이는지.
+     · 통증개선 · 재활 · 교정 → 유지 · 안전형: 오늘 풀린 감각을 관리하지 않으면 다시 불편해질 수 있다는 것(가능성 표현 · 진단 · 단정 금지).
+     · 기구사용 · 근력 · 벌크업 → 효율 · 정확형: 혼자 하면 힘 쓰는 지점을 못 찾아 시간을 쓰고도 덜 는다는 것, 같은 시간에 제대로 느는 게 PT.
+     · 건강 · 체력 · 활력 → 습관형: 지금 컨디션이 생활 습관이 되려면 초반에 무엇이 필요한지.
+     ★문장은 이 회원 관찰 · 기록으로 새로 쓴다(위 설명을 문장으로 옮기지 마라).`;
 
 // 대사 스타일(2026-10-02 대표 요청) — 리포트 3종(first·second·reregister)에 삽입.
 //   ① 핵심 한 구절만 **강조**(화면이 포인트 색으로 칠함 · components/ui/Emph) ② 긴 줄표 금지(서버에서도 한 번 더 걸러냄).
@@ -150,19 +159,18 @@ const SAY_STYLE = `[대사 스타일]
  - 핵심 강조(**두 별표**)는 꼭 필요한 곳에만: cheat 3줄, ask(요청), proof가 true인 운동의 cue, point_it_out,
    why_now·session_flow의 대사. 각 값에 한 구절만, 10자 안팎으로 짧게(문장 전체·긴 구절 금지). 그 밖의 값에는 별표를 쓰지 마라(강조가 많으면 아무것도 안 보인다).
  - [분량 · 폰 한 화면에 훑어보게] 트레이너가 수업 직전 30초~1분에 훑는다. 길면 안 읽힌다.
-   회원 대사(line·cue·point_it_out·trial_close·ask·objection_defense의 line·next_line·homework의 do·workout_intro)는 한 문장, 60자 안팎. nudge는 30자 안팎.
+   회원 대사(line·cue·point_it_out·trial_close·ask·objection_defense의 line·next_line·homework의 do·workout_intro·echo·next_goal·promise 각 줄)는 한 문장, 60자 안팎.
    stakes·plan_pitch·flush는 두 문장 이내. why·reason·feel·defense·trigger·bridge·so_what은 한 문장. metaphor 한 문장.
    같은 말을 여러 칸에 되풀이하지 마라.
  - 긴 줄표(—, –) 금지. 문장을 끊어야 하면 마침표로 나누고, 이어야 하면 쉼표를 써라.`;
 
 // 비유 재료 규칙(2026-10-02 대표: "직업을 안 적으면? 아무것도 없으면?") — first·second·reregister 공용.
-const METAPHOR_RULE = `   [비유 재료 찾는 순서] ① 직업 → ② 목표의 장면(결혼식 → "드레스도 가봉을 몇 번 해야 딱 맞잖아요" · 바디프로필 → "촬영 날짜가
-   정해진 프로젝트" · 건강검진 → "시험 날짜가 정해진 공부") → ③ 문진에 적힌 것(예전에 그만둔 이유 · 가능한 시간 · 받아본 운동) →
-   ④ 실제로 입력된 생활(거주지 · 불편한 부위) → ⑤ 누구나 겪어본 일상(운전 연수 · 처음 가는 길의 내비게이션 · 악기 레슨 · 이사).
-   앞 순서에 재료가 있으면 그걸 쓴다.
-   ★입력되지 않은 직업·생활을 짐작하지 마라("회사 다니시면" · "애 키우시면" · "학생이시면" 금지 · 회원이 "아닌데요" 하면 분위기가 깨진다).
-   ★뻔한 비유 금지: 저축·적금 · 자동차 정비 · 씨앗·나무 심기 · 집 기초공사·건물 짓기 · 인생은 마라톤 같은 누구에게나 해당하는 말.
-   ★억지 비유보다 분명한 질문이 낫다 — 어울리는 비유가 없으면 metaphor는 빈 문자열, ask는 요청 질문 한 문장만.`;
+const METAPHOR_RULE = `   [비유 — 어울릴 때만] metaphor는 stakes(왜 PT가 필요한지) 바로 다음에 트레이너가 '쉽게 말하면' 결로 이어 말할 한 문장이다
+   (화면이 stakes 바로 아래에 '쉽게 말하면' 이름표를 붙여 보여 준다 · metaphor를 '쉽게 말하면'으로 시작하지 마라 · stakes 문장 안에 비유를 또 넣지 마라). ★요청(ask)에는 비유를 넣지 마라.
+   재료 찾는 순서: ① 직업 → ② 목표의 장면(날짜가 있는 일) → ③ 문진에 적힌 것(그만둔 이유 · 가능한 시간 · 받아본 운동) →
+   ④ 실제로 입력된 생활 → ⑤ 누구나 겪어본 일상.
+   ★입력되지 않은 직업 · 생활을 짐작하지 마라. ★뻔한 비유(저축 · 자동차 정비 · 씨앗 · 건물 기초 · 마라톤) 금지.
+   ★어울리는 비유가 없으면 metaphor는 빈 문자열(억지 비유보다 없는 게 낫다).`;
 
 // ② 회원 대사 전문용어 금지(전 phase 공통 · 출력 규칙에 삽입).
 const MEMBER_LANG = `[회원 대사 용어] 회원에게 던지는 모든 대사(trial_close·ask·flush·point_it_out·opening 등)엔 트레이너
@@ -198,62 +206,73 @@ const REHAB_TONE = `   ★재활·교정 동작은 강하게 넣되(약한 동�
    → "굳은 목·어깨를 풀어 그날 목이 가벼워지는 걸 체감"(✅). 진단·치료·완치·교정완료 단정 금지. 통증은 '불편/부담'까지만.`;
 
 // ③ closing_sequence JSON 예시(스키마 · 3 프롬프트 공유).
-const CLOSING_SEQ_JSON = `"closing_sequence": { "stakes": "왜 PT가 필요한지: 근거 1개 + 혼자 하면/안 하면 어떻게 되는지(그대로 말할 짧은 두 문장)", "trial_close": "방금 이유에 회원이 스스로 '맞아요' 하게 하는 확인 질문 + 끝에 (기다림)", "plan_pitch": "트레이너가 하나를 골라 권하는 플랜: PT 주 N회·약 M개월·총 K회 + 왜 그 횟수인지 + 왜 그 값어치인지(두 문장 · 가격 숫자는 쓰지 않음)", "ask": "비유 한 구절로 여는 첫 문장 + 무엇을(PT 주 N회·기간) 언제부터('다음 주부터' 같은 시기까지만, 요일·시간은 정하지 않음) 시작할지 묻는 질문. 대상이 빠진 '시작하는 걸로' 금지", "metaphor_in_ask": true, "nudge": "요청 바로 뒤 웃으며 던지는 가벼운 한마디(30자 안팎)", "hold": "요청 직후 침묵. 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유 꺼내는 재요청 대사" }`;
+const CLOSING_SEQ_JSON = `"closing_sequence": { "echo": "되짚기 한 문장", "trial_close": "회원이 말하게 하는 열린 질문 한 문장 + (기다림)", "stakes": "필요 · 왜 지금(두 문장 이내)", "next_goal": "앞으로의 그림 한 문장", "promise": ["트레이너가 책임지고 할 구체 행동 한 문장", "또 하나"], "plan_pitch": "제안 + 얻는 것(두 문장 이내 · 가격 숫자 없음)", "ask": "초대하는 요청 한두 문장", "ask_style": "확인형|선택형|목표형|이어가기형 중 하나", "hold": "요청 직후 트레이너 행동 지시(회원 대사 아님)", "flush": "물러설 때 진짜 이유를 묻는 대사" }`;
 // OT(1차·2차+) 전용 — 오늘 결정이 안 될 때: 다음 OT를 그 자리에서 잡고, 다음 수업 전까지 회원에게 부탁할 것(숙제).
 const CLOSING_SEQ_JSON_OT = CLOSING_SEQ_JSON.replace(/ \}$/, `, "fallback": { "next_line": "가까운 날로 다음 OT를 잡자며 회원 일정을 묻는 열린 질문(트레이너가 요일·시간을 정해 묻지 않음)", "homework": [ { "do": "다음 수업 전까지 회원에게 그대로 말할 부탁 한 문장", "why": "왜 하는지 한 줄" } ] } }`);
 
+// 세일즈북을 넘기며 클로징(2026-10-11 시안) — 숫자 · 사진 · 가격은 세일즈북 화면이 보여 주고, 대본은 화면에 없는 말만.
+//   클로징 비트(echo · trial_close · stakes · next_goal · promise · plan_pitch · ask · flush)는 그대로 두고, 장과 장 사이를 잇는 짧은 줄(book_lines)만 더 쓴다.
+//   어느 장에서 어느 비트를 말할지는 화면(PrepReport BookClosing)이 정한다.
+const BOOK_RULE = `[세일즈북을 넘기며 하는 말 — book_lines] 클로징은 트레이너가 회원 세일즈북을 한 장씩 넘기며 한다.
+ ★세일즈북 화면이 숫자 · 사진 · 사례 · 가격을 이미 보여 주니, book_lines는 화면에 적힌 숫자를 다시 읽지 말고
+ '그게 무슨 뜻인지 · 회원과 무슨 상관인지'만 짧게(한 문장 · 40자 안팎). 위 closing_sequence 대사와 같은 말을 되풀이하지 마라.`;
+
 // ④ 클로징 4비트 지시(재료만 phase별 주입 · trial_close→stakes→ask→hold→flush).
-function closingSeqInstruction({ num, leverage, trialHint, askTarget, askExample, tone = "", fallback = false }) {
-  return `${num} closing_sequence(클로징 흐름 — 한 줄이 아니라 5비트 시퀀스 · 세일즈 비유에서 자연스럽게 이어짐): ${leverage}를 지렛대로, 회원을
-   커밋까지 데려가는 흐름을 준다. 각 비트는 '바로 말할 완성 대사'로. ★순서가 핵심 — 왜 PT가 필요한지(이유·근거)를
-   먼저 납득시키고 → 회원이 인정하게 하고 → 플랜(횟수·가격과 그 이유) → 요청. 이유 없이 플랜·요청부터 꺼내지 마라.${tone}
-   - stakes(① 왜 PT가 필요한지 · 그대로 말할 짧은 두 문장): 근거 = 오늘(또는 지난 OT) 회원 몸에서 실제로 확인한 사실
-     1개("아까 ○○할 때 ~하셨죠") + 혼자 하면 생기는 일 1개. 그다음 혼자 하면 왜 안 되는지·안 하면 어떻게 되는지를 이 회원 goal 축으로
-     (막연한 "좋아지실 거예요" 금지 · 없는 관찰 창작 금지).
-     ★결과는 회원이 장면으로 그려지게 구체적으로(2026-10-07 대표): "부담이 쌓일 수 있어요" 같은 흐린 말 대신
-     "전보다 불편함과 통증이 더 심해질 수도 있어요" · "다시 처음부터예요" · "그 날짜에 못 맞출 수도 있어요"처럼.
-     반드시 가능성 표현(~수도 있어요)으로 · 진단명 · 단정("반드시 아파져요") · 겁주기 과장 금지.
-     ★그리고 왜 '지금'인지 진짜 긴급성 한 마디(습관이 굳기 전 · 오늘 느낌이 남아 있을 때 · 목표 날짜까지 남은 기간). 허위 마감 · 가격 마감 금지.
-     손실·가치는 goal 유형마다 다르게 —
+// 같은 틀 방지(2026-10-11 대표: "요청이 어색하다 · 다 똑같다") — 30개 대본이 한 문장 모양으로 나온 원인이
+//   예문 · '반드시 이 모양' 규칙이었다. 예문을 빼고 '쓰지 말 것' 목록 + 회원 재료로 채우게 한다.
+const ANTI_TEMPLATE = `[쓰지 말 것 — 모든 대본이 같은 모양이 되는 표현]
+ - "○○도 ~잖아요, 그 ○○(역할)를 제가 해드릴게요 · 맡을게요 · 지켜드릴게요" 구조(비유 + 역할 넘겨받기)
+ - "다음 주부터 바로 시작하시죠" · "바로 시작하시죠" · "그대로 이어가시죠" 같은 정해진 요청 문구
+ - 계약 · 결제 · 남은 회차 얘기("남은 수업 끝나는 대로" · "결제" · "등록해 드릴게요")
+ - "제가 보기엔 ○○님은 ~가 맞아요"로 시작하는 문장
+ - "고민은 ~만 늦출 뿐" · "~ 아시죠?"로 끝나는 말장난 · 직업 용어로 하는 농담(커밋 · 결재 · 인수인계 · 가봉 등)
+ - "습관이 굳기 전" · "결국 제일 아끼는 길" · "처음부터 다시" · "시간과 돈을 아끼는" 같은 상투 문구
+ - 요청 끝을 "같이 가 보실래요 · 같이 가볼까요 · 함께 가 보실래요 · 같이 시작해 보실까요"로 맺는 것(트레이너가 대본을 여러 개 보면 다 같아 보인다)
+   → 이 회원 목표의 행동(무엇을 만들고 · 빼고 · 잡고 · 준비하는지)으로 맺거나, 회원의 결정을 직접 묻는 말로 맺는다. 대본마다 다른 말로.
+ - trial_close를 "오늘(그동안) 어떤 게 제일 다르게 느껴지셨어요?" 같은 누구에게나 쓸 수 있는 질문으로 쓰는 것
+   → 오늘(또는 그동안) 실제로 한 운동 · 장면 · 숫자를 콕 집어 묻는다.
+ ★회원마다 문장이 달라야 한다. 문장을 이 회원이 실제로 한 말 · 적은 목표 · 오늘(또는 그동안) 관찰 · 기록 숫자로 채우면 저절로 달라진다.`;
+
+// ④ 클로징 — 회원이 스스로 'PT를 받아야겠다'고 확신하게 만드는 대화(2026-10-11 재설계).
+//   다섯 가지 확신: 필요 · 효과 · 가치 · 지속 · 이 트레이너에 대한 신뢰. 비유는 선택(요청에 넣지 않음) · 웃으며 한마디(nudge) 없음.
+function closingSeqInstruction({ num, echoHint, trialHint, nextHint, askHint, tone = "", fallback = false }) {
+  return `${num} closing_sequence(클로징 — 압박이 아니라 회원이 스스로 확신하게 만드는 대화): 회원이 끝에
+   "PT 받아야겠다 · 도움이 많이 되겠다 · 돈이 아깝지 않겠다 · 아직 더 하는 게 맞다 · 이 쌤이랑이면 후회 없겠다"를
+   느끼게 하는 순서다. 각 칸은 트레이너가 그대로 말할 대사(짧게). 순서대로:${tone}
+   - echo(되짚기 · 한 문장): ${echoHint} 회원이 쓴 말이나 반응을 그대로 돌려준다(없는 말 지어내지 마라 · 없으면 적은 목표로).
+   - trial_close(회원이 말하게 · 한 문장): ${trialHint} 네/아니요로 끝나지 않는 열린 질문 하나 + 끝에 (기다림).
+     회원이 자기 입으로 효과를 말하게 하는 게 목적이다(트레이너가 대신 단정하지 마라).
+   - stakes(필요 · 두 문장 이내): 이 회원 goal 기준으로 왜 혼자보다 PT인지 + 왜 지금인지. 근거는 실제 관찰 · 기록 1개.
+     결과는 장면이 그려지게 가능성 표현(~수도 있어요)으로 · 진단 · 단정 · 겁주기 과장 · 허위 마감 금지.
+     손실만 말하지 말고 회원 목표와 직접 잇는다. goal 유형별 축 —
 ${STAKES_AXIS}
-   - trial_close(② 확인 질문): ${trialHint} — 방금 말한 이유에 회원이 스스로 "맞아요"라고 하게 + 끝에 (기다림).
-   - plan_pitch: ★트레이너가 리드한다 — "제가 보기엔 ○○님은 이렇게 가시는 게 맞아요"처럼 전문가로서 하나를
-     딱 골라 권하는 완성 대사(여러 선택지를 늘어놓고 회원에게 고르게 하지 마라). [recommended_program]의 pick_ref 패키지
-     기준 'PT 주 N회 · 약 M개월 · 총 K회'를 명확히 말하고, ★왜 그 횟수인지(목표 시점·몸 상태·가능 빈도에서 역산)를
-     한 문장으로 붙여라. ★K(세션수)는 pick_ref 패키지의 실제 sessions 값에 맞춰라(새 숫자 창작 금지).
-     ★가격 숫자(원·회당)는 대사에 쓰지 마라 — 화면이 이 대사 바로 아래에 '패키지 · 가격 · 회당'을 한 줄로 따로 보여주고,
-     트레이너는 그 줄을 보며 말한다(같은 숫자를 두 번 읽게 하지 않기). 대신 왜 그 값어치인지(혼자 하다 멈출 때 잃는 시간·돈,
-     목표까지 걸리는 기간 단축 등)를 숫자 없이 한 마디 붙여라. 전체 두 문장 이내. "비싸지 않아요" 같은 방어 말투 금지.
-   - ask: ★트레이너가 리드해서 무엇을 할지는 분명히 못 박는다. 위 plan_pitch 플랜을 전제로 ${askTarget} + 시작 시기를 담아
-     가정 종결로 — 결정된 걸 전제로 '바로 시작하시죠'처럼 권한다(질문형으로 물러서지 않기 · ${askExample}).
-     ★★ask는 두 문장(2026-10-02 대표: 비유를 요청에 녹여라): 첫 문장 = 아래 sales_metaphor의 비유를 한 구절로 받아
-     '그래서 그 역할을 제가 해드릴게요' 결로 잇는 말(40자 안팎). 둘째 문장 = 요청 질문.
-     ★비유는 이 첫 문장 안에서 처음이자 온전히 나와야 한다 — 앞에서 비유를 말했다고 가정하지 마라. "그 고치는 작업"처럼 앞 내용을
-     가리키는 지시어(그·이·그런) 금지. 회원 직업·일상의 장면을 이 한 문장만 들어도 그려지게("개발도 리뷰어가 있어야 ~잖아요" 결). 예시 문장을 그대로 베끼지 말고 이 회원 세계에서 새로 만들어라.
-     예) "개발도 리뷰어가 옆에 있어야 버그가 안 쌓이잖아요, 그 리뷰어를 제가 해드릴게요. PT 주 2회, 4개월로 다음 주부터 바로 시작하시죠."
-     (metaphor가 빈 문자열이면 ask는 요청 질문 한 문장만.)
-     ★★요청 질문 문장 안에 반드시 셋 다: (a)무엇을 = 'PT'라는 말 + 주 N회 · 기간(또는 총 회차) (b)언제부터 = '다음 주부터'
-     '이번 달 안에'처럼 시기까지만 (c)가정 종결('바로 시작하시죠' · '~로 가시죠'). 화면이 비유를 따로 보여주지 않으니 metaphor_in_ask: true를 함께 넣어라.
-     ★★요일·시간은 트레이너가 정해서 내밀지 마라("화요일 저녁 7시랑 목요일 저녁 7시 중" 같은 양자택일 금지). 회원이
-     당황한다. 요일·시간은 회원이 좋다고 한 뒤 회원 일정을 물어 맞춘다.
-     예) "그럼 말씀드린 PT 주 2회, 3개월로 다음 주부터 바로 시작하시죠."
-   - nudge(요청 바로 뒤 · 웃으며 던지는 가벼운 한마디 · 30자 안팎): 압박이 아니라 긴장을 풀어 결정을 돕는 말.
-     예) "고민은 배송만 늦출 뿐인 거 아시죠?" 결(이 회원 직업 · 상황에 맞게 매번 새로 · 예시를 그대로 베끼지 말 것).
-     죄책감 · 허위 긴급성 · 비꼬기 · 외모 지적 금지.
-     ★★금지: 대상이 빠진 말("오늘 바로 시작하는 걸로 정하고" · "이렇게 가볼까요" · "같이 맞춰가요" · "이어가시죠"
-     · "다음에 또 봬요")처럼 '뭘 시작하자는 건지' 회원이 해석해야 하는 표현. '등록하세요' 같은 명령형 판매동사,
-     "등록해둘게요"처럼 결제 전에 등록됐다고 말하는 표현, 가격(원)도 쓰지 마라.
-   - hold: 요청 직후 '트레이너 행동 지시'(회원 대사 아님) — "여기서 먼저 말하지 말고 회원 답을 기다린다."
-   - flush: 회원이 "생각해볼게요"로 물러설 때, 진짜 이유를 꺼내는 재요청 대사("뭐가 제일 걸리세요?
-     시간이에요, 비용이에요?"). 그 이유별 깊은 대응은 아래 objection_defense가 잇는다. 그래도 오늘 결정이
-     어려우면 붙잡지 말고, 다음 만남을 가까운 날로 잡자며 회원 일정을 묻는 말로 끝맺는다.${fallback ? `
-   - fallback(⑥ 오늘 결정이 안 될 때 · 붙잡지 않는다): next_line = 다음 OT를 가까운 날(이번 주, 며칠 안)로 잡자고
-     권하되 날짜·시간은 회원에게 묻는 열린 질문. 왜 가까운 날이 좋은지 한마디를 붙인다. 트레이너가 요일·시간을
-     정해 양자택일로 묻지 마라. 예) "오늘 느낌 남아 있을 때 이어가는 게 좋아서요, 이번 주 안에 언제쯤 시간 괜찮으세요?"
-     homework = 다음 수업 전까지 회원에게 부탁할 것 2개. 오늘 한 운동·확인한 문제와 이어지는 집에서 하는
-     스트레칭·자세 연습, 생활 습관, 기록해 올 것(예: 식사 사진·불편했던 순간) 중에서. 각 {do: 회원에게 그대로 말할
-     부탁 한 문장(방법과 느낌 위주), why: 왜 하는지 한 줄 — 다음 OT에서 무엇을 확인할지}. ★숫자 처방(세트·횟수·
-     시간·중량) 금지 · 통증 관련은 "불편하면 바로 멈추세요"를 덧붙여라. 다음 OT에서 이걸 확인하며 다시 클로징으로
+   - next_goal(앞으로의 그림 · 한 문장): ${nextHint}
+   - promise(배열 2개 · 각 한 문장): 이 트레이너가 이 회원에게 책임지고 할 구체 행동. 매 수업 무엇을 하는지 · 언제 무엇을
+     같이 확인하는지 · 이 회원의 걱정(문진 · 관찰 · 그만둔 이유 · 일정)에 대해 무엇을 해 줄지. 이 회원 정보에서 나온 것만.
+     "최선을 다할게요" 같은 막연한 말 금지 · 앱 기능 이름 나열 금지(회원이 알아들을 말로).
+   - plan_pitch(제안 + 얻는 것 · 두 문장 이내): [recommended_program]의 pick_ref 패키지 하나를 권한다 — 빈도 · 기간(또는 총 회차)
+     + 왜 그게 이 회원에게 맞는지 근거 1개(목표 시점 · 가능 빈도 · 몸 상태). 이어서 그걸로 회원이 얻는 것(목표까지의 그림 ·
+     달라질 생활)을 한 문장. ★세션수는 pick_ref 패키지의 실제 sessions 값 그대로(창작 금지). ★가격 숫자(원 · 회당)는 쓰지 마라
+     — 화면이 이 대사 바로 아래에 가격 한 줄을 따로 보여 준다. "비싸지 않아요" 같은 방어 말투 금지.
+   - ask(초대하는 요청 · 한두 문장): 무엇을 하자는지(PT · 빈도 · 기간 또는 총 회차)는 분명히. 문장 모양은 자유 — 아래
+     ask_style 중 이 회원에게 맞는 하나를 골라 그 결로 써라. 같은 요청 문구를 반복하지 마라.
+       · 확인형: 신중하거나 걱정이 큰 회원(통증 · 처음 · 예전에 그만둠) — 함께 가 볼지 부드럽게 묻는다.
+       · 선택형: 일정이 바쁜 회원 — 빈도(주 2회 / 3회처럼)를 회원이 고르게 묻는다. ★요일 · 시간은 고르게 하지 마라.
+       · 목표형: 목표 날짜가 분명한 회원(결혼식 · 촬영 · 검진) — 그 날까지 같이 가자고 묻는다.
+       · 이어가기형: 재등록 — 다음 목표를 같이 가자고 묻는다.
+     ${askHint}
+     ★요일 · 시간을 트레이너가 정해 내밀지 마라(정해지면 회원 일정을 물어 맞춘다). 시작 시기는 말해도 되지만 필수는 아니다.
+   - hold: 요청 직후 '트레이너 행동 지시'(회원 대사 아님) — 먼저 말하지 말고 회원 답을 기다린다.
+   - flush: 회원이 물러설 때 진짜 이유를 꺼내는 재요청 대사(무엇이 걸리는지 열어서 묻기). 그 이유별 깊은 대응은 아래
+     objection_defense가 잇는다. 그래도 오늘 결정이 어려우면 붙잡지 말고, 다음 만남을 가까운 날로 잡자며 회원 일정을 묻는 말로 끝맺는다.
+${ANTI_TEMPLATE}${fallback ? `
+   - fallback(오늘 결정이 안 될 때 · 붙잡지 않는다): next_line = 다음 OT를 가까운 날(이번 주, 며칠 안)로 잡자고
+     권하되 날짜 · 시간은 회원에게 묻는 열린 질문 + 왜 가까운 날이 좋은지 한마디. 트레이너가 요일 · 시간을
+     정해 양자택일로 묻지 마라.
+     homework = 다음 수업 전까지 회원에게 부탁할 것 2개. 오늘 한 운동 · 확인한 문제와 이어지는 집에서 하는
+     스트레칭 · 자세 연습, 생활 습관, 기록해 올 것(예: 식사 사진 · 불편했던 순간) 중에서. 각 {do: 회원에게 그대로 말할
+     부탁 한 문장(방법과 느낌 위주), why: 왜 하는지 한 줄 — 다음 OT에서 무엇을 확인할지}. ★숫자 처방(세트 · 횟수 ·
+     시간 · 중량) 금지 · 통증 관련은 "불편하면 바로 멈추세요"를 덧붙여라. 다음 OT에서 이걸 확인하며 다시 클로징으로
      잇는 다리다.` : ""}`;
 }
 
@@ -294,7 +313,6 @@ function firstPrompt(member, packages, favorites) {
 [★정보가 거의 없는 회원 — 목표도 직업도 입력되지 않았다] 근거·비유를 지어내지 마라. 대신 수업 중에 회원에게서 재료를 얻는다.
  - opening.line 끝에 목표를 묻는 질문 한 마디를 꼭 넣어라("오늘 운동하시면서 제일 바뀌었으면 하는 게 뭐예요?" 결).
  - stakes·plan_pitch·ask에서 회원 목표가 들어갈 자리는 ○○로 비워 둬라(트레이너가 회원이 한 말을 넣어 말한다).
-   예) ask = "아까 ○○ 말씀하셨죠, 그거 혼자 하면 오래 걸리는데 옆에서 제가 잡아드릴게요. PT 주 2회, 3개월로 다음 주부터 바로 시작하시죠."
  - 비유는 [비유 재료 찾는 순서]의 ⑤ 누구나 겪어본 일상 하나만, 어색하면 생략. fill_in: true를 JSON에 넣어라.
  - cheat ①은 "아직 목표를 모르는 분 · 첫마디에서 목표부터 듣기" 결로.
 ` : "";
@@ -409,19 +427,19 @@ ${REHAB_TONE}
 
 ③ 클로징 — 운동 끝나고 다시 앉아서. 아래 셋으로 자연히 닫는다.
 
- sales_metaphor(세일즈 비유 — 회원 세계 언어 · 요청 첫 문장에 녹아 들어간다): 회원 세계에서 끌어온 비유 하나로 '지금
+ sales_metaphor(세일즈 비유 — 선택 · 어울릴 때만 · 요청에는 넣지 않는다): 회원 세계에서 끌어온 비유 하나로 '지금
    안 하면/함께 하면'을 그림처럼. 운동·기계 클리셰("브레이크-액셀") 금지.
 ${METAPHOR_RULE}
    - metaphor: 비유 한 문장(없으면 "").  - bridge: 비유→등록 필요성으로 잇는 한 줄.
 
 ${closingSeqInstruction({
     num: "",
-    leverage: "오늘 exercises의 체감",
-    trialHint: "방금 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
-    askTarget: "추천 패키지 방향(회차·빈도)",
-    askExample: `"그럼 말씀드린 PT 주 2회, 3개월로 다음 주부터 바로 시작하시죠."`,
+    echoHint: "신청서 · 문진에 적은 목표나 바라는 점, 또는 오늘 운동 중 회원 반응(아직 관찰 전이라 '오늘 해 보시니' 결의 가설 톤).",
+    trialHint: "오늘 해 본 것 중 무엇이 가장 다르게 느껴졌는지 묻는다.",
+    nextHint: "PT를 시작하면 첫 한 달쯤 회원이 느낄 변화 한 가지(가능성 표현 · 숫자 약속 금지).",
+    askHint: "★1차 OT의 목표는 오늘 등록이다 — 오늘 결정을 부드럽게 묻는다('생각해 보세요'로 미루지 않는다).",
     fallback: true,
-    tone: " ★1차도 오늘 등록 요청까지 간다. ask는 '생각해 보세요'가 아니라 오늘 시작을 정하는 질문. 물러서면 flush에서 진짜 이유를 꺼내고, 그래도 안 되면 다음 OT를 가까운 날로 잡는다(날짜는 회원에게 묻는다).",
+    tone: " ★1차도 오늘 등록 요청까지 간다. ask는 '생각해 보세요'로 미루지 않고 오늘 결정을 묻는다. 물러서면 flush에서 진짜 이유를 꺼내고, 그래도 안 되면 다음 OT를 가까운 날로 잡는다(날짜는 회원에게 묻는다).",
   })}
 
  objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
@@ -456,7 +474,7 @@ ${closingSeqInstruction({
 [cheat — 30초 요약 3줄 · 화면 맨 위 · 화면이 줄마다 '이 회원 / 오늘 꼭 / 요청' 이름을 붙인다] 바빠서 이것만 보고 들어가도 되게.
  ① 이 회원: 한 문장으로 사람을 그려라("연말 검진 전에 8kg 빼고 싶은데, 허리 다칠까 봐 운동이 겁나는 분" 결). ★단어·명사 나열 금지("34세 개발자, 8kg 감량, 운동 겁과 허리 뻐근함" ❌).
  ② 오늘 꼭: 오늘 수업에서 반드시 할 한 가지를 동사로 끝나는 짧은 문장으로("숙이기를 처음과 끝에 시켜 달라진 걸 직접 느끼게 하기" 결).
- ③ 요청: 클로징에서 그대로 말할 요청 질문 한 문장(따옴표 · ask의 둘째 문장 · 비유는 빼고).
+ ③ 요청: 클로징 ask를 그대로 짧게(따옴표 · 40자 안팎).
  각 40자 안팎. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [분량 — 외우기 쉽게] 각 대사는 짧고 입에 붙게. 아래 [대사 스타일]의 분량을 지켜라.
 [필드명 인용 금지] 값 텍스트에 스키마 키(point_it_out·so_what·objection_defense 등)를 쓰지 마라.
@@ -594,18 +612,24 @@ ${REHAB_TONE}
    so_what: 두 증명을 묶어 'PT를 받아야 한다'는 회원 스스로의 결론으로 잇는 한 줄.
    if_weak: 증거 반응이 약하게 올 때 살릴 큐·조정 한 줄(숫자 없이·방향만).
 
-④ sales_metaphor: 회원 세계에서 끌어온 비유 하나(운동·기계 클리셰 금지 · 요청 첫 문장에 녹아 들어간다). metaphor + bridge(등록 필요성으로).
+④ sales_metaphor(선택): 어울릴 때만 회원 세계에서 끌어온 비유 하나(운동·기계 클리셰 금지 · 요청에는 넣지 않는다). metaphor + bridge(등록 필요성으로).
 ${METAPHOR_RULE}
 
 ${closingSeqInstruction({
     num: "⑤",
-    leverage: "오늘 proof의 체감",
-    trialHint: "방금 증명된 체감을 회원이 스스로 인정하게 하는 떠보기 대사",
-    askTarget: "추천 패키지 방향(회차·빈도)",
-    askExample: `"오늘 확인한 거 그대로 이어서, PT 주 2회 3개월로 다음 주부터 바로 시작하시죠."`,
+    echoHint: "1차 관찰의 회원 말(memberQuote) · 진짜 원하는 것 · 지난번 망설인 이유 중 하나.",
+    trialHint: "오늘 proof에서 확인한 체감을 회원이 자기 말로 말하게 묻는다.",
+    nextHint: "등록하면 목표까지 가는 첫 단계와 그때 회원이 보게 될 것(가능성 표현 · 숫자 약속 금지).",
+    askHint: "★2차는 마지막 OT급 — 1차보다 확신 있게 묻되 강요하지 않는다.",
     fallback: true,
-    tone: " ★2차는 1차 관찰로 '증명'까지 끝낸 국면 — trial_close는 proof의 체감을, ask는 1차보다 확신 있게(마지막 OT급).",
+    tone: " ★2차는 1차 관찰로 '증명'까지 끝낸 국면 — trial_close는 proof의 체감을 회원 입으로 듣고, ask는 1차보다 확신 있게(마지막 OT급).",
   })}
+
+⑤-b ${BOOK_RULE}
+   - open: 세일즈북 표지를 펴며 하는 첫마디(오늘 이 회원만 보고 정리했다는 결).
+   - cases: '이런 변화를 만들어요'(같은 목표 회원 사례) 장에서 한마디(숫자는 말하지 말고 '회원님과 목표가 같았던 분' 결).
+ 2차 세일즈북 장 순서: 표지 → 당신의 목표 → 오늘 함께 확인한 것 → (사진 · 사례) → 로드맵 → 추천 플랜 → (혜택) → 약속.
+ echo는 '목표' 장, trial_close와 stakes는 '확인한 것' 장, next_goal은 '로드맵' 장, plan_pitch는 '추천 플랜' 장, promise와 ask는 마지막 '약속' 장에서 말한다 — 그 장에 맞게 써라.
 
 ⑥ objection_defense(거절 선제 방어 5종): price·hesitation·doubt·time·compare 각 1개. 1차 관찰·(있으면)
    회원 quit_reason을 근거로 더 날카롭게. 각: trigger(나올 신호) / defense(공감+세일즈 무브) /
@@ -631,7 +655,7 @@ ${closingSeqInstruction({
 [cheat — 30초 요약 3줄 · 화면 맨 위 · 화면이 줄마다 '이 회원 / 오늘 꼭 / 요청' 이름을 붙인다] 바빠서 이것만 보고 들어가도 되게.
  ① 이 회원: 한 문장으로 사람을 그려라("연말 검진 전에 8kg 빼고 싶은데, 허리 다칠까 봐 운동이 겁나는 분" 결). ★단어·명사 나열 금지("34세 개발자, 8kg 감량, 운동 겁과 허리 뻐근함" ❌).
  ② 오늘 꼭: 오늘 수업에서 반드시 할 한 가지를 동사로 끝나는 짧은 문장으로("숙이기를 처음과 끝에 시켜 달라진 걸 직접 느끼게 하기" 결).
- ③ 요청: 클로징에서 그대로 말할 요청 질문 한 문장(따옴표 · ask의 둘째 문장 · 비유는 빼고).
+ ③ 요청: 클로징 ask를 그대로 짧게(따옴표 · 40자 안팎).
  각 40자 안팎. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 ${MEMBER_LANG}
@@ -646,6 +670,7 @@ ${SAY_STYLE}
   "proof": { "moves": [ { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "...", "lib_ref": null }, { "exercise": "...", "how": "...", "target_reaction": "...", "point_it_out": "...", "lib_ref": null } ], "so_what": "...", "if_weak": "..." },
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON_OT},
+  "book_lines": { "open": "...", "cases": "..." },
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
   "data_gaps": ["..."]${caseSchemaLine}
@@ -697,6 +722,15 @@ function reregisterPrompt(member, ctx, packages = [], favorites = []) {
  ※ 지난번 약속한 다음 단계를 이번에 얼마나 이뤘는지 정직하게 짚어라(이뤘으면 인정, 아직이면 왜 아직인지와 이번엔 어떻게).
  ※ next_roadmap·future_change는 지난번 것을 되풀이하지 말고 그 다음 단계로. 오래 함께한 회원이니 '처음 오신 분'처럼 말하지 마라.
 ` : "";
+  // 숫자 목표 · 다음 목표(2026-10-11 · lib/ptGoal) — 트레이너가 [맞아요]로 확인한 숫자만 · 다음 목표는 재등록 탭에서 정한 글.
+  const gl = c.goal && typeof c.goal === "object" ? c.goal : null;
+  const ng = c.next_goal && typeof c.next_goal === "object" && c.next_goal.text ? c.next_goal : null;
+  const goalBlock = gl || ng ? `
+${gl ? `[숫자 목표 — 트레이너 확인 · 앱 계산] ${g3(gl.goal)} · 지금=${gl.current ?? "기록 없음"}${gl.unit || ""}(시작보다 ${g3(gl.moved)})${gl.elapsed_months != null ? ` · 시작한 지 약 ${gl.elapsed_months}개월` : ""}${gl.done ? " · ★목표 달성" : ""}
+ ※ proven · trial_close는 이 숫자를 그대로(반올림 · 부풀리기 금지). 달성 못 했으면 '여기까지 왔다'로 정직하게, 남은 만큼이 이어갈 이유. 퍼센트(%)로 말하지 마라.
+` : ""}${ng ? `[★트레이너가 정한 다음 목표] "${String(ng.text).slice(0, 120)}"${ng.goal ? ` (숫자로: ${ng.goal})` : ""}
+ ※ next_goal · next_roadmap · 요청의 '다음엔'은 이 목표를 그대로 쓴다. 다른 목표를 지어내지 마라. [현재 PT 방향/목표]는 이미 이 다음 목표로 바뀌어 있을 수 있다.
+` : ""}` : "";
   return `[상황·대전제] PT 재등록 대화 준비(재등록은 보통 '오늘 PT 수업 중'에 이뤄진다). 유일한 목적 =
 이 회원의 재등록 확률 극대화. 근거는 관찰(1차)이 아니라 '첫 수업부터 지금까지의 변화'와 '회원 만족도'다.
 ★회원이 납득하는 순서: 그동안 이만큼 변했다(숫자) → 회원이 만족한 점 → 그래서 앞으로 무엇을 더 하고 →
@@ -719,7 +753,7 @@ ${recent.length ? recent.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}
  인바디 변화=${ib.length ? ib.map((x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`).join(", ") : "없음"}
  운동 무게 변화=${wc.length ? wc.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}
 [처음 수업 일지(시작점)]
-${firstLogs.length ? firstLogs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}${roundBlock}${roadmapBlock}
+${firstLogs.length ? firstLogs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "없음"}${roundBlock}${roadmapBlock}${goalBlock}
 [회원 만족도 — 트레이너 입력] 수준=${sat?.level ? SAT_KO[sat.level] || sat.level : "입력 없음"}, 회원이 한 말=${g3(sat?.quote)}
  ※ '아쉬워함'이면 감추지 말고 왜 아직인지 + 앞으로 어떻게 달라지게 할지를 정직하게(objection low_effect와 같은 결).
 
@@ -749,16 +783,23 @@ ${pkgBlock}
    운동'을 말할 때 이 회원 상황에 맞으면 이 자료의 운동을 '우선' 쓰고, 쓴 자료 번호를 lib_refs에 담아라. [fn]=자료번호)
 ${favoritesBlock(favorites)}
 
-③ sales_metaphor: 회원 세계에서 끌어온 비유 하나(운동·기계 클리셰 금지 · 요청 첫 문장에 녹아 들어간다). metaphor + bridge(재등록 필요성으로).
+③ sales_metaphor(선택): 어울릴 때만 회원 세계에서 끌어온 비유 하나(운동·기계 클리셰 금지 · 요청에는 넣지 않는다). metaphor + bridge(재등록 필요성으로).
 ${METAPHOR_RULE}
 
 ${closingSeqInstruction({
     num: "④",
-    leverage: "첫 수업부터 지금까지의 변화와 회원 만족(why_now)",
-    trialHint: `그동안의 변화를 회원이 스스로 인정하게 하는 확인 질문("처음이랑 비교하면 ○○ 확실히 달라진 거 느끼시죠?")`,
-    askTarget: "대상이 분명한 '재등록/연장 결제'(애매한 '이어가자' 금지)",
-    askExample: `"남은 수업 끝나는 대로 PT 주 2회, 3개월로 그대로 이어가시죠."`,
+    echoHint: "첫 수업 때 회원 상태나 처음에 한 말, 또는 만족도에 남은 회원 말.",
+    trialHint: "그동안 달라진 것 중 회원이 가장 체감한 걸 회원이 고르게 묻는다.",
+    nextHint: "[★트레이너가 정한 다음 목표]가 있으면 그 목표 그대로, 없으면 [목표 로드맵]의 다음 단계나 next_roadmap과 같은 다음 목표 한 문장(없으면 지금 성과에서 한 단계 위).",
+    askHint: "★재등록은 이어가기형이 기본: 다음 목표를 같이 가자고 묻는다. 계약 · 남은 회차 · 결제 시점은 말하지 마라.",
   })}
+
+④-b ${BOOK_RULE}
+ 재등록 세일즈북 장 순서: 표지 → 그동안의 여정 → 숫자로 확인된 변화 → (사진) → 지금 어디까지 · 앞으로 → 지금 멈추면 · 이어가면 → 추천 플랜 → 약속.
+ echo는 '여정' 장, trial_close는 '변화' 장, next_goal은 '앞으로' 장, stakes는 '멈추면 · 이어가면' 장, promise와 ask는 마지막 '약속' 장에서 말한다(화면이 그렇게 배치) — 그 장에 맞게 써라.
+   - open: 표지를 펴며 첫마디(그동안 회원이 만든 걸 정리했다는 결).
+   - journey: '그동안의 여정' 장에서 꾸준함을 인정하는 한마디(숫자 반복 금지).
+   - photo: 사진 장에서 한마디(사진이 없을 수 있으니 짧게 · 없으면 빈 문자열).
 
 ⑤ sweetener(재등록 혜택 — '덤'으로만): 위 이유를 납득시킨 뒤 마지막에 얹을 가격/혜택 한 줄. PT 재등록은
    보통 가격 혜택이 있으니 활용하되, ★이게 재등록의 '이유'를 대체하면 안 된다(이유가 메인, 혜택은 덤).
@@ -786,7 +827,7 @@ ${closingSeqInstruction({
 [cheat — 30초 요약 3줄 · 화면 맨 위 · 화면이 줄마다 '이 회원 / 오늘 꼭 / 요청' 이름을 붙인다] 바빠서 이것만 보고 들어가도 되게.
  ① 이 회원: 그동안 어땠고 지금 어떤 마음인지 한 문장(단어 나열 금지 · "처음엔 계단도 숨찼는데 이제 운동이 생활이 된 분" 결).
  ② 오늘 꼭: 오늘 수업에서 반드시 할 한 가지를 동사로 끝나는 짧은 문장으로(달라진 걸 회원이 직접 느끼게 하는 순간 · "처음 했던 운동을 다시 시켜 달라진 무게를 직접 보게 하기" 결).
- ③ 요청: 클로징에서 그대로 말할 요청 질문 한 문장(따옴표 · ask의 둘째 문장 · 비유는 빼고).
+ ③ 요청: 클로징 ask를 그대로 짧게(따옴표 · 40자 안팎).
  각 40자 안팎. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [data_gaps] 관리 기록이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 ${MEMBER_LANG}
@@ -801,6 +842,7 @@ ${SAY_STYLE}
   "lib_refs": [],
   "sales_metaphor": { "metaphor": "...", "bridge": "..." },
   ${CLOSING_SEQ_JSON},
+  "book_lines": { "open": "...", "journey": "...", "photo": "..." },
   "sweetener": "재등록 혜택 한 줄(덤 · 구체 금액 없이) 또는 빈 문자열",
   "objection_defense": [ { "reason": "money|sessions_left|low_effect|time|schedule", "trigger": "...", "defense": "...", "line": "..." } ],
   "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "alt_ref": null, "alt_why": "" },
@@ -875,8 +917,8 @@ ${pkgBlock}
    - [회원 사진 라벨]이 '없음'이면 body에 '사진은 다음에 함께 남겨요' 톤 + points는 유지.
 ⑤ roadmap: 근시일 3단계(steps) + 중장기 3단계(longterm).
    - current_step(정수, 보통 1 · 근시일 steps 기준. longterm은 대상 아님).
-   - steps[3] 각 {title · how('제 방법' 1문장 · 이 단계에서 트레이너가 뭘 하는지 · 1인칭 순서 언어) ·
-     feel("느낄 변화: …")}. 지금 등록 구간에 실제로 할 것. goal 기반.
+   - steps[3] 각 {title · how(화면에 '어떻게?' 머리말이 붙는 1문장 · 이 단계에서 트레이너가 뭘 하는지 · 1인칭 순서 언어) ·
+     feel(화면에 '이렇게!' 머리말이 붙는 1문장 · 회원이 느낄 변화 · 머리말은 쓰지 말 것)}. 지금 등록 구간에 실제로 할 것. goal 기반.
    - longterm[3] 각 {title(짧게) · goal(한 줄 · 회원 최종 목표를 향한 중장기 단계 · 회원 향한 약속 톤)}.
      steps 이후의 중장기 여정. ★마지막(6번째)은 '혼자서도 유지'처럼 자립·장기 목표 톤.
      longterm이 애매하면 무리해서 채우지 말고 goal에서 자연스럽게 이어지는 것만.
@@ -946,8 +988,8 @@ ${pkgBlock}
 ③ today(오늘 해본 운동 · 핵심 장): intro(1문장 · "오늘 한 운동은 아무거나 고른 게 아니에요" 결) · items[4](위 4칸 순서 그대로 · 각
    {name: 회원이 알아듣는 짧은 이름(전문용어·세팅 설명 빼고) · why: 이 회원이 이걸 해야 하는 이유 1문장(목표·문진 기반) · feel: "이런 느낌이 왔다면
    제대로 된 거예요" 결 1문장}) · so_what(1~2문장 · 혼자 하면 이 느낌을 못 찾는 이유 = 왜 같이 해야 하는지. 사실 기반·압박 아님).
-④ roadmap: 근시일 3단계(steps) + 중장기 3단계(longterm). current_step=1. steps[3] 각 {title · how('제 방법' 1문장 · 트레이너 1인칭 순서 언어) ·
-   feel("느낄 변화: …")}. longterm[3] 각 {title(짧게) · goal(한 줄 · 회원 최종 목표를 향한 약속 톤 · 마지막은 '혼자서도 유지' 자립 톤)}.
+④ roadmap: 근시일 3단계(steps) + 중장기 3단계(longterm). current_step=1. steps[3] 각 {title · how(화면에 '어떻게?' 머리말이 붙는 1문장 · 트레이너 1인칭 순서 언어) ·
+   feel(화면에 '이렇게!' 머리말이 붙는 1문장 · 회원이 느낄 변화 · 머리말은 쓰지 말 것)}. longterm[3] 각 {title(짧게) · goal(한 줄 · 회원 최종 목표를 향한 약속 톤 · 마지막은 '혼자서도 유지' 자립 톤)}.
 ⑤ plans[2]: A=추천 프로그램의 pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 패키지 1개). 각 {ref(정수) · name("집중 코스" 결) · recommended(불린) ·
    meta("주 N회 · 약 M개월" — A는 frequency·duration에서) · sessions_label("함께 K회" — 패키지 sessions) · why(2문장 · session_logic을 회원 언어로) ·
    includes[3](포함 서비스 · 회원 전용 페이지 기록 포함)}. ★금액(원) 값 텍스트 금지. 패키지가 없으면 plans는 빈 배열.
@@ -1692,26 +1734,42 @@ export async function POST(request) {
   //   응답은 1차 리포트만 기다린다. 세일즈북은 뒤에서(after) 끝까지 돌고 같은 1차 행에 저장된다(순서대로라 저장 충돌 없음).
   //   2차도 같다(2026-10-02 대표: 세일즈북은 OT 화면이 아니라 홈 › 세일즈북에서 보여준다) — 2차 리포트 저장 뒤 2차 세일즈북을
   //   이어서 만들어 같은 차수 행에 저장(트레이너가 짠 장 구성은 유지). 사진 장 재료(photoLabels)는 화면이 같이 보낸다.
-  const follow = (phase === "first" || phase === "second") && save ? job.then(async ({ brief, savedId }) => {
+  //   (2026-10-11 대표) 1차는 회원별 세일즈북 대신 '내 회원님 변화 모음집'(한 번 만들어 계속 씀) → 1차 이어 만들기는 끔 · 2차만.
+  //   (2026-10-11) 재등록도 같다 — 대본의 클로징이 세일즈북을 넘기며 말하게 바뀌어서, 대본 저장 뒤 재등록 세일즈북을 이어서
+  //   만들어 같은 계약 행(report.reg_salesbook)에 저장. 숫자(change) · 사진 장 재료(photoLabels)는 화면이 같이 보낸다.
+  const followRereg = phase === "reregister" && save?.kind === "contract" && change && typeof change === "object";
+  const follow = (phase === "second" || followRereg) && save ? job.then(async ({ brief, savedId }) => {
     if (!savedId) return;
     const t1 = Date.now();
     const anthropic = new Anthropic({ apiKey });
     const isFirst = phase === "first";
+    const isRereg = phase === "reregister";
     const sbSlot = await reserveAi(admin, { userId: auth.user?.id, kind: "salesbook", unitKey: `sb:follow:${once}`, memberId: mid });
     if (!sbSlot.ok) return;   // 하루 상한 · 남의 회원(2026-10-08) — 이어 만들기는 조용히 건너뛴다(화면이 처음 열 때 다시 만든다)
-    const msg = await anthropic.messages.create({
-      model: MODEL_FAST, max_tokens: 4096, system: SALESBOOK_PREAMBLE, thinking: thinkingFor(MODEL_FAST),
-      messages: [{ role: "user", content: isFirst
-        ? firstSalesbookPrompt(member, brief, brief?.recommended_program, packages)
-        : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels) }],
-    });
+    // 실패하면 예약 자리를 '실패'로 닫는다(원가만 남고 안 셈 · 2026-10-11 점검: 예전엔 대기로 남았다). 결과가 깨져도 실패로.
+    let msg = null, sbOut;
+    try {
+      msg = await anthropic.messages.create({
+        model: MODEL_FAST, max_tokens: 4096, system: SALESBOOK_PREAMBLE, thinking: thinkingFor(MODEL_FAST),
+        messages: [{ role: "user", content: isRereg
+          ? regSalesbookPrompt(member, change, brief?.recommended_program, packages, photoLabels)
+          : isFirst
+          ? firstSalesbookPrompt(member, brief, brief?.recommended_program, packages)
+          : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels) }],
+      });
+      const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const keys = isRereg ? ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"]
+        : isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
+      sbOut = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), packages);
+    } catch (e) {
+      await finishAi(admin, sbSlot.id, { ok: false, model: MODEL_FAST, usage: msg?.usage });
+      throw e;
+    }
     await finishAi(admin, sbSlot.id, { ok: true, model: MODEL_FAST, usage: msg.usage });
-    const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-    const keys = isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
-    const sbOut = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), packages);
-    await saveResult(token, isFirst ? "first_salesbook" : "salesbook",
+    if (isRereg) await saveResult(token, "reg_salesbook", { kind: "contract", contractId: save.contractId, meta: {} }, sbOut, MODEL_FAST);
+    else await saveResult(token, isFirst ? "first_salesbook" : "salesbook",
       { kind: "ot", memberId: save.memberId, round: isFirst ? 1 : otRound, meta: {} }, sbOut, MODEL_FAST);
-    console.log(`[ot-brief] ${isFirst ? "1차" : otRound + "차"} 세일즈북 이어서 생성 · ${Math.round((Date.now() - t1) / 1000)}s`);
+    console.log(`[ot-brief] ${isRereg ? "재등록" : isFirst ? "1차" : otRound + "차"} 세일즈북 이어서 생성 · ${Math.round((Date.now() - t1) / 1000)}s`);
   }).catch((e) => console.error("[ot-brief] 세일즈북 이어서 생성 실패:", e?.message || e)) : null;
   after(() => Promise.all([job.catch(() => {}), follow]));
 

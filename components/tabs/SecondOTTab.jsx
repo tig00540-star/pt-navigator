@@ -10,6 +10,8 @@
    ========================================================================= */
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import DeckLauncher from "@/components/salesbook/DeckLauncher";
 import Link from "next/link";
 import { otStepPath } from "@/lib/otRounds";
 import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
@@ -179,6 +181,36 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   const [caseGate, setCaseGate] = useState({ on: false, tier: "off" });
   const [packages, setPackages] = useState([]); // 내 active PT 패키지(recommended_program 실가격 재료)
   const [favorites, setFavorites] = useState([]); // 내 라이브러리에서 별표한 운동자료(대본이 수업 구성에 우선 반영 · lib_ref)
+  const [bookRow, setBookRow] = useState(null); // 클로징에서 연 세일즈북(2026-10-11 시안)
+  const [sbMaking, setSbMaking] = useState(false);
+  // 클로징의 '세일즈북 열기'(2026-10-11) — 세일즈북은 서버가 대본 뒤에 이어 만든다. 열 때 최신 행을 다시 읽고,
+  //   대본을 만든 지 2분이 지났는데도 없으면(이어 만들기 실패) 그 자리에서 만든다(약 20초 · 회원 앞에서 막히지 않게 · 점검).
+  const openBook = async () => {
+    if (sbMaking) { showToast("세일즈북을 만들고 있어요. 조금만 기다려 주세요."); return; }
+    if (!supabase || !existingRow2Id) return;
+    try {
+      const { data } = await supabase.from("ot_log").select("id, report").eq("id", existingRow2Id).maybeSingle();
+      if (data?.report?.salesbook) { setBookRow(data); return; }
+      const made = Date.parse(data?.report?.briefMeta?.generatedAt || "") || 0;
+      if (new Date().getTime() - made < 120000) { showToast("세일즈북을 아직 만드는 중이에요. 잠시 뒤 다시 눌러 주세요."); return; }
+      setSbMaking(true);
+      showToast("세일즈북을 만들고 있어요. 20초쯤 걸려요.");
+      const res = await fetch("/api/ot-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({ phase: "salesbook", member, report: obs, round, packages, photoLabels,
+          recommendedProgram: data?.report?.brief?.recommended_program || null, save: { kind: "ot", memberId: member.id, round } }),
+      });
+      if (!res.ok) { showToast("세일즈북을 만들지 못했어요. 다시 시도해 주세요."); return; }
+      const { data: again } = await supabase.from("ot_log").select("id, report").eq("id", existingRow2Id).maybeSingle();
+      if (again?.report?.salesbook) setBookRow(again); else showToast("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
+    } catch (e) {
+      console.error("세일즈북 열기 실패", e);
+      showToast("인터넷 연결을 확인하고 다시 시도해 주세요.");
+    } finally {
+      setSbMaking(false);
+    }
+  };
   const { toast, showToast } = useToast();
 
   const canAI = Boolean(supabase && member?.id);
@@ -239,7 +271,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       if (pendingKey) clearPending(pendingKey);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setAiError(d.error || "리포트를 만들지 못했어요. 다시 시도해 주세요.");
+        setAiError(d.error || "대본을 만들지 못했어요. 다시 시도해 주세요.");
         return;
       }
       const data = await res.json();
@@ -247,7 +279,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       const savedRow = res.headers.get("x-saved-row");
       setBrief(data);
       setBriefMeta(meta);
-      if (!savedRow) { setAiError("리포트를 저장하지 못했어요. 지금은 이 화면에서만 보여요."); return; }
+      if (!savedRow) { setAiError("대본을 저장하지 못했어요. 지금은 이 화면에서만 보여요."); return; }
       setExistingRow2Id(savedRow);
       // 서버가 저장한 최신 report를 다시 읽어 그 위에 세일즈북을 얹는다(다른 키 덮어쓰기 방지).
       const { data: fresh } = await supabase.from("ot_log").select("report").eq("id", savedRow).maybeSingle();
@@ -255,7 +287,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       setRow2Report(base);
       onSaved?.(); // 대시보드 진행(준비 ✓) 갱신
     } catch {
-      setAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 리포트는 이어서 저장돼요)");
+      setAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 대본은 이어서 저장돼요)");
     } finally {
       setGenerating(false);
       refreshAiQuota();
@@ -496,10 +528,11 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
 
         {legacyCache && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
-            이전 형식 리포트예요. &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀌어요.
+            이전 형식 대본이에요. &lsquo;재생성&rsquo;을 누르면 새 형식으로 바뀌어요.
           </div>
         )}
-        <PrepReport kind="second" data={b} packages={packages} favorites={favorites} caseTier={meta?.caseTier} />
+        <PrepReport kind="second" data={b} packages={packages} favorites={favorites} caseTier={meta?.caseTier}
+          onOpenBook={existingRow2Id ? openBook : null} />
 
         </AIBriefBlock>
 
@@ -514,6 +547,9 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
         </Link>
 
         <Toast message={toast} />
+        {/* 클로징에서 연 세일즈북 — body로 포털(조상 @container가 fixed 기준이 되지 않게) */}
+        {bookRow && typeof document !== "undefined" && createPortal(
+          <DeckLauncher member={member} row={bookRow} startPresent showToast={showToast} onClose={() => setBookRow(null)} />, document.body)}
 
       </div>
     );
@@ -527,7 +563,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       bare
       status="loading"
       title={`오늘의 OT 대본 · ${round}차`}
-      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 리포트는 저장돼 있다가 돌아오면 바로 떠요."
+      waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 대본은 저장돼 있다가 돌아오면 바로 떠요."
     />
   );
 

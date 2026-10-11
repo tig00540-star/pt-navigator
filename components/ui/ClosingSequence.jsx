@@ -47,9 +47,10 @@ function CompactMore({ label, children }) {
   );
 }
 
-export default function ClosingSequence({ sequence, fallbackLine = "", sweetener = "", metaphor = null, icon = null, compact = false, priceLine = "" }) {
+export default function ClosingSequence({ sequence, fallbackLine = "", sweetener = "", metaphor = null, icon = null, compact = false, priceLine = "", rereg = false }) {
+  const whyLabel = rereg ? "왜 지금 이어가야 하나" : "왜 PT가 필요한지";   // 재등록 회원은 이미 PT 중(2026-10-11 점검)
   const seq = sequence && typeof sequence === "object" && !Array.isArray(sequence) ? sequence : null;
-  const has = Boolean(seq && (seq.trial_close || seq.stakes || seq.plan_pitch || seq.ask || seq.hold || seq.flush));
+  const has = Boolean(seq && (seq.echo || seq.trial_close || seq.stakes || seq.plan_pitch || seq.ask || seq.hold || seq.flush));
   const line = typeof fallbackLine === "string" ? fallbackLine : "";
   const mp = metaphor && typeof metaphor === "object" ? metaphor : null;
   const hasMetaphor = Boolean(mp?.metaphor);
@@ -57,11 +58,69 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
   const hw = Array.isArray(fb?.homework) ? fb.homework.filter((h) => h && h.do) : [];
   if (!has && !line && !hasMetaphor) return null; // 아무것도 없으면 렌더 안 함
 
+  // 2026-10-11 새 클로징(되짚기 → 회원이 말하게 → 왜 PT → 앞으로 → 추천 플랜 → 약속 → 요청 → 망설이면 · 비유는 선택 · 웃으며 한마디 없음)
+  const v2 = Boolean(seq && (seq.echo || Array.isArray(seq.promise)));
+  if (compact && has && v2) {
+    // 2026-10-11 대표 "클로징이 외울 수 없을 만큼 길다" → 기본은 핵심 4줄(되짚기 · 왜 PT · 추천 플랜 · 요청),
+    //   전체 순서(회원이 말하게 · 쉽게 말하면 · 앞으로 · 약속 · 망설이면 포함)는 접어 둔다. AI 출력은 그대로.
+    const promises = (Array.isArray(seq.promise) ? seq.promise : []).filter(Boolean);
+    const mpText = hasMetaphor ? plainText(mp.metaphor).replace(/^쉽게 말하면[,\s]*/, "") : "";
+    const price = priceLine && <p className="m-0 mt-1.5 inline-block rounded-lg bg-elevate px-2.5 py-1 text-[13px] font-semibold text-ink">{priceLine}</p>;
+    const hold = seq.hold && <p className="m-0 mt-1 text-[12.5px] text-muted">요청한 뒤엔 먼저 말하지 말고 기다려요.</p>;
+    const total = [seq.echo, seq.trial_close, seq.stakes, mpText, seq.next_goal, seq.plan_pitch, promises.length ? 1 : null, seq.ask, seq.flush].filter(Boolean).length;
+    return (
+      <div className="space-y-4 break-keep text-pretty">
+        <Line label="① 되짚기" text={seq.echo} />
+        <Line label={`② ${whyLabel}`} text={seq.stakes} />
+        <div>
+          <Line label="③ 추천 플랜" text={seq.plan_pitch} />
+          {price}
+        </div>
+        <div>
+          <Line label="④ 요청" text={seq.ask} ask />
+          {hold}
+        </div>
+        <CompactMore label={`전체 순서로 보기 · ${total}줄`}>
+          <Line label="되짚기 · 핵심" text={seq.echo} />
+          <Line label="회원이 말하게" text={seq.trial_close} />
+          <Line label={`${whyLabel} · 핵심`} text={seq.stakes} />
+          {mpText && <p className="m-0 text-[15px] leading-[1.6] text-ink"><span className="mr-1 text-[12.5px] font-semibold text-sub">쉽게 말하면</span>&ldquo;{mpText}&rdquo;</p>}
+          <Line label="앞으로" text={seq.next_goal} />
+          <div>
+            <Line label="추천 플랜 · 핵심" text={seq.plan_pitch} />
+            {price}
+          </div>
+          {promises.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="m-0 text-[12px] font-semibold text-primary-strong">약속</p>
+              {promises.map((t, i) => <p key={i} className="m-0 text-[15px] leading-[1.6] text-ink">&ldquo;<Emph tone="quiet">{t}</Emph>&rdquo;</p>)}
+            </div>
+          )}
+          <div>
+            <Line label="요청 · 핵심" text={seq.ask} ask />
+            {hold}
+          </div>
+          <Line label="망설이면" text={seq.flush} />
+        </CompactMore>
+        {fb && (
+          <CompactMore label="오늘 안 되면 · 숙제">
+            {fb?.next_line && <p className="m-0 text-[13px] leading-[1.6] text-sub"><span className="font-semibold text-ink">오늘 결정이 어려우면</span> {plainText(fb.next_line)}</p>}
+            {hw.length > 0 && (
+              <div className="space-y-1">
+                <p className="m-0 text-[12px] font-semibold text-muted">다음 수업 전까지 부탁할 것</p>
+                {hw.map((h, i) => <p key={i} className="m-0 text-[13px] leading-[1.6] text-sub">{i + 1}. {plainText(h.do)}</p>)}
+              </div>
+            )}
+          </CompactMore>
+        )}
+      </div>
+    );
+  }
   if (compact && has) {
     const note = (label, t) => t ? <p className="m-0 text-[13px] leading-[1.6] text-sub"><span className="font-semibold text-ink">{label}</span> {plainText(t)}</p> : null;
     return (
       <div className="space-y-4 break-keep text-pretty">
-        <Line label="① 왜 PT가 필요한지" text={seq.stakes} />
+        <Line label={`① ${whyLabel}`} text={seq.stakes} />
         <Line label="② 확인 질문" text={seq.trial_close} />
         <div>
           <Line label="③ 추천 플랜" text={seq.plan_pitch} />
@@ -103,7 +162,7 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
           비유는 이유를 쉽게 풀어주는 보조라 이유 바로 뒤. 옛 캐시(stakes가 짧은 근거 문장)도 같은 자리에 그대로 보인다. */}
       {has ? (
         <div className="mt-2.5 space-y-2.5">
-          {seq.stakes && <SpeechBit label="① 왜 PT가 필요한지" text={seq.stakes} />}
+          {seq.stakes && <SpeechBit label={`① ${whyLabel}`} text={seq.stakes} />}
           {hasMetaphor && (
             <div>
               <span className="inline-block rounded-md bg-card px-1.5 py-0.5 text-[12px] font-semibold text-primary-strong">쉽게 비유하면</span>
