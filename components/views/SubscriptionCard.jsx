@@ -60,7 +60,7 @@ function AiUsage({ quota }) {
             <li key={g}>
               <div className="flex items-baseline justify-between gap-2 text-[13px]">
                 <span className="text-sub">{KIND_LABEL[g]}</span>
-                <span className="tabular-nums text-ink"><b>{v.used}</b> / {total}{v.pack_left ? ` (팩 ${v.pack_left} 남음)` : ""}</span>
+                <span className="tabular-nums text-ink"><b>{v.used}</b> / {total}{v.pack_left ? ` (추가 팩 ${v.pack_left} 남음)` : ""}</span>
               </div>
               <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
                 <div className={`h-full rounded-full ${v.left === 0 ? "bg-danger" : "bg-primary"}`} style={{ width: `${pct}%` }} />
