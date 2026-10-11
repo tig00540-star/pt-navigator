@@ -54,7 +54,6 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
           </div>
           <div className="space-y-6">
           <SoloProfileCard />
-          <BookingPrefCard />
           <TrainerGoalSetter />
           <PasswordChange />
           <SubscriptionCard />
@@ -82,7 +81,13 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
       {sub === "gear" && <CenterMachineSettings />}
       {sub === "library" && <TrainerLibrary />}
       {sub === "reward" && <EventManager />}
-      {sub === "notify" && <NotifySettings />}
+      {/* 알림 = 폰 알림 + 회원 예약 요청 받기(2026-10-11 · 대표: '받는 설정'이라 내 정보에서 옮김) */}
+      {sub === "notify" && (
+        <div className="space-y-6">
+          <NotifySettings />
+          <BookingPrefCard />
+        </div>
+      )}
     </div>
   );
 }
