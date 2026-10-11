@@ -3,7 +3,7 @@ const SITE = "https://www.onlytrainer.co.kr";
 export default function sitemap() {
   const now = new Date();
   return [
-    { url: `${SITE}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
+    { url: `${SITE}/lp`, lastModified: now, changeFrequency: "weekly", priority: 1 },   // 2026-10-12 대표 랜딩 = /lp
     { url: `${SITE}/center`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE}/try`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE}/check`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },

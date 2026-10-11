@@ -3,9 +3,9 @@ const DESC = "오직 트레이너는 트레이너만을 위한 앱이에요. 운
 export const metadata = {
   title: "오직 트레이너 · 트레이너만을 위한 앱",
   description: DESC,
-  alternates: { canonical: "/" },
+  alternates: { canonical: "/lp" },   // 2026-10-12 검색용 대표 랜딩 = /lp("/"는 앱 홈이라 초기 HTML이 비어 있음)
   openGraph: {
-    type: "website", locale: "ko_KR", siteName: "오직 트레이너", url: "/",
+    type: "website", locale: "ko_KR", siteName: "오직 트레이너", url: "/lp",
     title: "오직 트레이너 · 트레이너만을 위한 앱",
     description: DESC,
     images: [{ url: "/og/trainer.png", width: 1200, height: 630, alt: "오직 트레이너: 트레이너만을 위한 앱. 수업 밖 일은 앱이 알아서." }],
