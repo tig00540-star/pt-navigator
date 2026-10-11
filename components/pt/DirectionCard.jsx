@@ -128,7 +128,8 @@ export default function DirectionCard({ member, contracts = [], logs = [], onMem
     return Boolean(a && reregisterDue(a, logs, { contracts }));
   }, [contracts, logs]);
   const switched = Boolean(round?.report?.next_goal?.applied_at);
-  const showNext = !editing && !fix && !switched && (due || Boolean(prog?.done));
+  // 지금 목표가 있을 때만(목표를 아직 안 정한 회원에게 '다음 목표'가 먼저 뜨면 헷갈린다 · 실서비스 점검 2026-10-11)
+  const showNext = !editing && !fix && !switched && Boolean(saved.trim()) && (due || Boolean(prog?.done));
   const suggestion = useMemo(() => (goal ? suggestNextGoal(goal, inbody, logs) : null), [goal, inbody, logs]);
   const [nextText, setNextText] = useState("");
   const [nextTouched, setNextTouched] = useState(false);

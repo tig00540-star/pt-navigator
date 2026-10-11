@@ -51,7 +51,7 @@ export default function OwnerFeedbackToday({ members = [], uid }) {
 
   return (
     <ToneCard tone="brand">
-      <SectionHeader tone="brand" icon={MessageSquare} title="대표 피드백" count={rows.length} hint="확인하면 사라져요. 그 회원의 다음 리포트에도 반영돼요." />
+      <SectionHeader tone="brand" icon={MessageSquare} title="대표 피드백" count={rows.length} hint="확인하면 사라져요. 그 회원의 다음 대본에도 반영돼요." />
       <div className="grid gap-2">
         {rows.map((f) => {
           const m = byId.get(f.member_id);

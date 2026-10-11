@@ -308,7 +308,7 @@ export default function OwnerBriefing({ members = [], otRows = [], contracts = [
                       {canFb && (fbOpen === i.ref_id ? (
                         <div className="no-print mt-2 space-y-2">
                           <textarea value={fbText} onChange={(e) => setFbText(e.target.value)} rows={2} maxLength={1000} autoFocus
-                            placeholder={i.result === "success" ? "잘한 점 · 다음에도 이어갈 점" : "다음엔 이렇게 해 보세요 (트레이너 '오늘'에 뜨고, 이 회원 다음 리포트에 반영돼요)"}
+                            placeholder={i.result === "success" ? "잘한 점 · 다음에도 이어갈 점" : "다음엔 이렇게 해 보세요 (트레이너 '오늘'에 뜨고, 이 회원 다음 대본에 반영돼요)"}
                             className="w-full rounded-lg border border-line bg-card px-3 py-2 text-[14px] text-ink outline-none focus:border-primary" />
                           {fbErr && <p className="text-[12.5px] text-danger-text">{fbErr}</p>}
                           <div className="flex justify-end gap-2">
