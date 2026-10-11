@@ -182,16 +182,17 @@ const TIERS = [
   {
     key: "solo",
     tagline: "AI까지 트레이너 1인",
-    feats: ["베이직 전부", `말로 쓰는 운동일지 월 ${PLANS.solo.ai.voice}건`, `OT · 재등록 대본 월 ${PLANS.solo.ai.prep}번`, "세일즈북(상담 자료) · 인바디 분석"],
+    feats: ["베이직 전부", `말로 쓰는 운동일지 월 ${PLANS.solo.ai.voice}건`, `OT · 재등록 대본 월 ${PLANS.solo.ai.prep}번`, `식단 관리 AI 월 ${PLANS.solo.ai.diet}건(식단 회원 약 10명)`, "세일즈북(상담 자료) · 인바디 분석"],
     highlight: true,
     cta: { label: "시작하기", href: "/signup?plan=solo" },
   },
   {
     key: "center",
     tagline: "트레이너 3인 + 대표 1인",
-    feats: ["프로 전부(센터가 함께 쓰는 한도)", `말로 쓰는 운동일지 월 ${PLANS.center.ai.voice}건 · 대본 월 ${PLANS.center.ai.prep}번`, "대표 화면 · 아침 보고서 · 월간 결산", `트레이너 추가 1인 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원`],
+    feats: ["프로 전부(센터가 함께 쓰는 한도)", `말로 쓰는 운동일지 월 ${PLANS.center.ai.voice}건 · 대본 월 ${PLANS.center.ai.prep}번`, `식단 관리 AI 월 ${PLANS.center.ai.diet}건`, "대표 화면 · 아침 보고서 · 월간 결산", `트레이너 추가 1인 월 ${SEAT_PRICE.toLocaleString("ko-KR")}원(한도도 함께 늘어요)`],
     highlight: false,
-    cta: { label: "센터로 시작하기", href: "/signup?type=center" },   // 상품 카드마다 바로 결제 경로(토스 심사 2026-10-07) · 센터 소개는 아래 띠 · 머리 전환
+    cta: { label: "센터로 시작하기", href: "/signup?type=center" },
+    consult: true,   // 2026-10-11 대표: 센터는 가격 + [도입 상담](카카오톡)도 같이   // 상품 카드마다 바로 결제 경로(토스 심사 2026-10-07) · 센터 소개는 아래 띠 · 머리 전환
   },
 ];
 
@@ -203,7 +204,8 @@ const FAQ = [
   { q: "센터에 소속돼 있는데 혼자 써도 되나요?", a: "네. 개인 트레이너로 가입하고 '센터 소속'을 고르면 돼요. 회원 페이지와 OT 신청서엔 '○○짐 · 내 이름 트레이너'로 나와요." },
   { q: "프리랜서도 되나요?", a: "네. '프리랜서'를 고르면 PT 매출 · 그 밖의 매출 · 지출 · 남은 돈을 장부로 함께 봐요. 센터와 매출을 나누면 그 방식도 정할 수 있어요." },
   { q: "가입 전에 써 볼 수 있나요?", a: "네. '직접 눌러 보기'에서 트레이너 폰과 회원 폰을 나란히 두고 QR 신청 · 이벤트 · 수업 요청 · 서명을 해 볼 수 있어요." },
-  { q: "AI를 다 쓰면 어떻게 되나요?", a: `기록 · 회원 관리는 그대로 쓰고, AI만 다음 달 1일까지 멈춰요. 프로는 추가 팩(OT · 재등록 대본 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 운동일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원)으로 바로 이어 쓸 수 있어요. 산 팩은 7일 안에 한 번도 안 썼을 때만 전액 환불돼요.` },
+  { q: "AI를 다 쓰면 어떻게 되나요?", a: `기록 · 회원 관리는 그대로 쓰고, AI만 다음 달 1일까지 멈춰요. 프로 · 센터는 추가 팩(OT · 재등록 대본 10번 ${PACKS.prep10.price.toLocaleString("ko-KR")}원 · 운동일지 50건 ${PACKS.voice50.price.toLocaleString("ko-KR")}원 · 식단 AI 60건 ${PACKS.diet60.price.toLocaleString("ko-KR")}원)으로 바로 이어 쓸 수 있어요. 산 팩은 7일 안에 한 번도 안 썼을 때만 전액 환불돼요.` },
+  { q: "식단 관리는 어떻게 하나요?", a: "트레이너가 회원마다 켜면, 회원이 먹은 것을 사진으로 올리고 트레이너가 하루 한 번 피드백을 보내요. 바쁠 땐 AI가 트레이너 이름으로 대신 보내요. 건강정보 수집에 동의한 PT 회원만 쓸 수 있고, 영양 상담이 아닌 참고용이에요." },
   { q: "써 보고 마음에 안 들면요?", a: "첫 결제 뒤 7일 안이면 써 봤어도 전액 환불해 드려요. 설정 › 구독 관리에서 버튼 한 번이면 돼요(계정당 한 번)." },
   { q: "베이직에서 프로로 바꿀 수 있나요?", a: "네. 설정에서 바로 바뀌어요. 남은 기간만큼 차액만 내면 돼요." },
   { q: "의료·재활 목적인가요?", a: "아니요. 운동 지도·세일즈·회원관리 도구입니다." },
@@ -401,10 +403,26 @@ export default function LandingPage() {
                       <Checks items={tier.feats} />
                     </div>
                     <a href={tier.cta.href} className={`w-full ${tier.highlight ? BTN_PRIMARY : BTN_OUTLINE}`}>{tier.cta.label}</a>
+                    {tier.consult && <a href={contactHref()} className="-mt-1.5 inline-flex items-center justify-center gap-1 text-[15px] font-bold text-primary-strong underline-offset-2 hover:underline">도입 상담하기 <Arrow /></a>}
                   </div>
                 );
               })}
             </div>
+            {/* 추가 팩(2026-10-11 · 식단 팩 추가) — lib/plans PACKS 그대로 */}
+            <div className="rv w-full max-w-[420px] rounded-2xl border border-line bg-bg px-5 py-5 text-left md:max-w-none">
+              <p className="m-0 text-[16px] font-extrabold">AI를 다 쓰면, 추가 팩</p>
+              <p className="m-0 mt-1 text-[14px] text-sub">프로 · 센터에서 그달 한도를 다 썼을 때 필요한 만큼만 더해요.</p>
+              <div className="mt-3 grid gap-2 md:grid-cols-3">
+                {Object.values(PACKS).map((p) => (
+                  <div key={p.key} className="flex items-baseline justify-between gap-2 rounded-xl bg-card px-4 py-3 shadow-sm">
+                    <span className="text-[15px] font-bold">{p.name}</span>
+                    <span className="text-[16px] font-black tabular-nums">{p.price.toLocaleString("ko-KR")}원</span>
+                  </div>
+                ))}
+              </div>
+              <p className="m-0 mt-3 text-[13px] leading-[1.6] text-sub">산 달의 말일까지 쓸 수 있어요 · 기본 한도를 먼저 쓰고 넘친 만큼 팩에서 · 산 뒤 7일 안에 한 번도 안 썼으면 전액 환불 · 베이직은 프로로 올리면 한도가 늘어요</p>
+            </div>
+
             <p className="m-0 max-w-[520px] text-center text-[13px] leading-[1.6] text-sub">부가세 포함 · <strong className="font-bold text-ink">1개월 단위 정기결제(이용 기간 1개월)</strong> · 카드를 등록하면 바로 첫 결제, 이후 매달 같은 날 자동 결제 · <strong className="font-bold text-ink">첫 결제 7일 안에는 써 봤어도 전액 환불</strong>(계정당 한 번) · 언제든 해지(남은 기간까지 이용) · <a href="/legal/refund" className="font-bold text-ink underline underline-offset-2">환불 정책</a></p>
 
             <div className="rv mt-3 flex w-full flex-col items-center gap-3.5 rounded-3xl bg-ink px-6 py-[clamp(28px,6vw,44px)] text-white">

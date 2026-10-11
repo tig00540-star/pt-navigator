@@ -13,7 +13,7 @@ import { PACKS, REFUND_DAYS } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
-const ORDER_RE = /^pack_(prep10|voice50)_([0-9a-f-]{36})_(\d{10,})$/;
+const ORDER_RE = /^pack_(prep10|voice50|diet60)_([0-9a-f-]{36})_(\d{10,})$/;
 
 async function guard(req) {
   const sb = serviceClient();
@@ -29,7 +29,7 @@ async function guard(req) {
 // 이번 달 팩 하나하나가 얼마나 쓰였는지 — 기본 한도를 넘친 사용량을 산 순서대로 나눠 담는다
 function packUse(q, credits) {
   const out = new Map();
-  for (const kind of ["prep", "voice"]) {
+  for (const kind of ["prep", "voice", "diet"]) {
     const g = q.groups?.[kind];
     let over = g ? Math.max(0, g.used - g.limit) : 0;
     for (const c of credits.filter((x) => x.kind === kind && !x.refunded_at).sort((a, b) => a.created_at.localeCompare(b.created_at))) {
