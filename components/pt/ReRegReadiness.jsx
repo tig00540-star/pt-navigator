@@ -137,7 +137,7 @@ export default function ReRegReadiness({ member, contracts = [], logs = [], inbo
         <h2 className="m-0 text-[15px] font-bold text-ink">재등록 재료</h2>
         <span className="text-[13px] font-semibold text-sub">{okCount} / {items.length} 모였어요</span>
       </div>
-      <p className="m-0 px-5 text-[12px] text-muted">재등록 때 할 말이에요. 모인 재료는 재등록 대본에도 그대로 들어가요.</p>
+      <p className="m-0 px-5 text-[12px] text-muted">재등록 때 할 말이에요. 숫자 변화 · 회원의 말 · 목표는 대본에 들어가고, 나머지는 세일즈북을 넘기며 직접 말해 주세요.</p>
       {missingStar && (
         <div className="mx-4 mt-3 rounded-xl bg-amber-500/10 px-3.5 py-2.5">
           <p className="m-0 flex items-center gap-1.5 text-[13px] font-bold text-ot-text"><Star className="h-3.5 w-3.5" aria-hidden="true" /> 아직 &lsquo;{missingStar.label}&rsquo;{josa(missingStar.label)} 없어요</p>
