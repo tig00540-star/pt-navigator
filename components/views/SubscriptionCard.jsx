@@ -255,7 +255,8 @@ export default function SubscriptionCard() {
           </div>
         )}
 
-        {live && (st.plan === "solo" || st.plan === "center") && !trial && <AiPackSection showToast={showToast} />}
+        {/* 팩은 옛 무료 체험(TRIAL) 계정만 막는다 — DB ai_quota_for의 trial과 같은 기준(2026-10-11 · 결제 기록이 없는 시연 계정도 보이게) */}
+        {live && (st.plan === "solo" || st.plan === "center") && !quota.trial && <AiPackSection showToast={showToast} />}
 
         {refund && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-3.5 py-2.5">
