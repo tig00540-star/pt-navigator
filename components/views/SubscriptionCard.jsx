@@ -43,13 +43,17 @@ const plusDays = (iso, n) => (iso ? new Date(Date.parse(iso) + n * 86400000).toI
 /** 데이터 내려받기 — 화면 어디서든(읽기 전용 띠에서도) · 사진 파일까지 한 ZIP(2026-10-08 · lib/exportDownload) */
 export { downloadMyData };
 
-/** 이번 달 AI 사용량(베이직 = 기능 5개 · 프로/센터 = 음성일지 · 준비) */
+/** 이번 기간 AI 사용량(베이직 = 기능 6개 · 프로/센터 = 음성일지 · 준비 · 식단) — 기간 = 결제일 ~ 다음 결제일 전날(2026-10-12) */
+// "10월 7일~11월 6일"(한국 시간 · 끝 = 다음 결제일 전날)
+const kstMd = (ms) => { const d = new Date(ms + 9 * 3600000); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`; };
+const periodKo = (q) => (q?.period_start && q?.resets_at ? `${kstMd(Date.parse(q.period_start))}~${kstMd(Date.parse(q.resets_at) - 86400000)}` : "");
+
 function AiUsage({ quota }) {
   if (!quota.q?.groups) return null;
   const groups = quota.tier === "basic" ? ["voice", "ot", "rereg", "inbody", "roadmap", "diet"] : ["voice", "prep", "diet"];
   return (
     <div className="mt-4 rounded-xl bg-elevate px-3.5 py-3">
-      <p className="m-0 text-[13px] font-bold text-ink">이번 달 AI{quota.trial ? " · 체험 중엔 프로와 같아요" : ""}</p>
+      <p className="m-0 text-[13px] font-bold text-ink">이번 기간 AI{periodKo(quota.q) ? <span className="font-medium text-muted"> · {periodKo(quota.q)}</span> : null}{quota.trial ? " · 체험 중엔 프로와 같아요" : ""}</p>
       <ul className="m-0 mt-2 list-none space-y-2 p-0">
         {groups.map((g) => {
           const v = quota.q.groups[g];
@@ -69,7 +73,7 @@ function AiUsage({ quota }) {
           );
         })}
       </ul>
-      <p className="m-0 mt-2 text-[12px] text-muted">매달 1일에 다시 채워져요.{quota.tier === "basic" ? "" : " 추가 팩은 산 날부터 1개월 동안 써요. 인바디 분석 · 로드맵 초안은 따로 세지 않아요."}</p>
+      <p className="m-0 mt-2 text-[12px] text-muted">{quota.resetsKo ? `${quota.resetsKo}(다음 결제일)에 다시 채워져요.` : "결제일마다 다시 채워져요."}{quota.tier === "basic" ? "" : " 추가 팩은 산 날부터 1개월 동안 써요. 인바디 분석 · 로드맵 초안은 따로 세지 않아요."}</p>
     </div>
   );
 }
