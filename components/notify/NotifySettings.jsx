@@ -96,9 +96,9 @@ export default function NotifySettings() {
             <div className="text-[14px] leading-relaxed text-ink">
               <p className="m-0 font-semibold">아이폰은 앱을 홈 화면에 추가해야 알림을 받을 수 있어요.</p>
               <ol className="m-0 mt-2 list-decimal space-y-1 pl-5 text-sub">
-                <li>사파리 아래 <b className="text-ink">공유 버튼(네모에 위 화살표)</b>을 눌러요</li>
-                <li><b className="text-ink">홈 화면에 추가</b>를 눌러요</li>
-                <li>홈 화면에 생긴 <b className="text-ink">오직 트레이너</b> 아이콘으로 열고, 여기서 알림을 켜요</li>
+                <li><b className="text-ink">공유 버튼(네모에 위 화살표)</b>을 눌러요. 화면 아래에 없으면 <b className="text-ink">주소창 옆 ⋯</b> 안에 있어요</li>
+                <li><b className="text-ink">홈 화면에 추가</b>를 눌러요. 안 보이면 <b className="text-ink">더보기</b>를 누르거나 목록을 아래로 내려요</li>
+                <li><b className="text-ink">추가</b>를 누른 뒤, 홈 화면에 생긴 <b className="text-ink">오직 트레이너</b> 아이콘으로 열고 여기서 알림을 켜요</li>
               </ol>
             </div>
           ) : state === "unsupported" ? (

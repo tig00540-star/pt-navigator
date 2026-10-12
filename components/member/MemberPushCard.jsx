@@ -55,9 +55,9 @@ export default function MemberPushCard({ supabase, place = "home" }) {
             <span className="shrink-0 text-[13px] font-semibold text-primary-strong">방법</span>
           </summary>
           <ol className="m-0 mt-1 list-decimal space-y-1 pb-1 pl-5 text-[14px] leading-relaxed text-sub">
-            <li>사파리 아래 <b className="text-ink">공유 버튼(네모에 위 화살표)</b>을 눌러요</li>
-            <li><b className="text-ink">홈 화면에 추가</b>를 눌러요</li>
-            <li>홈 화면에 생긴 아이콘으로 열고, 여기서 <b className="text-ink">켜기</b>를 눌러요</li>
+            <li><b className="text-ink">공유 버튼(네모에 위 화살표)</b>을 눌러요. 화면 아래에 없으면 <b className="text-ink">주소창 옆 ⋯</b> 안에 있어요</li>
+            <li><b className="text-ink">홈 화면에 추가</b>를 눌러요. 안 보이면 <b className="text-ink">더보기</b>를 누르거나 목록을 아래로 내려요</li>
+            <li><b className="text-ink">추가</b>를 누른 뒤, 홈 화면에 생긴 아이콘으로 열고 여기서 <b className="text-ink">켜기</b>를 눌러요</li>
           </ol>
         </details>
       ) : (

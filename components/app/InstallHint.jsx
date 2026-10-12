@@ -73,7 +73,7 @@ export default function InstallHint() {
         <p className="text-[14px] font-bold text-ink">홈 화면에 추가하면 앱처럼 열려요</p>
         <p className="mt-0.5 text-[13px] leading-relaxed text-sub">
           {ios
-            ? "주소창 옆 ⋯ → 공유 → 더보기 → 홈 화면에 추가 → 웹 앱으로 열기"
+            ? "공유 버튼(네모에 위 화살표 · 화면 아래에 없으면 주소창 옆 ⋯ 안) → 홈 화면에 추가(안 보이면 더보기) → 추가"
             : "주소창 없이 아이콘으로 바로 열려요."}
         </p>
         {!ios && deferred && (
