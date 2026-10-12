@@ -9,7 +9,8 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronRight, Search, User, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Search, User, UserPlus, Users } from "lucide-react";
 import { hasVal } from "@/lib/format";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -82,6 +83,10 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
           <UserPlus className="h-4 w-4" /> 등록
         </Button>
       </div>
+      {/* 여러 명 한꺼번에(2026-10-12) — 처음 시작할 때 기존 회원을 한 번에 */}
+      <Link href="/members/import" className="-mt-2 mb-3 inline-flex min-h-[36px] items-center gap-1.5 text-[13px] font-semibold text-sub hover:text-ink">
+        <Users className="h-4 w-4" aria-hidden="true" /> 여러 명 한꺼번에 등록
+      </Link>
 
       {isOwner && (
         <div className="mb-3 flex gap-1.5">
@@ -129,9 +134,10 @@ export default function MemberList({ members, selectedId, onSelect, onAdd, uid, 
               : "이 그룹에 회원이 없어요."}
           </p>
           {members.length === 0 && (
-            <Button variant="ghost" size="sm" onClick={onAdd} className="mt-4">
-              첫 회원 등록하기
-            </Button>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <Button variant="ghost" size="sm" onClick={onAdd}>첫 회원 등록하기</Button>
+              <Link href="/members/import" className="inline-flex min-h-[36px] items-center rounded-lg bg-primary px-3.5 text-[13px] font-bold text-white">기존 회원 한꺼번에 등록</Link>
+            </div>
           )}
         </div>
       ) : (

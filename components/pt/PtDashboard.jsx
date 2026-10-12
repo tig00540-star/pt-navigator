@@ -21,6 +21,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { describeGoal, goalProgress } from "@/lib/ptGoal";
 import ReRegReadiness from "@/components/pt/ReRegReadiness";
+import PriceFix from "@/components/members/PriceFix";
 
 const KST_TODAY = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const kstDay = (iso) => (iso ? new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10) : null);
@@ -73,6 +74,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
   const [ounwan, setOunwan] = useState(null);
   const [routineAlert, setRoutineAlert] = useState({ pain: false, request: false });   // 케어 탭으로 데려갈 일
   const [nowMs] = useState(() => Date.now());
+  const [priceDone, setPriceDone] = useState(false);   // 회당 단가를 방금 넣음(2026-10-12)
 
   useEffect(() => {
     let cancelled = false;
@@ -153,12 +155,17 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
     if (el) { el.open = true; el.scrollIntoView({ behavior: "smooth", block: "start" }); }
   };
 
+  // 회당 단가 빈칸(회원 한꺼번에 등록 때 비워 둔 것 · 2026-10-12) — 최근 계약 기준
+  const latestC = contracts.filter((c) => !c.handed_over).reduce((a, c) => (!a || String(c.started_at ?? "") > String(a.started_at ?? "") ? c : a), null);
+  const priceMissing = Boolean(latestC && !(Number(latestC.price_per_session) > 0) && !priceDone);
+
   // 지금 할 일 — 가장 급한 하나만.
   const todo = !d.active && !contracts.length ? null
     : todayAppt && !d.wroteToday ? { href: `/pt/${member.id}/write`, title: "오늘 운동일지 쓰기", sub: "오늘 수업이 있어요" }
     : d.disputes > 0 ? { href: null, title: `회원이 '내용이 달라요' ${d.disputes}건`, sub: "아래 지난 수업에서 운동일지를 고치거나, 받지 않은 수업이면 삭제해 주세요" }
     : routineAlert.pain ? { href: `/pt/${member.id}/care`, title: "개인운동 확인하기", sub: "회원이 '아파서 멈췄어요'를 남겼어요" }
     : routineAlert.request ? { href: `/pt/${member.id}/care`, title: "개인운동 루틴 만들기", sub: "회원이 루틴을 요청했어요" }
+    : priceMissing ? { href: null, price: true, title: "회당 단가를 넣어 주세요", sub: "급여 계산에 필요해요" }
     : d.due || !d.active ? { href: `/pt/${member.id}/renewal`, title: "재등록 준비하기", sub: d.active ? `남은 수업 ${d.rem.total}회` : "진행 중인 계약이 없어요" }
     : d.unconfirmed > 0 ? { href: null, title: `회원 확인 대기 ${d.unconfirmed}개`, sub: "회원 전용 페이지에서 확인해 달라고 알려 주세요" }
     : null;
@@ -241,6 +248,7 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
         <div className="rounded-2xl border border-line bg-card px-5 py-3.5">
           <span className="block text-[12px] text-muted">지금 할 일 · {todo.sub}</span>
           <span className="block text-[16px] font-bold tracking-[-0.02em] text-ink">{todo.title}</span>
+          {todo.price && <div className="mt-2"><PriceFix contractId={latestC.id} compact onSaved={() => setPriceDone(true)} /></div>}
         </div>
       ))}
 

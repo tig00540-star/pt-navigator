@@ -16,6 +16,7 @@ import {
 import { won, personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
 import PayrollConfirm from "@/components/PayrollConfirm";
+import { preAppSessions } from "@/lib/bulkMembers";
 
 // 우수(good)/주의(warn) 임계 — 원장 조정 가능. rate 0..1, 소진 회/월.
 const TH = {
@@ -60,7 +61,7 @@ const EMPTY_REV = { newRev: 0, reRev: 0, total: 0, cntNew: 0, cntRe: 0 };
 const EMPTY_CLOSE = { r1: { attempted: 0, success: 0, rate: null }, r2: { attempted: 0, success: 0, rate: null } };
 
 /* 펼침 상세 — 기존 트레이너별 실적의 신규/재등록 split + PayrollConfirm 재사용(급여 확정 흐름 보존). */
-function ExpandDetail({ rev, id, ym, pay, run, prev, onSaveRun, onGoPayroll }) {
+function ExpandDetail({ rev, id, ym, pay, run, prev, onSaveRun, onGoPayroll, contracts = [] }) {
   // 급여 확정은 이번 달 · 지난달 둘 다(2026-10-06) — 달이 바뀌면 지난달 급여를 확정할 길이 없던 문제.
   const [payMonth, setPayMonth] = useState("prev");
   const usePrev = payMonth === "prev" && prev;
@@ -94,7 +95,8 @@ function ExpandDetail({ rev, id, ym, pay, run, prev, onSaveRun, onGoPayroll }) {
           ))}
         </div>
       )}
-      <PayrollConfirm key={usePrev ? prev.ym : ym} trainerId={id} ym={usePrev ? prev.ym : ym} pay={usePrev ? prev.pay : pay} run={usePrev ? prev.run : run} onSaved={onSaveRun} />
+      <PayrollConfirm key={usePrev ? prev.ym : ym} trainerId={id} ym={usePrev ? prev.ym : ym} pay={usePrev ? prev.pay : pay} run={usePrev ? prev.run : run} onSaved={onSaveRun}
+        preApp={preAppSessions(contracts, id, usePrev ? prev.ym : ym)} />
       {onGoPayroll && (
         <button
           type="button"
@@ -309,7 +311,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                     {open && (
                       <tr className="border-t border-line bg-elevate/30">
                         <td colSpan={13} className="px-3 py-3">
-                          <ExpandDetail rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} prev={t.prev} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} />
+                          <ExpandDetail contracts={contracts} rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} prev={t.prev} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} />
                         </td>
                       </tr>
                     )}
@@ -357,7 +359,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
                 className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-line bg-elevate py-2 text-[12px] font-semibold text-sub transition hover:border-primary/40">
                 {open ? "접기" : "상세 · 급여 확정"} {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               </button>
-              {open && <div className="mt-3"><ExpandDetail rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} prev={t.prev} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} /></div>}
+              {open && <div className="mt-3"><ExpandDetail contracts={contracts} rev={t.rev} id={t.id} ym={ym} pay={t.pay} run={t.run} prev={t.prev} onSaveRun={onSaveRun} onGoPayroll={onGoPayroll} /></div>}
             </Card>
           );
         })}

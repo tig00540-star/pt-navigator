@@ -7,6 +7,7 @@
    ========================================================================= */
 
 import { useState, useEffect, useMemo } from "react";
+import MemberLinkNudge from "@/components/members/MemberLinkNudge";
 import dynamic from "next/dynamic";
 import { ChevronDown, ClipboardList, Dumbbell, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -60,6 +61,7 @@ const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, confirms = [], loading, mode, children, header = null }) {
   const [showAllLogs, setShowAllLogs] = useState(false); // 지난 수업 — 기본 최근 5개
   const [attestOpen, setAttestOpen] = useState(false);    // 월별 수업 확인서(2026-10-06)
+  const [linkNudge, setLinkNudge] = useState(false);      // 일지 저장 뒤 회원 페이지 링크 안내(2026-10-12)
   const [body, setBody] = useState(""); // 손입력 수업 내용/피드백
   const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
@@ -305,6 +307,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       return;
     }
     setLogs((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 −1
+    if (payload.source !== "noshow" && !member.member_auth_id) setLinkNudge(true);   // 회원 페이지를 아직 안 열어 본 회원
     if (payload.source !== "noshow") notifyPush(authHeader(), "log_written", data[0].id);   // 회원 폰으로 '운동일지 확인해 주세요'(알림 켠 회원만)
     // 오늘(KST) 이 회원의 '예약' 하나를 자동으로 '완료'로 연결 — 스케줄에서 또 누르지 않게 · 미처리 예약으로 안 뜨게(대표 결정 2026-10-06).
     //   지금 시각에 가장 가까운 예약 하나. 실패해도 일지는 이미 저장됐으니 조용히 넘어간다(콘솔만).
@@ -705,6 +708,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <UserX className="h-4 w-4" /> 노쇼 차감
           </Button>
         </div>
+        {linkNudge && <MemberLinkNudge member={member} onMemberPatch={onMemberPatch} onClose={() => setLinkNudge(false)} />}
       </Card>
       )}
 

@@ -35,6 +35,7 @@ import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import AdminPayrollSettings from "@/components/AdminPayrollSettings";
 import OwnerHub from "@/components/admin/OwnerHub";
+import StartChecklist from "@/components/home/StartChecklist";
 import SettlementPanel from "@/components/admin/SettlementPanel";
 import OwnerBriefing from "@/components/admin/OwnerBriefing";
 import OwnerOverview from "@/components/admin/OwnerOverview";
@@ -430,6 +431,8 @@ export default function AdminDashboard() {
         <AdminEmptyOnboarding members={rows} trainers={trainers} atab={atab} />
 
         {/* OT 신청 배정 대기(센터 QR · 2026-10-06) — 홈 맨 위 · 있을 때만 */}
+        {/* 처음 시작하기(2026-10-12 · 대표용 줄 · 가입 30일 안만) */}
+        {atab === "hub" && <div className="mb-4"><StartChecklist members={rows.filter((m) => !m.hidden)} /></div>}
         {atab === "hub" && <OtPendingCard onGo={() => goTab("flow")} />}
         {atab === "hub" && <MonthlyReadyCard kind="owner" onGo={() => goTab("monthly")} />}
 

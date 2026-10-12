@@ -34,6 +34,8 @@ import ApptRequestToday from "@/components/views/ApptRequestToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
+import BasicInfoToday from "@/components/views/BasicInfoToday";
+import StartChecklist from "@/components/home/StartChecklist";
 import PtEndToday from "@/components/views/PtEndToday";
 import OunwanRanking from "@/components/home/OunwanRanking";
 import SectionTitle from "@/components/ui/SectionTitle";
@@ -147,6 +149,8 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
         <Link href={hrefFor(9)} className="text-[13px] text-sub hover:text-ink">스케줄 전체 보기 →</Link>
       </div>
 
+      <StartChecklist members={members} />
+
       <div className="grid grid-cols-4 gap-3">
         <Stat icon={CalendarDays} label="오늘 수업" value={`${appts.length}건`} sub={appts.length ? `완료 ${done} · 남음 ${appts.length - done}` : "예약 없음"} />
         <Stat icon={UserPlus} label="오늘 신규 OT" value={`${todayOt.length}명`} sub={todayOt.length ? todayOt.map((a) => nameOf(a.user_id)).join(", ") : "없음"} tone="ot" />
@@ -192,6 +196,7 @@ export default function WideHome({ members = [], uid, trainerName, go }) {
           <OwnerFeedbackToday members={members} uid={uid} />
           <PayrollConfirmedToday uid={uid} />
           <RoutineRequestToday members={scoped} onSelect={(id) => go(id, 13)} />
+          <BasicInfoToday members={scoped} />
           <ReapproachToday members={scoped} onSelect={(id) => go(id, 1)} />
           <RegisterDueToday members={scoped} onSelect={(id) => go(id, 11)} />
           <RegisterReapproachToday members={scoped} onSelect={(id) => go(id, 11)} />

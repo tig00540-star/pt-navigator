@@ -20,6 +20,7 @@ import ApptRequestToday from "@/components/views/ApptRequestToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
+import BasicInfoToday from "@/components/views/BasicInfoToday";
 import DietToday from "@/components/diet/DietToday";
 import PtEndToday from "@/components/views/PtEndToday";
 import SectionTitle from "@/components/ui/SectionTitle";
@@ -44,6 +45,7 @@ export default function TodoTab({ members, uid, onSelect }) {
       <OwnerFeedbackToday members={members} uid={uid} />
       <PayrollConfirmedToday uid={uid} />
       <RoutineRequestToday members={scoped} onSelect={(id) => onSelect(id, 13)} />
+      <BasicInfoToday members={scoped} />
       {/* 식단(2026-10-11) — 요청 · 피드백 대기 · AI가 보낸 것 · 기록 끊김 */}
       <DietToday members={scoped} onSelect={(id) => onSelect(id, 13)} />
 

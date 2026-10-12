@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Award, ChevronDown, ChevronRight, Coins, Dumbbell, FileText, Target, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { preAppSessions } from "@/lib/bulkMembers";
 import { won } from "@/lib/format";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, payLinesForTrainer, sessionCountByTrainer, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
@@ -162,7 +163,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
     nameById, displayName, revRows, refundRows,
     ptMemberIds, sessTotalAll, remAll, doneAll,
-    scheme, sessionCount, priceSum, payLines,
+    scheme, sessionCount, priceSum, payLines, preApp,
   } = useMemo(() => {
     const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
     // 내 회원만(원장이 남의 회원 수업/클로징까지 세던 버그 수정 — 급여 스코프와 일치).
@@ -177,6 +178,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     const scheme = resolveScheme(schemes, uid);
     const pay = payForScheme(scheme, { monthRevenue: rev.total, sessionCount, sessionPriceSum: priceSum });
     const myRun = runs.find((r) => r.trainer_id === uid && r.ym === ym) || null;
+    const preApp = preAppSessions(contracts, uid, ym);   // 앱 쓰기 전 이번 달 수업(첫 달 안내 · 2026-10-12)
     const confirmed = myRun?.final_total != null;
     const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
     // P2 — drill-down 파생. memberIds·ym·uid·logs·contracts·members는 이미 있음.
@@ -205,7 +207,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
       ym, memberIds, rev, target, closing, pay, myRun, confirmed, rate,
       nameById, displayName, revRows, refundRows,
       ptMemberIds, sessTotalAll, remAll, doneAll,
-      scheme, sessionCount, priceSum,
+      scheme, sessionCount, priceSum, preApp,
       payLines: payLinesForTrainer(logs, contracts, ym, uid), // 급여 내역(회원 × 계약) — 위 수업 수 · 수업료 합과 같은 거름
     };
   }, [members, contracts, logs, otRows, schemes, runs, uid, goals, contractNames]);
@@ -478,6 +480,11 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
       </details>
 
       <p className="text-[12px] leading-relaxed text-muted">{isSolo ? (manualPay ? "받은 금액은 내가 적은 금액이에요. 이번 달 안에 고칠 수 있어요." : "자동 계산은 이번 달 완료한 수업 기준이에요.") : "확정 전 예상 급여는 이번 달 완료한 수업으로 자동 계산한 금액이에요. 실제 지급액은 대표가 확정한 금액이에요."}</p>
+      {preApp > 0 && (
+        <p className="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] leading-relaxed text-amber-800">
+          앱 쓰기 전 이번 달 수업 {preApp}회는 급여 계산에 산입이 되지 않습니다. 본인이 이번 달 받는 수업료로 계산해서 따로 더해 주세요.
+        </p>
+      )}
       </>)}
         </>
       )}

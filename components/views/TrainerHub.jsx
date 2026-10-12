@@ -40,6 +40,8 @@ import ApptRequestToday from "@/components/views/ApptRequestToday";
 import PayrollConfirmedToday from "@/components/views/PayrollConfirmedToday";
 import InbodyDueToday from "@/components/views/InbodyDueToday";
 import RoutineRequestToday from "@/components/views/RoutineRequestToday";
+import BasicInfoToday from "@/components/views/BasicInfoToday";
+import StartChecklist from "@/components/home/StartChecklist";
 import PtEndToday from "@/components/views/PtEndToday";
 import PriceSheet from "@/components/salesbook/PriceSheet";
 import { useSalesbookAssets } from "@/components/salesbook/DeckLauncher";
@@ -235,6 +237,8 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
         </h1>
       </div>
 
+      <StartChecklist members={members} />
+
       {/* 오늘 — 고정. 숫자 2칸 + 다음 수업 바로가기 */}
       <Card as="section">
         <SectionTitle icon={CalendarDays} aside={
@@ -272,6 +276,7 @@ export default function TrainerHub({ members = [], uid, trainerName, onGo, onAdd
       <div className="[&>section]:mb-0 empty:hidden"><PayrollConfirmedToday uid={uid} /></div>
       {/* 루틴 요청 — 있을 때만(회원이 회원 전용 페이지에서 요청) */}
       <div className="[&>section]:mb-0 empty:hidden"><RoutineRequestToday members={scoped} onSelect={(mid) => go(mid, 13)} /></div>
+      <div className="[&>section]:mb-0 empty:hidden"><BasicInfoToday members={scoped} /></div>
       {/* PT 종료 처리할까요? — 남은 수업 0회 회원이 있을 때만 */}
       <div className="[&>section]:mb-0 empty:hidden"><PtEndToday members={scoped} onSelect={(mid) => go(mid, 11)} /></div>
 

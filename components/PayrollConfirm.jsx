@@ -18,7 +18,7 @@ import Button from "@/components/ui/Button";
 import NumberInput from "@/components/ui/NumberInput";
 import { inputCls } from "@/components/ui/Field";
 
-export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
+export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved, preApp = 0 }) {
   const isManual = pay?.computed == null;
   const confirmed = run?.final_total != null;
   const [final, setFinal] = useState(
@@ -62,6 +62,12 @@ export default function PayrollConfirm({ trainerId, ym, pay, run, onSaved }) {
 
   return (
     <div className="mt-3 rounded-xl border border-primary/30 bg-primary-soft p-3">
+      {/* 앱 쓰기 전 그달 수업(첫 달 · 회원 한꺼번에 등록 때 적은 것 · 2026-10-12) — 계산엔 안 넣고 알려만 */}
+      {preApp > 0 && (
+        <p className="mb-2 rounded-lg bg-card px-3 py-2 text-[13px] leading-relaxed text-amber-800">
+          앱 쓰기 전 이달 수업 {preApp}회는 급여 계산에 산입이 되지 않습니다. 트레이너의 이달 수업료로 계산해서 따로 더해 주세요.
+        </p>
+      )}
       <div className="flex items-center justify-between">
         <div className="text-[13px] font-semibold tracking-label-ko text-primary-strong">
           {isManual ? "자동계산 없음 · 최종액 입력" : "예상 급여"}
