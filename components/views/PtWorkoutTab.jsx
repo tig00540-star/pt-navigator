@@ -7,7 +7,6 @@
    ========================================================================= */
 
 import { useState, useEffect, useMemo } from "react";
-import MemberLinkNudge from "@/components/members/MemberLinkNudge";
 import dynamic from "next/dynamic";
 import { ChevronDown, ClipboardList, Dumbbell, History, LineChart, Minus, NotebookPen, RefreshCw, TrendingDown, TrendingUp, UserX, CheckCircle2, AlertTriangle, Pencil, Trash2, RotateCcw, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -47,6 +46,17 @@ function fmtDT(iso) {
   const d = new Date(iso);
   return isNaN(d) ? "" : d.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
+// 지난 수업 접힌 줄 날짜 '10월 5일 (일) 19:00'(한국 시간)
+function fmtDay(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const k = new Date(d.getTime() + 9 * 3600000);
+  const day = "일월화수목금토"[k.getUTCDay()];
+  return `${k.getUTCMonth() + 1}월 ${k.getUTCDate()}일 (${day}) ${String(k.getUTCHours()).padStart(2, "0")}:${String(k.getUTCMinutes()).padStart(2, "0")}`;
+}
+// 종목 볼륨 = 무게 × 횟수 합(맨몸 세트는 0)
+const exVolume = (ex) => (Array.isArray(ex?.sets) ? ex.sets : []).reduce((s, x) => s + (Number(x.weight) || 0) * (Number(x.reps) || 0), 0);
 // source 배지 정적 클래스 맵(Tailwind purge 안전 — 동적 조립 금지).
 const SOURCE_TONE = {
   manual: "border-line bg-elevate text-sub",
@@ -61,7 +71,6 @@ const weightTone = (d) => (d > 0 ? "good" : d < 0 ? "bad" : "flat");
 export default function PtWorkoutTab({ member, onMemberPatch, contracts, setContracts, logs, setLogs, confirms = [], loading, mode, children, header = null }) {
   const [showAllLogs, setShowAllLogs] = useState(false); // 지난 수업 — 기본 최근 5개
   const [attestOpen, setAttestOpen] = useState(false);    // 월별 수업 확인서(2026-10-06)
-  const [linkNudge, setLinkNudge] = useState(false);      // 일지 저장 뒤 회원 페이지 링크 안내(2026-10-12)
   const [body, setBody] = useState(""); // 손입력 수업 내용/피드백
   const [rawText, setRawText] = useState(""); // 음성 STT 원본(voice일 때만 저장)
   const [usedVoice, setUsedVoice] = useState(false); // 음성으로 채웠나 → source 판정
@@ -73,6 +82,8 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [logBusy, setLogBusy] = useState(false);      // 수정/void 진행 중(버튼 잠금)
   const [voidTarget, setVoidTarget] = useState(null); // 삭제 확인 모달 대상 log(null=닫힘)
   const [actionLogId, setActionLogId] = useState(null); // 수정 · 삭제 버튼을 펼친 일지(2026-10-11 · 카드마다 늘 보이던 버튼을 ⋯ 뒤로)
+  const [openLogs, setOpenLogs] = useState(() => new Set()); // 지난 수업 — 펼친 일지(2026-10-12 · 기본은 회차 · 날짜 한 줄)
+  const toggleLog = (id) => setOpenLogs((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   // 계약 등록 회복 모달(①/② 실패 회복 · ③ 재등록 씨앗) — 금액 4칸은 ContractAmountFields 재사용.
   const [showContract, setShowContract] = useState(false);
   const [cSessions, setCSessions] = useState("");
@@ -114,6 +125,9 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const timeline = [...logs].sort(
     (a, b) => new Date(b.session_at ?? b.created_at ?? 0) - new Date(a.session_at ?? a.created_at ?? 0)
   );
+  // 회차 = 이 회원의 몇 번째 수업(취소 제외 · 노쇼 포함 = 차감된 수업) · 오래된 것부터 1.
+  const sessionNo = new Map();
+  [...timeline].reverse().filter((l) => !l.voided).forEach((l, i) => sessionNo.set(l.id, i + 1));
 
   // log_id → 확인 상태(확정). confirm 레코드가 있으면 확정 · content_hash 보관(아래 해시 대조).
   //   2026-10-06: method 'auto' = 48시간 자동 확인(DB cron) · '내용이 달라요'(dispute)는 아래 openDispute로 따로.
@@ -307,7 +321,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       return;
     }
     setLogs((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 −1
-    if (payload.source !== "noshow" && !member.member_auth_id) setLinkNudge(true);   // 회원 페이지를 아직 안 열어 본 회원
     if (payload.source !== "noshow") notifyPush(authHeader(), "log_written", data[0].id);   // 회원 폰으로 '운동일지 확인해 주세요'(알림 켠 회원만)
     // 오늘(KST) 이 회원의 '예약' 하나를 자동으로 '완료'로 연결 — 스케줄에서 또 누르지 않게 · 미처리 예약으로 안 뜨게(대표 결정 2026-10-06).
     //   지금 시각에 가장 가까운 예약 하나. 실패해도 일지는 이미 저장됐으니 조용히 넘어간다(콘솔만).
@@ -491,44 +504,55 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                 <p className="text-sm text-muted">아직 기록된 수업이 없습니다.</p>
               ) : (
                 <ul className="space-y-2">
-                  {(showAllLogs ? timeline : timeline.slice(0, 5)).map((log) => (
-                    <li
-                      key={log.id}
-                      className={`rounded-xl border border-line bg-elevate p-3 ${log.voided ? "opacity-50" : ""}`}
-                    >
+                  {(showAllLogs ? timeline : timeline.slice(0, 5)).map((log) => {
+                    // 접힌 줄 = 회차 · 날짜 · 상태만(2026-10-12 대표) → 누르면 종목 · 세트 · 볼륨 · 글 · 서명 · 수정/삭제.
+                    const logConfirms = (confirms || []).filter((x) => x.log_id === log.id);
+                    const dispute = !log.voided ? openDispute(log, logConfirms) : null;
+                    const c = confirmByLog.get(log.id);
+                    const open = openLogs.has(log.id) || editLogId === log.id;
+                    const exs = Array.isArray(log.sets_structured) ? log.sets_structured : [];
+                    const totalVol = exs.reduce((s, ex) => s + exVolume(ex), 0);
+                    const no = sessionNo.get(log.id);
+                    return (
+                    <li key={log.id} className={`rounded-xl border border-line bg-elevate ${log.voided ? "opacity-60" : ""}`}>
+                      <button type="button" onClick={() => toggleLog(log.id)} aria-expanded={open}
+                        className="flex min-h-[48px] w-full items-center gap-2 px-3 py-2 text-left">
+                        <span className="w-[52px] shrink-0 text-[13px] font-bold text-pt-text">{no ? `${no}회차` : "취소"}</span>
+                        <span className={`min-w-0 flex-1 truncate text-[14px] font-semibold text-ink ${log.voided ? "line-through" : ""}`}>{fmtDay(log.session_at ?? log.created_at)}</span>
+                        {log.voided ? (
+                          <Badge tone="neutral">취소됨</Badge>
+                        ) : log.source === "noshow" ? (
+                          <Badge tone="danger">노쇼</Badge>
+                        ) : c?.result === "confirm" ? (
+                          changedIds.has(log.id)
+                            ? <Badge tone="danger"><AlertTriangle className="h-3 w-3" />변경됨</Badge>
+                            : <Badge tone="primary"><CheckCircle2 className="h-3 w-3" />{c.method === "auto" ? "자동 확인" : "확인됨"}</Badge>
+                        ) : dispute ? (
+                          <Badge tone="danger"><AlertTriangle className="h-3 w-3" />내용이 달라요</Badge>
+                        ) : (
+                          <Badge tone="neutral">미확인</Badge>
+                        )}
+                        <ChevronDown className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+                      </button>
+                      {/* '내용이 달라요'는 접혀 있어도 보인다(트레이너가 바로 고쳐야 하는 것). */}
+                      {dispute && (
+                        <p className="mx-3 mb-2.5 rounded-md bg-rose-50 px-2.5 py-2 text-[13px] leading-relaxed text-danger-text">
+                          {dispute.dispute_note ? <>회원 메모: &ldquo;{dispute.dispute_note}&rdquo;<br /></> : null}
+                          내용을 고치면 회원에게 다시 확인을 받아요. 받지 않은 수업이면 삭제해 주세요.
+                        </p>
+                      )}
+                      {open && (
+                      <div className="border-t border-line px-3 pb-3 pt-2.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[13px] font-semibold text-ink">{fmtDT(log.session_at ?? log.created_at)}</span>
                         {log.source && (
                           <span className={`rounded-md border px-1.5 py-0.5 text-[12px] font-semibold ${SOURCE_TONE[log.source] ?? "border-line bg-elevate text-sub"}`}>
                             {labelOf(SOURCE_OPTS, log.source)}
                           </span>
                         )}
-                        {log.sent_at && (
-                          <span className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-0.5 text-[12px] font-medium text-primary-strong">
-                            카톡 전송
-                          </span>
+                        {c?.result === "confirm" && changedIds.has(log.id) && <span className="text-[12px] font-semibold text-danger-text">회원 확인 뒤 내용이 바뀌었어요</span>}
+                        {c?.result === "confirm" && c.confirmed_at && (
+                          <span className="text-[12px] text-muted">{c.method === "auto" ? "자동 확인" : "회원 확인"} {new Date(c.confirmed_at).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</span>
                         )}
-                        {log.voided && (
-                          <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[12px] font-semibold text-amber-700">
-                            취소됨
-                          </span>
-                        )}
-                        {/* 회원 확인 상태 — 노쇼/취소는 확인 대상 아님(라우트가 400)이라 뱃지 안 붙임. */}
-                        {!log.voided && log.source !== "noshow" && (() => {
-                          const c = confirmByLog.get(log.id);
-                          if (c?.result === "confirm") {
-                            return (
-                              <>
-                                <Badge tone="primary"><CheckCircle2 className="h-3 w-3" />{c.method === "auto" ? "자동 확인" : "확인됨"} {c.confirmed_at ? new Date(c.confirmed_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : ""}</Badge>
-                                {changedIds.has(log.id) && (
-                                  <Badge tone="danger"><AlertTriangle className="h-3 w-3" />확인 후 변경됨</Badge>
-                                )}
-                              </>
-                            );
-                          }
-                          if (openDispute(log, (confirms || []).filter((x) => x.log_id === log.id))) return <Badge tone="danger"><AlertTriangle className="h-3 w-3" />회원: 내용이 달라요</Badge>;
-                          return <Badge tone="neutral">미확인</Badge>;
-                        })()}
                         {!log.voided && editLogId !== log.id && (
                           <button type="button" onClick={() => setActionLogId((v) => (v === log.id ? null : log.id))}
                             aria-label="수정 · 삭제" aria-expanded={actionLogId === log.id}
@@ -537,31 +561,34 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                           </button>
                         )}
                       </div>
-                      {sigs.get(log.id) && (
-                        <div className="mt-1.5 flex items-center gap-2">
-                          {sigs.get(log.id).url && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={sigs.get(log.id).url} alt="회원 서명" className="h-10 w-auto rounded border border-line bg-white" />
+                      {exs.length > 0 && (
+                        <ul className="mt-2 divide-y divide-line rounded-lg border border-line bg-card">
+                          {exs.map((ex, i) => {
+                            const sets = Array.isArray(ex.sets) ? ex.sets : [];
+                            const vol = exVolume(ex);
+                            return (
+                              <li key={i} className="px-2.5 py-2">
+                                <div className="flex items-baseline justify-between gap-2">
+                                  <span className="min-w-0 truncate text-[13px] font-semibold text-ink">{ex.exercise}</span>
+                                  <span className="shrink-0 text-[12px] text-muted">{sets.length}세트{vol > 0 ? ` · 볼륨 ${vol.toLocaleString("ko-KR")}kg` : ""}</span>
+                                </div>
+                                <div className="mt-0.5 text-[12px] text-sub">
+                                  {sets.map((s) => `${s.weight != null && s.weight !== "" ? `${s.weight}kg` : "맨몸"}×${s.reps ?? "–"}`).join(" · ")}
+                                </div>
+                              </li>
+                            );
+                          })}
+                          {totalVol > 0 && exs.length > 1 && (
+                            <li className="flex justify-between px-2.5 py-2 text-[12px] font-semibold text-ink">
+                              <span>총 볼륨</span><span>{totalVol.toLocaleString("ko-KR")}kg</span>
+                            </li>
                           )}
-                          <span className="text-[12.5px] text-sub">
-                            회원 서명 · {(() => { const d = new Date(sigs.get(log.id).signed_at); const h = d.getHours(); return `${d.getMonth() + 1}/${d.getDate()} ${h < 12 ? "오전" : "오후"} ${h % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}`; })()}
-                            {sigs.get(log.id).after_auto ? " (자동 확인 뒤)" : ""}
-                          </span>
-                        </div>
+                        </ul>
                       )}
-                      {!log.voided && (() => {
-                        const d = openDispute(log, (confirms || []).filter((x) => x.log_id === log.id));
-                        return d ? (
-                          <p className="mt-1.5 rounded-md bg-rose-50 px-2.5 py-2 text-[13px] leading-relaxed text-danger-text">
-                            {d.dispute_note ? <>회원 메모: &ldquo;{d.dispute_note}&rdquo;<br /></> : null}
-                            내용을 고치면 회원에게 다시 확인을 받아요. 받지 않은 수업이면 삭제해 주세요.
-                          </p>
-                        ) : null;
-                      })()}
                       {editLogId === log.id ? (
                         /* §1 인라인 편집 — ai_summary만. */
                         <div className="mt-2">
-                          {confirmByLog.get(log.id)?.result === "confirm" && (
+                          {c?.result === "confirm" && (
                             <p className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[12px] leading-relaxed text-amber-700">
                               ⚠️ 이미 회원이 확인한 수업이에요. 수정하면 회원 화면에 &lsquo;변경됨&rsquo;으로 표시됩니다.
                             </p>
@@ -578,35 +605,25 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                             <Button variant="primary" size="sm" fullWidth onClick={() => saveEdit(log)} disabled={logBusy}>저장</Button>
                           </div>
                         </div>
-                      ) : log.source === "noshow" ? (
-                        <p className="mt-1.5 text-sm font-medium text-amber-700">노쇼</p>
-                      ) : log.ai_summary ? (
-                        <details className="group mt-1.5">
-                          {/* 힌트는 summary 안에 둔다 — 네이티브 details는 닫힘 시 summary 외 자식을 숨기므로. */}
-                          <summary className={`cursor-pointer list-none group-open:hidden ${log.voided ? "line-through" : ""}`}>
-                            <span className="text-sm text-sub line-clamp-3">
-                              {log.ai_summary}
-                            </span>
-                            <span className="mt-1 block text-[12px] font-medium text-muted">더 보기</span>
-                          </summary>
-                          <p className={`hidden whitespace-pre-wrap text-sm text-sub group-open:block ${log.voided ? "line-through" : ""}`}>
-                            {log.ai_summary}
-                          </p>
-                        </details>
-                      ) : !(Array.isArray(log.sets_structured) && log.sets_structured.length) ? (
-                        <p className="mt-1.5 text-sm text-muted">본문 없음</p>
+                      ) : log.source === "noshow" ? null : log.ai_summary ? (
+                        <p className={`mt-2 whitespace-pre-wrap text-sm leading-relaxed text-sub ${log.voided ? "line-through" : ""}`}>{log.ai_summary}</p>
+                      ) : exs.length === 0 ? (
+                        <p className="mt-2 text-sm text-muted">본문 없음</p>
                       ) : null}
-                      {Array.isArray(log.sets_structured) && log.sets_structured.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {log.sets_structured.map((ex, i) => (
-                            <span key={i} className="rounded-md border border-line bg-card px-1.5 py-0.5 text-[12px] text-sub">
-                              {ex.exercise} {(Array.isArray(ex.sets) ? ex.sets : []).map((s) => `${s.weight ?? "–"}${s.weight != null ? "kg" : ""}×${s.reps ?? "–"}`).join("·")}
-                            </span>
-                          ))}
+                      {sigs.get(log.id) && (
+                        <div className="mt-2 flex items-center gap-2">
+                          {sigs.get(log.id).url && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={sigs.get(log.id).url} alt="회원 서명" className="h-10 w-auto rounded border border-line bg-white" />
+                          )}
+                          <span className="text-[12.5px] text-sub">
+                            회원 서명 · {(() => { const d = new Date(sigs.get(log.id).signed_at); const h = d.getHours(); return `${d.getMonth() + 1}/${d.getDate()} ${h < 12 ? "오전" : "오후"} ${h % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}`; })()}
+                            {sigs.get(log.id).after_auto ? " (자동 확인 뒤)" : ""}
+                          </span>
                         </div>
                       )}
                       {/* §1·§2 수정/삭제 — 편집 중엔 자체 버튼이 있어 숨김. voided면 무르기(하드 DELETE 금지 — 서명 cascade). */}
-                      {editLogId !== log.id && (log.voided || actionLogId === log.id || openDispute(log, (confirms || []).filter((x) => x.log_id === log.id))) && (
+                      {editLogId !== log.id && (log.voided || actionLogId === log.id || dispute) && (
                         <div className="mt-2.5 flex justify-end gap-1.5 border-t border-line pt-2">
                           {log.voided ? (
                             <Button variant="ghost" size="sm" onClick={() => setVoided(log, false)} disabled={logBusy}>
@@ -626,8 +643,11 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                           )}
                         </div>
                       )}
+                      </div>
+                      )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
               {timeline.length > 5 && (
@@ -708,7 +728,6 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <UserX className="h-4 w-4" /> 노쇼 차감
           </Button>
         </div>
-        {linkNudge && <MemberLinkNudge member={member} onMemberPatch={onMemberPatch} onClose={() => setLinkNudge(false)} />}
       </Card>
       )}
 

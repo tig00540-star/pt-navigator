@@ -26,7 +26,7 @@ const ITEMS = {
   members:  { label: "기존 회원 옮겨 오기", sub: "여러 명 한꺼번에 · 남은 수업까지", href: "/members/import" },
   assign:   { label: "회원 옮겨 오기 · 트레이너 배정", sub: "여러 명 한꺼번에 · 담당까지", href: "/members/import" },
   log:      { label: "첫 운동일지 말로 남기기", href: "/members/pt" },
-  link:     { label: "회원에게 회원 전용 페이지 링크 보내기", sub: "운동일지를 저장하면 안내가 떠요", href: "/members/pt" },
+  link:     { label: "회원에게 회원 전용 페이지 링크 보내기", sub: "회원 화면 › 케어 › 회원 전용 페이지에서 링크를 복사해요", href: "/members/pt" },
   goal:     { label: "회원 목표 · 첫 인바디", href: "/members/pt", ai: true },
   ot:       { label: "첫 OT 대본 만들어 보기", href: "/members/ot" },
   fav:      { label: "자주 쓰는 영상 별표", href: "/settings/library", ai: true },
