@@ -12,6 +12,7 @@ import { Salad } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { fetchByIds } from "@/lib/fetchByIds";
+import { remainingSessions } from "@/lib/memberStatus";
 import { dietToday, addDays, DIET_AUTO_AFTER_MIN, DIET_AUTO_SEQ } from "@/lib/diet";
 import { useAiLocked } from "@/components/ui/AiQuota";
 import ToneCard from "@/components/ui/ToneCard";
@@ -31,8 +32,18 @@ export default function DietToday({ members = [], onSelect }) {
       if (!ids.length) { if (!cancelled) setRows([]); return; }
       const { data: plans, error } = await fetchByIds(supabase, "diet_plan", "member_id, started_on", "member_id", ids, (q) => q.eq("enabled", true), { orderColumn: "member_id" });
       if (error || !plans?.length) { if (!cancelled) setRows([]); return; }
-      const on = plans.map((p) => p.member_id);
-      await read(plans, on);
+      // 남은 수업 0회 = 식단도 끝(2026-10-12 대표 · 회원 페이지도 쓰기 잠금) → 알림에서 뺀다
+      const pids = plans.map((p) => p.member_id);
+      const [cs, ls] = await Promise.all([
+        fetchByIds(supabase, "session_log", "id, user_id, sessions_total, service_sessions, handed_over", "user_id", pids),
+        fetchByIds(supabase, "daily_workout_log", "id, user_id, contract_id, voided", "user_id", pids),
+      ]);
+      const left = (id) => (cs.data || []).filter((c) => c.user_id === id)
+        .reduce((n, c) => n + remainingSessions(c, (ls.data || []).filter((l) => l.user_id === id)).total, 0);
+      const live = cs.error || ls.error ? plans : plans.filter((p) => left(p.member_id) > 0);
+      if (!live.length) { if (!cancelled) setRows([]); return; }
+      const on = live.map((p) => p.member_id);
+      await read(live, on);
       // 트레이너가 안 한 답 · 피드백 → AI가 대신(몇 분 걸릴 수 있어 기다리지 않음 · 보낸 게 있으면 한 번 다시 읽음)
       (async () => {
         try {

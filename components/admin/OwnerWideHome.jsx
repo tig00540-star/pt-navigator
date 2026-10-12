@@ -13,7 +13,7 @@ import { useMemo } from "react";
 import { AlertTriangle, ArrowRight, ChevronRight, Filter, Target } from "lucide-react";
 import Card from "@/components/ui/Card";
 import { manwon, won } from "@/lib/format";
-import { ownerBriefing, revenueCompositionInMonth, otFunnel, reregisterStats } from "@/lib/memberStatus";
+import { ownerBriefing, revenueCompositionInMonth, otFunnel, reregisterStats, newClosingInMonth } from "@/lib/memberStatus";
 import OwnerOverview from "@/components/admin/OwnerOverview";
 
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
@@ -58,6 +58,7 @@ export default function OwnerWideHome({
 
   const funnel = useMemo(() => otFunnel(visible, otRows), [visible, otRows]);
   const rereg = useMemo(() => reregisterStats(contracts), [contracts]);
+  const closing = useMemo(() => newClosingInMonth(visible, otRows, contracts, ym), [visible, otRows, contracts, ym]);
   const stages = [
     { label: "OT 회원", n: funnel.intake },
     { label: "1차 OT", n: funnel.first },
@@ -140,8 +141,9 @@ export default function OwnerWideHome({
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3 text-center">
             <div>
-              <div className="text-[12px] text-muted">클로징률</div>
-              <div className="text-[18px] font-bold text-ink">{pct(funnel.intake ? funnel.confirmed / funnel.intake : null)}</div>
+              <div className="text-[12px] text-muted">이번 달 신규 클로징률</div>
+              <div className="text-[18px] font-bold text-ink">{pct(closing.rate)}</div>
+              {closing.den > 0 && <div className="text-[12px] text-muted">OT {closing.den}명 중 {closing.num}명</div>}
             </div>
             <div>
               <div className="text-[12px] text-muted">재등록률</div>

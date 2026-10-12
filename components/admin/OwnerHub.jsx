@@ -13,7 +13,7 @@ import { ArrowRight, CalendarDays, ChevronRight, LayoutDashboard, Receipt, Repea
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { manwon } from "@/lib/format";
-import { ownerBriefing, revenueCompositionInMonth, otFunnel, reregisterStats, viewFor } from "@/lib/memberStatus";
+import { ownerBriefing, revenueCompositionInMonth, otFunnel, reregisterStats, viewFor, newClosingInMonth } from "@/lib/memberStatus";
 
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 const ymdKST = (d) => new Date(d.getTime() + 9 * 3600000).toISOString().slice(0, 10);
@@ -59,9 +59,10 @@ export default function OwnerHub({
 
   const rev = revenueCompositionInMonth(contracts, ym);
   const target = goals.filter((g) => g && g.ym === ym && g.target_revenue != null).reduce((s, g) => s + (g.target_revenue || 0), 0) || null;
-  const funnel = otFunnel(visible, otRows);
+  const funnel = otFunnel(visible, otRows);   // 바로가기 칸 'OT 회원 N명'(누적)
   const rereg = reregisterStats(contracts);
-  const convRate = funnel.intake ? funnel.confirmed / funnel.intake : null;
+  // 클로징률 = 이번 달 신규(PT 등록한 달 기준 · 2026-10-12 대표)
+  const closing = newClosingInMonth(visible, otRows, contracts, ym);
 
   // 오늘(KST) 센터 전체 예약 · 취소 제외.
   const today = ymdKST(now);
@@ -88,7 +89,7 @@ export default function OwnerHub({
           <Stat label="오늘 수업" value={`${todays.length}건`} sub={todays.length ? `완료 ${done} · 남음 ${todays.length - done}` : "예약 없음"} />
           <Stat label="오늘 신규 OT" value={`${newOt}명`} accent={newOt > 0} sub={newOt ? "등록 기회" : "없음"} />
           <Stat label="이달 매출" value={manwon(rev.net)} sub={target ? `목표의 ${pct(rev.net / target)}` : `신규 ${rev.cntNew} · 재등록 ${rev.cntRe}건`} />
-          <Stat label="클로징률 · 재등록률" value={`${pct(convRate)} · ${pct(rereg.rate)}`} sub="누적 기준" />
+          <Stat label="이번 달 신규 클로징률" value={pct(closing.rate)} sub={closing.den ? `OT ${closing.den}명 중 ${closing.num}명 등록 · 재등록률 ${pct(rereg.rate)}` : `재등록률 ${pct(rereg.rate)}`} />
         </div>
         <button type="button" onClick={() => onGoTab("briefing")}
           className="mt-3 flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl bg-primary px-4 text-left text-white transition hover:bg-primary-strong active:scale-[0.99]">

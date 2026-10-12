@@ -21,6 +21,12 @@ import { useToast } from "@/hooks/useToast";
 import ContractAmountFields from "@/components/views/ContractAmountFields";
 import { SOURCE_OPTS, labelOf } from "@/lib/labels";
 import { hasVal } from "@/lib/format";
+import { kstToday } from "@/lib/date";
+
+// 수업 날짜 고르기(2026-10-12 대표) — 사정상 2~3일 늦게 써도 그날 수업으로. 14일 전까지.
+const LOG_BACK_DAYS = 14;
+const addDaysYmd = (ymd, n) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+const ymdLabel = (ymd) => { const d = new Date(`${ymd}T00:00:00Z`); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${"일월화수목금토"[d.getUTCDay()]})`; };
 import SetsEditor from "@/components/views/SetsEditor";
 import Sparkline from "@/components/ui/Sparkline";
 import { cleanStructured, buildExerciseSeries } from "@/lib/workout";
@@ -81,7 +87,8 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [editText, setEditText] = useState("");
   const [logBusy, setLogBusy] = useState(false);      // 수정/void 진행 중(버튼 잠금)
   const [voidTarget, setVoidTarget] = useState(null); // 삭제 확인 모달 대상 log(null=닫힘)
-  const [noshowArm, setNoshowArm] = useState(false);   // 노쇼 차감은 두 번 눌러야(바로 옆 저장 버튼과 헷갈려 한 번에 빠지던 것 · 2026-10-12)
+  const [noshowArm, setNoshowArm] = useState(false);
+  const [logDay, setLogDay] = useState(() => kstToday());   // 수업 날짜(한국 시간 'YYYY-MM-DD')   // 노쇼 차감은 두 번 눌러야(바로 옆 저장 버튼과 헷갈려 한 번에 빠지던 것 · 2026-10-12)
   const [actionLogId, setActionLogId] = useState(null); // 수정 · 삭제 버튼을 펼친 일지(2026-10-11 · 카드마다 늘 보이던 버튼을 ⋯ 뒤로)
   const [openLogs, setOpenLogs] = useState(() => new Set()); // 지난 수업 — 펼친 일지(2026-10-12 · 기본은 회차 · 날짜 한 줄)
   const toggleLog = (id) => setOpenLogs((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -272,6 +279,22 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const saveLog = async (source) => {
     if (saving) return;
     setSaving(true);
+    const today = kstToday();
+    const pastDay = logDay && logDay < today ? logDay : null;
+    const dayStartIso = new Date(`${pastDay || today}T00:00:00+09:00`).toISOString();
+    const dayEndIso = new Date(Date.parse(dayStartIso) + 86400000).toISOString();
+    // 그날 이 회원의 아직 처리 안 한 예약(지난 날이면 수업 시각으로 쓰고, 저장 뒤 '완료'로 잇는다)
+    let dayAppts = [];
+    if (supabase) {
+      try {
+        const { data: ap } = await supabase.from("appointment").select("id, start_at")
+          .eq("user_id", member.id).eq("status", "booked").gte("start_at", dayStartIso).lt("start_at", dayEndIso);
+        dayAppts = ap || [];
+      } catch { /* 예약을 못 읽어도 저장은 한다 */ }
+    }
+    const sessionAtIso = pastDay
+      ? ([...dayAppts].sort((x, y) => String(x.start_at).localeCompare(String(y.start_at)))[0]?.start_at || new Date(`${pastDay}T12:00:00+09:00`).toISOString())
+      : new Date().toISOString();
     // 비노쇼면 저장 전 body 카톡 복사(성공 시 sent_at 증거 프록시).
     let copied = false;
     let sentAt = null;
@@ -284,7 +307,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       ai_summary: source === "noshow" ? null : body.trim() || null,
       raw_voice_text: source === "voice" ? rawText || null : null,
       contract_id: active?.id ?? null, // 계약 없음/전소진이면 null(안전)
-      session_at: new Date().toISOString(), // 기본 now (수정 UI는 후속)
+      session_at: sessionAtIso, // 오늘 = 지금 · 지난 날 = 그날 예약 시각(없으면 낮 12시) · 2026-10-12
       source,
       sent_at: sentAt,
       sets_structured:
@@ -323,22 +346,18 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     }
     setLogs((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 −1
     if (payload.source !== "noshow") notifyPush(authHeader(), "log_written", data[0].id);   // 회원 폰으로 '운동일지 확인해 주세요'(알림 켠 회원만)
-    // 오늘(KST) 이 회원의 '예약' 하나를 자동으로 '완료'로 연결 — 스케줄에서 또 누르지 않게 · 미처리 예약으로 안 뜨게(대표 결정 2026-10-06).
-    //   지금 시각에 가장 가까운 예약 하나. 실패해도 일지는 이미 저장됐으니 조용히 넘어간다(콘솔만).
+    // 그날(고른 날짜 · KST) 이 회원의 '예약' 하나를 자동으로 '완료'로 연결 — 스케줄에서 또 누르지 않게 · 미처리 예약으로 안 뜨게(대표 결정 2026-10-06).
+    //   수업 시각에 가장 가까운 예약 하나. 실패해도 일지는 이미 저장됐으니 조용히 넘어간다(콘솔만).
     try {
-      const ymdK = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
-      const dayStart = new Date(`${ymdK}T00:00:00+09:00`).toISOString();
-      const dayEnd = new Date(Date.parse(dayStart) + 86400000).toISOString();
-      const { data: todays } = await supabase.from("appointment").select("id, start_at")
-        .eq("user_id", member.id).eq("status", "booked").gte("start_at", dayStart).lt("start_at", dayEnd);
-      if (todays && todays.length) {
-        const nowMs = Date.now();
-        const pick = [...todays].sort((x, y) => Math.abs(Date.parse(x.start_at) - nowMs) - Math.abs(Date.parse(y.start_at) - nowMs))[0];
+      if (dayAppts.length) {
+        const atMs = Date.parse(sessionAtIso);
+        const pick = [...dayAppts].sort((x, y) => Math.abs(Date.parse(x.start_at) - atMs) - Math.abs(Date.parse(y.start_at) - atMs))[0];
         const { error: ae } = await supabase.from("appointment").update({ status: "done", log_id: data[0].id }).eq("id", pick.id).select("id");
         if (ae) console.error("오늘 예약 자동 완료 실패", ae);
       }
     } catch (e) { console.error("오늘 예약 자동 완료 실패", e); }
     if (source !== "noshow") clearForm();
+    setLogDay(kstToday());
     // 남은 계약이 없으면 contract_id가 비어 차감 · 급여에 안 들어간다 → '차감'이라고 하지 않는다(2026-10-12 점검).
     const ded = data[0].contract_id ? "수업 1회 차감했어요" : "남은 계약이 없어 차감하지 않았어요. 계약을 먼저 등록해 주세요";
     showToast(
@@ -726,6 +745,21 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <SetsEditor value={sets} onChange={setSets} disabled={saving || loading} machineOptions={machineOptions} />
           </div>
         </details>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label htmlFor="log-day" className="text-[13px] font-semibold text-sub">수업 날짜</label>
+          <input id="log-day" type="date" value={logDay} max={kstToday()} min={addDaysYmd(kstToday(), -LOG_BACK_DAYS)}
+            onChange={(e) => setLogDay(e.target.value || kstToday())} disabled={saving || loading}
+            className="min-h-[40px] rounded-lg border border-line bg-elevate px-3 text-[14px] text-ink outline-none focus:border-primary" />
+          {logDay !== kstToday() && (
+            <button type="button" onClick={() => setLogDay(kstToday())} className="min-h-[36px] rounded-lg px-2 text-[13px] font-semibold text-sub hover:text-ink">오늘로</button>
+          )}
+        </div>
+        {logDay && logDay < kstToday() && (
+          <p className="mt-2 rounded-lg bg-elevate px-3 py-2 text-[13px] leading-relaxed text-sub">
+            {`${ymdLabel(logDay)} 수업으로 저장돼요.`} 그날 잡혀 있던 예약이 있으면 그 시각으로 적고 예약도 &lsquo;완료&rsquo;로 바꿔요.
+            {logDay.slice(0, 7) !== kstToday().slice(0, 7) && <b className="mt-1 block text-ot-text">지난달 수업이라 지난달 급여에 들어가요. 지난달 급여가 이미 확정됐다면 대표에게 알려 주세요.</b>}
+          </p>
+        )}
         {!loading && !active && (
           <p className="mt-3 rounded-lg bg-ot-soft px-3 py-2 text-[13px] leading-relaxed text-ot-text">
             남은 계약이 없어요. 지금 저장하면 수업이 차감되지 않고 급여에도 들어가지 않아요. 재등록했다면 계약을 먼저 등록해 주세요.

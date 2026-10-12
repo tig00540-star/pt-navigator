@@ -261,6 +261,10 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **사례 사진 경로는 믿지 않는다:** 저장소 규칙 · 내려받기 · '내 자료 가져오기' 모두 그 계정 폴더 · 그 계정 회원 폴더만.
 - **1차 대본 '최신 아님' 해시:** 신청서 건강 체크 · 주 몇 번 등까지 포함(`inputHashV: 2` · 옛 대본은 옛 해시로 비교). 대본 가격은 **담당 트레이너 가격표**(`loadPackagesFor`). AI JSON 목록 칸은 서버가 배열로 고쳐 저장.
 - **비밀번호 찾기**(2026-10-12): 로그인 카드 '비밀번호를 잊었어요' → `resetPasswordForEmail(redirectTo /reset-password)` · 가입 여부와 상관없이 같은 안내 · `/login?forgot=1` → `app/reset-password`(복구 세션 → `PasswordChange forced` → 앱) · AuthGate는 이 주소를 게이트 없이 통과 · `PASSWORD_RECOVERY` 세션이 다른 주소에 떨어지면 /reset-password로. ⚠️ Supabase Auth Redirect URLs에 `https://www.onlytrainer.co.kr/reset-password` 필요 · 메일 발송(SMTP) 설정 확인.
+- **남은 수업 0회 = 회원 페이지에서 요청 전부 불가 · 식단도 끝**(2026-10-12 대표 · SQL `2026-10-12-member-lock.sql`): 이벤트 참여도 `auth_member_writable()` · 회원 홈에서 이벤트 · 식단 카드 숨김 · 트레이너 '오늘' 식단 카드에서 그 회원 제외 · 케어 탭 식단 카드 '멈췄어요'. 운동일지 확인 · 동의 철회 · 요청 취소는 그대로.
+- **수업 날짜 고르기**(2026-10-12 대표): PT 자료남기기 일지 칸에 날짜(오늘 ~ 14일 전) · 지난 날 = 그날 예약 시각(없으면 낮 12시)으로 `session_at` · 그날 예약을 '완료'로 이음 · 지난달이면 급여 안내. **급여 · 출석 달은 `session_at`(한국 시간) 기준**이라 늦게 써도 그날로 들어가게.
+- **클로징률 정본 = 이번 달 신규 클로징률**(2026-10-12 대표 · `newClosingInMonth` · PT 등록한 달 기준): 분자 = 그달 신규 PT 계약(kind new · 매출)을 시작한 OT 회원 · 분모 = 그달 OT를 받은 회원(otHeld · ot_log.created_at) + 분자. 대표 홈 · 넓은 홈 · 등록·이탈(머리 숫자 + '달마다' 그래프 `newClosingByMonth`) · 트레이너 탭(리더보드 '이달 클로징' · 옛 1차/2차 칸 대체) · 내 실적 · 월간 실적 · 월간 결산(`lib/monthlyReport`)이 같은 숫자. 깔때기(누적)는 참고로 남김 · 매출 예측(RevenuePipeline)과 '오늘 코칭할 것'은 누적 · 차수별 그대로.
+- 공휴일(`lib/holidays`): 2026 제헌절 · 지방선거 추가 · 2027(노동절 · 제헌절 공휴일 · 대체 포함). 해마다 갱신.
 - 없는 주소 = `app/not-found.jsx`(한글). 서버 오류 문구도 해요체 · 개발 용어 없음(`requireTrainer` · billing · voice-log · ot-brief).
 
 ### 처음 시작하기 · 회원 한꺼번에 등록 (2026-10-12 · SQL `docs/migrations/2026-10-12-bulk-members.sql` · 설계 `docs/v2-계획-처음시작-회원일괄등록.md`)

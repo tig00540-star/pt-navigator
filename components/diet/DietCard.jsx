@@ -27,7 +27,7 @@ import { DietDayModal, DietRequestModal } from "@/components/diet/DietPanels";
 const chip = (on) => `min-h-[36px] rounded-full px-3 text-[13px] transition ${on ? "bg-ink font-semibold text-white" : "bg-elevate text-sub hover:text-ink"}`;
 const fmtK = (n) => (n == null ? "-" : Number(n).toLocaleString());
 
-export default function DietCard({ member }) {
+export default function DietCard({ member, noSessions = false }) {
   const { toast, showToast } = useToast();
   const [state, setState] = useState(null);     // null=읽는 중 · {missing} · {plan, consent, inbody, days, meals, reqs}
   const [sheet, setSheet] = useState(false);
@@ -109,6 +109,11 @@ export default function DietCard({ member }) {
       <SectionTitle icon={Salad} aside={on ? <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[12px] font-semibold text-sky-700">켜짐</span> : null}>
         식단{on ? ` · ${purposeLabel(plan.purpose)}${plan.goal_kg ? ` ${plan.months}개월 ${plan.goal_kg > 0 ? "+" : "−"}${Math.abs(plan.goal_kg)}kg` : ""}` : ""}
       </SectionTitle>
+      {on && noSessions && (
+        <p className="m-0 mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] leading-relaxed text-amber-800">
+          남은 수업이 없어서 식단도 멈췄어요. 회원은 끼니를 올리거나 식단을 요청할 수 없어요. 재등록하면 다시 열려요.
+        </p>
+      )}
 
       {!on ? (
         <>

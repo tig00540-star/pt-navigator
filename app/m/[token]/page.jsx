@@ -1158,13 +1158,13 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         <TransferAsk supabase={memberSupabase} onMoved={() => window.location.reload()} />
 
         {/* 이벤트(옛 '트레이너 포상' 대신 · 열린 게 있을 때만) */}
-        {!ended && <MemberEvents supabase={memberSupabase} />}
+        {!readOnly && <MemberEvents supabase={memberSupabase} />}
 
         {/* 운동일지 알림 받기 — 꺼져 있을 때만 한 줄(켜지면 맨 아래 '알림 받는 중 · 끄기') */}
         {!ended && <MemberPushCard supabase={memberSupabase} place="home" />}
 
         {/* 식단 피드백 · 새로 온 식단 답(트레이너가 식단 관리를 켠 회원만 · 2026-10-11) */}
-        {!ended && <DietFeedbackHome supabase={memberSupabase} onGoWrite={readOnly ? null : () => goTab("write")} />}
+        {!readOnly && <DietFeedbackHome supabase={memberSupabase} onGoWrite={() => goTab("write")} />}
 
         {/* 내 PT — 남은 수업 + 수업 일정(예약 · 변경 · 취소 요청 · 지난 회원은 '다음 수업' 한 줄) + 목표 로드맵(접힘) */}
         <MyPtCard supabase={memberSupabase}>

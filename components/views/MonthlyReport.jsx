@@ -12,12 +12,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import { labelOf, CLOSING_APPROACH_OPTS, CLOSING_REASON_OPTS, REG_REASON_OPTS } from "@/lib/labels";
-import {
-  revenueByTrainer, sessionCountByTrainer, sessionPriceSumByTrainer,
-  payLinesForTrainer, revenueContractsInMonth, refundsInMonth,
-  resolveScheme, payForScheme, closingStats,
-  closingApproachStats, closingReasonStats, reregisterStats, reregisterReasonStats,
-} from "@/lib/memberStatus";
+import { revenueByTrainer, sessionCountByTrainer, sessionPriceSumByTrainer, payLinesForTrainer, revenueContractsInMonth, refundsInMonth, resolveScheme, payForScheme, closingStats, closingApproachStats, closingReasonStats, reregisterStats, reregisterReasonStats, newClosingInMonth } from "@/lib/memberStatus";
 
 // 최근 n개월 ym 리스트(KST). 컴포넌트는 now 읽어도 됨(저장소 컨벤션).
 function lastMonths(n) {
@@ -90,6 +85,9 @@ export default function MonthlyReport({ data, onClose }) {
   const myOt = (otRows || []).filter((r) => r && memberIds.has(r.user_id));
   const closing = closingStats(myOt);
   const rate = closing.rate == null ? "—" : Math.round(closing.rate * 100) + "%";
+  // 머리 칸 = 고른 달의 신규 클로징률(PT 등록한 달 기준 · 2026-10-12 대표 · 대표 화면 · 내 실적과 같은 숫자). 아래 성과 상세는 누적 그대로.
+  const monthClose = newClosingInMonth((members || []).filter((m) => m && m.trainer_id === uid && !m.hidden), otRows, contracts, ym);
+  const monthRate = monthClose.rate == null ? "—" : Math.round(monthClose.rate * 100) + "%";
   // 클로징 성과 상세(누적) — 성공 방향(강점)·실패/보류 사유(약점).
   const approachRows = closingApproachStats(myOt); // [{approach, count}]
   const reasonRows = closingReasonStats(myOt);     // [{reason, count}]
@@ -183,8 +181,8 @@ export default function MonthlyReport({ data, onClose }) {
           <StatTile icon={RefreshCw} label="재등록" value={`${rev.cntRe}건`}>
             <div className="mt-2 text-[12.5px] text-muted">재등록 매출 {won(rev.reRev)}</div>
           </StatTile>
-          <StatTile icon={Target} label="클로징률(누적)" value={rate}>
-            <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 중 {closing.success}명 등록 · 전체 기간</div>
+          <StatTile icon={Target} label="신규 클로징률" value={monthRate}>
+            <div className="mt-2 text-[12.5px] text-muted">{monthClose.den ? `이 달 OT ${monthClose.den}명 중 ${monthClose.num}명 등록` : "이 달 OT가 없어요"}</div>
           </StatTile>
         </div>
 
@@ -223,7 +221,7 @@ export default function MonthlyReport({ data, onClose }) {
                   <div className="tabular-nums text-lg font-bold text-rose-700">{closing.fail}</div>
                 </div>
               </div>
-              <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 · 클로징률 {rate}</div>
+              <div className="mt-2 text-[12.5px] text-muted">등록 제안 {closing.attempted}명 · 누적 제안 대비 등록 {rate}</div>
               {approachRows.length > 0 && (
                 <div className="mt-3">
                   <div className="text-[12.5px] font-semibold text-sub">통한 방향</div>

@@ -23,6 +23,7 @@ const FIELDS = [
   { k: "name", label: "이름", ph: "김철수" },
   { k: "phone_number", label: "휴대폰 번호 (회원 전용 페이지 로그인용)", ph: "010-1234-5678", type: "tel" },
   { k: "age", label: "나이", ph: "34", type: "number" },
+  { k: "gender", label: "성별", sel: [["", "선택 안 함"], ["female", "여성"], ["male", "남성"]] },   // 2026-10-12: 등록 때 고른 성별을 고칠 수 없던 것
   { k: "job", label: "직업", ph: "IT 개발자" },
   { k: "residence", label: "거주지", ph: "센터 인근 오피스텔" },
   { k: "mbti", label: "MBTI", ph: "ISTJ" },
@@ -159,6 +160,12 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
                     <label className="mb-1 block text-[12px] font-medium text-muted">
                       {f.label}{f.k === "name" && <span className="text-primary-strong"> *</span>}
                     </label>
+                    {f.sel ? (
+                      <select value={form[f.k]} onChange={setF(f.k)}
+                        className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary">
+                        {f.sel.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    ) : (
                     <input
                       type={f.type || "text"}
                       value={form[f.k]}
@@ -167,6 +174,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
                       list={f.opts ? `mle-${f.k}` : undefined}
                       className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-primary"
                     />
+                    )}
                     {f.opts && <datalist id={`mle-${f.k}`}>{f.opts.map((o) => <option key={o} value={o} />)}</datalist>}
                   </div>
                 ))}

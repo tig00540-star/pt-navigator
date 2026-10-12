@@ -17,10 +17,7 @@
    ========================================================================= */
 import { useMemo, useState } from "react";
 import { ChevronDown, Filter, TrendingDown, RefreshCw, Users, Wallet, AlertTriangle, ChevronRight } from "lucide-react";
-import {
-  otFunnel, otFunnelByMonth, closingDueSoon, churnRiskMembers, expiringMembers,
-  avgReregisterAmount, reregisterStats, viewFor, isClosingStatSubject,
-} from "@/lib/memberStatus";
+import { otFunnel, closingDueSoon, churnRiskMembers, expiringMembers, avgReregisterAmount, reregisterStats, viewFor, isClosingStatSubject, newClosingInMonth, newClosingByMonth } from "@/lib/memberStatus";
 import { wonApprox, personName } from "@/lib/format";
 import Card from "@/components/ui/Card";
 
@@ -47,7 +44,9 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
   const trainerOf = useMemo(() => new Map(visible.filter((m) => m?.id).map((m) => [m.id, m.trainer_id ?? "unknown"])), [visible]);
 
   const funnel = useMemo(() => otFunnel(visible, otRows), [visible, otRows]);
-  const trend = useMemo(() => otFunnelByMonth(visible, ym, 6), [visible, ym]);
+  // 클로징률 = PT 등록한 달 기준 · 이번 달 신규(2026-10-12 대표) — 대표 홈 · 트레이너 탭 · 내 실적과 같은 숫자
+  const closing = useMemo(() => newClosingInMonth(visible, otRows, contracts, ym), [visible, otRows, contracts, ym]);
+  const trend = useMemo(() => newClosingByMonth(visible, otRows, contracts, ym, 6), [visible, otRows, contracts, ym]);
   const churn = useMemo(() => churnRiskMembers(visible, contracts, logs, { nowISO }), [visible, contracts, logs, nowISO]);
   const expiring = useMemo(() => expiringMembers(visible, contracts, logs, { nowISO }), [visible, contracts, logs, nowISO]);
   const avgRe = useMemo(() => avgReregisterAmount(contracts), [contracts]);
@@ -82,7 +81,6 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
     { label: "2차 OT 진행", n: funnel.second },
     { label: "PT 등록", n: funnel.confirmed },
   ];
-  const convRate = funnel.intake ? funnel.confirmed / funnel.intake : null;
   const firstRate = funnel.firstAttempt ? funnel.firstSuccess / funnel.firstAttempt : null;
   const secondRate = funnel.secondAttempt ? funnel.secondSuccess / funnel.secondAttempt : null;
   const idleSessions = churn.reduce((s, c) => s + c.rem.total, 0);
@@ -125,7 +123,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
     },
   ];
 
-  const maxIntake = Math.max(1, ...trend.map((t) => t.intake));
+  const maxIntake = Math.max(1, ...trend.map((t) => t.den));
 
   return (
     <div className="space-y-4">
@@ -145,9 +143,10 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
         ) : (
           <>
             <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-mono text-4xl font-extrabold text-cyan-700">{rpct(convRate)}</span>
-              <span className="text-[13px] text-sub">OT 회원 <b className="text-ink">{funnel.intake}명</b> 중 <b className="text-cyan-700">{funnel.confirmed}명</b> 등록</span>
+              <span className="font-mono text-4xl font-extrabold text-cyan-700">{rpct(closing.rate)}</span>
+              <span className="text-[13px] text-sub">이번 달 신규 클로징률 · OT <b className="text-ink">{closing.den}명</b> 중 <b className="text-cyan-700">{closing.num}명</b> 등록</span>
             </div>
+            <p className="mt-1 text-[12px] leading-relaxed text-muted">이번 달에 OT를 받은 회원(지난달 OT 받고 이번 달 등록한 회원 포함) 중 이번 달에 PT 등록한 비율이에요. 아래 깔때기는 처음부터 지금까지 누적이에요(OT 회원 {funnel.intake}명 중 {funnel.confirmed}명).</p>
 
             <div className="mt-4 space-y-2">
               {stages.map((s, i) => {
@@ -187,20 +186,20 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
           <Users className="h-4 w-4 shrink-0 text-primary-strong" />
           <span className="text-[15px] font-bold tracking-[-0.02em] text-ink">달마다 클로징률 · 나아지고 있나</span>
         </div>
-        {trend.every((t) => t.intake === 0) ? (
+        {trend.every((t) => t.den === 0) ? (
           <p className="mt-3 text-[12px] text-muted">아직 달별로 비교할 유입이 없어요.</p>
         ) : (
           <>
             <div className="mt-4 flex items-stretch justify-between gap-2" style={{ height: 110 }}>
               {trend.map((t, i) => {
                 const last = i === trend.length - 1;
-                const h = Math.max(3, Math.round((t.intake / maxIntake) * 100));
-                const fill = t.intake ? Math.round((t.confirmed / t.intake) * 100) : 0;
+                const h = Math.max(3, Math.round((t.den / maxIntake) * 100));
+                const fill = t.den ? Math.round((t.num / t.den) * 100) : 0;
                 return (
                   <div key={t.ym} className="flex flex-1 flex-col items-center gap-1">
                     <div className="flex w-full flex-1 items-end">
                       <div className="relative mx-auto w-6 overflow-hidden rounded-t bg-line" style={{ height: `${h}%` }}
-                        title={`${t.ym} · 유입 ${t.intake}명 중 ${t.confirmed}명 등록`}>
+                        title={`${t.ym} · OT ${t.den}명 중 ${t.num}명 등록`}>
                         <div className="absolute inset-x-0 bottom-0 bg-cyan-500" style={{ height: `${fill}%` }} />
                       </div>
                     </div>
@@ -211,8 +210,8 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
               })}
             </div>
             <p className="mt-3 text-[12px] leading-relaxed text-muted">
-              그 달에 <b className="text-ink">들어온</b> 회원 중 몇 %가 등록했는지예요(회색 막대=유입 인원, 파란 부분=등록).
-              이번 달은 아직 진행 중이라 낮게 보여요. 등록은 다음 달에도 일어나요.
+              그 달에 <b className="text-ink">PT 등록한 달</b> 기준이에요. 그 달 OT를 받은 회원(지난달 OT 받고 그 달 등록한 회원 포함) 중 몇 %가 그 달에 등록했는지예요(회색 막대=OT 회원, 파란 부분=등록).
+              이번 달은 아직 진행 중이에요.
             </p>
           </>
         )}

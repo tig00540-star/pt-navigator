@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { preAppSessions } from "@/lib/bulkMembers";
 import { won } from "@/lib/format";
 import SectionTitle from "@/components/ui/SectionTitle";
-import { revenueByTrainer, sessionPriceSumByTrainer, closingStats, resolveScheme, payForScheme, payLinesForTrainer, sessionCountByTrainer, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
+import { revenueByTrainer, sessionPriceSumByTrainer, newClosingInMonth, resolveScheme, payForScheme, payLinesForTrainer, sessionCountByTrainer, revenueContractsInMonth, refundsInMonth, remainingSessions, viewFor } from "@/lib/memberStatus";
 import StatTile from "@/components/ui/StatTile";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
@@ -171,12 +171,12 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
     // 내 회원만(원장이 남의 회원 수업/클로징까지 세던 버그 수정 — 급여 스코프와 일치).
     const memberIds = new Set(members.filter((m) => m.trainer_id === uid).map((m) => m.id));
-    const myOt = otRows.filter((r) => r && memberIds.has(r.user_id));
     const rev = revenueByTrainer(contracts, ym).find((r) => r.trainer_id === uid) || { newRev: 0, reRev: 0, refund: 0, total: 0, cntNew: 0, cntRe: 0 };
     const goalRow = goals.find((g) => g.ym === ym) || null;
     const target = goalRow?.target_revenue ?? null;
     const priceSum = sessionPriceSumByTrainer(logs, contracts, ym).get(uid) || 0;
-    const closing = closingStats(myOt);
+    // 클로징률 = 이번 달 신규(PT 등록한 달 기준 · 2026-10-12 대표) — 대표 화면과 같은 숫자 · 내 담당 회원만
+    const closing = newClosingInMonth(members.filter((m) => m.trainer_id === uid && !m.hidden), otRows, contracts, ym);
     const sessionCount = sessionCountByTrainer(logs, contracts, ym).get(uid) || 0;
     const scheme = resolveScheme(schemes, uid);
     const pay = payForScheme(scheme, { monthRevenue: rev.total, sessionCount, sessionPriceSum: priceSum });
@@ -374,8 +374,8 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
 
       {/* 클로징률 | 이번 달 수업 — 수업 수는 급여 기준(노쇼 포함 · 취소 · 보강 제외 · 계약 담당 기준)이 정본(2026-10-03 대표). 누르면 급여 내역(회원별). */}
       <div className="grid grid-cols-2 gap-3">
-        <StatTile icon={Target} label="클로징률" value={rate}>
-          <div className="mt-1.5 text-[12.5px] text-sub">등록 제안 {closing.attempted}명 중 {closing.success}명</div>
+        <StatTile icon={Target} label="이번 달 신규 클로징률" value={rate}>
+          <div className="mt-1.5 text-[12.5px] text-sub">{closing.den ? `이번 달 OT ${closing.den}명 중 ${closing.num}명 등록` : "이번 달 OT가 아직 없어요"}</div>
         </StatTile>
         <StatTile icon={Dumbbell} label="이번 달 수업" value={`${sessionCount}회`} onClick={isFreelance && !hasScheme ? undefined : openPay}>
           <div className="mt-1.5 text-[12.5px] text-sub">

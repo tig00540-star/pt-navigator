@@ -138,7 +138,7 @@ export default function MonthlyOwnerReport({ goals = [], onGoTab }) {
         </button>
       )}
       <p className="m-0 text-[12px] leading-relaxed text-muted">
-        {new Date(rep.generated_at).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요. 클로징률 · 재등록률은 그달에 결과를 남긴 것만 세요. 추천 목표는 최근 3개월 평균 × 1.1과 들어올 매출 예측 중 큰 값이에요.
+        {new Date(rep.generated_at).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요. 클로징률은 그달 OT를 받은 회원 중 그달 PT 등록한 비율(등록한 달 기준)이고, 재등록률은 그달에 결과를 남긴 것만 세요. 추천 목표는 최근 3개월 평균 × 1.1과 들어올 매출 예측 중 큰 값이에요.
       </p>
     </div>
   );
