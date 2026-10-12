@@ -6,7 +6,7 @@
    순서 = 첫 OT 준비에 중요한 것부터: 목표 → 주 몇 번 → 운동 경험 → 그만둔 이유 → 생활 · 페이스 → 건강 체크
           → 알게 된 경로 → (센터 QR) 원하는 트레이너 → 나에 대해(나이 · 성별 · 직업 · 바라는 점). */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
 import { HEALTH_CONSENT } from "@/lib/consent";
 import { MEMBER_OPTS, GENDER_OPTS, WEEKLY_OPTS, LEAD_SOURCES, HEALTH_SCREEN_ITEMS, TRAINER_GENDER_OPTS } from "@/lib/memberOptions";
@@ -36,10 +36,17 @@ export default function IntakeMore({ app, token, kind, healthAgreed = false, onD
       body: JSON.stringify({ app, token, answers: patch, health: healthNow && !healthAgreed, healthKnown: healthNow }),
     }).then((r) => { if (r.ok) setSaved(true); }).catch(() => {});
   };
+  // 자동 넘김 타이머는 하나만 — 두 번 빠르게 누르면 질문 하나를 건너뛰던 것(2026-10-12). 누른 화면에서 한 칸만 넘어간다.
+  const advRef = useRef(null);
+  useEffect(() => () => clearTimeout(advRef.current), []);
   const pick = (k, v, auto = true) => {
     setA((x) => ({ ...x, [k]: v }));
     save({ [k]: v });
-    if (auto) setTimeout(() => setI((n) => n + 1), 220);
+    if (auto) {
+      const from = i;
+      clearTimeout(advRef.current);
+      advRef.current = setTimeout(() => setI((n) => (n === from ? from + 1 : n)), 220);
+    }
   };
   const setOne = (k, v) => setA((x) => ({ ...x, [k]: x[k] === v ? "" : v }));
 

@@ -126,9 +126,13 @@ export default function CaseLibrary() {
       // 내 계정 폴더의 파일만 지운다(후기 캡처 · 다른 아이디에서 가져온 사진 사례). 회원 사진(member-photos)은 회원 것이라 안 지움.
       const own = [(item.kind === "review" || item.kind === "care") && item.data?.path,
         ...["before", "after"].map((k) => item.data?.[k]?.bucket === "sales-cases" && item.data[k].path)].filter(Boolean);
-      if (own.length) await supabase.storage.from("sales-cases").remove(own);
+      // 기록을 먼저 지우고(0행 = 실패) 그다음 파일 — 반대 순서면 기록 삭제가 막혔을 때 사진만 사라진 사례가 남는다(2026-10-12).
       const { data, error } = await supabase.from("sales_case").delete().eq("id", item.id).select("id");
-      if (error || !data?.length) { showToast("빼지 못했어요. 다시 시도해 주세요."); return; }
+      if (error || !data?.length) { showToast(error ? "빼지 못했어요. 다시 시도해 주세요." : "빼지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
+      if (own.length) {
+        const { error: se } = await supabase.storage.from("sales-cases").remove(own);
+        if (se) console.error("사례 파일 삭제 실패", se);   // 기록은 이미 빠졌다 — 파일만 남는 건 화면에 영향 없음
+      }
       setCases((cs) => cs.filter((c) => c.id !== item.id));
       showToast("보관함에서 뺐어요");
     } catch {

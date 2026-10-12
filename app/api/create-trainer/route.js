@@ -15,14 +15,14 @@ export async function POST(req) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     console.error("[create-trainer] 503 서버키 미설정(SUPABASE_SERVICE_ROLE_KEY/URL)");
-    return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+    return Response.json({ error: "트레이너를 추가할 준비가 안 됐어요. 잠시 후 다시 시도해 주세요." }, { status: 503 });
   }
 
   const authz = req.headers.get("authorization") || "";
   const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
   if (!token) {
     console.warn("[create-trainer] 401 인증필요 — 토큰 없음");
-    return Response.json({ error: "인증 필요" }, { status: 401 });
+    return Response.json({ error: "다시 로그인해 주세요." }, { status: 401 });
   }
 
   const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
@@ -31,7 +31,7 @@ export async function POST(req) {
   const { data: u, error: ue } = await sb.auth.getUser(token);
   if (ue || !u?.user?.id) {
     console.warn("[create-trainer] 401 세션무효:", ue?.message || "no uid");
-    return Response.json({ error: "세션 무효" }, { status: 401 });
+    return Response.json({ error: "다시 로그인해 주세요." }, { status: 401 });
   }
   const { data: me } = await sb.from("trainer").select("role, account_id").eq("id", u.user.id).maybeSingle();
   if (me?.role !== "owner") {
@@ -55,7 +55,7 @@ export async function POST(req) {
     .eq("active", true);
   if (cErr) {
     console.error("[create-trainer] 좌석 집계 실패:", cErr.message);
-    return Response.json({ error: "좌석을 확인하지 못했습니다. 잠시 후 다시 시도하세요." }, { status: 500 });
+    return Response.json({ error: "트레이너 자리를 확인하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 500 });
   }
   if ((used ?? 0) >= seatLimit) {
     console.warn(`[create-trainer] 409 좌석 초과 account=${me.account_id} plan=${planKey} used=${used} limit=${seatLimit}`);
@@ -70,7 +70,7 @@ export async function POST(req) {
   const body = await req.json().catch(() => ({}));
   const email = (body.email || "").trim().toLowerCase();
   const name = (body.name || "").trim();
-  if (!email || !name) return Response.json({ error: "이메일과 이름을 입력하세요." }, { status: 400 });
+  if (!email || !name) return Response.json({ error: "이메일과 이름을 입력해 주세요." }, { status: 400 });
 
   const password = genPassword();
   const { data: created, error: ce } = await sb.auth.admin.createUser({

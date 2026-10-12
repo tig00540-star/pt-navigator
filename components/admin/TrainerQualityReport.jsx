@@ -356,8 +356,8 @@ export default function TrainerQualityReport({ members = [], otRows = [], contra
 function Footnotes() {
   return (
     <div className="mt-4 space-y-0.5 text-[12px] leading-relaxed text-muted">
-      <p>· 재등록 코칭은 「전체 누적」에서 봅니다(결과 시각 데이터 한계).</p>
-      <p>· 1차 사전무장 브리핑은 저장되지 않아, 1차 품질은 관찰 충실도로 봅니다.</p>
+      <p>· 재등록 코칭은 「전체 누적」에서 봐요(결과 시각 기록이 그 전엔 없어서).</p>
+      <p>· 1차 품질은 OT 피드백을 얼마나 꼼꼼히 남겼는지로 봐요.</p>
     </div>
   );
 }

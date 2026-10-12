@@ -8,6 +8,7 @@ import PasswordChange from "@/components/views/PasswordChange";
 import Button from "@/components/ui/Button";
 import Wordmark, { Slogan } from "@/components/ui/Wordmark";
 import { PLANS, planAmount, SEAT_AI } from "@/lib/plans";
+import { won } from "@/lib/format";
 import LandingPage from "@/app/lp/page";
 import { trainerCloseAt, kstDay } from "@/lib/trainerClose";
 
@@ -247,7 +248,7 @@ export default function AuthGate({ children }) {
           </Button>
         </div>
         <div className="mt-4 text-center text-[12px] text-muted">
-          트레이너는 대표 초대로 참여합니다 ·{" "}
+          트레이너는 대표 초대로 참여해요 ·{" "}
           <a href="/signup" className="font-semibold text-primary-strong hover:underline">새 계정 만들기</a>
         </div>
       </div>
@@ -264,7 +265,7 @@ function TrainerOff({ onSignOut, offAt }) {
         <div className="text-lg font-semibold text-ink">센터에서 이 아이디를 껐어요</div>
         <ul className="m-0 mt-3 list-none space-y-2 p-0 text-[14px] leading-relaxed text-sub">
           <li>· 센터 아이디와 회원 기록은 센터에 남아요.</li>
-          <li>· 개인으로 계속 쓰려면 다른 이메일로 개인 가입한 뒤 <b className="text-ink">설정 › 내 정보 › 다른 아이디에서 내 자료 가져오기</b>에 이 아이디를 넣어 주세요. 가격표 · 라이브러리 · 회원이 포트폴리오에 동의한 사례를 가져올 수 있어요.</li>
+          <li>· 개인으로 계속 쓰려면 다른 이메일로 개인 가입한 뒤 <b className="text-ink">설정 › 내 정보 › 다른 아이디에서 내 자료 가져오기</b>에 이 아이디를 넣어 주세요. 가격표 · 라이브러리 · 동의 체크한 사례를 가져올 수 있어요.</li>
           {end && <li>· 이 아이디는 <b className="text-ink">{kstDay(end)}</b>까지만 남아요. 그 뒤엔 로그인할 수 없고, 같은 이메일로 새로 가입할 수 있어요.</li>}
           <li>· 잘못 꺼졌다면 센터 대표에게 알려 주세요.</li>
         </ul>
@@ -336,7 +337,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
 
   const startCheckout = async () => {
     setPayErr("");
-    if (!clientKey) { setPayErr("결제가 곧 열립니다. 잠시만 기다려 주세요."); return; }
+    if (!clientKey) { setPayErr("결제 창이 곧 열려요. 잠시만 기다려 주세요."); return; }
     if (!uid) { setPayErr("세션을 확인할 수 없어요. 다시 로그인해 주세요."); return; }
     setBusy(true);
     try {
@@ -379,7 +380,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-[15px] font-bold text-ink">{p.name}{p.key === "solo" && <span className="ml-1.5 text-[12px] font-bold text-primary-strong">추천</span>}</span>
-                    <span className="text-[15px] font-black tabular-nums text-ink">{(planAmount(p.key, extraSeats) ?? p.amount).toLocaleString("ko-KR")}<span className="text-[12px] font-semibold text-muted">원/월</span></span>
+                    <span className="text-[15px] font-black tabular-nums text-ink">{won(planAmount(p.key, extraSeats) ?? p.amount)}<span className="text-[12px] font-semibold text-muted">/월</span></span>
                   </div>
                   <div className="mt-1 text-[12.5px] leading-snug text-sub">
                     {p.key === "basic" ? "기록 · 회원 관리 · 회원 전용 페이지 · AI는 기능마다 매달 3번"
@@ -394,7 +395,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
               {busy ? "결제창 여는 중…" : expired ? "카드 등록하고 이어서 이용하기" : "카드 등록하고 시작하기"}
             </Button>
             <p className="mt-2 text-center text-[12px] leading-relaxed text-muted">
-              {`부가세 포함 · 오늘 ${plan && PLANS[plan] ? planAmount(plan, extraSeats).toLocaleString("ko-KR") + "원" : "첫 달"} 결제 · 이후 매달 같은 날 자동결제 · ${expired ? "" : "7일 안 전액 환불 · "}언제든 해지`}
+              {`부가세 포함 · 오늘 ${plan && PLANS[plan] ? won(planAmount(plan, extraSeats)) : "첫 달"} 결제 · 이후 매달 같은 날 자동결제 · ${expired ? "" : "7일 안 전액 환불 · "}언제든 해지`}
             </p>
           </>
         )}

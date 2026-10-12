@@ -22,6 +22,10 @@ function addOneMonth(d) {
 
 export const runtime = "nodejs";
 
+// 화면에 보이는 오류 문구(해요체 · 개발 용어 없이 · 원인은 서버 로그로)
+const MSG_SETUP = "결제를 준비하지 못했어요. 잠시 후 다시 시도해 주세요.";
+const MSG_LOGIN = "다시 로그인해 주세요.";
+
 // 독립한 트레이너가 결제를 마쳐 계정이 열리면 — 옮길지 기다리던 회원에게 '기록을 함께 옮길까요?' 알림(2026-10-07)
 async function notifyWaitingMembers(sb, accountId) {
   try {
@@ -31,7 +35,7 @@ async function notifyWaitingMembers(sb, accountId) {
     for (const m of ms || []) {
       if (!m.member_token) continue;
       await sendPush(sb, { memberIds: [m.id], type: "transfer", url: `/m/${m.member_token}`,
-        title: "기록을 함께 옮길까요?", body: `앞으로 ${mt[0].to_name || "담당 트레이너"}가 직접 기록을 관리해요. 회원 페이지에서 옮길지 골라 주세요.` });
+        title: "기록을 함께 옮길까요?", body: `앞으로 ${mt[0].to_name ? `${mt[0].to_name} 트레이너가` : "담당 트레이너가"} 직접 기록을 관리해요. 회원 페이지에서 옮길지 골라 주세요.` });
     }
   } catch (e) { console.error("[billing/confirm] 회원 알림 실패(비차단)", e); }
 }
@@ -42,18 +46,19 @@ async function notifyWaitingMembers(sb, accountId) {
 export async function GET(req) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+  if (!url || !key) return Response.json({ error: MSG_SETUP }, { status: 503 });
   const authz = req.headers.get("authorization") || "";
   const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
-  if (!token) return Response.json({ error: "인증 필요" }, { status: 401 });
+  if (!token) return Response.json({ error: MSG_LOGIN }, { status: 401 });
   const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: u, error: ue } = await sb.auth.getUser(token);
-  if (ue || !u?.user?.id) return Response.json({ error: "세션 무효" }, { status: 401 });
+  if (ue || !u?.user?.id) return Response.json({ error: MSG_LOGIN }, { status: 401 });
   const { data: me } = await sb.from("trainer").select("role, account_id").eq("id", u.user.id).maybeSingle();
   if (!me?.account_id) return Response.json({ role: me?.role ?? null, type: null, noTrial: false });
-  const { data: acct } = await sb.from("account").select("type, no_trial, extra_seats").eq("id", me.account_id).maybeSingle();
+  const { data: acct } = await sb.from("account").select("type, no_trial, extra_seats, next_extra_seats").eq("id", me.account_id).maybeSingle();
   // 센터 = 추가 자리까지 더한 실제 결제 금액(2026-10-08 · 화면 149,000원인데 자리 값까지 결제되던 것 막기)
-  const extraSeats = acct?.type === "center" ? Math.max(0, Number(acct?.extra_seats) || 0) : 0;
+  //   줄이기를 예약해 둔 채 끝난 계정 = 줄인 자리로(2026-10-12 · POST와 같은 규칙)
+  const extraSeats = acct?.type === "center" ? Math.max(0, Number(acct?.next_extra_seats ?? acct?.extra_seats) || 0) : 0;
   return Response.json({ role: me.role, type: acct?.type ?? null, noTrial: Boolean(acct?.no_trial), extraSeats,
     centerAmount: acct?.type === "center" ? planAmount("center", extraSeats) : null });
 }
@@ -63,21 +68,21 @@ export async function POST(req) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     console.error("[billing/confirm] 503 서버키 미설정");
-    return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+    return Response.json({ error: MSG_SETUP }, { status: 503 });
   }
   if (!tossReady()) {
     console.error("[billing/confirm] 503 TOSS_SECRET_KEY 미설정");
-    return Response.json({ error: "결제 키 미설정" }, { status: 503 });
+    return Response.json({ error: MSG_SETUP }, { status: 503 });
   }
 
   const authz = req.headers.get("authorization") || "";
   const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
-  if (!token) return Response.json({ error: "인증 필요" }, { status: 401 });
+  if (!token) return Response.json({ error: MSG_LOGIN }, { status: 401 });
 
   const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 
   const { data: u, error: ue } = await sb.auth.getUser(token);
-  if (ue || !u?.user?.id) return Response.json({ error: "세션 무효" }, { status: 401 });
+  if (ue || !u?.user?.id) return Response.json({ error: MSG_LOGIN }, { status: 401 });
 
   // 결제(구독 설정)는 원장만 — 계정 구독을 원장이 책임(센터 트레이너는 원장 결제로 커버).
   const { data: me } = await sb.from("trainer").select("role, account_id").eq("id", u.user.id).maybeSingle();
@@ -91,28 +96,28 @@ export async function POST(req) {
   const customerKey = (body.customerKey || "").trim();
   // 요금제 = 계정 종류가 정하는 범위 안에서(서버가 검증). 센터 계정 = center · 개인 계정 = basic | solo(프로 · 기본값).
   //   2026-10-07 요금제 개편 — 개인은 화면에서 베이직/프로를 고른다. 그 밖의 값은 무시.
-  const { data: acct } = await sb.from("account").select("type, extra_seats, subscription_status, current_period_end").eq("id", me.account_id).maybeSingle();
+  const { data: acct } = await sb.from("account").select("type, extra_seats, next_extra_seats, subscription_status, current_period_end").eq("id", me.account_id).maybeSingle();
   const planKey = acct?.type === "center" ? "center" : body.plan === "basic" ? "basic" : "solo";
   const plan = PLANS[planKey];
   if (!authKey || !customerKey || !plan) {
-    return Response.json({ error: "결제 정보가 올바르지 않습니다." }, { status: 400 });
+    return Response.json({ error: "결제 정보를 확인하지 못했어요. 다시 시도해 주세요." }, { status: 400 });
   }
   // customerKey 위조 방지 — 반드시 호출자 본인 uid여야 함.
   if (customerKey !== u.user.id) {
     console.warn(`[billing/confirm] 403 customerKey 불일치 uid=${u.user.id}`);
-    return Response.json({ error: "결제 사용자 불일치" }, { status: 403 });
+    return Response.json({ error: "결제 정보를 확인하지 못했어요. 다시 로그인한 뒤 시도해 주세요." }, { status: 403 });
   }
 
   // 1) 빌링키 발급(카드 등록 확정)
   const issued = await issueBillingKey({ authKey, customerKey });
   if (!issued.ok) {
     console.error("[billing/confirm] 빌링키 발급 실패:", issued.status, issued.error?.message || issued.error?.code);
-    return Response.json({ error: "카드 등록에 실패했습니다.", detail: issued.error?.message }, { status: 400 });
+    return Response.json({ error: "카드를 등록하지 못했어요. 카드 정보를 확인하고 다시 시도해 주세요." }, { status: 400 });
   }
   const billingKey = issued.data.billingKey;
   if (!billingKey) {
     console.error("[billing/confirm] 응답에 billingKey 없음");
-    return Response.json({ error: "카드 등록 응답이 올바르지 않습니다." }, { status: 400 });
+    return Response.json({ error: "카드를 등록하지 못했어요. 다시 시도해 주세요." }, { status: 400 });
   }
 
   // 1.5) 이미 이용 중인 계정 = 카드만 바꾼다(2026-10-08 · 예전엔 한 달 치를 또 결제하고 남은 기간이 사라졌다 · 두 탭 · 뒤로 가기)
@@ -132,7 +137,9 @@ export async function POST(req) {
   const refundable = !(past && past.length > 0);
   const now = Date.now();
   const nowIso = new Date(now).toISOString();
-  const amount = planAmount(planKey, acct?.extra_seats);
+  // 다시 시작할 때 자리 줄이기 예약(next_extra_seats)이 있으면 그 값으로 결제 · 저장(2026-10-12 · 예전엔 옛 자리 값으로 결제)
+  const seats = planKey === "center" ? Math.max(0, Number(acct?.next_extra_seats ?? acct?.extra_seats) || 0) : 0;
+  const amount = planAmount(planKey, seats);
   const orderId = `sub_${me.account_id}_${now}`;
   const res = await chargeBilling(billingKey, { customerKey, amount, orderId, orderName: `${plan.name} 월 구독` });
   if (!(res.ok && res.data?.status === "DONE")) {
@@ -144,7 +151,7 @@ export async function POST(req) {
   const { data: up2, error: ue3 } = await sb.from("account").update({
     subscription_status: "active", plan: "premium", current_period_end: end, last_payment_at: nowIso,
     billing_provider: "toss", billing_key: billingKey, billing_customer_key: customerKey, billing_plan: planKey, next_billing_plan: null, cancel_at_period_end: false,
-    next_extra_seats: null, purge_notified_at: null,   // 다시 시작 = 지난번 줄이기 예약 · 파기 알림 기록은 지움(2026-10-08)
+    extra_seats: seats, next_extra_seats: null, purge_notified_at: null,   // 다시 시작 = 지난번 줄이기 예약 · 파기 알림 기록은 지움(2026-10-08)
   }).eq("id", me.account_id).select();
   await sb.from("payment").insert({ account_id: me.account_id, order_id: orderId, toss_payment_key: res.data.paymentKey || null, amount, status: "DONE",
     plan: planKey, period_start: nowIso, period_end: end, raw: { approvedAt: res.data.approvedAt ?? null } });

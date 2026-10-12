@@ -113,7 +113,10 @@ export async function POST(req) {
       }
       if ((c.kind === "review" || c.kind === "care") && d.path) fromCases.push({ path: d.path, name: uniq(`${base}_${c.kind === "care" ? "관리" : "후기"}.jpg`) });
     });
-    const list = [...(await sign("member-photos", [...mp, ...fromMember])), ...(await sign("sales-cases", fromCases))];
+    // 사례 data의 경로는 트레이너가 쓴 값이라 그대로 믿지 않는다 — 이 계정 폴더 · 이 계정 회원 폴더만(2026-10-12 점검: 남의 파일 서명 방지).
+    const mineM = (f) => mName.has(String(f.path).split("/")[0]);
+    const mineC = (f) => String(f.path).startsWith(`${aid}/`);
+    const list = [...(await sign("member-photos", [...mp, ...fromMember.filter(mineM)])), ...(await sign("sales-cases", fromCases.filter(mineC)))];
     return Response.json({ images: list });
   }
 

@@ -166,6 +166,12 @@ export default function SalesbookView({
   const [prevSb, setPrevSb] = useState(salesbook);
   if (salesbook !== prevSb) { setPrevSb(salesbook); setDraft(salesbook || {}); }
   const sb = editable ? draft : (salesbook || {});
+  // 저장 안 한 수정이 있으면 닫기 전에 묻는다(Esc 한 번에 고친 게 다 사라지던 것 · 2026-10-12). 드래프트는 고칠 때마다 새 객체.
+  const dirty = editable && draft !== (salesbook || draft);
+  const requestClose = useCallback(() => {
+    if (dirty && !window.confirm("저장하지 않은 수정이 있어요. 저장하지 않고 닫을까요?")) return;
+    onClose?.();
+  }, [dirty, onClose]);
   // 장 구성(2단계) — 순서·숨김·사례 장. deck이 없으면 예전 순서 그대로.
   // 트레이너 소개 장(2026-10-11 · 설정 '내 소개 페이지'를 만든 경우만 · 표지 바로 다음)
   const intro = useTrainerIntro(trainer, personName(me.trainerName));
@@ -238,11 +244,11 @@ export default function SalesbookView({
       if (e.key === "ArrowRight") step(1);
       else if (e.key === "ArrowLeft") step(-1);
       // Esc 이중동작 방지 — 전체화면 중엔 브라우저가 Esc로 전체화면만 종료(닫기는 다음 Esc).
-      else if (e.key === "Escape") { if (document.fullscreenElement) return; onClose?.(); }
+      else if (e.key === "Escape") { if (document.fullscreenElement) return; requestClose(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, onClose]);
+  }, [step, requestClose]);
 
   // 스와이프.
   const [touchX, setTouchX] = useState(null);
@@ -322,7 +328,7 @@ export default function SalesbookView({
             </button>
           )}
           {onClose && (
-            <button onClick={onClose} aria-label="닫기" className="rounded-lg bg-white/15 p-1.5 text-white transition hover:bg-white/25">
+            <button onClick={requestClose} aria-label="닫기" className="rounded-lg bg-white/15 p-1.5 text-white transition hover:bg-white/25">
               <X className="h-4 w-4" />
             </button>
           )}

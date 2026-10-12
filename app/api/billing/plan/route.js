@@ -10,7 +10,7 @@
 // GET = 지금 바꾸면 얼마인지 미리 보기(?action=upgrade|seat_add).
 // -----------------------------------------------------------------------------
 import { serviceClient, callerOf } from "@/lib/serverCaller";
-import { chargeBilling, tossReady } from "@/lib/toss";
+import { chargeBilling, tossOrderState, tossReady } from "@/lib/toss";
 import { PLANS, SEAT_PRICE, MAX_EXTRA_SEATS, proratedDiff } from "@/lib/plans";
 
 export const runtime = "nodejs";
@@ -83,12 +83,19 @@ export async function POST(req) {
     if (!tossReady()) return { ok: false, error: "결제 설정이 아직 준비되지 않았어요. 고객센터로 알려 주세요." };
     if (!acc.billing_key) return { ok: false, error: "등록된 카드가 없어요. 카드를 다시 등록해 주세요." };
     const orderId = `${kind}_${acc.id}_${Date.now()}`;
-    const r = await chargeBilling(acc.billing_key, { customerKey: acc.billing_customer_key, amount, orderId, orderName });
-    const done = r.ok && r.data?.status === "DONE";
+    let r;
+    try { r = await chargeBilling(acc.billing_key, { customerKey: acc.billing_customer_key, amount, orderId, orderName }); }
+    catch (e) { r = { ok: false, thrown: String(e?.message || e) }; }
+    let done = r.ok && r.data?.status === "DONE";
+    // 실패 · 응답 끊김이어도 토스에 실제로 결제됐는지 확인(2026-10-12 · 돈은 나갔는데 되돌려 버리던 것 막기)
+    if (!done) {
+      const st = await tossOrderState(orderId);
+      if (st.done) { r = { ok: true, data: st.done }; done = true; }
+    }
     await sb.from("payment").insert({
       account_id: acc.id, order_id: orderId, toss_payment_key: done ? (r.data.paymentKey || null) : null, amount,
       status: done ? "DONE" : "FAILED", plan: kind, period_start: new Date().toISOString(), period_end: acc.current_period_end,
-      raw: done ? { approvedAt: r.data.approvedAt ?? null } : { error: r.error ?? null, status: r.status ?? null },
+      raw: done ? { approvedAt: r.data.approvedAt ?? null } : { error: r.error ?? null, status: r.status ?? null, thrown: r.thrown ?? null },
     });
     if (!done) { console.error("[billing/plan] 결제 실패", kind, r.status, r.error?.code || r.error?.message); return { ok: false, error: "카드 결제에 실패했어요. 카드 정보를 확인하고 다시 시도해 주세요." }; }
     return { ok: true, paid: amount };
@@ -101,7 +108,9 @@ export async function POST(req) {
     const { data: claimed } = await sb.from("account").update({ billing_plan: "solo", next_billing_plan: null })
       .eq("id", acc.id).eq("billing_plan", "basic").select("id");
     if (!claimed?.length) return Response.json({ error: "이미 처리 중이에요. 잠시 뒤 새로고침해 주세요." }, { status: 409 });
-    const p = await pay(amount, "upgrade", "프로로 올리기(남은 기간)");
+    let p;
+    try { p = await pay(amount, "upgrade", "프로로 올리기(남은 기간)"); }
+    catch (e) { console.error("[billing/plan] 결제 중 오류", e); p = { ok: false, error: "카드 결제를 끝내지 못했어요. 다시 시도해 주세요." }; }
     if (!p.ok) {
       await sb.from("account").update({ billing_plan: "basic" }).eq("id", acc.id).eq("billing_plan", "solo");   // 결제 실패 = 되돌리기
       return Response.json({ error: p.error }, { status: 402 });
@@ -134,7 +143,9 @@ export async function POST(req) {
       claimQ = cur === 0 ? claimQ.or("extra_seats.is.null,extra_seats.eq.0") : claimQ.eq("extra_seats", cur);
       const { data: claimed } = await claimQ.select("extra_seats");
       if (!claimed?.length) return Response.json({ error: "이미 처리 중이에요. 잠시 뒤 새로고침해 주세요." }, { status: 409 });
-      const p = await pay(amount, "seat", "트레이너 자리 추가(남은 기간)");
+      let p;
+      try { p = await pay(amount, "seat", "트레이너 자리 추가(남은 기간)"); }
+      catch (e) { console.error("[billing/plan] 결제 중 오류", e); p = { ok: false, error: "카드 결제를 끝내지 못했어요. 다시 시도해 주세요." }; }
       if (!p.ok) {
         await sb.from("account").update({ extra_seats: cur }).eq("id", acc.id).eq("extra_seats", cur + 1);   // 결제 실패 = 되돌리기
         return Response.json({ error: p.error }, { status: 402 });

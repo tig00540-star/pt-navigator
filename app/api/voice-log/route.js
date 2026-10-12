@@ -104,7 +104,7 @@ export async function POST(request) {
   // 키 미설정 → 데모 폴백을 클라이언트가 타도록 503.
   if (!openaiKey || !anthropicKey) {
     return Response.json(
-      { error: "AI 키가 설정되지 않았습니다. 데모 모드로 동작합니다." },
+      { error: "AI 연결이 아직 준비되지 않았어요. 예시로 보여 드려요." },
       { status: 503 }
     );
   }
@@ -116,27 +116,28 @@ export async function POST(request) {
   try {
     const form = await request.formData();
     audio = form.get("audio");
-    machines = (form.get("machines") || "").toString().trim();
+    machines = (form.get("machines") || "").toString().trim().slice(0, 500);   // 프롬프트 길이 제한(2026-10-12 점검)
     memberId = (form.get("member_id") || "").toString().trim();
     try {
       const rawCues = form.get("machine_cues");
       if (rawCues) {
         const parsed = JSON.parse(rawCues.toString());
-        if (Array.isArray(parsed)) machineCues = parsed.filter((m) => m?.name && Array.isArray(m?.cues) && m.cues.length);
+        if (Array.isArray(parsed)) machineCues = parsed.filter((m) => m?.name && Array.isArray(m?.cues) && m.cues.length).slice(0, 30)
+          .map((m) => ({ name: String(m.name).slice(0, 60), cues: m.cues.slice(0, 6).map((c) => String(c).slice(0, 120)) }));
       }
     } catch { /* 큐 주입은 선택 — 파싱 실패 무시 */ }
   } catch {
-    return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
+    return Response.json({ error: "녹음을 받지 못했어요. 다시 시도해 주세요." }, { status: 400 });
   }
   if (!audio || typeof audio === "string") {
-    return Response.json({ error: "audio 파일이 없습니다." }, { status: 400 });
+    return Response.json({ error: "녹음된 소리가 없어요. 다시 녹음해 주세요." }, { status: 400 });
   }
   // 서버측 크기 백스톱 — 클라 가드를 우회(구버전 캐시 JS 등)한 4~4.5MB 구간을 STT 호출 전에 차단 + 로깅.
   // (4.5MB 초과는 Vercel이 함수 실행 전 413으로 끊어 여기 도달 못 함 — 그건 클라 가드가 담당.)
   if (typeof audio.size === "number" && audio.size > MAX_AUDIO_BYTES) {
     console.error(`[voice-log] 오디오 초과: ${audio.size} bytes (한도 ${MAX_AUDIO_BYTES})`);
     return Response.json(
-      { error: "녹음 파일이 너무 큽니다. 더 짧게 나눠 다시 녹음해 주세요." },
+      { error: "녹음 파일이 너무 커요. 더 짧게 나눠 다시 녹음해 주세요." },
       { status: 413 }
     );
   }
@@ -170,13 +171,13 @@ export async function POST(request) {
   } catch (e) {
     await finishAi(admin, slot.id, { ok: false });
     console.error("[voice-log] STT 실패:", e?.message || e);
-    return Response.json({ error: "음성 인식에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
+    return Response.json({ error: "말을 글로 옮기지 못했어요. 다시 시도해 주세요." }, { status: 502 });
   }
 
   if (!rawText) {
     await finishAi(admin, slot.id, { ok: false, extraUsd: sttUsd });
     return Response.json(
-      { error: "녹음에서 텍스트를 추출하지 못했습니다. 더 또렷하게 다시 녹음해 주세요." },
+      { error: "녹음에서 말을 알아듣지 못했어요. 더 또렷하게 다시 녹음해 주세요." },
       { status: 422 }
     );
   }
@@ -210,7 +211,7 @@ export async function POST(request) {
   } catch (e) {
     await finishAi(admin, slot.id, { ok: false, model: SUMMARY_MODEL, extraUsd: sttUsd });
     console.error("[voice-log] 요약 실패:", e?.message || e);
-    return Response.json({ error: "AI 요약에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
+    return Response.json({ error: "운동일지로 정리하지 못했어요. 다시 시도해 주세요." }, { status: 502 });
   }
 
   return Response.json({ raw_text: rawText, report });

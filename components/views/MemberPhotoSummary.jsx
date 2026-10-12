@@ -76,7 +76,7 @@ export default function MemberPhotoSummary({ member, mode }) {
     const file = e.target.files?.[0];
     e.target.value = ""; // 같은 파일 재선택 허용
     if (!file || busy) return;
-    if (!supabase || !member?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시."); return; }
+    if (!supabase || !member?.id) { setErr("정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요."); return; }
     setBusy(true); setErr("");
     let blob;
     try { blob = await compressImage(file); }

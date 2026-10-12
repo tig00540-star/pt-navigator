@@ -131,7 +131,7 @@ export default function AIBriefBlock({
         <div className="mt-4">
           <div className="mb-3 flex items-center gap-2.5">
             <Loader2 className="h-[18px] w-[18px] animate-spin text-primary motion-reduce:animate-none" />
-            <span className="text-sm font-semibold text-ink">브리핑 만드는 중…</span>
+            <span className="text-sm font-semibold text-ink">대본 만드는 중…</span>
           </div>
 
           <div className="h-1.5 overflow-hidden rounded-full bg-elevate">

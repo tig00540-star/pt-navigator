@@ -10,14 +10,15 @@
    구 스키마 캐시(arc·movement_cues 등, 신필드 전무)는 legacyCache로 감지 → '이전 형식' 안내 + '다시 생성'으로 갱신.
    ========================================================================= */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AIBriefBlock from "@/components/ui/AIBriefBlock";
 import PrepReport from "@/components/ot/PrepReport";
 import { useAppUi } from "@/components/app/AppChrome";
 import { hasVal } from "@/lib/format";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
-import { firstInputHash } from "@/lib/otHash";
+import { firstInputHash, firstInputStale, FIRST_INPUT_HASH_V } from "@/lib/otHash";
+import { loadPackagesFor } from "@/components/salesbook/DeckLauncher";
 import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
 import { refreshAiQuota } from "@/lib/useAiQuota";
 
@@ -75,18 +76,25 @@ export default function FirstOTAssist({ member, onSaved }) {
     };
   }, [member?.id]);
 
-  // 본인 active 패키지 로드(마운트 1회 · 회원 의존 아님). pick_ref로 실가격 조회하는 재료.
+  // 패키지 = 회원의 담당 트레이너 가격표(노출 켠 것 · 없거나 못 읽으면 내 것 · loadPackagesFor). pick_ref로 실가격 조회하는 재료.
+  const pkgTrainer = member?.trainer_id || null;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const pkgs = await loadPackagesFor(pkgTrainer).catch(() => []);
+      if (!cancelled) setPackages(pkgs || []);
+    })();
+    return () => { cancelled = true; };
+  }, [pkgTrainer]);
+
+  // 내 별표 운동자료(마운트 1회 · 회원 의존 아님 · 대본을 만드는 사람의 라이브러리).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!supabase) return;
       const { data: au } = await supabase.auth.getUser();
       const uid = au?.user?.id ?? null;
-      const { data } = await supabase
-        .from("pt_package").select("*")
-        .eq("trainer_id", uid).eq("active", true) // 노출(active) 패키지만
-        .order("sort", { ascending: true }).order("created_at", { ascending: true });
-      if (!cancelled) setPackages(data || []);
       // 즐겨찾기 운동자료(favorite=true). ⚠️ favorite 컬럼 마이그레이션 전이면 에러→[] 폴백(비차단).
       const { data: favs } = await supabase
         .from("library_item").select("id, title, category, url, note")
@@ -100,16 +108,20 @@ export default function FirstOTAssist({ member, onSaved }) {
   // 생성은 서버가 끝까지 돌리고 저장까지 한다(다른 화면·창 닫기에도 안 끊김 · 2026-10-02).
   //   화면은 '만드는 중'만 기억해 두고, 돌아오면 저장된 결과를 이어 받는다(lib/aiPending).
   const pendingKey = member?.id ? `first:${member.id}` : null;
+  const inFlight = useRef(false);   // 두 번 눌러 AI를 두 번 부르지 않게(2026-10-12)
   const generate = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
     setNotice("");
     if (pendingKey) markPending(pendingKey);
     try {
       const inputHash = firstInputHash(member);
+      const inputHashV = FIRST_INPUT_HASH_V;
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "first", member, packages, favorites, save: { kind: "ot", memberId: member.id, round: 1, meta: { inputHash } } }),
+        body: JSON.stringify({ phase: "first", member, packages, favorites, save: { kind: "ot", memberId: member.id, round: 1, meta: { inputHash, inputHashV } } }),
       });
       // 서버가 답을 준 순간에만 '만드는 중' 표시를 지운다 — 화면 이동·창 닫기로 끊긴 경우엔 남겨 두고 돌아왔을 때 이어 받는다.
       if (pendingKey) clearPending(pendingKey);
@@ -119,7 +131,7 @@ export default function FirstOTAssist({ member, onSaved }) {
         return;
       }
       const result = await res.json();
-      const newMeta = { generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "", inputHash };
+      const newMeta = { generatedAt: new Date().toISOString(), model: res.headers.get("x-ai-model") || "", inputHash, inputHashV };
       setData(result);
       setMeta(newMeta);
       const savedRow = res.headers.get("x-saved-row");
@@ -133,9 +145,16 @@ export default function FirstOTAssist({ member, onSaved }) {
     } catch {
       setNotice("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 대본은 이어서 저장돼요)");
     } finally {
+      inFlight.current = false;
       setLoading(false);
       refreshAiQuota();
     }
+  };
+  // 다시 만들기 — 만드는 1~2분 동안 지금 대본이 안 보이니 한 번 묻는다.
+  const regenerate = () => {
+    if (inFlight.current) return;
+    if (data && !window.confirm("지금 대본을 새로 만들까요? 새로 만드는 1~2분 동안 지금 대본은 안 보여요.")) return;
+    generate();
   };
 
   // 돌아왔을 때 이어 받기 — 다른 화면에 갔다 오는 사이 서버가 저장한 결과.
@@ -150,11 +169,12 @@ export default function FirstOTAssist({ member, onSaved }) {
     setData(row.report.first_assist.data);
     setMeta(row.report.first_assist.meta);
     onSaved?.();
-  });
+  }, () => setNotice("대본을 만들지 못했어요. 다시 시도해 주세요."));
 
   // 캐시 스테일: 저장된 inputHash ≠ 현재 회원 입력 해시 → 재생성 권장.
   const persisted = Boolean(row1Report?.first_assist);
-  const stale = Boolean(meta?.inputHash && meta.inputHash !== firstInputHash(member));
+  //   해시 판(inputHashV)이 없는 예전 대본은 예전 해시로 비교한다(새로 넣은 문진 칸 때문에 전부 '낡음'으로 뜨지 않게).
+  const stale = firstInputStale(meta, member);
 
   const exercises = Array.isArray(data?.exercises) ? data.exercises.filter(Boolean) : [];
   // 구캐시(구 스키마: session_plan·target_exercise) 감지 — exercises 없으면 '이전 형식' 안내 후 재생성.
@@ -174,7 +194,7 @@ export default function FirstOTAssist({ member, onSaved }) {
       idleDescription="1차 OT도 목표는 오늘 PT 등록이에요. 회원 정보와 내 PT 패키지·즐겨찾기 자료로 수업 직전 3분에 볼 대본을 만들어요. 맨 위 30초 요약, 그다음 입장 · 운동 · 클로징 · 거절 대응 순서예요."
       waitingHint="1~2분 걸려요. 다른 화면에 다녀와도 괜찮아요. 만들던 대본은 저장돼 있다가 돌아오면 바로 떠요."
       onGenerate={generate}
-      onRegenerate={generate}
+      onRegenerate={regenerate}
       notice={notice || (sparse && !data ? (
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           목표 한 줄만 적어도 대본이 훨씬 정확해져요.

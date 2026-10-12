@@ -26,7 +26,7 @@ export async function POST(request) {
   if (!auth.ok) return auth.res;
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  if (!anthropicKey) return Response.json({ error: "AI 키가 설정되지 않았습니다." }, { status: 503 });
+  if (!anthropicKey) return Response.json({ error: "AI 연결이 아직 준비되지 않았어요." }, { status: 503 });
 
   let name = "", brand = "", kind = "", spec = "";
   try {
@@ -36,8 +36,8 @@ export async function POST(request) {
     brand = (b?.brand || "").toString().trim().slice(0, 60);
     kind = (b?.kind || "").toString().trim().slice(0, 30);
     spec = (b?.spec || "").toString().trim().slice(0, 200);
-  } catch { return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 }); }
-  if (!name) return Response.json({ error: "장비 이름이 필요합니다." }, { status: 400 });
+  } catch { return Response.json({ error: "요청을 처리하지 못했어요. 다시 시도해 주세요." }, { status: 400 }); }
+  if (!name) return Response.json({ error: "장비 이름을 입력해 주세요." }, { status: 400 });
 
   const info = [`이름: ${name}`, brand ? `브랜드: ${brand}` : null, `종류: ${KIND_LABEL[kind] || kind || "미상"}`, spec ? `규격: ${spec}` : null].filter(Boolean).join("\n");
 
@@ -65,6 +65,6 @@ ${NO_DASH_RULE}`,
   } catch (err) {
     await finishAi(admin, slot.id, { ok: false, model: CUE_MODEL });
     console.error("[machine-cues] 생성 실패:", err?.message || err);
-    return Response.json({ error: "AI 초안 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
+    return Response.json({ error: "초안을 만들지 못했어요. 다시 시도해 주세요." }, { status: 502 });
   }
 }

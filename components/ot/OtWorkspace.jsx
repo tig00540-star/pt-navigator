@@ -8,7 +8,7 @@
    차수 계산 규칙은 lib/otRounds.js 한 곳.
    ========================================================================= */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -22,26 +22,39 @@ import ObservationTab from "@/components/tabs/ObservationTab";
 import PtInbodyTab from "@/components/views/PtInbodyTab";
 
 // 이 회원의 ot_log 전부(차수 수가 적어 전체를 읽는다) — 대시보드 진행 표시·차수 계산 재료.
+//   ⚠️ 조회가 실패하면 rows를 비우지 않는다(비우면 '1차'로 주소가 바뀌어 버림 · 2026-10-12). 같은 회원의 지난 값을 그대로 두고
+//   failed=true — 한 번도 못 읽었으면 화면이 주소를 바로잡지 않고 안내를 띄운다.
 export function useOtRows(memberId) {
   const [rows, setRows] = useState([]);
   const [ready, setReady] = useState(!supabase);
+  const [failed, setFailed] = useState(false);
+  const loadedFor = useRef(null);   // 지금 rows가 어느 회원 것인지
   const reload = useCallback(async () => {
     if (!supabase || !memberId) { setReady(true); return; }
+    let ok = false;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("ot_log")
         .select("id, ot_round, closing_result, closing_reason, closing_reapproach_at, created_at, report")
         .eq("user_id", memberId)
         .order("created_at", { ascending: true });
-      setRows(data || []);
+      if (!error && Array.isArray(data)) {
+        setRows(data);
+        loadedFor.current = memberId;
+        ok = true;
+      } else if (error) console.error("ot_log 불러오기 실패", error);
+    } catch (e) {
+      console.error("ot_log 불러오기 실패", e);
     } finally {
+      if (!ok && loadedFor.current !== memberId) setRows([]);   // 다른 회원 값이 남지 않게
+      setFailed(!ok && loadedFor.current !== memberId);
       setReady(true);
     }
   }, [memberId]);
   useEffect(() => {
     (async () => { await reload(); })();
   }, [reload]);
-  return { rows, ready, reload };
+  return { rows, ready, failed, reload };
 }
 
 /* OT 화면 탭(2026-10-02 대표 지정 구조) — 두 줄.
@@ -95,13 +108,14 @@ const STEP_NAME = { prep: "OT 준비하기", inbody: "인바디 분석", feedbac
 
 export default function OtWorkspace({ member, step, onClosingSaved }) {
   const router = useRouter();
-  const { rows, ready, reload } = useOtRows(member.id);
+  const { rows, ready, failed, reload } = useOtRows(member.id);
   const info = otRoundsInfo(rows);
   const { key, round: asked } = parseOtStep(step);
-  const round = asked && roundAllowed(info, asked) ? asked : info.current;
+  // 기록을 못 읽었으면 주소의 차수를 그대로 쓴다(1차로 잘못 옮기지 않게).
+  const round = asked && (failed || roundAllowed(info, asked)) ? asked : info.current;
 
   // 차수 생략·못 여는 차수 → 지금 차수 주소로(뒤로가기에 남지 않게 replace).
-  const fix = ready && key && asked !== round;
+  const fix = ready && !failed && key && asked !== round;
   useEffect(() => {
     if (fix) router.replace(otStepPath(member.id, key, round));
   }, [fix, key, round, member.id, router]);
@@ -111,9 +125,17 @@ export default function OtWorkspace({ member, step, onClosingSaved }) {
   // 저장 후 대시보드·차수 진행을 다시 계산(배너 재조회는 부모 몫).
   const saved = () => { reload(); onClosingSaved?.(); };
 
+  const loadFail = failed && (
+    <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[13px] text-amber-700">
+      OT 기록을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.
+      <button type="button" onClick={reload} className="font-semibold underline underline-offset-2">다시 불러오기</button>
+    </div>
+  );
+
   if (!key) {
     return (
       <>
+        {loadFail}
         <OtTabs memberId={member.id} info={info} stepKey={null} round={null} />
         <OtDashboard member={member} info={info} />
       </>
@@ -122,6 +144,7 @@ export default function OtWorkspace({ member, step, onClosingSaved }) {
 
   return (
     <>
+      {loadFail}
       <OtTabs memberId={member.id} info={info} stepKey={key} round={round} />
       {key === "prep" && (round === 1
         ? <FirstOTAssist member={member} onSaved={reload} />

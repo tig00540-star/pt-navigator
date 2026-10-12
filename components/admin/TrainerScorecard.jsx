@@ -183,7 +183,7 @@ export default function TrainerScorecard({ members = [], otRows = [], contracts 
     const ids = trainers.length
       ? trainers.map((t) => t.id)
       : [...new Set([...revMap.keys(), ...closeMap.keys(), ...memberCounts.keys()])];
-    const nameOf = (id) => personName(trainers.find((t) => t.id === id)?.name) || (id === "unknown" ? "미배정" : String(id).slice(0, 8));
+    const nameOf = (id) => personName(trainers.find((t) => t.id === id)?.name) || (id === "unknown" ? "미배정" : "(알 수 없는 트레이너)");
     const list = ids.map((id) => {
       const rev = revMap.get(id) || EMPTY_REV;
       const close = closeMap.get(id) || EMPTY_CLOSE;

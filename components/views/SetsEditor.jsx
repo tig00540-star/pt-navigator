@@ -94,7 +94,7 @@ export default function SetsEditor({ value, onChange, disabled, machineOptions =
     <div className="space-y-3">
       {list.length === 0 && (
         <p className="text-[12px] leading-relaxed text-muted">
-          종목·세트를 입력하면 종목별 무게 그래프에 반영됩니다.
+          종목·세트를 입력하면 종목별 무게 그래프에 반영돼요.
         </p>
       )}
 

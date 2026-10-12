@@ -76,7 +76,7 @@ export default function TrainerLibrary() {
     if (!supabase) {
       if (editingId) setRows((p) => p.map((r) => (r.id === editingId ? { ...r, ...payload } : r)));
       else setRows((p) => [...p, { ...payload, id: `demo-${Date.now()}`, created_at: new Date().toISOString() }]);
-      resetForm(); showToast("저장됨(데모)"); setSaving(false); return;
+      resetForm(); showToast("저장했어요(데모)"); setSaving(false); return;
     }
     try {
     if (editingId) {
@@ -105,7 +105,7 @@ export default function TrainerLibrary() {
 
   const remove = async (id) => {
     if (confirmId !== id) { setConfirmId(id); return; }
-    if (!supabase) { setRows((p) => p.filter((r) => r.id !== id)); setConfirmId(null); showToast("삭제됨(데모)"); return; }
+    if (!supabase) { setRows((p) => p.filter((r) => r.id !== id)); setConfirmId(null); showToast("삭제했어요(데모)"); return; }
     const { data, error } = await supabase.from("library_item").delete().eq("id", id).select();
     if (error || !data || data.length === 0) { showToast("삭제하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setConfirmId(null); return; }
     setRows((p) => p.filter((r) => r.id !== id));

@@ -133,7 +133,7 @@ export default function PtConfirmBanner({ member, onConfirm, closingVersion }) {
               <b className="text-primary-strong">{member?.name || "회원"}</b>님을 PT 등록으로 확정할까요?
             </p>
             <p className="mb-4 text-xs text-muted">
-              확정하면 PT 회원으로 전환됩니다. 결제가 끝난 뒤 진행하세요.
+              확정하면 PT 회원으로 바뀌어요. 결제가 끝난 뒤 눌러 주세요.
             </p>
 
             {/* 계약 금액 — 세션수·회당단가 입력 시 총액 자동(할인이면 총액 수정). */}

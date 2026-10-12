@@ -41,9 +41,9 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
   const [open, setOpen] = useState(null); // 한 번에 하나만 펼친다
 
   const visible = useMemo(() => members.filter((m) => m && !m.hidden), [members]);
-  const nameOf = (tid) => personName(trainers.find((t) => t.id === tid)?.name) || (tid === "unknown" ? "미배정" : String(tid).slice(0, 8));
+  const nameOf = (tid) => personName(trainers.find((t) => t.id === tid)?.name) || (tid === "unknown" ? "미배정" : "(알 수 없는 트레이너)");
   const nameById = useMemo(() => new Map(visible.filter((m) => m?.id).map((m) => [m.id, personName(m.name)])), [visible]);
-  const memberName = (uid) => nameById.get(uid) || String(uid).slice(0, 8);
+  const memberName = (uid) => nameById.get(uid) || "(이름 없음)";
   const trainerOf = useMemo(() => new Map(visible.filter((m) => m?.id).map((m) => [m.id, m.trainer_id ?? "unknown"])), [visible]);
 
   const funnel = useMemo(() => otFunnel(visible, otRows), [visible, otRows]);
@@ -175,7 +175,7 @@ export default function MemberFlow({ members = [], otRows = [], contracts = [], 
               <span>2차에서 등록 <b className="text-ink">{rpct(secondRate)}</b> <span className="text-muted">({funnel.secondSuccess}/{funnel.secondAttempt})</span></span>
             </div>
             <p className="mt-2 text-[12px] leading-relaxed text-muted">
-              각 단계는 앞 단계에 포함돼요(2차 진행 회원은 1차에도 들어감). 지금 시점 기준이라 이번 달 성적이 아니라 누적입니다.
+              각 단계는 앞 단계에 포함돼요(2차 진행 회원은 1차에도 들어감). 지금 시점 기준이라 이번 달 성적이 아니라 누적이에요.
             </p>
           </>
         )}

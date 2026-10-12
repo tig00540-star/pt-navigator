@@ -89,7 +89,7 @@ export default function OwnerWideHome({
 
       {/* ② 3칸 */}
       <div className="grid grid-cols-3 gap-4">
-        <Box title="오늘 챙길 것" icon={AlertTriangle} action="보고서" onAction={() => onGoTab("briefing")}>
+        <Box title="오늘 보고서" icon={AlertTriangle} action="보고서" onAction={() => onGoTab("briefing")}>
           {brief.length === 0 ? (
             <p className="py-4 text-center text-[13px] text-muted">지금은 비어 있어요.</p>
           ) : (

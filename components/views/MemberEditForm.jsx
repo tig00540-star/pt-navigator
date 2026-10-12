@@ -84,7 +84,7 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
 
   const save = async () => {
     if (saving || !form) return;
-    if (!form.name.trim()) { setErr("이름은 필수입니다."); return; }
+    if (!form.name.trim()) { setErr("이름을 입력해 주세요."); return; }
     if (!supabase) { setErr("데모 모드라 저장할 수 없어요."); return; }
     setSaving(true); setErr("");
     // 표가 없을 때(42P01 · SQL 전)만 예전처럼 칸을 연다. 그 밖의 조회 실패는 '동의 모름'으로 보고 건강정보 칸을 건드리지 않는다(2026-10-06).
@@ -128,8 +128,8 @@ export default function MemberEditForm({ member, onClose, onSaved }) {
           </div>
           <div className="space-y-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 text-[13px] leading-relaxed text-ink">
             <p>AI 답을 바꾸려고 회원 정보를 고치는 거라면 멈추세요.</p>
-            <p className="text-[15px] font-bold text-rose-700">실패도 경험해야 성장할 수 있습니다. 회피하지 마세요.</p>
-            <p className="text-sub">클로징이 안 됐다면 정보를 바꾸지 말고 &lsquo;1차 피드백&rsquo;에 <b>왜 안 됐는지(사유·케이스)</b>를 남겨 주세요. 그 정직한 기록이 쌓여야 앱이 나에게 맞는 세일즈 코치로 자라요.</p>
+            <p className="text-[15px] font-bold text-rose-700">실패도 경험해야 성장할 수 있어요. 피하지 마세요.</p>
+            <p className="text-sub">클로징이 안 됐다면 정보를 바꾸지 말고 &lsquo;OT 피드백&rsquo;에 <b>왜 안 됐는지(사유·케이스)</b>를 남겨 주세요. 그 정직한 기록이 쌓여야 앱이 나에게 맞는 세일즈 코치로 자라요.</p>
             <p className="text-muted">전화번호·직업 변경처럼 <b>실제 사실이 바뀐 경우에만</b> 수정하세요.</p>
           </div>
           <div className="mt-4 flex justify-end gap-2">

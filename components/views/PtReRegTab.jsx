@@ -367,7 +367,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
     setContracts((p) => p.map((c) => (c.id === row.id ? row : c)));
     setRegBrief(row.report.reg_brief);
     setRegBriefMeta(row.report.regBriefMeta);
-  });
+  }, () => setRegAiError("대본을 만들지 못했어요. 다시 시도해 주세요."));
 
   const loadPhotoLabels = async () => {
     if (!supabase || !member?.id) return [];

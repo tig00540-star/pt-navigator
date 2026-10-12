@@ -58,7 +58,10 @@ export default function ApptRequestToday({ members, uid, onChanged }) {
       }
       notifyPush(authHeader(), "appt_decided", r.id);   // 회원 폰으로 승인/거절
       setDeclining(null); setNote("");
+      if (approve) window.dispatchEvent(new Event("ot:appts-changed"));   // 같은 화면 스케줄 다시 읽기
       await load(); onChanged?.();
+    } catch {
+      setErr((e) => ({ ...e, [r.id]: "인터넷 연결을 확인하고 다시 시도해 주세요." }));
     } finally { setBusyId(null); }
   };
 

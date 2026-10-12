@@ -37,6 +37,8 @@ export default function RefundMember({ member, contracts, onDone }) {
     if (!target) return showToast("환불 가능한 유료 계약이 없어요");
     const amt = Number(amount);
     if (!(amt > 0)) return showToast("환불 금액을 입력해 주세요");
+    // 오타(0 하나 더)로 이달 매출이 마이너스가 되던 것(2026-10-12 점검) — 계약 금액까지만.
+    if (target.amount_total != null && amt > Number(target.amount_total)) return showToast(`환불 금액은 계약 금액(${won(target.amount_total)})보다 클 수 없어요`);
     if (!confirming) { setConfirming(true); return; } // 1탭: 확인 대기
     setSaving(true);
     try {
@@ -48,7 +50,7 @@ export default function RefundMember({ member, contracts, onDone }) {
     const { data: hd, error: he } = await supabase.from("user_table")
       .update({ hidden: true }).eq("id", member.id).select();
     if (he || !hd || hd.length === 0) { showToast("환불은 기록했지만 회원 정리는 하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); setSaving(false); return; }
-    showToast("환불 처리 및 회원 정리 완료");
+    showToast("환불하고 회원을 정리했어요");
       setSaving(false);
     } catch {
       showToast("환불을 처리하지 못했어요. 다시 시도해 주세요.");
@@ -66,7 +68,7 @@ export default function RefundMember({ member, contracts, onDone }) {
       </summary>
       <div className="mt-3 space-y-3">
         <p className="text-[12px] leading-relaxed text-muted">
-          환불하면 이 회원은 목록에서 사라지고, 이달 매출에서 환불금이 차감됩니다.
+          환불하면 이 회원은 목록에서 사라지고, 이달 매출에서 환불금이 빠져요.
           PT 회원은 환불로만 삭제돼요. (기록은 보존)
         </p>
         {target ? (

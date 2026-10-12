@@ -854,9 +854,19 @@ ${SAY_STYLE}
 // ⑥ phase="salesbook" user 프롬프트 — 회원 대면 세일즈북(2차 준비 자료). 독자=회원 본인.
 // ⚠️ 트레이너용 브리핑을 변환하지 않고 원천(1차 관찰)에서 회원 톤으로 재생성. 숫자는 recommendedProgram만.
 // ⚠️ 금액은 값 텍스트 금지(앱이 packages[ref].price 렌더). 거절방어·클로징시퀀스·member_read 등 내부요소 없음.
-function salesbookPrompt(member, report, recommendedProgram, packages, photoLabels) {
+//   n차(3차+)면 차수 문구를 따르고, 2차 이후 관찰(history[].observation) 중 가장 최근 것을 같이 근거로 넣는다(2026-10-12).
+//   2차(이전 관찰 없음)는 예전과 같은 프롬프트.
+function salesbookPrompt(member, report, recommendedProgram, packages, photoLabels, round = 2, history = []) {
   const m = member || {};
   const r = report || {};
+  const n = Number.isInteger(round) && round >= 2 ? round : 2;
+  const later = (Array.isArray(history) ? history : []).filter((h) => h && h.observation && typeof h.observation === "object" && h.round >= 2);
+  const lastObs = later.length ? later[later.length - 1] : null;
+  const laterBlock = later.length ? `
+[2차 이후 관찰 — 트레이너가 실제 남긴 기록 · 가장 최근 차수가 '오늘 확인한 것'의 첫째 근거]
+${later.map((h) => `${h.round}차: ${JSON.stringify(h.observation)}`).join("\n")}
+⚠️ 위 JSON 키도 내부 라벨이다. 값 텍스트에 영어 단어를 쓰지 마라.
+` : "";
   const rp = recommendedProgram || {};
   const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
   // ⚠️ 세일즈북 pkgBlock은 금액(price·회당)을 넣지 않는다 — 회원 대면 + 숫자 세이프넷 부재라,
@@ -869,12 +879,12 @@ function salesbookPrompt(member, report, recommendedProgram, packages, photoLabe
     : "등록된 패키지 없음";
   const labels = Array.isArray(photoLabels) ? photoLabels.filter(Boolean) : [];
   const labelBlock = labels.length ? labels.join(", ") : "없음(사진 미등록)";
-  return `[상황] 이 회원의 2차 OT 준비 자료(세일즈북)다. 트레이너가 2차 수업을 마친 뒤 회원에게 직접 보여준다.
+  return `[상황] 이 회원의 ${n}차 OT 준비 자료(세일즈북)다. 트레이너가 ${n}차 수업을 마친 뒤 회원에게 직접 보여준다.
 너는 회원이 볼 화면의 '텍스트'만 채운다. 폰트·구도·디자인은 이미 정해져 있다. 회원이 직접 읽으니 따뜻한 구어체로.
 
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
 
-[1차 관찰 — 유일 근거(트레이너가 실제 관찰)]
+[1차 관찰 — ${later.length ? "기본 근거" : "유일 근거"}(트레이너가 실제 관찰)]
 ${JSON.stringify({
     movements: r.movements ?? [],
     reaction: r.reaction ?? {},
@@ -883,7 +893,7 @@ ${JSON.stringify({
     trainer_note: r.trainer_note ?? "",
   }, null, 2)}
 ⚠️위 [1차 관찰]의 JSON 키(movements·reaction·memo 등)는 내부 라벨이다 — 값 텍스트에 그 영어 단어를 절대 쓰지 마라. 한국어로 풀어라. 없는 관찰·수치·에피소드 창작 금지(회원이 직접 본다).
-
+${laterBlock}
 [추천 프로그램(이미 확정) — 이 값만 사용, 새 숫자·금액 창작 금지]
 ${JSON.stringify({
     pick_ref: rp.pick_ref ?? null,
@@ -906,7 +916,7 @@ ${pkgBlock}
 ③ confirmed(오늘 확인한 것 — ★트레이너 전문가 시선이 주인공): before(오늘 처음 상태 1줄, 작게) · after(자세 하나
    잡아드린 뒤 1줄, 작게) · diagnosis('제가 본 원인' 1~2문장 · 트레이너 1인칭 — 왜 이런지·뭐가 관건인지. "제가 보니
    원인은 ~"결) · approach('그래서 이렇게 바꿔드려요' 1~2문장 · 트레이너 1인칭 · 순서 언어. "닫힌 흉곽부터 열고 →
-   등 감각 심고 → 어깨 라인 올리는 순서로 잡아드려요"결) · member_quote(1차 memberQuote 있으면 그 말 그대로, 짧은
+   등 감각 심고 → 어깨 라인 올리는 순서로 잡아드려요"결) · member_quote(${lastObs ? `${lastObs.round}차 관찰의 memberQuote, 없으면 1차 memberQuote` : "1차 memberQuote"} 있으면 그 말 그대로, 짧은
    보조 근거로만. 없으면 ""). ★diagnosis·approach는 회원 감상보다 '전문가 계획'을 앞세운다. "혼자선 못 잡는 지점을
    제가 잡아드린다"는 사실·책임의 말이라 OK. 단 의료 단정(치료·완치·진단명)·숫자 처방(세트·중량·각도) 금지 —
    자세·감각·순서 언어까지만.
@@ -1461,6 +1471,46 @@ function guardedUnion(objs) {
   return union;
 }
 
+/* AI가 목록 칸을 목록이 아닌 값(문자열 · 객체 · 숫자)으로 보내면 화면의 .map · .filter가 죽는다(2026-10-12 점검).
+   저장 전에 알려진 목록 칸만 배열로 맞춘다. 칸이 아예 없으면 건드리지 않는다(옛 형식 감지 등이 '없음'을 보므로).
+   OBJ = 객체 목록(객체가 아닌 칸은 버림) · STR = 글 목록(숫자는 글로 · 나머지 버림) · ANY = 배열이기만 하면 됨. "*" = 배열의 각 칸. */
+const LIST_PATHS = [
+  ["cheat", "STR"], ["exercises", "OBJ"], ["exercises.*.alts", "OBJ"], ["session_plan", "OBJ"], ["proof.moves", "OBJ"],
+  ["objection_defense", "OBJ"], ["closing_sequence.promise", "STR"], ["closing_sequence.fallback.homework", "OBJ"],
+  ["lib_refs", "ANY"], ["data_gaps", "STR"],
+  // 세일즈북 · 인바디 · 로드맵 · 체형
+  ["goal.current_issues", "STR"], ["photo_slide.points", "STR"], ["today.items", "OBJ"],
+  ["roadmap.steps", "OBJ"], ["roadmap.longterm", "OBJ"], ["roadmap.stages", "OBJ"], ["fork.stop", "STR"], ["fork.go", "STR"],
+  ["plans", "OBJ"], ["plans.*.includes", "STR"], ["closing.services", "STR"],
+  ["metrics", "OBJ"], ["findings", "OBJ"], ["diet", "STR"], ["lifestyle", "STR"], ["exercise", "STR"], ["stages", "OBJ"],
+];
+const isPlainObj = (v) => v != null && typeof v === "object" && !Array.isArray(v);
+function toList(v, kind) {
+  let a;
+  if (Array.isArray(v)) a = v;
+  else if (typeof v === "string") a = v.trim() ? [v] : [];
+  else if (isPlainObj(v)) {
+    const keys = Object.keys(v);
+    a = keys.length && keys.every((k) => /^\d+$/.test(k)) ? Object.values(v) : [v];   // {"0":…,"1":…} → 배열 · 객체 하나 → [객체]
+  } else a = [];
+  if (kind === "OBJ") return a.filter(isPlainObj);
+  if (kind === "STR") return a.filter((x) => typeof x === "string" || typeof x === "number").map(String);
+  return a;
+}
+function coerceAt(node, parts, kind) {
+  if (!isPlainObj(node) && !Array.isArray(node)) return;
+  const [head, ...rest] = parts;
+  if (head === "*") { if (Array.isArray(node)) for (const el of node) coerceAt(el, rest, kind); return; }
+  if (!isPlainObj(node) || !(head in node)) return;
+  if (rest.length === 0) { if (!Array.isArray(node[head]) || kind !== "ANY") node[head] = toList(node[head], kind); return; }
+  coerceAt(node[head], rest, kind);
+}
+function coerceLists(o) {
+  if (!isPlainObj(o)) return o;
+  for (const [path, kind] of LIST_PATHS) coerceAt(o, path.split("."), kind);
+  return o;
+}
+
 /** 모델 응답 텍스트 → JSON 객체 + data_gaps 기본값. requiredKeys를 주면 그 키가 모두 있어야 '완전'.
     1순위: 펜스·구분자 제거 후 단일 파싱(대개 한 객체를 감싼 것뿐).
     2순위: 실패/불완전 시 '첫 완전한 최상위 객체' 균형 추출.
@@ -1473,6 +1523,7 @@ function parseBrief(text, requiredKeys = []) {
     o && typeof o === "object" && !Array.isArray(o) &&
     (requiredKeys.length === 0 || requiredKeys.every((k) => k in o));
   const finalize = (o) => {
+    coerceLists(o);
     if (!Array.isArray(o.data_gaps)) o.data_gaps = [];
     return o;
   };
@@ -1579,14 +1630,25 @@ function equipmentBlock(machines) {
   return `[보유 장비 — 이 센터에 있는 장비] (아래를 최대한 활용해 구성. 목록이 아직 추가 중일 수 있으니, 목표에 더 맞으면 목록에 없는 머신·기구도 함께 제안 가능.)\n${lines}`;
 }
 
+// 화면에 보이는 실패 문구(해요체 · 개발자 용어 없이 · 2026-10-12).
+const BAD_REQUEST = "요청을 처리하지 못했어요. 다시 시도해 주세요.";
+const failMsg = (phase) => REPORT_PHASES.has(phase) ? "대본을 만들지 못했어요. 다시 시도해 주세요."
+  : phase === "inbody" || phase === "posture" ? "분석을 만들지 못했어요. 다시 시도해 주세요."
+  : phase === "roadmap" ? "로드맵 초안을 만들지 못했어요. 다시 시도해 주세요."
+  : "세일즈북을 만들지 못했어요. 다시 시도해 주세요.";
+// AI 호출 마감 — 플랫폼이 180초(maxDuration)에 함수를 끊기 전에 SDK가 먼저 포기해야 catch가 돌아
+//   한도 자리를 '실패'로 닫는다(finishAi ok:false · 안 그러면 대기로 남음). 요청 시작부터 잰다.
+const AI_DEADLINE_MS = 165_000;
+
 export async function POST(request) {
+  const tReq = Date.now();
   const auth = await requireTrainer(request);
   if (!auth.ok) return auth.res;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: "AI 키가 설정되지 않았습니다. 데모 모드로 동작합니다." },
+      { error: "AI 연결이 아직 준비되지 않았어요. 예시로 보여 드려요." },
       { status: 503 }
     );
   }
@@ -1595,7 +1657,7 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "요청 본문을 읽지 못했습니다." }, { status: 400 });
+    return Response.json({ error: BAD_REQUEST }, { status: 400 });
   }
 
   // 입력 상한(P1-12) — 심층방어. 이 라우트는 requireTrainer(인증+구독)로 이미 게이트되지만,
@@ -1610,12 +1672,12 @@ export async function POST(request) {
   let bodyBytes = 0;
   try { bodyBytes = JSON.stringify(body).length; } catch { bodyBytes = MAX_BODY_BYTES + 1; } // 순환참조 등 = 거부
   if (bodyBytes > MAX_BODY_BYTES) {
-    return Response.json({ error: "요청 본문이 너무 큽니다." }, { status: 413 });
+    return Response.json({ error: BAD_REQUEST }, { status: 413 });
   }
 
   const { phase, member: rawMember, report, ptContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture" && phase !== "roadmap") {
-    return Response.json({ error: "phase가 올바르지 않습니다." }, { status: 400 });
+    return Response.json({ error: BAD_REQUEST }, { status: 400 });
   }
   // 건강정보 동의를 철회한 회원 = 불편 부위 · 부상 이력을 빼고 보낸다(프롬프트엔 '-'로 보임).
   const member = rawMember && typeof rawMember === "object" && (await fetchHealthWithdrawn(request, rawMember.id))
@@ -1653,7 +1715,7 @@ export async function POST(request) {
     phase === "first" ? firstPrompt(member, packages, boundedFavs)
     : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages, otRound, boundedHistory, boundedFavs)
     : phase === "reregister" ? reregisterPrompt(member, ptContext, packages, boundedFavs)
-    : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels)
+    : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels, otRound, boundedHistory)
     : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)
     : phase === "first_salesbook" ? firstSalesbookPrompt(member, report, recommendedProgram, packages)
     : phase === "inbody" ? inbodyPrompt(member, inbody)
@@ -1702,7 +1764,9 @@ export async function POST(request) {
     req.thinking = thinkingFor(model);
 
     let msg;
-    try { msg = await anthropic.messages.create(req); }
+    // 마감(AI_DEADLINE_MS)까지 남은 시간만큼만 기다린다 — signal은 SDK 재시도까지 통째로 끊는다.
+    const left = Math.max(5_000, AI_DEADLINE_MS - (Date.now() - tReq));
+    try { msg = await anthropic.messages.create(req, { timeout: left, signal: AbortSignal.timeout(left) }); }
     catch (e) { await finishAi(admin, slot.id, { ok: false, model }); throw e; }
     const textOut = msg.content
       .filter((b) => b.type === "text")
@@ -1740,6 +1804,9 @@ export async function POST(request) {
   const followRereg = phase === "reregister" && save?.kind === "contract" && change && typeof change === "object";
   const follow = (phase === "second" || followRereg) && save ? job.then(async ({ brief, savedId }) => {
     if (!savedId) return;
+    // 남은 시간이 모자라면 이어 만들기를 건너뛴다(플랫폼이 끊으면 한도 자리가 대기로 남는다 · 화면이 나중에 다시 만든다).
+    const leftFollow = tReq + 175_000 - Date.now();
+    if (leftFollow < 20_000) { console.log("[ot-brief] 세일즈북 이어 만들기 건너뜀 · 시간 부족"); return; }
     const t1 = Date.now();
     const anthropic = new Anthropic({ apiKey });
     const isFirst = phase === "first";
@@ -1755,8 +1822,8 @@ export async function POST(request) {
           ? regSalesbookPrompt(member, change, brief?.recommended_program, packages, photoLabels)
           : isFirst
           ? firstSalesbookPrompt(member, brief, brief?.recommended_program, packages)
-          : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels) }],
-      });
+          : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels, otRound, boundedHistory) }],
+      }, { timeout: leftFollow, signal: AbortSignal.timeout(leftFollow) });
       const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       const keys = isRereg ? ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"]
         : isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
@@ -1779,6 +1846,6 @@ export async function POST(request) {
     return Response.json(brief, { headers });
   } catch (e) {
     console.error("[ot-brief] 생성 실패 · phase=" + phase + ":", e?.message || e);
-    return Response.json({ error: "AI 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
+    return Response.json({ error: failMsg(phase) }, { status: 502 });
   }
 }

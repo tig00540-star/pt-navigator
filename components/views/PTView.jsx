@@ -23,6 +23,8 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
   const [logs, setLogs] = useState([]); // daily_workout_log (수업로그)
   const [confirms, setConfirms] = useState([]); // workout_log_confirmation (회원 확인/이의 · 트레이너 SELECT 정책 스코프)
   const [loading, setLoading] = useState(false);
+  const [loadErr, setLoadErr] = useState(false);   // 불러오기 실패(빈 목록과 구분)
+  const [reloadKey, setReloadKey] = useState(0);
 
   // 회원 변경 시 계약·수업로그 로드. setState는 async IIFE 안에서만(set-state-in-effect 회피).
   useEffect(() => {
@@ -39,19 +41,27 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
       }
       setLoading(true);
       try {
-        const [{ data: cs }, { data: ls }, { data: cf }] = await Promise.all([
+        const [r1, r2, { data: cf }] = await Promise.all([
           supabase.from("session_log").select("*").eq("user_id", member.id),
           supabase.from("daily_workout_log").select("*").eq("user_id", member.id),
           // 이 회원 일지들의 확인 — 트레이너 SELECT 정책(account 스코프)로 이 회원 것만 온다. 확인 전용(dispute 제거).
           supabase.from("workout_log_confirmation").select("log_id, result, method, content_hash, dispute_note, confirmed_at").eq("member_id", member.id),
         ]);
+        const cs = r1.data, ls = r2.data;
         if (cancelled) return;
+        if (r1.error || r2.error) {
+          // 실패를 빈 목록으로 두면 '진행 중인 계약이 없어요' + 재등록이 신규로 저장된다(2026-10-12 점검) → 다시 읽기 안내.
+          console.error("PT 회원 기록 불러오기 실패", r1.error || r2.error);
+          setLoadErr(true);
+          return;
+        }
+        setLoadErr(false);
         setContracts(cs || []);
         setLogs(ls || []);
         setConfirms(cf || []);
         setLoading(false);
       } catch {
-        // 조회 실패 — finally에서 로딩 해제.
+        if (!cancelled) setLoadErr(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -59,9 +69,19 @@ export default function PTView({ member, tab, onGoList, onMemberPatch, onMembers
     return () => {
       cancelled = true;
     };
-  }, [member?.id]);
+  }, [member?.id, reloadKey]);
 
   const isRecord = tab === 12; // 자료남기기 — 환불 여기(맨 끝 · 회원 전용 페이지 링크는 2026-10-11 케어 탭으로)
+
+  if (loadErr) {
+    return (
+      <div className="rounded-2xl border border-line bg-card p-5 text-center shadow-sm">
+        <p className="m-0 text-[14px] text-sub">회원 기록을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.</p>
+        <button type="button" onClick={() => { setLoadErr(false); setReloadKey((k) => k + 1); }}
+          className="mt-3 min-h-[40px] rounded-lg border border-line bg-elevate px-4 text-[14px] font-semibold text-ink">다시 불러오기</button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

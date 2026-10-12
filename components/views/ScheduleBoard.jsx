@@ -95,6 +95,13 @@ export default function ScheduleBoard({ members = [], onSelect }) {
   const { toast, showToast } = useToast();
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
+  // 다른 카드(회원 수업 요청 승인 등)가 예약을 바꾸면 다시 읽는다 — 새로고침 전까지 빈 칸으로 보여 겹쳐 잡던 것(2026-10-12 점검).
+  const [apptVer, setApptVer] = useState(0);
+  useEffect(() => {
+    const on = () => setApptVer((v) => v + 1);
+    window.addEventListener("ot:appts-changed", on);
+    return () => window.removeEventListener("ot:appts-changed", on);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,7 +125,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [weekStart, weekEnd]);
+  }, [weekStart, weekEnd, apptVer]);
 
   // 개인 일정 — 이 주에 걸리는 것(한 번짜리는 이 주 · 반복은 이 주 전에 시작한 것 전부 → 화면에서 펼침). 표 없으면(SQL 전) 조용히 빈 채로.
   useEffect(() => {
@@ -223,14 +230,19 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     setSaving(true);
     const slot = addDays(weekStart, pick.dayIdx);
     slot.setHours(pick.hour, pickMin, 0, 0); // 정각 · 30분(2026-10-06)
-    const payload = { user_id: member.id, start_at: slot.toISOString() };
+    // 담당 트레이너로 — 비우면 DB 기본값(적은 사람)이라 대표가 잡은 예약이 담당 트레이너 스케줄에 안 보였다(2026-10-12 점검).
+    const payload = { user_id: member.id, start_at: slot.toISOString(), ...(member.trainer_id ? { trainer_id: member.trainer_id } : {}) };
     if (!supabase) {
       setAppts((p) => [...p, { ...payload, id: `demo-${Date.now()}`, status: "booked" }]);
       setPick(null); setQ(""); setSaving(false); return;
     }
     try {
     const { data, error } = await supabase.from("appointment").insert(payload).select();
-    if (error || !data || data.length === 0) { setSaving(false); return; }
+    if (error || !data || data.length === 0) {
+      if (error) console.error("예약 저장 실패", error);
+      showToast("예약하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
+      setSaving(false); return;
+    }
     setAppts((p) => [...p, data[0]]);
     setPick(null); setQ(""); setSaving(false);
     } catch {
@@ -248,8 +260,10 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     let copied = false, sentAt = null;
     if (body) { copied = await copyToClipboard(body); if (copied) sentAt = new Date().toISOString(); }
 
+    let noContract = false;   // 차감하려 했는데 남은 계약이 없음 → '차감'이라고 하지 않는다
     const doneMsg = () => showToast(
-      (deduct ? "완료 · 차감" : "완료(차감 안 함)") + (body ? (copied ? " · 카톡 복사됨" : " · 복사 실패(길게 눌러 복사)") : "")
+      (!deduct ? "완료했어요 · 차감하지 않았어요" : noContract ? "완료했어요 · 남은 수업이 없어 차감하지 않았어요. 계약을 먼저 등록해 주세요." : "완료했어요 · 1회 차감했어요")
+      + (body ? (copied ? " · 카톡 문구를 복사했어요" : " · 복사하지 못했어요. 길게 눌러 복사해 주세요.") : "")
     );
 
     if (!supabase) {
@@ -264,6 +278,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
         supabase.from("daily_workout_log").select("*").eq("user_id", appt.user_id),
       ]);
       contractId = activeContract(cs || [], ls || [])?.id ?? null; // 활성 없으면 null(차감 안 됨)
+      noContract = !contractId;
     }
     // 멱등 가드(이중차감 방지) — 이전 시도에서 로그 insert 성공 후 appointment update 실패 시,
     // 재시도가 로그를 다시 만들지 않도록 이 예약의 완료 로그가 이미 있으면 재사용한다.
@@ -346,13 +361,13 @@ export default function ScheduleBoard({ members = [], onSelect }) {
     setActing(true);
     if (!supabase) {
       setAppts((p) => p.map((a) => (a.id === appt.id ? { ...a, status: "done" } : a)));
-      showToast("OT 수업 완료"); setAction(null); setActing(false); return;
+      showToast("OT 수업을 완료했어요"); setAction(null); setActing(false); return;
     }
     try {
       const { data, error } = await supabase.from("appointment").update({ status: "done" }).eq("id", appt.id).select();
       if (error || !data || data.length === 0) { showToast("완료 처리하지 못했어요. 다시 시도해 주세요."); setActing(false); return; }
       setAppts((p) => p.map((a) => (a.id === appt.id ? data[0] : a)));
-      showToast("OT 수업 완료"); setAction(null); setActing(false);
+      showToast("OT 수업을 완료했어요"); setAction(null); setActing(false);
     } catch {
       showToast("완료 처리하지 못했어요. 다시 시도해 주세요.");
     } finally {
@@ -606,7 +621,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
             </div>
             <div className="max-h-64 space-y-1 overflow-y-auto">
               {filtered.length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted">회원이 없습니다.</p>
+                <p className="py-4 text-center text-xs text-muted">회원이 없어요.</p>
               ) : filtered.map((m) => (
                 <button key={m.id} onClick={() => book(m)} disabled={saving} className="flex w-full items-center gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-left transition hover:border-primary disabled:opacity-50">
                   <MemberBadge view={viewFor(m)} />
@@ -666,7 +681,7 @@ export default function ScheduleBoard({ members = [], onSelect }) {
             </div>
 
             {action.status === "done" ? (
-              <p className="text-sm text-sub">완료 처리된 수업입니다. (완료 취소는 후속)</p>
+              <p className="text-sm text-sub">완료한 수업이에요.</p>
             ) : actionMember && viewFor(actionMember) === "ot" ? (
               /* OT 회원 — 차감/일지 없음. 준비 이동 · 완료(status done) · 취소 */
               <div className="space-y-3">

@@ -7,14 +7,17 @@
      '식단 짜 주세요' 하루 3번) · 오늘 요청과 답.
    DietFeedbackHome(홈): 어제 식단 피드백 · 새로 온 식단 답(트레이너 이름으로만 · AI 표시 없음).
    둘 다 열 때 /api/diet {action:'auto'}를 한 번 부른다 — 트레이너가 안 한 답 · 피드백을 AI가 대신(예약 작업 없이도 돌게).
+     기다리지 않는다(AI가 몇 분 걸릴 수 있음): 먼저 지금 기록을 보여 주고, 끝나면 한 번 다시 읽는다 · 두 카드가 같은 호출을 나눠 씀.
+   새로 온 식단 답은 실제로 보여 줄 때만 '봤음'(diet_mark_seen) — 다음 날 아침에 온 답(오전 6시 작업 · 트레이너 아침 답)도 보이게
+     지난 7일 요청을 읽는다(member_diet_request가 7일까지).
    하루 = 오전 6시 ~ 다음 날 오전 6시(lib/diet). 쓰기는 DB가 막는다(지난 회원 · 남은 수업 0회 · 식단 꺼짐).
    ========================================================================= */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Check, ChevronDown, Salad, Trash2, Utensils } from "lucide-react";
 import { compressImage } from "@/lib/image";
 import { notifyPush } from "@/lib/pushClient";
-import { dietToday, timeLabel, dayLabel, addDays, purposeLabel, DIET_SITUATIONS, DIET_REQUESTS_PER_DAY } from "@/lib/diet";
+import { dietToday, dietDayOf, timeLabel, dayLabel, addDays, purposeLabel, DIET_SITUATIONS, DIET_REQUESTS_PER_DAY } from "@/lib/diet";
 import Modal from "@/components/ui/Modal";
 
 const URL_TTL = 3600;
@@ -29,11 +32,30 @@ function useAuthHeaders(supabase) {
   }, [supabase]);
 }
 
-// 트레이너가 안 한 답 · 피드백을 AI가 대신(열 때 한 번 · 실패해도 화면은 그대로)
-async function runAuto(headers) {
-  try {
-    await fetch("/api/diet", { method: "POST", headers: { "Content-Type": "application/json", ...(await headers()) }, body: JSON.stringify({ action: "auto" }) });
-  } catch { /* 다음에 다시 */ }
+// 트레이너가 안 한 답 · 피드백을 AI가 대신(열 때 한 번 · 실패해도 화면은 그대로).
+//   홈 카드와 기록하기 카드가 같이 열리므로 진행 중인 호출 하나를 나눠 쓴다. 반환 = 새로 보낸 게 있었나(모르면 true).
+let autoInflight = null;
+function runAuto(headers) {
+  if (!autoInflight) {
+    autoInflight = (async () => {
+      try {
+        const res = await fetch("/api/diet", { method: "POST", headers: { "Content-Type": "application/json", ...(await headers()) }, body: JSON.stringify({ action: "auto" }) });
+        const j = await res.json().catch(() => null);
+        return j ? Boolean(j.requests || j.feedbacks) : true;
+      } catch { return false; /* 다음에 다시 */ }
+    })().finally(() => { autoInflight = null; });
+  }
+  return autoInflight;
+}
+const SEEN_EVT = "diet-answers-seen";   // 기록하기에서 답을 보여 줬음 → 홈 카드의 '왔어요' 줄 지우기
+
+// DB 오류 글자 → 회원에게 보일 말(diet_close_day · request_diet가 raise하는 코드)
+function dietErrMsg(error, fallback) {
+  const m = String(error?.message || "");
+  if (/diet_off/.test(m)) return "트레이너가 식단 관리를 꺼 두었어요. 트레이너에게 물어봐 주세요.";
+  if (/not_allowed/.test(m)) return "지금은 식단을 남길 수 없어요. 남은 수업이 없거나 PT가 끝났을 수 있어요.";
+  if (/failed to fetch|network/i.test(m)) return "인터넷 연결을 확인하고 다시 시도해 주세요.";
+  return fallback;
 }
 
 function MacroBar({ label, got, goal, unit }) {
@@ -93,23 +115,43 @@ export function AnswerBody({ answer }) {
 export function DietFeedbackHome({ supabase, onGoWrite }) {
   const headers = useAuthHeaders(supabase);
   const [data, setData] = useState(null);
+  const markedRef = useRef(false);
   useEffect(() => {
     let alive = true;
-    (async () => {
-      if (!supabase) return;
-      const { data: plan, error } = await supabase.from("member_diet_plan").select("purpose").maybeSingle();
-      if (error || !plan) return;
-      await runAuto(headers);
+    const read = async () => {
       const [d, r] = await Promise.all([
         supabase.from("member_diet_day").select("*").not("feedback", "is", null).gte("day", addDays(dietToday(), -2)).order("day", { ascending: false }).limit(1),
         supabase.from("member_diet_request").select("*").eq("status", "answered").is("member_seen_at", null).order("answered_at", { ascending: false }).limit(3),
       ]);
       if (alive) setData({ day: d.data?.[0] || null, answers: r.data || [] });
+    };
+    (async () => {
+      if (!supabase) return;
+      const { data: plan, error } = await supabase.from("member_diet_plan").select("purpose").maybeSingle();
+      if (error || !plan) return;
+      await read();                                              // 먼저 지금 것
+      runAuto(headers).then((changed) => { if (alive && changed) read(); });   // AI가 대신 보낸 게 있으면 한 번 더
     })();
-    return () => { alive = false; };
+    // 기록하기에서 답을 봤으면 '왔어요' 줄을 지운다
+    const onSeen = () => { if (alive) setData((p) => (p ? { ...p, answers: [] } : p)); };
+    window.addEventListener(SEEN_EVT, onSeen);
+    return () => { alive = false; window.removeEventListener(SEEN_EVT, onSeen); };
   }, [supabase, headers]);
+  // 기록하기 탭이 없는 때(볼 수만 있는 때)는 답을 여기서 바로 보여 주고, 보여 준 뒤에 '봤음'
+  const inline = !onGoWrite;
+  const hasAnswers = Boolean(data?.answers?.length);
+  useEffect(() => {
+    if (!inline || !hasAnswers || markedRef.current || !supabase) return;
+    markedRef.current = true;
+    supabase.rpc("diet_mark_seen").then(({ error }) => { if (error) console.error("식단 답 확인 표시 실패", error); });
+  }, [inline, hasAnswers, supabase]);
   if (!data || (!data.day && !data.answers.length)) return null;
   const d = data.day;
+  const goAnswers = () => {
+    onGoWrite?.();
+    // 기록하기 탭이 그려진 뒤 답 칸으로
+    setTimeout(() => { try { document.getElementById("diet-answers")?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch { /* 무시 */ } }, 60);
+  };
   return (
     <section className={card}>
       {d && (
@@ -121,18 +163,34 @@ export function DietFeedbackHome({ supabase, onGoWrite }) {
           <FeedbackBody fb={d.feedback} />
         </>
       )}
-      {data.answers.length > 0 && (
-        <button type="button" onClick={() => { supabase.rpc("diet_mark_seen").then(() => {}); onGoWrite?.(); }}
+      {data.answers.length > 0 && (inline ? (
+        <div className={`space-y-2 ${d ? "mt-3" : ""}`}>
+          <p className="m-0 text-[14px] font-semibold text-primary-strong">요청한 식단이 왔어요</p>
+          {data.answers.map((q) => (
+            <div key={q.id} className="rounded-xl border border-line px-3 py-2.5">
+              <p className="m-0 text-[12px] text-muted">{reqLabel(q)}</p>
+              <div className="mt-1"><AnswerBody answer={q.answer} /></div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <button type="button" onClick={goAnswers}
           className={`flex min-h-[44px] w-full items-center justify-between rounded-xl bg-primary-soft px-3 text-[14px] font-semibold text-primary-strong ${d ? "mt-3" : ""}`}>
           요청한 식단이 왔어요 · {data.answers.length}개 <span aria-hidden="true">→</span>
         </button>
-      )}
+      ))}
     </section>
   );
 }
 
 /* ── 기록하기: 오늘 식단 · 내 식단 가이드 ── */
-export default function DietSection({ supabase, me, trainedToday = false }) {
+// 요청 한 줄 머리: 오늘 것이 아니면 날짜를 앞에
+function reqLabel(q, today = dietToday()) {
+  const when = q.day === today ? "" : q.day === addDays(today, -1) ? "어제 요청 · " : `${dayLabel(q.day)} 요청 · `;
+  return `${when}${q.scope === "today" ? (q.day === today ? "오늘 남은 끼니" : "그날 남은 끼니") : "이번 주"}${q.situations?.length ? ` · ${q.situations.join(", ")}` : ""}`;
+}
+
+export default function DietSection({ supabase, me, trainedToday = false, active = true }) {
   const headers = useAuthHeaders(supabase);
   const [plan, setPlan] = useState(undefined);       // undefined = 읽는 중 · null = 꺼짐
   const [meals, setMeals] = useState([]);
@@ -143,8 +201,10 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
   const [file, setFile] = useState(null);
   const [memo, setMemo] = useState("");
   const [when, setWhen] = useState("");
+  const [whenAt, setWhenAt] = useState(0);   // 먹은 시각을 고른 때(어느 식단 하루인지 화면에 보여 줄 기준)
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [note2, setNote2] = useState("");   // 안내(빨강 아님) — 예: 어제 식단에 올렸어요
   const [reqOpen, setReqOpen] = useState(false);
   const [scope, setScope] = useState("today");
   const [sits, setSits] = useState([]);
@@ -159,7 +219,8 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
     const [m, d, r] = await Promise.all([
       supabase.from("diet_meal").select("*").gte("day", addDays(today, -1)).order("eaten_at", { ascending: true }),
       supabase.from("member_diet_day").select("*").gte("day", addDays(today, -1)),
-      supabase.from("member_diet_request").select("*").eq("day", today).neq("status", "withdrawn").order("created_at", { ascending: true }),
+      // 지난 7일(뷰 범위) — 다음 날 아침에 온 답도 보이게. 오늘 몇 번 썼는지는 아래에서 오늘 것만 센다.
+      supabase.from("member_diet_request").select("*").neq("status", "withdrawn").order("created_at", { ascending: true }),
     ]);
     const ms = m.data || [];
     const paths = ms.map((x) => x.photo_path).filter(Boolean);
@@ -173,7 +234,10 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
 
   useEffect(() => {
     let alive = true;
-    (async () => { await runAuto(headers); if (alive) await load(); })();
+    (async () => {
+      await load();                                                 // 먼저 지금 기록
+      runAuto(headers).then((changed) => { if (alive && changed) load(); });   // AI가 대신 보낸 게 있으면 한 번 더
+    })();
     return () => { alive = false; };
   }, [load, headers]);
 
@@ -181,7 +245,25 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
   const todayDay = days.find((d) => d.day === today);
   const fedToday = Boolean(todayDay?.feedback);
   const closed = Boolean(todayDay?.closed_at);
-  const usedReq = reqs.length;
+  const todayReqs = reqs.filter((q) => q.day === today);
+  const usedReq = todayReqs.length;
+  // 보여 줄 요청: 오늘 것 전부 + 지난 날 중 아직 기다리는 것 · 답이 왔는데 아직 안 본 것(최근 순) · 이미 본 지난 답은 접어서
+  const pastReqs = reqs.filter((q) => q.day !== today);
+  const showReqs = [...pastReqs.filter((q) => q.status === "open" || (q.status === "answered" && !q.member_seen_at)), ...todayReqs];
+  const oldAnswers = pastReqs.filter((q) => q.status === "answered" && q.member_seen_at).reverse();
+  const unseen = reqs.filter((q) => q.status === "answered" && !q.member_seen_at).length;
+
+  // 새 답을 실제로 보여 줄 때(기록하기 탭이 열려 있을 때)만 '봤음' — 홈 카드의 '왔어요' 줄도 지운다
+  useEffect(() => {
+    if (!active || !unseen || !supabase) return;
+    let alive = true;
+    (async () => {
+      const { error } = await supabase.rpc("diet_mark_seen");
+      if (error) { console.error("식단 답 확인 표시 실패", error); return; }
+      if (alive) { try { window.dispatchEvent(new Event(SEEN_EVT)); } catch { /* 무시 */ } }
+    })();
+    return () => { alive = false; };
+  }, [active, unseen, supabase]);
   const kcal = plan ? (trainedToday ? plan.kcal_pt : plan.kcal_rest) : null;
   const week = useMemo(() => {
     if (!plan?.started_on) return null;
@@ -202,20 +284,24 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
     const local = t && Date.now() - t.getTime() < 20 * 3600000 ? t : new Date();
     const k = new Date(local.getTime() + 9 * 3600000);
     setWhen(`${String(k.getUTCHours()).padStart(2, "0")}:${String(k.getUTCMinutes()).padStart(2, "0")}`);
+    setWhenAt(Date.now());
     setAdding(true);
   };
-  const eatenIso = () => {
-    // 'HH:MM'(KST) → 오늘 식단 하루 안의 시각(새벽 0~6시는 다음 날 새벽)
+  const eatenIso = (nowMs) => {
+    // 'HH:MM'(KST) → 오늘 식단 하루 안의 시각(새벽 0~6시는 다음 날 새벽).
+    //   그 시각이 아직 안 왔으면 지난 식단 하루의 시각이다(아침 8시에 '23:00' = 어젯밤 · DB는 어제 하루까지 받음).
     const [h, mi] = (when || "").split(":").map(Number);
-    if (Number.isNaN(h)) return new Date().toISOString();
+    if (!when || Number.isNaN(h)) return new Date(nowMs).toISOString();
     const base = Date.parse(`${today}T00:00:00Z`) - 9 * 3600000;   // 그날 KST 0시
-    const ms = base + (h < 6 ? h + 24 : h) * 3600000 + (mi || 0) * 60000;
-    return new Date(Math.min(ms, Date.now())).toISOString();
+    let ms = base + (h < 6 ? h + 24 : h) * 3600000 + (mi || 0) * 60000;
+    if (ms > nowMs + 5 * 60000) ms -= 24 * 3600000;
+    return new Date(Math.min(ms, nowMs)).toISOString();
   };
+  const whenDay = adding && when ? dietDayOf(eatenIso(whenAt)) : today;   // 올릴 식단 하루(화면에 보여 줌)
 
   const save = async () => {
     if (busy || (!file && !memo.trim())) return;
-    setBusy(true); setMsg("");
+    setBusy(true); setMsg(""); setNote2("");
     let path = null;
     try {
       if (file) {
@@ -224,14 +310,17 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
         const { error: ue } = await supabase.storage.from("diet-photos").upload(path, blob, { contentType: "image/jpeg" });
         if (ue) { console.error("식단 사진 올리기 실패", ue); setMsg("사진을 올리지 못했어요. 다시 시도해 주세요."); return; }
       }
-      const { data, error } = await supabase.from("diet_meal").insert({ user_id: me.id, eaten_at: eatenIso(), photo_path: path, memo: memo.trim() || null }).select("id");
+      const at = eatenIso(Date.now());
+      const { data, error } = await supabase.from("diet_meal").insert({ user_id: me.id, eaten_at: at, photo_path: path, memo: memo.trim() || null }).select("id");
       if (error || !data?.length) {
         console.error("식단 저장 실패", error);
         if (path) await supabase.storage.from("diet-photos").remove([path]);
         setMsg("저장하지 못했어요. 다시 시도해 주세요.");
         return;
       }
+      const toDay = dietDayOf(at);
       setFile(null); setMemo(""); setWhen(""); setAdding(false);
+      if (toDay !== today) setNote2(`${toDay === addDays(today, -1) ? "어제" : dayLabel(toDay)} 식단에 올렸어요.`);
       await load();
     } catch (e) {
       console.error(e);
@@ -255,7 +344,12 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
     setBusy(true); setMsg("");
     const { error } = await supabase.rpc("diet_close_day");
     setBusy(false);
-    if (error) { setMsg("저장하지 못했어요. 다시 시도해 주세요."); return; }
+    if (error) {
+      console.error("오늘 식단 끝 실패", error);
+      setMsg(dietErrMsg(error, "저장하지 못했어요. 다시 시도해 주세요."));
+      if (/diet_off/.test(String(error.message || ""))) await load();
+      return;
+    }
     notifyPush(headers(), "diet_done", me.id);
     await load();
   };
@@ -266,15 +360,22 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
     setBusy(true); setMsg("");
     const { data, error } = await supabase.rpc("request_diet", { p_scope: scope, p_situations: sits.length ? sits : null, p_note: note.trim() || null });
     setBusy(false);
-    if (error) { setMsg("요청하지 못했어요. 다시 시도해 주세요."); return; }
-    if (!data?.ok) { setMsg("오늘은 요청을 다 썼어요. 내일 다시 요청해 주세요 🙂"); setReqOpen(false); return; }
+    if (error) {
+      console.error("식단 요청 실패", error);
+      setMsg(dietErrMsg(error, "요청하지 못했어요. 다시 시도해 주세요.")); setReqOpen(false);
+      if (/diet_off/.test(String(error.message || ""))) await load();
+      return;
+    }
+    if (!data?.ok) { setMsg(data?.code === "limit" ? "오늘은 요청을 다 썼어요. 내일 다시 요청해 주세요 🙂" : "요청하지 못했어요. 다시 시도해 주세요."); setReqOpen(false); if (data?.code === "limit") await load(); return; }
     notifyPush(headers(), "diet_request", data.id);
     setReqOpen(false); setSits([]); setNote("");
     await load();
   };
   const withdraw = async (id) => {
-    const { data } = await supabase.rpc("withdraw_diet_request", { p_id: id });
-    if (!data) setMsg("이미 답을 준비하고 있어서 취소할 수 없어요.");
+    setMsg("");
+    const { data, error } = await supabase.rpc("withdraw_diet_request", { p_id: id });
+    if (error) { console.error("식단 요청 취소 실패", error); setMsg(dietErrMsg(error, "요청을 취소하지 못했어요. 다시 시도해 주세요.")); }
+    else if (!data) setMsg("이미 답을 준비하고 있어서 취소할 수 없어요.");
     await load();
   };
 
@@ -312,8 +413,9 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
             {file && <p className="m-0 text-[13px] text-sub">사진 1장 · 고른 사진이 올라가요</p>}
             <input value={memo} onChange={(e) => setMemo(e.target.value.slice(0, 200))} placeholder="메모(선택) 예: 밥 반 공기 · 단백질 쉐이크 1개"
               className="min-h-[44px] w-full rounded-lg border border-line bg-card px-3 text-[14px] text-ink placeholder-muted" />
-            <label className="flex items-center gap-2 text-[13px] text-sub">먹은 시각
-              <input type="time" value={when} onChange={(e) => setWhen(e.target.value)} className="min-h-[40px] rounded-lg border border-line bg-card px-2 text-[14px] text-ink" />
+            <label className="flex flex-wrap items-center gap-2 text-[13px] text-sub">먹은 시각
+              <input type="time" value={when} onChange={(e) => { setWhen(e.target.value); setWhenAt(Date.now()); }} className="min-h-[40px] rounded-lg border border-line bg-card px-2 text-[14px] text-ink" />
+              {when && <span className={whenDay === today ? "text-muted" : "font-semibold text-primary-strong"}>{whenDay === today ? "오늘 식단" : `${whenDay === addDays(today, -1) ? "어제" : dayLabel(whenDay)} 식단으로 올라가요`}</span>}
             </label>
             <div className="flex gap-2">
               <button type="button" onClick={() => { setAdding(false); setFile(null); setMemo(""); }} className="min-h-[44px] flex-1 rounded-xl border border-line bg-card text-[14px] font-semibold text-sub">취소</button>
@@ -336,6 +438,7 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
             : <button type="button" onClick={closeDay} disabled={busy} className="mt-3 min-h-[48px] w-full rounded-xl bg-primary text-[15px] font-bold text-white disabled:opacity-50">오늘 식단 끝</button>
         )}
         {msg && <p className="m-0 mt-2 text-[13px] text-danger-text">{msg}</p>}
+        {note2 && !msg && <p className="m-0 mt-2 text-[13px] text-sky-700">{note2}</p>}
         <p className="m-0 mt-3 text-[12px] leading-relaxed text-muted">사진 없이 글로만 남겨도 돼요. 오늘 식단은 내일 오전 6시까지예요.</p>
       </section>
 
@@ -373,11 +476,11 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
           </div>
         )}
 
-        {reqs.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {reqs.map((q) => (
+        {showReqs.length > 0 && (
+          <div id="diet-answers" className="mt-3 scroll-mt-16 space-y-2">
+            {showReqs.map((q) => (
               <div key={q.id} className="rounded-xl border border-line px-3 py-2.5">
-                <p className="m-0 text-[12px] text-muted">{q.scope === "today" ? "오늘 남은 끼니" : "이번 주"}{q.situations?.length ? ` · ${q.situations.join(", ")}` : ""}</p>
+                <p className="m-0 text-[12px] text-muted">{reqLabel(q, today)}</p>
                 {q.status === "answered" ? <div className="mt-1"><AnswerBody answer={q.answer} /></div>
                   : q.status === "open" ? (
                     <div className="mt-1 flex items-center justify-between gap-2">
@@ -388,6 +491,19 @@ export default function DietSection({ supabase, me, trainedToday = false }) {
               </div>
             ))}
           </div>
+        )}
+        {oldAnswers.length > 0 && (
+          <details className="mt-2 rounded-xl bg-elevate px-3 py-2">
+            <summary className="cursor-pointer text-[13px] font-semibold text-sub">지난 식단 답 {oldAnswers.length}개</summary>
+            <div className="mt-2 space-y-2">
+              {oldAnswers.map((q) => (
+                <div key={q.id} className="rounded-xl border border-line bg-card px-3 py-2.5">
+                  <p className="m-0 text-[12px] text-muted">{reqLabel(q, today)}</p>
+                  <div className="mt-1"><AnswerBody answer={q.answer} /></div>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
         <p className="m-0 mt-3 text-[12px] text-muted">오늘 요청 {usedReq} / {DIET_REQUESTS_PER_DAY}</p>
         <p className="m-0 mt-1 text-[12px] leading-relaxed text-muted">사진 기준 추정이에요. 영양 상담이 아닌 참고용이고, 트레이너가 AI 분석을 활용해 답할 수 있어요.</p>

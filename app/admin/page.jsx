@@ -312,6 +312,7 @@ export default function AdminDashboard() {
   // KST(UTC+9) 이달 — memberStatus.kstYm과 경계 통일. Date.now()는 react 룰상 impure라 new Date().getTime() 사용.
   const ym = new Date(new Date().getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7);
   // 매출 · 정산용 계약 = 지금 계약 + 옮겨 간 회원의 사본(회원 없음 · 인계 표시 → 남은 수업 계산엔 안 들어감)
+  //   홈 · 한눈에 · 보고서 · 리더보드의 '이달 매출'도 이걸로(2026-10-12 · 매출 탭 · 정산과 숫자 맞춤). 사본은 회원 · 결과 칸이 없어 클로징 · 재등록 · 이탈 계산엔 안 섞인다.
   const revenueContracts = useMemo(() => movedOut.length ? [...contracts, ...ledgerAsContracts(movedOut)] : contracts, [contracts, movedOut]);
   const approachDist = useMemo(() => closingApproachStats(otRows), [otRows]);
   const reasonDist = useMemo(() => reregisterReasonStats(contracts), [contracts]);
@@ -330,8 +331,8 @@ export default function AdminDashboard() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-bg">
         <ShieldCheck className="h-10 w-10 text-muted" />
         <div>
-          <div className="text-lg font-semibold text-ink">접근 권한이 없습니다</div>
-          <div className="mt-1 text-sm text-muted">대표 화면은 센터 대표만 볼 수 있어요.</div>
+          <div className="text-lg font-semibold text-ink">대표만 볼 수 있어요</div>
+          <div className="mt-1 text-sm text-muted">대표 아이디로 로그인해 주세요.</div>
         </div>
         <Link href="/" className="rounded-lg border border-line bg-elevate px-3 py-2 text-xs font-medium text-ink hover:border-primary hover:text-primary-strong">
           트레이너 화면으로
@@ -440,7 +441,7 @@ export default function AdminDashboard() {
         {atab === "hub" && wide && (
         <section className="mb-8">
           <OwnerWideHome
-            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            members={rows} otRows={otRows} contracts={revenueContracts} logs={logs}
             appts={appts} goals={goals} expenses={expenses} incomes={incomes} trainers={trainers} ym={ym}
             centerName={centerName} onGoTab={goTab} />
         </section>
@@ -448,7 +449,7 @@ export default function AdminDashboard() {
         {atab === "hub" && !wide && (
         <section className="mb-8">
           <OwnerHub
-            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            members={rows} otRows={otRows} contracts={revenueContracts} logs={logs}
             appts={appts} goals={goals} trainers={trainers} ym={ym}
             centerName={centerName} onGoTab={goTab} />
         </section>
@@ -458,7 +459,7 @@ export default function AdminDashboard() {
         {atab === "overview" && (
         <section className="mb-8">
           <OwnerOverview
-            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            members={rows} otRows={otRows} contracts={revenueContracts} logs={logs}
             trainers={trainers} appts={appts} expenses={expenses} incomes={incomes} ym={ym}
             onGoTab={goTab} />
         </section>
@@ -469,7 +470,7 @@ export default function AdminDashboard() {
         <section className="mb-8">
           <OwnerBriefing
             ready={dataReady}
-            members={rows} otRows={otRows} contracts={contracts} logs={logs}
+            members={rows} otRows={otRows} contracts={revenueContracts} logs={logs}
             appts={appts} goals={goals} trainers={trainers} ym={ym}
             onGoTab={goTab} />
         </section>
@@ -570,7 +571,7 @@ export default function AdminDashboard() {
           <TrainerScorecard
             members={rows}
             otRows={otRows}
-            contracts={contracts}
+            contracts={revenueContracts}
             logs={logs}
             trainers={trainers}
             schemes={schemes}

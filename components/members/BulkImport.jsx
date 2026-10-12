@@ -257,7 +257,7 @@ export default function BulkImport() {
                   : <Check className="mt-0.5 h-4 w-4 shrink-0 text-cyan-700" aria-hidden="true" />}
                 <div className="min-w-0 flex-1 text-[14px]">
                   <span className="font-semibold text-ink">{r.name || "(이름 없음)"}</span>
-                  <span className="text-muted"> · {r.kind === "pt" ? `PT · 남은 ${r.remaining || "?"}회` : "OT 예정"}{r.phone ? ` · ${formatPhone(r.phone)}` : ""}</span>
+                  <span className="text-muted"> · {r.kind === "pt" ? `PT · 남은 ${r.remaining || "?"}회${!r.thisMonth && Number(r.price) > 0 ? ` · 회당 ${won(Number(r.price))}` : ""}` : "OT 예정"}{r.phone ? ` · ${formatPhone(r.phone)}` : ""}</span>
                   {skip && <p className="m-0 text-[13px] text-muted">{skip === "exists" ? "이미 있는 회원이에요 · 건너뜀" : "위 줄과 번호가 같아요 · 건너뜀"}</p>}
                   {!skip && r.kind === "pt" && r.thisMonth && !errors.length && (
                     <p className="m-0 text-[13px] text-sub">이번 달 매출 {won(Number(r.tmAmount) || 0)} · 회당 {won(Math.round((Number(r.tmAmount) || 0) / (Number(r.tmTotal) || 1)))}</p>

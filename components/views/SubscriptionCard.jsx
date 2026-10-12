@@ -180,6 +180,32 @@ export default function SubscriptionCard() {
     } finally { setBusy(""); }
   };
 
+  // 카드 바꾸기(2026-10-12) — 결제벽과 같은 토스 카드 등록창. 이용 중 계정이면 서버(/api/billing/confirm)가 결제 없이 카드만 바꾼다.
+  const changeCard = async () => {
+    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+    if (!clientKey) { showToast("카드 등록 창을 준비하지 못했어요. 잠시 후 다시 시도해 주세요."); return; }
+    setBusy("card");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const uid = data?.session?.user?.id;
+      if (!uid) { showToast("다시 로그인해 주세요."); setBusy(""); return; }
+      const { loadTossPayments } = await import("@tosspayments/payment-sdk");
+      const toss = await loadTossPayments(clientKey);
+      const origin = window.location.origin;
+      // 성공 → /billing/success(카드만 바뀜 · '카드를 바꿨어요') · 실패 · 취소 → /billing/fail(카드 그대로)
+      await toss.requestBillingAuth("카드", {
+        customerKey: uid,
+        successUrl: `${origin}/billing/success?plan=${st.plan || ""}&card=1`,
+        failUrl: `${origin}/billing/fail?kind=card`,
+      });
+      // 정상 흐름은 여기서 페이지가 넘어간다 — 아래는 예외일 때만.
+    } catch (e) {
+      console.error("카드 등록 창 열기 실패", e);
+      setBusy("");
+      showToast("카드 등록 창을 열지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+  };
+
   // 요금제 · 자리 바꾸기 — 결제가 있는 것(올리기 · 자리 더하기)은 먼저 금액을 보여 주고 확인받는다
   const askChange = async (action) => {
     if (action !== "upgrade" && action !== "seat_add") { setChange({ action, amount: 0 }); return; }
@@ -270,6 +296,11 @@ export default function SubscriptionCard() {
         )}
 
         <div className="mt-4 flex flex-col gap-2">
+          {st.mode === "full" && st.end && (
+            <Button variant="ghost" size="md" fullWidth onClick={changeCard} disabled={busy !== ""}>
+              <CreditCard className="h-4 w-4" aria-hidden="true" /> {busy === "card" ? "카드 등록 창 여는 중…" : "카드 바꾸기"}
+            </Button>
+          )}
           <Button variant="ghost" size="md" fullWidth onClick={exportData} disabled={busy !== ""}>
             <Download className="h-4 w-4" aria-hidden="true" /> {busy === "export" ? "준비하는 중…" : "내 데이터 내려받기"}
           </Button>

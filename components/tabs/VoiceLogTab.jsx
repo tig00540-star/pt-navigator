@@ -212,7 +212,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
     // 마이크 미지원 브라우저 → 데모
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setNotice("이 브라우저는 마이크 녹음을 지원하지 않아 데모 리포트로 진행합니다.");
+      setNotice("이 브라우저는 마이크 녹음을 지원하지 않아요. 예시로 보여 드려요.");
       runDemo();
       return;
     }
@@ -233,7 +233,7 @@ export default function VoiceLogTab({ member, onResult }) {
         },
       });
     } catch {
-      setNotice("마이크 권한이 필요합니다. 브라우저에서 권한을 허용한 뒤 다시 시도해 주세요.");
+      setNotice("마이크를 쓸 수 있게 허용해 주세요. 브라우저 설정에서 허용한 뒤 다시 시도해 주세요.");
       return;
     }
 
@@ -257,7 +257,7 @@ export default function VoiceLogTab({ member, onResult }) {
     // 최대 길이 도달 시 자동 정지
     maxTimerRef.current = setTimeout(() => {
       if (recorderRef.current?.state === "recording") {
-        setNotice("최대 녹음 시간(10분)에 도달해 자동 정지했습니다.");
+        setNotice("최대 녹음 시간(10분)이 지나 자동으로 멈췄어요.");
         stop();
       }
     }, MAX_RECORD_SEC * 1000);
@@ -280,7 +280,7 @@ export default function VoiceLogTab({ member, onResult }) {
 
     const blob = new Blob(chunksRef.current, { type });
     if (blob.size === 0) {
-      failReal("녹음된 오디오가 없습니다. 다시 녹음해 주세요.");
+      failReal("녹음된 소리가 없어요. 다시 녹음해 주세요.");
       return;
     }
     // 업로드 전 크기 가드 — Vercel 함수 body 4.5MB 한도(초과 시 함수 실행 전 413·서버로그 0).
@@ -300,13 +300,13 @@ export default function VoiceLogTab({ member, onResult }) {
       const res = await fetch("/api/voice-log", { method: "POST", headers: { ...(await authHeader()) }, body: fd });
       if (!res.ok) {
         // 503 = AI 키 미설정(데모 환경) → 미리보기용 데모 유지. 그 외 실패는 가짜 리포트 안 채움.
-        if (res.status === 503) { setNotice("AI가 설정되지 않아 데모 리포트로 보여 드려요."); runDemo(); return; }
+        if (res.status === 503) { setNotice("AI 연결이 아직 준비되지 않아 예시로 보여 드려요."); runDemo(); return; }
         const data = await res.json().catch(() => ({}));
         // 402 = 이번 달 한도를 다 씀 → 서버 문구 그대로(재시도 문구 없이)
         if (res.status === 402) { failReal(data.error || "이번 달 음성일지를 다 썼어요."); refreshAiQuota(); return; }
         // 413 = 용량 초과: 같은 녹음 재전송은 무의미 → 재시도 문구 없이 크기 안내만.
-        if (res.status === 413) { failReal(data.error || "녹음 파일이 너무 큽니다. 더 짧게 나눠 다시 녹음해 주세요."); return; }
-        failReal((data.error || "AI 처리에 실패했습니다.") + " 잠시 후 다시 시도해 주세요.");
+        if (res.status === 413) { failReal(data.error || "녹음 파일이 너무 커요. 더 짧게 나눠 다시 녹음해 주세요."); return; }
+        failReal(data.error || "운동일지로 정리하지 못했어요. 다시 시도해 주세요.");
         return;
       }
       const data = await res.json();
@@ -316,13 +316,13 @@ export default function VoiceLogTab({ member, onResult }) {
       setPhase("done");
       refreshAiQuota();
     } catch {
-      failReal("네트워크 오류로 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      failReal("인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
   };
 
   const buildText = (r) =>
     (isDemo ? "⚠️ 데모 예시 · 실제 기록 아님\n\n" : "") +
-    `[${todayLabel()}${sessionNo ? ` · ${sessionNo}회차` : ""}, ${member.name} 회원님 운동일지 입니다!]\n\n` +
+    `[${todayLabel()}${sessionNo ? ` · ${sessionNo}회차` : ""}, ${member.name} 회원님 운동일지입니다!]\n\n` +
     `1. 오늘 진행한 운동\n` +
     r.machines
       .map((m) => {
@@ -420,7 +420,7 @@ export default function VoiceLogTab({ member, onResult }) {
       {phase === "processing" && (
         <Card as="section">
           <div className="mb-3 flex items-center gap-2 text-xs text-muted">
-            <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 음성 → 텍스트 변환 후 AI가 리포트로 정제하는 중
+            <Sparkles className="h-3.5 w-3.5 text-primary-strong" /> 말한 내용을 AI가 운동일지로 정리하는 중
           </div>
           <div className="space-y-2.5">
             <div className="h-4 w-1/3 animate-pulse rounded bg-elevate" />
@@ -472,7 +472,7 @@ export default function VoiceLogTab({ member, onResult }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">언급된 머신 정보가 없습니다.</p>
+              <p className="text-sm text-muted">말한 장비가 없어요.</p>
             )}
           </div>
 
@@ -505,8 +505,7 @@ export default function VoiceLogTab({ member, onResult }) {
           </Button>
 
           <p className="mt-3 text-[12px] leading-relaxed text-muted">
-            ※ 실제 마이크 녹음 → 음성인식(STT) → AI 요약으로 생성됩니다. 키 미설정·오류·미지원
-            브라우저 시 데모 리포트로 자동 폴백합니다.
+            ※ 말한 내용을 AI가 운동일지로 정리했어요. 저장하기 전에 한 번 읽어 봐 주세요.
           </p>
         </section>
       )}

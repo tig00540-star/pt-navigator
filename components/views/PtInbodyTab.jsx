@@ -203,7 +203,9 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setAnaNotice(res.status === 402 ? d.error : (d.error || "분석을 만들지 못했어요.") + " 다시 시도해 주세요.");
+        const msg = d.error || "분석을 만들지 못했어요.";
+        // 서버 문구가 이미 '다시 …'로 끝나면 그대로(같은 말 두 번 붙지 않게)
+        setAnaNotice(res.status === 402 || /다시/.test(msg) ? msg : msg + " 다시 시도해 주세요.");
         return;
       }
       const result = await res.json();
@@ -324,7 +326,7 @@ export default function PtInbodyTab({ member, mode, showAnalysis = false }) {
         {loading ? (
           <p className="mt-2 text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">아직 인바디 기록이 없습니다. 위에서 첫 측정을 입력해 주세요.</p>
+          <p className="mt-2 text-sm text-muted">아직 인바디 기록이 없어요. 위에서 첫 측정을 입력해 주세요.</p>
         ) : (
           <ul className="mt-2 space-y-2">
             {rows.map((row) => (

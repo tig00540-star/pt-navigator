@@ -81,6 +81,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
   const [editText, setEditText] = useState("");
   const [logBusy, setLogBusy] = useState(false);      // 수정/void 진행 중(버튼 잠금)
   const [voidTarget, setVoidTarget] = useState(null); // 삭제 확인 모달 대상 log(null=닫힘)
+  const [noshowArm, setNoshowArm] = useState(false);   // 노쇼 차감은 두 번 눌러야(바로 옆 저장 버튼과 헷갈려 한 번에 빠지던 것 · 2026-10-12)
   const [actionLogId, setActionLogId] = useState(null); // 수정 · 삭제 버튼을 펼친 일지(2026-10-11 · 카드마다 늘 보이던 버튼을 ⋯ 뒤로)
   const [openLogs, setOpenLogs] = useState(() => new Set()); // 지난 수업 — 펼친 일지(2026-10-12 · 기본은 회차 · 날짜 한 줄)
   const toggleLog = (id) => setOpenLogs((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -194,7 +195,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     setLogBusy(true);
     if (!supabase) {
       setLogs((p) => p.map((x) => (x.id === log.id ? { ...x, ai_summary: next } : x)));
-      cancelEdit(); showToast("수정됨(데모)"); setLogBusy(false); return;
+      cancelEdit(); showToast("수정했어요(데모)"); setLogBusy(false); return;
     }
     try {
       const { data, error } = await supabase
@@ -274,7 +275,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     // 비노쇼면 저장 전 body 카톡 복사(성공 시 sent_at 증거 프록시).
     let copied = false;
     let sentAt = null;
-    if (source !== "noshow") {
+    if (source !== "noshow" && body.trim()) {
       copied = await copyToClipboard(body);
       if (copied) sentAt = new Date().toISOString();
     }
@@ -338,12 +339,16 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
       }
     } catch (e) { console.error("오늘 예약 자동 완료 실패", e); }
     if (source !== "noshow") clearForm();
+    // 남은 계약이 없으면 contract_id가 비어 차감 · 급여에 안 들어간다 → '차감'이라고 하지 않는다(2026-10-12 점검).
+    const ded = data[0].contract_id ? "수업 1회 차감했어요" : "남은 계약이 없어 차감하지 않았어요. 계약을 먼저 등록해 주세요";
     showToast(
       source === "noshow"
-        ? "노쇼를 저장했어요 · 수업 1회 차감"
+        ? `노쇼를 저장했어요 · ${ded}`
+        : !body.trim()
+        ? `저장했어요 · ${ded}`
         : copied
-        ? "저장했어요 · 수업 1회 차감 · 카톡 문구 복사"
-        : "저장했어요 · 수업 1회 차감. 복사가 안 됐어요. 길게 눌러 복사해 주세요"
+        ? `저장했어요 · ${ded} · 카톡 문구를 복사했어요`
+        : `저장했어요 · ${ded}. 복사하지 못했어요. 길게 눌러 복사해 주세요`
     );
       setSaving(false);
     } catch {
@@ -364,6 +369,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     setCSaving(true);
     const payload = buildContract({
       userId: member.id,
+      trainerId: member.trainer_id,
       origin: member.origin,
       kind: isReReg ? "reregister" : "new",
       sessions_total: Number(cSessions),
@@ -387,6 +393,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
     }
     setContracts((p) => [...p, data[0]]); // 낙관적 → 잔여 즉시 반영
     setShowContract(false);
+    setCSessions(""); setCPrice(""); setCAmountEdited(""); setCSvc("");
     setCSaving(false);
     showToast(isReReg ? (active ? "재등록했어요 · 남은 수업이 끝나면 이어져요" : "재등록했어요") : "계약을 등록했어요");
     } catch {
@@ -428,7 +435,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <Card as="section">
               <SectionTitle icon={LineChart}>종목별 무게 추이</SectionTitle>
               {exerciseSeries.length === 0 ? (
-                <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 표시됩니다.</p>
+                <p className="mt-2 text-sm text-muted">세트를 기록하면 종목별 무게 변화가 여기 보여요.</p>
               ) : (
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {exerciseSeries.map((s) => {
@@ -501,7 +508,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               {loading ? (
                 <p className="text-sm text-muted">불러오는 중…</p>
               ) : timeline.length === 0 ? (
-                <p className="text-sm text-muted">아직 기록된 수업이 없습니다.</p>
+                <p className="text-sm text-muted">아직 기록된 수업이 없어요.</p>
               ) : (
                 <ul className="space-y-2">
                   {(showAllLogs ? timeline : timeline.slice(0, 5)).map((log) => {
@@ -590,7 +597,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
                         <div className="mt-2">
                           {c?.result === "confirm" && (
                             <p className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[12px] leading-relaxed text-amber-700">
-                              ⚠️ 이미 회원이 확인한 수업이에요. 수정하면 회원 화면에 &lsquo;변경됨&rsquo;으로 표시됩니다.
+                              ⚠️ 이미 회원이 확인한 수업이에요. 수정하면 회원 화면에 &lsquo;변경됨&rsquo;으로 보여요.
                             </p>
                           )}
                           <textarea
@@ -681,7 +688,7 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
               <p className="text-[14px] text-sub">진행 중인 계약이 없어요. 등록이나 재등록이 필요해요.</p>
             )}
           </div>
-          <Button variant="primary" size="md" onClick={() => setShowContract(true)} className="shrink-0">
+          <Button variant="primary" size="md" onClick={() => setShowContract(true)} disabled={loading} className="shrink-0">
             <RefreshCw className="h-4 w-4" /> {isReReg ? "새 계약 등록" : "계약 등록"}
           </Button>
         </div>
@@ -719,13 +726,22 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
             <SetsEditor value={sets} onChange={setSets} disabled={saving || loading} machineOptions={machineOptions} />
           </div>
         </details>
+        {!loading && !active && (
+          <p className="mt-3 rounded-lg bg-ot-soft px-3 py-2 text-[13px] leading-relaxed text-ot-text">
+            남은 계약이 없어요. 지금 저장하면 수업이 차감되지 않고 급여에도 들어가지 않아요. 재등록했다면 계약을 먼저 등록해 주세요.
+          </p>
+        )}
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button variant="primary" size="md" onClick={() => saveLog(usedVoice ? "voice" : "manual")} disabled={saving || loading || !body.trim()} className="flex-1 gap-2">
+          <Button variant="primary" size="md" onClick={() => saveLog(usedVoice ? "voice" : "manual")} disabled={saving || loading || (!body.trim() && cleanStructured(sets).length === 0)} className="flex-1 gap-2">
             <NotebookPen className="h-4 w-4" strokeWidth={2.5} />
-            {saving ? "저장 중…" : "저장 + 차감"}
+            {saving ? "저장 중…" : active ? "저장 + 차감" : "저장(차감 없음)"}
           </Button>
-          <Button variant="ghost" size="md" onClick={() => saveLog("noshow")} disabled={saving || loading} className="gap-2">
-            <UserX className="h-4 w-4" /> 노쇼 차감
+          <Button variant={noshowArm ? "danger" : "ghost"} size="md" disabled={saving || loading} className="gap-2"
+            onClick={() => {
+              if (!noshowArm) { setNoshowArm(true); setTimeout(() => setNoshowArm(false), 4000); return; }
+              setNoshowArm(false); saveLog("noshow");
+            }}>
+            <UserX className="h-4 w-4" /> {noshowArm ? "한 번 더 누르면 노쇼 차감" : "노쇼 차감"}
           </Button>
         </div>
       </Card>
@@ -794,10 +810,10 @@ export default function PtWorkoutTab({ member, onMemberPatch, contracts, setCont
         >
           <p className="text-sm leading-relaxed text-sub">
             <span className="font-mono text-xs text-muted">{fmtDT(voidTarget.session_at ?? voidTarget.created_at)}</span> 수업이 목록에서 흐려지고,
-            <b className="text-ink"> 오운완 출석·세션 차감에서 제외</b>됩니다. 기록은 남아 있어 <b className="text-ink">언제든 무르기</b>로 되돌릴 수 있어요.
+            <b className="text-ink"> 오운완 출석·세션 차감에서 빠져요</b>. 기록은 남아 있어 <b className="text-ink">언제든 무르기</b>로 되돌릴 수 있어요.
             {confirmByLog.get(voidTarget.id)?.result === "confirm" && (
               <span className="mt-2 block rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[12px] text-amber-700">
-                ⚠️ 이미 회원이 확인한 수업이에요. 삭제해도 회원의 확인·서명 기록은 보존됩니다.
+                ⚠️ 이미 회원이 확인한 수업이에요. 삭제해도 회원의 확인·서명 기록은 남아요.
               </span>
             )}
           </p>

@@ -7,17 +7,20 @@
 //     draft_request   — 트레이너: 식단 요청 답 AI 초안(저장 안 함 · 트레이너가 고쳐서 보낸다).
 //   트레이너가 '보내기'를 누르는 저장은 화면이 RLS로 직접 한다(+ /api/push/notify).
 import { serviceClient, callerOf } from "@/lib/serverCaller";
-import { runDietAuto, feedbackFor, answerFor, makeExamples, reserveDiet } from "@/lib/dietAI";
+import { runDietAuto, feedbackFor, answerFor, makeExamples, reserveDiet, accountLive } from "@/lib/dietAI";
 import { finishAi } from "@/lib/aiQuota";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
+// 'auto'는 이 시간이 지나면 새 AI 일을 시작하지 않는다(한 건이 1분 가까이 걸릴 수 있어 180초 제한 전에 끝내기 · 남은 건 다음에 열 때)
+const AUTO_BUDGET_MS = 110000;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const quotaRes = (code) => Response.json({ error: code === "quota" ? "이번 달 식단 AI를 다 썼어요. 직접 써서 보내 주세요." : code === "daily_cap" ? "오늘은 더 만들 수 없어요. 내일 다시 시도해 주세요." : "AI가 지금 답하지 못했어요. 다시 시도해 주세요.", code }, { status: code === "quota" ? 402 : code === "daily_cap" ? 429 : 502 });
 
 export async function POST(req) {
+  const t0 = Date.now();
   const sb = serviceClient();
   if (!sb) return Response.json({ error: "준비 중이에요." }, { status: 503 });
   const who = await callerOf(sb, req);
@@ -38,11 +41,14 @@ export async function POST(req) {
         ids = (mine || []).map((m) => m.id);
       }
     }
-    const r = await runDietAuto(sb, ids);
+    const r = await runDietAuto(sb, ids, { deadline: t0 + AUTO_BUDGET_MS });   // 구독이 끝난 센터는 runDietAuto가 건너뜀
     return Response.json({ ok: true, ...r });
   }
 
   if (who.kind !== "trainer") return Response.json({ error: "트레이너만 쓸 수 있어요." }, { status: 403 });
+  // 구독이 끝난 계정(읽기 전용 30일 포함)은 식단 AI를 못 쓴다 — owner-daily-report와 같은 조건
+  const { data: acc } = await sb.from("account").select("plan, subscription_status, current_period_end").eq("id", who.account_id).maybeSingle();
+  if (!accountLive(acc)) return Response.json({ error: "구독이 만료돼서 지금은 식단 AI를 쓸 수 없어요.", code: "inactive" }, { status: 403 });
   const memberId = String(b.memberId || "");
   const loadMember = async (id) => {
     if (!UUID_RE.test(id)) return null;

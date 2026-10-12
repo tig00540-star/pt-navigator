@@ -31,7 +31,7 @@ export async function POST(req) {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !svcKey || !anon) {
     console.error("[member-auth] 503 서버키 미설정");
-    return Response.json({ error: "서버 키 미설정" }, { status: 503 });
+    return Response.json({ error: "로그인하지 못했어요. 다시 시도해 주세요." }, { status: 503 });
   }
 
   const body = await req.json().catch(() => ({}));
@@ -151,14 +151,14 @@ export async function POST(req) {
     });
     if (ce || !created?.user?.id) {
       console.error(`[member-auth] 회원 auth 생성 실패 member_id=${member.id}:`, ce?.message || "unknown");
-      return Response.json({ error: "회원 세션 생성 실패." }, { status: 500 });
+      return Response.json({ error: "로그인하지 못했어요. 다시 시도해 주세요." }, { status: 500 });
     }
     authId = created.user.id;
     const { error: le } = await svc.from("user_table").update({ member_auth_id: authId }).eq("id", member.id);
     if (le) {
       console.error(`[member-auth] member_auth_id 연결 실패 — auth 롤백 member_id=${member.id}:`, le.message);
       await svc.auth.admin.deleteUser(authId); // 정합성: 연결 실패 시 방금 만든 유저 롤백
-      return Response.json({ error: "회원 연결 실패." }, { status: 500 });
+      return Response.json({ error: "로그인하지 못했어요. 다시 시도해 주세요." }, { status: 500 });
     }
   }
 
@@ -167,7 +167,7 @@ export async function POST(req) {
   const { data: sess, error: se } = await pub.auth.signInWithPassword({ email, password });
   if (se || !sess?.session) {
     console.error(`[member-auth] 세션 발급 실패 member_id=${member.id}:`, se?.message || "no session");
-    return Response.json({ error: "세션 발급 실패." }, { status: 500 });
+    return Response.json({ error: "로그인하지 못했어요. 다시 시도해 주세요." }, { status: 500 });
   }
 
   return Response.json({

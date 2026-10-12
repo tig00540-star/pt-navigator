@@ -45,6 +45,10 @@ export async function POST(req) {
   const password = String(body.password || "").slice(0, 200);
   if (!email || !password) return Response.json({ error: "가져올 아이디의 이메일과 비밀번호를 입력해 주세요." }, { status: 400 });
 
+  {
+    const { data: dst0 } = await sb.from("account").select("subscription_status, current_period_end").eq("id", me.account_id).maybeSingle();
+    if (!live(dst0)) return Response.json({ error: "지금 아이디의 이용 기간이 끝났어요. 결제한 뒤 가져와 주세요." }, { status: 409 });
+  }
   if ((await failCount(sb, me.id)) >= FAIL_MAX) {
     return Response.json({ error: "여러 번 틀려서 잠시 막아 뒀어요. 10분 뒤 다시 시도해 주세요." }, { status: 429 });
   }
@@ -78,7 +82,16 @@ export async function POST(req) {
     sb.from("sales_case").select("*").eq("trainer_id", src.id).eq("account_id", src.account_id).order("created_at"),
   ]);
   const allCases = cases.data || [];
-  const okCases = allCases.filter((c) => !needsConsent(c) || c.consent_confirmed_at);
+  // 사례 data의 파일 경로는 그 아이디 트레이너가 쓴 값 → 그 계정 폴더 · 그 계정 회원 폴더 · 알려진 버킷만 복사(2026-10-12 점검: 남의 파일을 service_role로 끌어오는 길 막기).
+  const { data: srcMembers } = await fetchAllRows(() => sb.from("user_table").select("id").eq("account_id", src.account_id));
+  const srcMemberIds = new Set((srcMembers || []).map((m) => m.id));
+  const fileOk = (f) => {
+    const head = String(f.path || "").split("/")[0];
+    if (f.bucket === "sales-cases") return head === src.account_id;
+    if (f.bucket === "member-photos") return srcMemberIds.has(head);
+    return false;
+  };
+  const okCases = allCases.filter((c) => (!needsConsent(c) || c.consent_confirmed_at) && caseFiles(c).every(fileOk));
 
   // 개인 회원 → 센터(개인 아이디 주인 → 센터 아이디일 때만)
   const memberMove = srcAcc?.type === "solo" && src.role === "owner" && dstAcc?.type === "center";
@@ -132,7 +145,7 @@ export async function POST(req) {
     if (!mine) {
       const { trainer_id: _t, account_id: _a, updated_at: _u, intro_cases: _ic, photo_path: srcPhoto, ...rest } = prof.data;
       let photo_path = null;
-      if (srcPhoto) {
+      if (srcPhoto && String(srcPhoto).startsWith(`${src.account_id}/profile/`)) {
         const { data: blob } = await sb.storage.from("sales-cases").download(srcPhoto);
         if (blob) {
           const path = `${me.account_id}/profile/${crypto.randomUUID()}.jpg`;

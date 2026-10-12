@@ -23,7 +23,7 @@ export default function ReapproachDateField({ value, onChange }) {
   return (
     <div>
       <label className="mb-1 block text-[12px] font-medium text-muted">
-        재접근 예정일 <span className="text-muted">(보류 후속 · &lsquo;오늘 재접근&rsquo; 리스트 재료)</span>
+        재접근 예정일 <span className="text-muted">(&lsquo;오늘 재접근&rsquo;에 떠요)</span>
       </label>
       <div className="mb-2 flex flex-wrap gap-1.5">
         {PRESETS.map((preset) => (
@@ -44,7 +44,7 @@ export default function ReapproachDateField({ value, onChange }) {
         className="w-full rounded-lg border border-line bg-elevate px-3 py-2 text-sm text-ink outline-none focus:border-primary"
       />
       <p className="mt-1 text-[12px] leading-relaxed text-muted">
-        프리셋을 탭하면 오늘 기준으로 채워지고, 날짜를 직접 골라 덮어쓸 수 있어요. 비우면 저장은 되되 &lsquo;오늘 재접근&rsquo;엔 안 뜹니다.
+        프리셋을 탭하면 오늘 기준으로 채워지고, 날짜를 직접 골라 덮어쓸 수 있어요. 비우면 저장은 되되 &lsquo;오늘 재접근&rsquo;엔 안 떠요.
       </p>
     </div>
   );

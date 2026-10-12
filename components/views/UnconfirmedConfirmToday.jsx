@@ -78,7 +78,8 @@ export default function UnconfirmedConfirmToday({ members, uid, onSelect }) {
           const cs = confByLog.get(l.id) || [];
           const d = openDispute(l, cs);
           if (d) { disputes.push({ user_id: l.user_id, log_id: l.id, at: l.session_at ?? l.created_at, note: d.dispute_note || "" }); continue; }
-          if (!firstStart.has(l.user_id)) continue;                 // 미확인은 오늘 오는 회원만
+          // 미확인 = 오늘 오는 회원 · 또는 예약이 없어도 수업 뒤 2일 넘게 확인 안 한 회원(CLAUDE.md 규칙 · 2026-10-12 점검 때 빠져 있던 것)
+          if (!firstStart.has(l.user_id) && !(nowMs - Date.parse(l.session_at ?? l.created_at) > 2 * 86400000)) continue;
           if (cs.some((c) => c.result === "confirm") || !confirmDue(l, nowMs)) continue;
           counts.set(l.user_id, (counts.get(l.user_id) || 0) + 1);
         }
@@ -110,7 +111,7 @@ export default function UnconfirmedConfirmToday({ members, uid, onSelect }) {
         count={disputes.length + today.length}
         hint={disputes.length
           ? "회원이 '내용이 달라요'를 누른 일지는 고치거나, 받지 않은 수업이면 삭제해 주세요"
-          : "오늘 오는 회원에게 그 자리에서 확인받아 주세요"}
+          : "오늘 오는 회원은 그 자리에서, 예약이 없는 회원은 연락해서 확인받아 주세요"}
       />
       <div className="grid gap-2">
         {disputes.map((r) => (
@@ -124,7 +125,7 @@ export default function UnconfirmedConfirmToday({ members, uid, onSelect }) {
         {today.map((r) => (
           <ListRow key={r.user_id} tone="reapproach" name={nameOfEl(r.user_id)} onClick={() => onSelect(r.user_id)}>
             <div className="mt-0.5 text-[12.5px] text-sub">
-              확인 안 한 일지 <b className="text-ot-text">{r.count}개</b> · 오늘 {time(r.start_at)} 수업
+              확인 안 한 일지 <b className="text-ot-text">{r.count}개</b> · {r.start_at ? `오늘 ${time(r.start_at)} 수업` : "수업 뒤 2일 넘게 확인 안 함"}
             </div>
           </ListRow>
         ))}

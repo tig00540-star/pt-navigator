@@ -27,6 +27,20 @@ function client() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+// 한 곳(IP)에서 10분 5번까지(서버 인스턴스마다 · DB 함수의 링크당 1시간 30건 · 같은 번호 10분과 별개 · 2026-10-12).
+const HITS = new Map();
+const WINDOW_MS = 10 * 60 * 1000;
+function okIp(ip) {
+  const now = Date.now();
+  const arr = (HITS.get(ip) || []).filter((t) => now - t < WINDOW_MS);
+  if (arr.length >= 5) { HITS.set(ip, arr); return false; }
+  arr.push(now); HITS.set(ip, arr);
+  if (HITS.size > 2000) HITS.delete(HITS.keys().next().value);
+  return true;
+}
+const isObj = (v) => v != null && typeof v === "object" && !Array.isArray(v);
+const FAIL = { error: "server", message: "신청하지 못했어요. 다시 시도해 주세요." };
+
 const clip = (v, n) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -69,9 +83,31 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  try {
+    return await submit(req);
+  } catch (e) {
+    console.error("[ot-intake] 제출 처리 실패", e?.message || e);
+    return Response.json(FAIL, { status: 500 });
+  }
+}
+
+async function submit(req) {
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "x";
+  if (!okIp(ip)) return Response.json({ error: "busy" }, { status: 429 });
   const sb = client();
   if (!sb) return Response.json({ error: "closed" }, { status: 503 });
-  const b = await req.json().catch(() => ({}));
+  const b = await req.json().catch(() => null);
+  if (!isObj(b)) return Response.json({ error: "bad" }, { status: 400 });
+  // 모양 확인 — 답은 객체, 시간은 객체(by_day 객체 · days/hours 배열). 아니면 400(500으로 죽지 않게).
+  if (b.answers != null && !isObj(b.answers)) return Response.json({ error: "bad" }, { status: 400 });
+  if (b.slots != null) {
+    const sl = b.slots;
+    if (!isObj(sl) || (sl.by_day != null && !isObj(sl.by_day))
+      || (sl.days != null && !Array.isArray(sl.days)) || (sl.hours != null && !Array.isArray(sl.hours))) {
+      return Response.json({ error: "bad" }, { status: 400 });
+    }
+  }
+  if (b.consent != null && !isObj(b.consent)) return Response.json({ error: "bad" }, { status: 400 });
   if (b.website) return Response.json({ ok: true });   // 사람 눈엔 안 보이는 칸 — 채워져 있으면 자동 제출(봇)
   const code = String(b.code || "");
   if (!CODE_RE.test(code)) return Response.json({ error: "invalid" }, { status: 404 });
@@ -100,10 +136,13 @@ export async function POST(req) {
   const { data, error } = await sb.rpc("submit_ot_application", {
     p_code: code, p_name: name, p_phone: phone, p_answers: answers, p_slots: slots, p_consent: consent,
   });
-  if (error) { console.error("[ot-intake] 제출 실패", error.message); return Response.json({ error: "server" }, { status: 500 }); }
+  if (error) { console.error("[ot-intake] 제출 실패", error.message); return Response.json(FAIL, { status: 500 }); }
   if (data?.error) return Response.json(data, { status: data.error === "busy" ? 429 : 404 });
+  // 같은 번호 10분 안 다시 제출(repeat) = 처음 신청의 이어 적기 열쇠를 돌려주지 않는다 — 번호만 아는 사람이
+  //   남의 신청서(건강 칸 포함)를 이어 적지 못하게. 화면은 '신청했어요'만 보인다.
+  if (data?.repeat) return Response.json({ ok: true, kind: data?.kind || null, app: null, token: null });
   // 폰 알림(응답 뒤 · 실패해도 신청은 저장됨): 트레이너 QR → 그 트레이너 '새 OT 회원' · 센터 QR → 대표 '배정 대기'
-  if (!data?.repeat) after(async () => {
+  after(async () => {
     try {
       const { data: l } = await sb.from("intake_link").select("id, account_id, trainer_id").eq("code", code).eq("active", true).maybeSingle();
       if (!l) return;
@@ -123,7 +162,8 @@ export async function POST(req) {
 export async function PATCH(req) {
   const sb = client();
   if (!sb) return Response.json({ error: "closed" }, { status: 503 });
-  const b = await req.json().catch(() => ({}));
+  const b = await req.json().catch(() => null);
+  if (!isObj(b) || (b.answers != null && !isObj(b.answers))) return Response.json({ error: "bad" }, { status: 400 });
   const app = String(b.app || ""), token = String(b.token || "");
   if (!UUID_RE.test(app) || !/^[0-9a-f]{32}$/.test(token)) return Response.json({ error: "invalid" }, { status: 404 });
   const health = Boolean(b.health);

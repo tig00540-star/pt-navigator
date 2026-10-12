@@ -56,8 +56,8 @@ export default function ScheduleAnalytics({ appts = [], logs = [], members = [],
   const ptSess = useMemo(() => sessionsThisMonthByTrainer(logs, memberTrainer, ym), [logs, memberTrainer, ym]);
   const otMonthTotal = useMemo(() => [...otSess.values()].reduce((s, n) => s + n, 0), [otSess]);
   const ptMonthTotal = useMemo(() => [...ptSess.values()].reduce((s, n) => s + n, 0), [ptSess]);
-  const nameOf = (tid) => personName(trainers.find((t) => t.id === tid)?.name) || (tid === "unknown" ? "미배정" : String(tid).slice(0, 8));
-  const memberName = (uid) => personName(members.find((m) => m.id === uid)?.name) || String(uid).slice(0, 8);
+  const nameOf = (tid) => personName(trainers.find((t) => t.id === tid)?.name) || (tid === "unknown" ? "미배정" : "(알 수 없는 트레이너)");
+  const memberName = (uid) => personName(members.find((m) => m.id === uid)?.name) || "(이름 없음)";
 
   // 센터 롤업(단순 reduce).
   const totalDone = outcome.reduce((s, t) => s + t.done, 0);

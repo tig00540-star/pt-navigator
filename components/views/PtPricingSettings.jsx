@@ -171,7 +171,7 @@ export default function PtPricingSettings() {
       {/* 리스트 */}
       <Card as="section">
         <SectionTitle icon={Tag} aside={rows.length ? `${rows.length}개` : null}>내 PT 패키지</SectionTitle>
-        <p className="-mt-1.5 mb-3 text-[13px] text-sub">여기 가격으로 OT 리포트가 프로그램을 추천하고, 세일즈북 가격표에 그대로 보여요.</p>
+        <p className="-mt-1.5 mb-3 text-[13px] text-sub">여기 가격으로 OT 대본이 프로그램을 추천하고, 세일즈북 가격표에 그대로 보여요.</p>
         {loading ? (
           <p className="text-[13px] text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (

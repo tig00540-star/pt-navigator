@@ -14,7 +14,7 @@
 // -----------------------------------------------------------------------------
 import { bearerOk } from "@/lib/bearerOk";
 import { createClient } from "@supabase/supabase-js";
-import { chargeBilling, tossReady } from "@/lib/toss";
+import { chargeBilling, tossOrderState, tossReady } from "@/lib/toss";
 import { PLANS, planAmount } from "@/lib/plans";
 import { sendPush, ownerIds } from "@/lib/pushServer";
 import { trainerCloseAt, kstDay } from "@/lib/trainerClose";
@@ -106,7 +106,7 @@ export async function GET(req) {
       //   이 기간에 DONE이 이미 있으면 청구하지 않고 연장만 보정한다. 실패한 시도는 _2 · _3 … 로 새 번호(같은 번호 재사용 금지).
       const periodKey = periodEnd.toISOString().slice(0, 10);
       const prefix = `sub_${acc.id}_${periodKey}`;
-      const { data: prev } = await sb.from("payment").select("order_id, status, period_end").like("order_id", `${prefix}%`);
+      const { data: prev } = await sb.from("payment").select("id, order_id, status, period_end").like("order_id", `${prefix}%`);
       const done = (prev || []).find((p) => p.status === "DONE");
       if (done) {
         const fixEnd = done.period_end || newEnd.toISOString();
@@ -120,38 +120,72 @@ export async function GET(req) {
         } else skipped++;
         continue;
       }
-      const attempt = (prev || []).length + 1;
-      const orderId = attempt === 1 ? prefix : `${prefix}_${attempt}`;
-      const orderName = `${PLANS[planKey]?.name || "구독"} 월 구독`;
 
-      const res = await chargeBilling(acc.billing_key, {
-        customerKey: acc.billing_customer_key,
-        amount,
-        orderId,
-        orderName,
-      });
-
-      if (res.ok && res.data?.status === "DONE") {
-        // 결제 기록을 먼저 남긴다 — 그래야 아래 연장 저장이 실패해도 내일 이 기간을 다시 청구하지 않는다.
-        const { error: pe } = await sb.from("payment").insert({
-          account_id: acc.id,
-          order_id: orderId,
-          toss_payment_key: res.data.paymentKey || null,
-          amount,
-          status: "DONE",
-          plan: planKey,
-          period_start: new Date(now).toISOString(),
-          period_end: newEnd.toISOString(),
-          raw: { approvedAt: res.data.approvedAt ?? null },
-        });
+      // 결제 성공 처리(바로 된 것 · 응답이 끊겼지만 토스에선 된 것 공용) — 결제 기록을 먼저 남긴다.
+      //   그래야 아래 연장 저장이 실패해도 내일 이 기간을 다시 청구하지 않는다.
+      //   기간 시작 = 옛 만료일(base · 2026-10-12): 만료 하루 전에 미리 결제해도 AI 한도 기간(DB ai_period)이 결제한 날이 아니라 만료일에 한 번만 다시 채워지게.
+      const settle = async (oid, data, rowId) => {
+        const rec = {
+          account_id: acc.id, order_id: oid, toss_payment_key: data?.paymentKey || null, amount: Number(data?.totalAmount) || amount, status: "DONE", plan: planKey,
+          period_start: base.toISOString(), period_end: newEnd.toISOString(),
+          raw: { approvedAt: data?.approvedAt ?? null, seats },
+        };
+        const { error: pe } = rowId
+          ? await sb.from("payment").update(rec).eq("id", rowId)
+          : await sb.from("payment").insert(rec);
         if (pe) note(`${acc.id}: 청구 성공 · 결제 기록 실패(수동 확인)`);
         const upd = await sb.from("account").update({
           current_period_end: newEnd.toISOString(),
-          last_payment_at: new Date(now).toISOString(),
+          last_payment_at: data?.approvedAt || new Date(now).toISOString(),
           subscription_status: "active",
           billing_plan: planKey, extra_seats: seats, next_billing_plan: null, next_extra_seats: null,
         }).eq("id", acc.id).select();
         if (upd.error || !upd.data || upd.data.length === 0) note(`${acc.id}: 청구 성공 · 연장 실패(내일 자동 보정)`);
+      };
+
+      // 이중 결제 막기(2026-10-12): 새 주문번호로 청구하기 전에, 이 기간의 지난 시도가 토스에선 실제로 결제됐는지 확인한다.
+      //   (응답이 끊겨 FAILED로 적혔지만 돈은 나간 경우) → 됐으면 그 결제로 연장만. 확인이 안 되면 오늘은 청구하지 않는다.
+      let recovered = false, unsure = false;
+      for (const p of prev || []) {
+        const st = await tossOrderState(p.order_id);
+        if (st.done) {
+          await settle(p.order_id, st.done, p.id);
+          recovered = true;
+          note(`${acc.id}: 지난 시도가 토스에선 결제돼 있었어요 · 기록 고침`);
+          break;
+        }
+        if (st.unknown) unsure = true;
+      }
+      if (recovered) { repaired++; continue; }
+      if (unsure) { skipped++; note(`${acc.id}: 지난 시도 결제 여부를 확인하지 못해 오늘 청구 건너뜀`); continue; }
+
+      const attempt = (prev || []).length + 1;
+      const orderId = attempt === 1 ? prefix : `${prefix}_${attempt}`;
+      const orderName = `${PLANS[planKey]?.name || "구독"} 월 구독`;
+
+      let res;
+      try {
+        res = await chargeBilling(acc.billing_key, {
+          customerKey: acc.billing_customer_key,
+          amount,
+          orderId,
+          orderName,
+        });
+      } catch (e) {
+        res = { ok: false, thrown: String(e?.message || e) };   // 응답이 끊김 = 결제됐을 수도 있다 → 아래에서 확인
+      }
+
+      let paid = res.ok && res.data?.status === "DONE" ? res.data : null;
+      let verify = null;
+      if (!paid) {
+        // 실패 · 끊김이어도 토스에 주문번호로 실제 상태를 묻는다(된 결제를 FAILED로 적고 내일 새 번호로 또 청구하던 것 막기)
+        const st = await tossOrderState(orderId);
+        if (st.done) paid = st.done;
+        else verify = st.unknown ? "unknown" : "none";
+      }
+
+      if (paid) {
+        await settle(orderId, paid, null);
         charged++;
       } else {
         await sb.from("payment").insert({
@@ -160,10 +194,10 @@ export async function GET(req) {
           amount,
           status: "FAILED",
           plan: planKey,
-          raw: { error: res.error ?? null, status: res.status ?? null },
+          raw: { error: res.error ?? null, status: res.status ?? null, thrown: res.thrown ?? null, verify },
         });
         failed++;
-        note(`${acc.id}: 청구 실패(${res.error?.code || res.status || "unknown"})`);
+        note(`${acc.id}: 청구 실패(${res.error?.code || res.status || (res.thrown ? "응답 끊김" : "unknown")}${verify === "unknown" ? " · 토스 확인 안 됨" : ""})`);
       }
     } catch (e) {
       // 한 계정에서 터져도 다음 계정은 계속(예전엔 루프 전체가 멈췄다)
@@ -177,15 +211,22 @@ export async function GET(req) {
   //   ⚠️ 실제 파기는 아직 자동으로 하지 않는다(대표 확인 뒤 별도 작업). 대상 수만 돌려준다(purgeDue).
   let purgeNotified = 0, purgeDue = 0;
   const RO = 30 * DAY;
+  //   알림 대상 = 끝 + 30일이 (지금, 내일] 안 + 아직 안 보낸 계정만(2026-10-12 · 예전엔 이미 지난 옛 계정 500개가 자리를 채워 새 계정이 밀렸다).
+  //   파기 대상 수(purgeDue)는 따로 센다.
+  const { count: dueCount } = await sb.from("account").select("id", { count: "exact", head: true })
+    .not("current_period_end", "is", null).lte("current_period_end", new Date(now - RO).toISOString());
+  purgeDue = dueCount || 0;
   const { data: ro } = await sb.from("account")
     .select("id, current_period_end, purge_notified_at, subscription_status")
     .not("current_period_end", "is", null)
+    .is("purge_notified_at", null)
+    .gt("current_period_end", new Date(now - RO).toISOString())          // 아직 30일 안 지남
     .lte("current_period_end", new Date(now - RO + DAY).toISOString())   // 끝 + 30일 ≤ 내일
     .limit(500);
   for (const a of ro || []) {
     const end = Date.parse(a.current_period_end);
     if (a.subscription_status === "active" && end > now) continue;      // 다시 결제해서 이용 중
-    if (end + RO <= now) { purgeDue++; continue; }                       // 이미 30일 지남 = 파기 대상(보고만)
+    if (end + RO <= now) continue;                                       // 이미 30일 지남 = 파기 대상(위에서 셈)
     if (a.purge_notified_at) continue;
     const ids = await ownerIds(sb, a.id);
     const day = new Date(end + RO + 9 * 3600000);

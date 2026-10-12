@@ -10,6 +10,7 @@ import { Lock } from "lucide-react";
 import { useAiQuota, KIND_LABEL } from "@/lib/useAiQuota";
 import { useAccount } from "@/lib/useAccount";
 import { PLANS } from "@/lib/plans";
+import { won } from "@/lib/format";
 
 const SOON = { voice: 10, prep: 3, inbody: 5, roadmap: 5, diet: 20 };
 // 받침이 있으면 '을', 없으면 '를'(음성일지를 · 대본을)
@@ -49,7 +50,7 @@ export function AiLockCard({ kind, className = "", children }) {
       </p>
       <p className="m-0 mt-1.5 text-[13.5px] leading-relaxed text-sub">
         {basic
-          ? <>프로({PLANS.solo.amount.toLocaleString("ko-KR")}원/월)는 음성일지 월 {PLANS.solo.ai.voice}건 · OT · 재등록 대본 월 {PLANS.solo.ai.prep}번을 쓸 수 있어요. {resetsKo || "다음 결제일"}에 무료 3번이 다시 채워져요.</>
+          ? <>프로({won(PLANS.solo.amount)}/월)는 음성일지 월 {PLANS.solo.ai.voice}건 · OT · 재등록 대본 월 {PLANS.solo.ai.prep}번을 쓸 수 있어요. {resetsKo || "다음 결제일"}에 무료 3번이 다시 채워져요.</>
           : <>{resetsKo || "다음 결제일"}에 다시 채워져요. {acc.isOwner ? "추가 팩을 사면 바로 이어 쓸 수 있어요." : "급하면 대표에게 추가 팩을 부탁해 주세요."}</>}
       </p>
       {children}

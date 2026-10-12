@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { ymdOf } from "@/lib/trainerEvents";
-import { BOOK_HOURS, slotText, dayText, windowDays, slotDate, busySlots, beforeCutoff, requestLine, KIND_LABEL } from "@/lib/booking";
+import { BOOK_HOURS, slotText, slotKey, dayText, windowDays, slotDate, busySlots, beforeCutoff, requestLine, KIND_LABEL } from "@/lib/booking";
 import { notifyPush } from "@/lib/pushClient";
 import Modal from "@/components/ui/Modal";
 
@@ -33,6 +33,7 @@ export default function BookingCard({ supabase, readOnly = false, embedded = fal
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [listMsg, setListMsg] = useState("");   // 요청 취소 실패 등 창 밖 안내
 
   const load = useCallback(async () => {
     const since = new Date(Date.now() - 14 * 86400000).toISOString();
@@ -55,8 +56,8 @@ export default function BookingCard({ supabase, readOnly = false, embedded = fal
   const days = useMemo(() => (d ? windowDays(d.rule.window_end) : []), [d]);
   const taken = useMemo(() => {
     if (!d || !days.length) return new Set();
-    const set = busySlots(d.busy, days[0], new Date(days[days.length - 1].getTime() + 86400000));
-    for (const r of d.reqs) if (r.status === "pending" && r.want_start) { const t = new Date(r.want_start); set.add(`${ymdOf(t)}|${t.getHours()}`); }
+    const set = busySlots(d.busy, slotDate(days[0], 0), new Date(slotDate(days[days.length - 1], 0).getTime() + 86400000));
+    for (const r of d.reqs) if (r.status === "pending" && r.want_start) set.add(slotKey(r.want_start));
     return set;
   }, [d, days]);
 
@@ -90,8 +91,11 @@ export default function BookingCard({ supabase, readOnly = false, embedded = fal
     finally { setBusy(false); }
   };
   const withdraw = async (id) => {
-    const { error } = await supabase.rpc("withdraw_appt_request", { p_id: id });
-    if (error) console.error("요청 취소 실패", error);
+    setListMsg("");
+    try {
+      const { error } = await supabase.rpc("withdraw_appt_request", { p_id: id });
+      if (error) { console.error("요청 취소 실패", error); setListMsg("요청을 취소하지 못했어요. 다시 시도해 주세요."); }
+    } catch (e) { console.error("요청 취소 실패", e); setListMsg("인터넷 연결을 확인하고 다시 시도해 주세요."); }
     await load();
   };
   const seen = async (id) => { await supabase.rpc("mark_appt_request_seen", { p_id: id }); await load(); };
@@ -145,6 +149,7 @@ export default function BookingCard({ supabase, readOnly = false, embedded = fal
           </li>
         ))}
       </ul>
+      {listMsg && <p className="m-0 mt-2 text-[14px] text-danger-text">{listMsg}</p>}
 
       {!ro && (
         <>

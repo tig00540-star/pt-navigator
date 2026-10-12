@@ -307,37 +307,10 @@ create or replace function ai_group_of(p_tier text, p_kind text) returns text la
     else null end
 $$;
 
-create or replace function ai_quota_for(p_account uuid, p_ym text default null)
-returns jsonb language plpgsql stable security definer set search_path = public as $$
-declare
-  a record; tier text; v_ym text := coalesce(p_ym, kst_ym()); trial boolean; seats integer;
-  lim jsonb; g text; base integer; extra integer; used integer; v_out jsonb := '{}'::jsonb;
-begin
-  select type, billing_plan, extra_seats into a from account where id = p_account;
-  if not found then return null; end if;
-  tier := coalesce(a.billing_plan, case when a.type = 'center' then 'center' else 'solo' end);
-  trial := not exists (select 1 from payment where account_id = p_account and status = 'DONE')
-           and exists (select 1 from payment where account_id = p_account and status = 'TRIAL');
-  if trial and tier = 'basic' then tier := 'solo'; end if;
-  seats := coalesce(a.extra_seats, 0);
-  lim := case tier
-    when 'basic'  then jsonb_build_object('voice', 3, 'ot', 3, 'rereg', 3, 'inbody', 3, 'roadmap', 3, 'diet', 3)
-    when 'center' then jsonb_build_object('voice', 300 + 100 * seats, 'prep', 60 + 20 * seats, 'inbody', 150, 'roadmap', 150, 'diet', 900 + 300 * seats)
-    else               jsonb_build_object('voice', 120, 'prep', 25, 'inbody', 60, 'roadmap', 60, 'diet', 300)
-  end;
-  for g in select jsonb_object_keys(lim) loop
-    base := (lim ->> g)::integer;
-    select coalesce(sum(amount), 0) into extra from ai_credit
-     where account_id = p_account and ai_credit.ym = v_ym and kind = g and refunded_at is null;
-    select count(*) into used from ai_usage u
-     where u.account_id = p_account and u.ym = v_ym and u.counted and ai_group_of(tier, u.kind) = g;
-    v_out := v_out || jsonb_build_object(g, jsonb_build_object('limit', base, 'extra', extra, 'used', used,
-                                                           'left', greatest(base + extra - used, 0)));
-  end loop;
-  return jsonb_build_object('tier', tier, 'trial', trial, 'ym', v_ym, 'groups', v_out);
-end $$;
-revoke all on function ai_quota_for(uuid, text) from public, anon, authenticated;
-grant execute on function ai_quota_for(uuid, text) to service_role;
+-- ai_quota_for('diet' 한도 포함)는 여기서 다시 만들지 않는다(2026-10-12 점검).
+--   예전엔 매달 1일 기준 옛 판을 여기서 다시 만들어, 이 파일을 다시 실행하면 결제일 기준 한도가 깨졌다.
+--   정본 = docs/migrations/2026-10-12-billing-period-quota.sql(결제일 ~ 다음 결제일 전날 · 'diet' 묶음 포함).
+--   새 DB라면 이 파일 → 2026-10-11-pack-carryover.sql → 2026-10-11-pack-1month.sql → 2026-10-12-billing-period-quota.sql 순서로 실행.
 
 -- 8) 새 표 · 화면 규칙 정리(읽기 전용 30일 규칙 다시 만들기 · 화면 쓰기 권한 회수)
 select refresh_read_only_policies();

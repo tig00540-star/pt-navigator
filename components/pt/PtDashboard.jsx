@@ -81,8 +81,10 @@ export default function PtDashboard({ member, contracts = [], logs = [], confirm
     (async () => {
       if (!supabase || !member?.id) return;
       const now = new Date();
-      const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
-      const endToday = new Date(now); endToday.setHours(23, 59, 59, 999);
+      // 오늘 = 한국 시간(폰 시간대와 무관 · 다른 화면과 같게 · 2026-10-12 점검)
+      const ymdK = new Date(now.getTime() + 9 * 3600000).toISOString().slice(0, 10);
+      const startToday = new Date(`${ymdK}T00:00:00+09:00`);
+      const endToday = new Date(startToday.getTime() + 86400000 - 1);
       const [nx, td, ib, ow, rt, rq, rl] = await Promise.all([
         supabase.from("appointment").select("start_at").eq("user_id", member.id).eq("status", "booked")
           .gte("start_at", now.toISOString()).order("start_at", { ascending: true }).limit(1),

@@ -47,6 +47,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
   const [email, setEmail] = useState("");        // 리포트 헤더 폴백(실명 없을 때) · personName 가드
   const [trainerName, setTrainerName] = useState("");  // trainer.name(실명) · 없으면 email 폴백
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState(false);   // 불러오기 실패를 0원 급여로 보이지 않게(2026-10-12 점검)
   const [contractNames, setContractNames] = useState(new Map());
   const [reportOpen, setReportOpen] = useState(false);
   // '이달 매출' 칸을 누르면 아래 매출 내역을 펼치고 그리로 내려간다(2026-10-03 대표: "누르면 언제 · 누구 · 몇 회 · 얼마").
@@ -133,6 +134,7 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
         names = new Map((nrows || []).map((r) => [r.id, r.name]));
       }
       if (cancelled) return;
+      if (c.error || l.error || o.error) { console.error("내 실적 불러오기 실패", c.error || l.error || o.error); setLoadErr(true); }
       setUid(au?.user?.id ?? null);
       setEmail(au?.user?.email ?? "");
       setTrainerName(tr?.data?.name || au?.user?.email || "");
@@ -145,7 +147,8 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
       setContractNames(names);
       setLoading(false);
     } catch {
-      // 조회 실패 — finally에서 로딩 해제(무한 스피너 방지). MyStats는 별도 에러 표시 없음(빈 통계로 degrade).
+      // 조회 실패 — 0원 급여로 보이지 않게 안내 띄움 · finally에서 로딩 해제.
+      if (!cancelled) setLoadErr(true);
     } finally {
       if (!cancelled) setLoading(false);
     }
@@ -223,10 +226,12 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     if (!supabase || !uid) return;
     setManualBusy(true); setManualNote("");
     const now = new Date().toISOString();
-    const { data, error } = await supabase.from("payroll_run")
-      .upsert({ trainer_id: uid, ym, final_total: amt, computed_total: null, note: "본인 입력", seen_at: now, updated_at: now }, { onConflict: "account_id,trainer_id,ym" })
-      .select();
-    setManualBusy(false);
+    let data, error;
+    try {
+      ({ data, error } = await supabase.from("payroll_run")
+        .upsert({ trainer_id: uid, ym, final_total: amt, computed_total: null, note: "본인 입력", seen_at: now, updated_at: now }, { onConflict: "account_id,trainer_id,ym" })
+        .select());
+    } catch (e) { error = e; } finally { setManualBusy(false); }
     if (error || !data?.length) { console.error("받은 금액 저장 실패", error); setManualNote("저장하지 못했어요. 다시 시도해 주세요."); return; }
     setRuns((rs) => [...rs.filter((r) => !(r.trainer_id === uid && r.ym === ym)), data[0]]);
     setManualAmt("");
@@ -237,8 +242,10 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
   const clearManual = async () => {
     if (!supabase || !myRun) return;
     setManualBusy(true); setManualNote("");
-    const { data, error } = await supabase.from("payroll_run").update({ final_total: null, updated_at: new Date().toISOString() }).eq("id", myRun.id).select();
-    setManualBusy(false);
+    let data, error;
+    try {
+      ({ data, error } = await supabase.from("payroll_run").update({ final_total: null, updated_at: new Date().toISOString() }).eq("id", myRun.id).select());
+    } catch (e) { error = e; } finally { setManualBusy(false); }
     if (error || !data?.length) { console.error("받은 금액 지우기 실패", error); setManualNote("지우지 못했어요. 다시 시도해 주세요."); return; }
     setRuns((rs) => rs.map((r) => (r.id === myRun.id ? data[0] : r)));
     setManualEdit(false); setManualAmt("");
@@ -277,6 +284,11 @@ export default function MyStats({ members = [], isSolo = false, isFreelance = fa
     /* 넓은 화면(lg~): 왼쪽 급여·매출·수업 | 오른쪽 오운완 랭킹. 폰은 위아래 한 줄. */
     <div className="space-y-4 break-keep text-pretty lg:max-w-3xl">
       <div className="space-y-4">
+      {!loading && loadErr && (
+        <p className="rounded-xl bg-rose-50 px-3.5 py-2.5 text-[13px] leading-relaxed text-danger-text">
+          실적을 다 불러오지 못했어요. 아래 숫자가 실제보다 적을 수 있어요. 인터넷 연결을 확인하고 새로고침해 주세요.
+        </p>
+      )}
       {loading ? (
         <div className="py-10 text-center text-[13px] text-muted">불러오는 중…</div>
       ) : (

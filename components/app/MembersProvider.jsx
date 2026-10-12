@@ -15,6 +15,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { toPtActive, buildContract } from "@/lib/memberStatus";
 
 // 데모(키 미설정) 회원 — 키 없이 실행할 때 화면이 비지 않게 하는 용도.
@@ -76,7 +77,7 @@ export function mapMemberRow(r) {
     pt_end_snooze_until: r.pt_end_snooze_until ?? null,
     summary: r.name === DEMO_MEMBER.name
       ? DEMO_MEMBER.summary
-      : ["AI 성향 요약은 회원 데이터를 바탕으로 곧 생성됩니다."],
+      : ["AI 성향 요약은 회원 기록이 쌓이면 만들어져요."],
   };
 }
 
@@ -103,11 +104,12 @@ export default function MembersProvider({ children }) {
       return;
     }
     try {
-      const { data, error } = await supabase
+      // 1000명 넘으면 조용히 잘리던 것(2026-10-12 점검) → fetchAllRows로 끝까지 · 정렬은 화면에서(최근 등록 위).
+      const { data: all, error } = await fetchAllRows(() => supabase
         .from("user_table")
         .select("*")
-        .eq("hidden", false) // 소프트 삭제(환불) 회원 제외
-        .order("created_at", { ascending: false });
+        .eq("hidden", false)); // 소프트 삭제(환불) 회원 제외
+      const data = (all || []).slice().sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
       if (error) {
         console.error("회원 불러오기 실패", error); setDbNote("불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
         setReady(true);
@@ -161,7 +163,7 @@ export default function MembersProvider({ children }) {
       const hasContract = (existing?.length ?? 0) > 0;
       // 2) 계약 INSERT (없을 때만) — .select() 하드닝.
       if (!hasContract) {
-        const payload = buildContract({ userId: member.id, origin: member.origin, kind: "new", ...contractInput });
+        const payload = buildContract({ userId: member.id, trainerId: member.trainer_id, origin: member.origin, kind: "new", ...contractInput });
         const { data: ins, error: insErr } = await supabase
           .from("session_log")
           .insert(payload)

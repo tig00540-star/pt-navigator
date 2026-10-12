@@ -227,7 +227,7 @@ function DietSetupSheet({ member, plan, inbody, onClose, onSaved }) {
         return;
       }
       // 처음 켤 때 예시 식단(AI · 회원에게 보임) — 기다리지 않는다
-      if (!plan?.enabled) fetch("/api/diet", { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) }, body: JSON.stringify({ action: "examples", memberId: member.id }) }).then(() => { refreshAiQuota(); onSaved?.("예시 식단을 만들었어요"); }).catch(() => {});
+      if (!plan?.enabled) fetch("/api/diet", { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeader()) }, body: JSON.stringify({ action: "examples", memberId: member.id }) }).then((r) => { refreshAiQuota(); if (r.ok) onSaved?.("예시 식단을 만들었어요"); }).catch(() => {});
       onSaved?.(plan?.enabled ? "식단 숫자를 고쳤어요" : "식단 관리를 켰어요. 예시 식단을 만들고 있어요");
       onClose();
     } finally { setBusy(false); }

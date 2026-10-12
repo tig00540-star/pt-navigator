@@ -74,7 +74,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
 
   const save = async () => {
     if (!form.name.trim()) {
-      setErr("이름은 필수입니다.");
+      setErr("이름을 입력해 주세요.");
       return;
     }
     if (assignTrainers && !assignedTrainerId) {
@@ -88,7 +88,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
     // 인계·외부는 이월 잔여가 필요 — user INSERT 전에 검증(잘못된 등록 방지).
     const isCarry = form.origin !== "ot_funnel";
     if (isCarry && !(Number(form.carrySessions) > 0 && Number(form.carryPrice) > 0)) {
-      setErr("인계·외부 등록은 남은 세션수·회당단가가 필요합니다");
+      setErr("인계 · 외부 등록은 남은 수업 수와 회당 단가를 입력해 주세요.");
       return;
     }
     setSaving(true);
@@ -301,7 +301,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
             <option value="external">외부 PT 등록</option>
           </select>
           <p className="mt-1 text-[12px] leading-relaxed text-muted">
-            인계·외부 PT는 OT 없이 바로 PT 뷰로 시작합니다. 상태는 자동 결정.
+            인계 · 외부 PT는 OT 없이 바로 PT 회원으로 시작해요.
           </p>
         </div>
 
@@ -327,7 +327,7 @@ export default function MemberForm({ onClose, onSaved, assignTrainers }) {
               />
             </label>
             <p className="sm:col-span-2 text-[12px] text-muted">
-              인계·외부 PT는 이월 계약으로 잔여가 잡힙니다(매출 제외).
+              인계 · 외부 PT는 이월 계약으로 남은 수업이 잡혀요(매출에는 안 들어가요).
             </p>
           </div>
         )}

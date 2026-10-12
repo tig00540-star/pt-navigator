@@ -70,7 +70,7 @@ export default function CenterMachineSettings() {
         body: JSON.stringify({ name: name.trim(), brand: brand.trim(), kind, spec: spec.trim() }),
       });
       const data = await res.json();
-      if (!res.ok || !Array.isArray(data.cues) || !data.cues.length) showToast(data.error || "초안 생성 실패");
+      if (!res.ok || !Array.isArray(data.cues) || !data.cues.length) showToast(data.error || "초안을 만들지 못했어요. 다시 시도해 주세요.");
       else { setCues((p) => (p.trim() ? p.trim() + "\n" : "") + data.cues.join("\n")); showToast("초안을 만들었어요. 다듬어서 저장해 주세요"); }
     } catch { showToast("초안을 만들지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."); }
     setCueLoading(false);
@@ -175,7 +175,7 @@ export default function CenterMachineSettings() {
                 <Button variant="ghost" size="md" onClick={resetForm} disabled={saving}><X className="h-4 w-4" /> 취소</Button>
               )}
             </div>
-            <p className="text-[12px] leading-relaxed text-muted">여기 등록한 장비를 AI가 1·2차 OT·재등록 루틴에 &lsquo;있는 장비&rsquo;로 반영합니다. 덤벨·바벨은 종류를 &lsquo;프리웨이트&rsquo;로.</p>
+            <p className="text-[12px] leading-relaxed text-muted">여기 등록한 장비를 AI가 1·2차 OT·재등록 루틴에 &lsquo;있는 장비&rsquo;로 반영해요. 덤벨·바벨은 종류를 &lsquo;프리웨이트&rsquo;로.</p>
           </div>
         </Card>
       ) : (

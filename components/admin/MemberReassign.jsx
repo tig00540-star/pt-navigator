@@ -11,7 +11,7 @@ import { X, Search, ArrowLeftRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { viewFor, activeContract, remainingSessions } from "@/lib/memberStatus";
 import { handoverMember } from "@/lib/handover";
-import { personName } from "@/lib/format";
+import { personName, won } from "@/lib/format";
 import Modal from "@/components/ui/Modal";
 import NumberInput from "@/components/ui/NumberInput";
 import Button from "@/components/ui/Button";
@@ -59,7 +59,7 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
     if (!supabase) { setErr("Supabase가 설정되지 않았어요"); return; }
     const n = Number(sessions) || 0;
     const p = Number(price) || 0;
-    if (n > 0 && !(p > 0)) { setErr("이월할 잔여가 있으면 회당단가가 필요합니다"); return; }
+    if (n > 0 && !(p > 0)) { setErr("이월할 수업이 있으면 회당 단가를 입력해 주세요."); return; }
 
     setSaving(true); setErr("");
     try {
@@ -120,7 +120,7 @@ export default function MemberReassign({ members = [], trainers = [], contracts 
           </div>
 
           {rem && rem.total > 0 ? (
-            <p className="text-[12px] text-sub">이월할 잔여: <b className="text-ink">{rem.total}회</b>{active?.price_per_session ? ` · 현 회당 ${active.price_per_session.toLocaleString("ko-KR")}원` : ""}</p>
+            <p className="text-[12px] text-sub">이월할 잔여: <b className="text-ink">{rem.total}회</b>{active?.price_per_session ? ` · 현 회당 ${won(active.price_per_session)}` : ""}</p>
           ) : (
             <p className="text-[12px] text-muted">이월할 잔여가 없어요. 담당만 옮겨져요.</p>
           )}

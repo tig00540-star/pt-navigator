@@ -9,9 +9,9 @@
    게이트 미통과 시 기존 하드코딩을 '데모'로 폴백(앱 안 죽음, 진짜/데모 라벨 분리).
    ========================================================================= */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import DeckLauncher from "@/components/salesbook/DeckLauncher";
+import DeckLauncher, { loadPackagesFor } from "@/components/salesbook/DeckLauncher";
 import Link from "next/link";
 import { otStepPath } from "@/lib/otRounds";
 import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
@@ -198,7 +198,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "salesbook", member, report: obs, round, packages, photoLabels,
+        body: JSON.stringify({ phase: "salesbook", member, report: obs, round, history, packages, photoLabels,
           recommendedProgram: data?.report?.brief?.recommended_program || null, save: { kind: "ot", memberId: member.id, round } }),
       });
       if (!res.ok) { showToast("세일즈북을 만들지 못했어요. 다시 시도해 주세요."); return; }
@@ -215,17 +215,25 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
 
   const canAI = Boolean(supabase && member?.id);
 
-  // 본인 active 패키지 + 트레이너 프로필(표지·서명) 로드(마운트 1회) — 둘 다 uid 기준(회원 무관).
+  // 패키지 = 회원의 담당 트레이너 가격표(없거나 못 읽으면 내 것 · loadPackagesFor · 2026-10-12).
+  const pkgTrainer = member?.trainer_id || null;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase) return;
+      const pkgs = await loadPackagesFor(pkgTrainer).catch(() => []);
+      if (!cancelled) setPackages(pkgs || []);
+    })();
+    return () => { cancelled = true; };
+  }, [pkgTrainer]);
+
+  // 내 별표 운동자료(마운트 1회 · 대본을 만드는 사람의 라이브러리).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!supabase) return;
       const { data: au } = await supabase.auth.getUser();
       const uid = au?.user?.id ?? null;
-      const { data: pkgs } = await supabase.from("pt_package").select("*")
-        .eq("trainer_id", uid).eq("active", true)
-        .order("sort", { ascending: true }).order("created_at", { ascending: true });
-      if (!cancelled) setPackages(pkgs || []);
       // 별표한 운동자료(1차와 같은 조회 · favorite 컬럼이 없으면 에러 → [] 비차단).
       const { data: favs } = await supabase
         .from("library_item").select("id, title, category, url, note")
@@ -243,7 +251,10 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   // 생성·저장은 서버가 끝까지(다른 화면·창 닫기에도 안 끊김 · 2026-10-02). 세일즈북은 그다음 화면이 이어 만든다
   //   (도중에 나가면 세일즈북만 빠지고 리포트는 남는다 — '세일즈북 만들기' 버튼으로 다시).
   const pendingKey = member?.id ? `second:${member.id}:${round}` : null;
+  const inFlight = useRef(false);   // 두 번 눌러 AI를 두 번 부르지 않게(2026-10-12)
   const generateBrief = async (obsReport) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setGenerating(true);
     setAiError("");
     if (pendingKey) markPending(pendingKey);
@@ -289,9 +300,16 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     } catch {
       setAiError("인터넷 연결을 확인하고 다시 시도해 주세요. (다른 화면에 다녀와도 만들던 대본은 이어서 저장돼요)");
     } finally {
+      inFlight.current = false;
       setGenerating(false);
       refreshAiQuota();
     }
+  };
+  // 다시 만들기 — 만드는 1~2분 동안 지금 대본이 안 보이니 한 번 묻는다.
+  const regenerateBrief = () => {
+    if (inFlight.current) return;
+    if (!window.confirm("지금 대본을 새로 만들까요? 새로 만드는 1~2분 동안 지금 대본은 안 보여요.")) return;
+    generateBrief(obs);
   };
 
   // 돌아왔을 때 이어 받기 — 다른 화면에 갔다 오는 사이 서버가 저장한 리포트.
@@ -306,7 +324,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     setBrief(row.report.brief);
     setBriefMeta(row.report.briefMeta);
     onSaved?.();
-  });
+  }, () => setAiError("대본을 만들지 못했어요. 다시 시도해 주세요."));
 
   // 회원·차수 변경 시 이 회원 ot_log 전부 조회 → round-1(관찰)·이번 차수(캐시)·이전 차수(history).
   useEffect(() => {
@@ -518,7 +536,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           bare
           status={stale ? "stale" : "ready"}
           title={`오늘의 OT 대본 · ${round}차`}
-          onRegenerate={() => generateBrief(obs)}
+          onRegenerate={regenerateBrief}
           meta={
             meta?.generatedAt && (
               <span>{new Date(meta.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요</span>
@@ -585,7 +603,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     return renderDemo(
       !supabase
         ? "데모 모드라 AI가 동작하지 않아요. 아래는 예시예요."
-        : "회원을 먼저 선택해 주세요. 아래는 예시(하드코딩)입니다."
+        : "회원을 먼저 선택해 주세요. 아래는 예시예요."
     );
   }
   if (loading) {

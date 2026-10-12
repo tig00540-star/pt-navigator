@@ -16,6 +16,7 @@ function Confirm() {
   const [refundable, setRefundable] = useState(false); // 첫 결제 = 7일 안 전액 환불 대상(2026-10-07)
   const [paid, setPaid] = useState(false); // 체험을 이미 쓴 계정 = 바로 첫 달 결제(2026-10-06) // confirming | done | error
   const [msg, setMsg] = useState("");
+  const [cardOnly, setCardOnly] = useState(false); // 이용 중 계정의 카드 바꾸기(구독 관리 '카드 바꾸기' · 결제 없음)
   const ran = useRef(false); // StrictMode 이중 실행/재요청 방지
 
   useEffect(() => {
@@ -30,11 +31,11 @@ function Confirm() {
       const authKey = sp.get("authKey");
       const customerKey = sp.get("customerKey");
       const plan = sp.get("plan");
-      if (!supabase) { setState("error"); setMsg("결제 설정이 준비 중입니다."); return; }
+      if (!supabase) { setState("error"); setMsg("결제를 준비하지 못했어요. 잠시 후 다시 시도해 주세요."); return; }
       if (!authKey || !customerKey) { setState("error"); setMsg("결제 정보가 확인되지 않았어요."); return; }
       const { data } = await supabase.auth.getSession();
       const tok = data?.session?.access_token;
-      if (!tok) { setState("error"); setMsg("로그인이 필요합니다. 다시 로그인 후 시도해 주세요."); return; }
+      if (!tok) { setState("error"); setMsg("다시 로그인한 뒤 시도해 주세요."); return; }
       try {
         const res = await fetch("/api/billing/confirm", {
           method: "POST",
@@ -42,10 +43,10 @@ function Confirm() {
           body: JSON.stringify({ authKey, customerKey, plan }),
         });
         const body = await res.json().catch(() => ({}));
-        if (res.ok) { setPaid(Boolean(body.paid)); setRefundable(Boolean(body.refundable)); setState("done"); }
-        else { setState("error"); setMsg(body.error || "결제 처리에 실패했어요."); }
+        if (res.ok) { setPaid(Boolean(body.paid)); setCardOnly(Boolean(body.cardUpdated)); setRefundable(Boolean(body.refundable)); setState("done"); }
+        else { setState("error"); setMsg(body.error || "결제하지 못했어요. 다시 시도해 주세요."); }
       } catch {
-        setState("error"); setMsg("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
+        setState("error"); setMsg("인터넷 연결을 확인하고 다시 시도해 주세요.");
       }
     })();
   }, [sp]);
@@ -55,7 +56,7 @@ function Confirm() {
       <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
         {state === "confirming" && (
           <>
-            <div className="text-base font-semibold text-ink">결제 정보를 확인하고 있어요…</div>
+            <div className="text-base font-semibold text-ink">{sp.get("card") === "1" ? "카드 정보를 확인하고 있어요…" : "결제 정보를 확인하고 있어요…"}</div>
             <p className="mt-2 text-sm text-muted">잠시만 기다려 주세요.</p>
           </>
         )}
@@ -67,14 +68,14 @@ function Confirm() {
                 ? `첫 달 결제가 끝났어요. 다음 달부터 같은 날 등록하신 카드로 자동 결제돼요(언제든 해지 가능).${refundable ? " 7일 안에는 써 봤어도 설정 › 구독 관리에서 전액 환불받을 수 있어요." : ""}`
                 : "결제 카드를 바꿨어요. 이번 이용 기간은 그대로이고, 다음 결제일부터 새 카드로 결제돼요."}
             </p>
-            <Link href="/" className="mt-5 inline-block w-full">
-              <Button variant="primary" size="md" fullWidth>앱 시작하기</Button>
+            <Link href={cardOnly ? "/settings/me#subscription" : "/"} className="mt-5 inline-block w-full">
+              <Button variant="primary" size="md" fullWidth>{cardOnly ? "구독 관리로 돌아가기" : "앱 시작하기"}</Button>
             </Link>
           </>
         )}
         {state === "error" && (
           <>
-            <div className="text-lg font-semibold text-ink">결제를 완료하지 못했어요</div>
+            <div className="text-lg font-semibold text-ink">{sp.get("card") === "1" ? "카드를 바꾸지 못했어요" : "결제를 완료하지 못했어요"}</div>
             <p className="mt-2 text-sm leading-relaxed text-muted">{msg}</p>
             <Link href="/" className="mt-5 inline-block w-full">
               <Button variant="primary" size="md" fullWidth>돌아가기</Button>

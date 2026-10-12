@@ -40,9 +40,11 @@ const shortName = (s) => String(s || "").split(/\s[—–-]\s|\(|·/)[0].trim().
 
 function prepExercises(report, round) {
   const r = report || {};
+  // AI 결과의 목록 칸이 목록이 아닐 수도 있다(옛 캐시 · 모델 실수) — 그땐 비운다(화면이 죽지 않게).
+  const arr = (v) => (Array.isArray(v) ? v : []);
   const names = round === 1
-    ? (r.first_assist?.data?.exercises || []).map((e) => e?.name)
-    : [...(r.brief?.session_plan || []).map((p) => p?.exercise), ...(r.brief?.proof?.moves || []).map((m) => m?.exercise)];
+    ? arr(r.first_assist?.data?.exercises).map((e) => e?.name)
+    : [...arr(r.brief?.session_plan).map((p) => p?.exercise), ...arr(r.brief?.proof?.moves).map((m) => m?.exercise)];
   return [...new Set(names.map(shortName).filter(Boolean))].slice(0, 6);
 }
 
@@ -54,10 +56,10 @@ function rowToForm(row, round) {
     : r.next === "continue" ? "continue" : "";
   const proposed = res === "hold" ? true : res === "fail" ? (r.proposed ?? true) : res === "success" ? true
     : r.next === "continue" ? false : null;
-  const saved = (Array.isArray(r.movements) ? r.movements : []).filter((m) => m && (m.name || (m.observation || "").trim()))
+  const saved = (Array.isArray(r.movements) ? r.movements : []).filter((m) => m && (m.name || String(m.observation || "").trim()))
     .map((m) => m.name
       ? { name: m.name, tags: Array.isArray(m.tags) ? m.tags : [], star: !!m.star }
-      : { name: shortName(m.observation) || m.observation.slice(0, 30), tags: m.memberAware ? ["aware"] : [], star: !!(m.plan2nd || "").trim(), legacy: m.observation });
+      : { name: shortName(m.observation) || String(m.observation).slice(0, 30), tags: m.memberAware ? ["aware"] : [], star: !!(m.plan2nd || "").trim(), legacy: m.observation });
   const have = new Set(saved.map((m) => m.name));
   const fromPrep = prepExercises(r, round).filter((n) => !have.has(n)).map((name) => ({ name, tags: [], star: false }));
   return {
@@ -385,7 +387,7 @@ export default function ObservationTab({ member, round = 1, onClosingSaved }) {
           </div>
         </Q>
 
-        <Q label="회원 성향" hint="리포트 말투·설명 길이에 반영돼요">
+        <Q label="회원 성향" hint="대본 말투·설명 길이에 반영돼요">
           <div className="flex flex-wrap gap-1.5">
             {ATTITUDE_TAGS.map((t) => (
               <Chip key={t.value} on={form.traits.includes(t.value)} onClick={() => toggleIn("traits", t.value)}>{t.label}</Chip>

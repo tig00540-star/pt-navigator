@@ -21,6 +21,7 @@ import SignaturePad from "@/components/member/SignaturePad";
 import RoutineSection from "@/components/member/RoutineSection";
 import DietSection, { DietFeedbackHome } from "@/components/member/DietSection";
 import { dietDayOf, dietToday } from "@/lib/diet";
+import { pushSupported, disablePush } from "@/lib/pushClient";
 import ConsentGate from "@/components/member/ConsentGate";
 import MemberFooter from "@/components/member/MemberFooter";
 import { CONSENT_VERSION, latestConsent } from "@/lib/consent";
@@ -160,7 +161,7 @@ function LoginCard({ last4, setLast4, onSubmit, busy, err }) {
           </Button>
         </div>
         <p className="mt-4 text-center text-[12px] leading-relaxed text-muted">
-          담당 트레이너가 보내준 링크로 접속하셨어요. 본인 기록만 안전하게 열람됩니다.
+          담당 트레이너가 보내준 링크로 접속하셨어요. 본인 기록만 안전하게 볼 수 있어요.
         </p>
       </div>
     </div>
@@ -784,7 +785,8 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [serverOff, setServerOff] = useState(false);  // member-confirm 503 → 유도 전체 끔(fail-open)
+  const [serverOff, setServerOff] = useState(false);  // member-confirm 503 · 403 → 유도 전체 끔(fail-open)
+  const [offMsg, setOffMsg] = useState("");           // 403(볼 수만 있는 때)이면 왜 못 하는지 한 줄
 
   const [nowMs] = useState(() => Date.now());   // 페이지를 연 시각 기준(수업 1시간 뒤부터)
   const [sentIds, setSentIds] = useState(() => new Set());   // 방금 '내용이 달라요' 보낸 일지(뷰가 늦게 반영돼도 다시 안 뜨게)
@@ -829,6 +831,10 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
         body: JSON.stringify({ log_ids: [log_id, ...others], result, note: memo, signature }),
       });
       if (res.status === 503) { setServerOff(true); setModalOpen(false); return; } // fail-open: 유도 끔
+      if (res.status === 403) {   // 지금은 확인할 수 없는 때(센터 이용 기간 끝 · PT 종료 등) → 유도 끄고 이유만
+        const j = await res.json().catch(() => ({}));
+        setOffMsg(j.error || "지금은 기록을 볼 수만 있어요."); setServerOff(true); setModalOpen(false); return;
+      }
       if (res.status === 409) { await onReload?.(); return; } // 이미 확인됨 → 재조회로 정리, 성공 취급
       if (!res.ok) { console.error("운동일지 확인 실패", res.status, await res.text().catch(() => "")); setErr("확인하지 못했어요. 다시 시도해 주세요."); return; }
       if (result === "dispute") setSentIds((p) => new Set(p).add(log_id));
@@ -843,6 +849,7 @@ function ConfirmFlow({ logs, onReload, consentAt = null, consentVersion = null }
 
   const snooze = () => setModalOpen(false);   // 이번만 닫기 — 다음에 페이지를 열면 다시 뜬다
 
+  if (serverOff && offMsg) return <p className="mb-6 rounded-2xl border border-line bg-card px-4 py-3 text-[14px] text-sub">{offMsg}</p>;
   if (serverOff || pending.length === 0) return null;
 
   // 배너 = 항상. 앱 사용은 안 막는다(소프트).
@@ -949,7 +956,10 @@ function AutoSignFlow({ logs, onReload }) {
   const [sig, setSig] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [offMsg, setOffMsg] = useState("");   // 503 · 403 = 지금은 서명할 수 없는 때 → 띠 끄기(fail-open)
   const list = (logs || []).filter((l) => l.confirm_method === "auto" && !l.signed_at).slice(0, 10);
+  if (offMsg === "off") return null;
+  if (offMsg) return <p className="mb-4 rounded-2xl border border-line bg-card px-4 py-3 text-[14px] text-sub">{offMsg}</p>;
   if (!list.length) return null;
   const sign = async () => {
     setBusy(true); setErr("");
@@ -961,6 +971,8 @@ function AutoSignFlow({ logs, onReload }) {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ log_ids: list.map((l) => l.id), result: "sign", signature: sig }),
       });
+      if (res.status === 503) { setOpen(false); setOffMsg("off"); return; }
+      if (res.status === 403) { const j = await res.json().catch(() => ({})); setOpen(false); setOffMsg(j.error || "지금은 기록을 볼 수만 있어요."); return; }
       if (!res.ok) { console.error("서명 실패", res.status, await res.text().catch(() => "")); setErr("서명을 저장하지 못했어요. 다시 시도해 주세요."); return; }
       setOpen(false); setSig(null);
       await onReload?.();
@@ -1132,7 +1144,8 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         </nav>
 
         {/* 운동일지 확인 유도 — 배너 + pending≥3 소프트 모달. 홈 · 운동일지 탭에서 보이고, 한 번만 그려 두어 탭을 바꿔도 창이 다시 안 뜬다. */}
-        {!ended && (
+        {/* 센터 이용 기간이 끝난 '볼 수만' 때는 확인 · 서명이 안 된다(member-confirm 403) → 유도도 안 띄운다 */}
+        {!ended && !centerClosed && (
           <div hidden={tab !== "home" && tab !== "logs"}>
             <ConfirmFlow logs={logs} onReload={onReloadLogs} consentAt={autoFrom} consentVersion={consent?.general?.version || null} />
           </div>
@@ -1169,7 +1182,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {/* ── 운동일지: 운동 달력 · PT 운동일지 · 내가 한 개인운동 · 유산소 ── */}
         <div hidden={tab !== "logs"}>
 
-        {!ended && <AutoSignFlow logs={logs} onReload={onReloadLogs} />}
+        {!ended && !centerClosed && <AutoSignFlow logs={logs} onReload={onReloadLogs} />}
 
         {/* 운동 달력 — 이미 로드된 logs·cardio·schedule 파생(추가 쿼리 없음 · 2026-10-06 홈에서 옮김) */}
         <MemberActivityCalendar logs={logs} cardio={cardio} schedule={schedule} />
@@ -1303,7 +1316,7 @@ function HomeView({ me, logs, inbody, cardio, onReloadCardio, photos, onReloadPh
         {!readOnly && (
           <div hidden={tab !== "write"}>
         {/* 오늘 식단(트레이너가 식단 관리를 켠 회원만 · 2026-10-11) — 맨 위 */}
-        <DietSection supabase={memberSupabase} me={me}
+        <DietSection supabase={memberSupabase} me={me} active={tab === "write"}
           trainedToday={logs.some((l) => dietDayOf(l.session_at || l.created_at) === dietToday()) || schedule.some((x) => x.kind === "personal" && x.on_date === dietToday())} />
 
         {/* 오늘 할 개인운동(트레이너가 확정 · 보이기 켠 루틴 · 2026-10-04) */}
@@ -1447,19 +1460,37 @@ export default function MemberHome() {
         body: JSON.stringify({ token, phoneLast4: last4 }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.ok) { setErr(json.error || "확인에 실패했습니다."); setBusy(false); return; }
+      if (!res.ok || !json.ok) { setErr(json.error || "확인하지 못했어요. 다시 시도해 주세요."); setBusy(false); return; }
       await memberSupabase.auth.setSession({
         access_token: json.access_token,
         refresh_token: json.refresh_token,
       });
       await loadHome();
     } catch {
-      setErr("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
+      setErr("인터넷 연결을 확인하고 다시 시도해 주세요.");
     }
     setBusy(false);
   };
 
+  // 로그아웃하면 이 기기의 회원 알림도 끈다(2026-10-12 · 로그아웃한 기기로 운동일지 · 식단 알림이 계속 가지 않게).
+  //   같은 브라우저에 트레이너가 로그인돼 있으면 브라우저 구독은 트레이너 것일 수 있어 그대로 두고, 서버의 이 회원 줄만 지운다.
+  const stopPushHere = async () => {
+    try {
+      if (!memberSupabase || !pushSupported()) return;
+      const { data } = await memberSupabase.auth.getSession();
+      const t = data?.session?.access_token;
+      if (!t) return;
+      const headers = { Authorization: `Bearer ${t}` };
+      const trainerHere = (() => { try { return Object.keys(localStorage).some((k) => /^sb-.+-auth-token$/.test(k)); } catch { return false; } })();
+      if (!trainerHere) { await disablePush(headers); return; }
+      const reg = await navigator.serviceWorker.getRegistration("/");
+      const sub = reg ? await reg.pushManager.getSubscription() : null;
+      if (sub) await fetch("/api/push/subscribe", { method: "DELETE", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+    } catch (e) { console.error("알림 끄기 실패", e); }   // 실패해도 로그아웃은 그대로
+  };
+
   const signOut = async () => {
+    await stopPushHere();
     if (memberSupabase) await memberSupabase.auth.signOut({ scope: "local" }); // 이 기기만(다른 기기 로그인은 그대로)
     setMe(null); setLogs([]); setInbody([]); setCardio([]); setPhotos([]); setSchedule([]); setOunwan(null); setConsentRows(null); setLast4(""); setPhase("login");
   };

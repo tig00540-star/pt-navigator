@@ -41,7 +41,7 @@ export default function SignupPage() {
   const submit = async () => {
     if (busy) return;
     if (!supabase) { setErr("데모 모드라 가입할 수 없어요. 키를 설정한 뒤 다시 시도해 주세요."); return; }
-    if (!email.trim() || !pw || !displayName.trim()) { setErr("이메일·비밀번호·이름은 필수입니다."); return; }
+    if (!email.trim() || !pw || !displayName.trim()) { setErr("이메일 · 비밀번호 · 이름을 입력해 주세요."); return; }
     if (pw.length < 6) { setErr("비밀번호를 6자 이상으로 입력해 주세요."); return; }
     if (type === "center" && !accountName.trim()) { setErr("센터명을 입력해 주세요."); return; }
     if (type === "solo" && !workMode) { setErr("어떻게 일하시는지 골라 주세요."); return; }
@@ -70,7 +70,7 @@ export default function SignupPage() {
       <div className="min-h-screen flex items-center justify-center px-6 bg-bg">
         <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
           <div className="text-base font-semibold text-ink">메일함을 확인해 주세요</div>
-          <p className="mt-2 text-sm text-muted">{email}로 보낸 확인 링크를 누르면 가입이 완료됩니다.</p>
+          <p className="mt-2 text-sm text-muted">{email}로 보낸 확인 링크를 누르면 가입이 끝나요.</p>
           <Link href="/" className="mt-4 inline-block text-xs font-semibold text-primary-strong hover:underline">로그인으로</Link>
         </div>
       </div>

@@ -20,6 +20,9 @@ import Emph, { plainText } from "@/components/ui/Emph";
 import { resolvePkg } from "@/lib/pkgRef";
 import { labelOf, REG_REASON_OPTS } from "@/lib/labels";
 
+// AI가 목록 칸을 목록이 아닌 값으로 보내도 화면이 죽지 않게(옛 캐시 포함 · 서버도 고쳐 저장).
+const arr = (v) => (Array.isArray(v) ? v : []);
+
 const OBJ_LABEL = { price: "가격", hesitation: "생각해볼게요", doubt: "효과 의심", time: "시간 부족", compare: "다른 곳 비교" };
 
 // 말할 대사 — 말풍선. strong=빨강 강조 허용(요청·증명), 아니면 굵게만.
@@ -170,10 +173,10 @@ function BookClosing({ kind, d, priceLine, onOpenBook }) {
           </ol>
         )}
       </div>
-      {(seq.fallback?.next_line || (seq.fallback?.homework || []).length > 0) && (
+      {(seq.fallback?.next_line || arr(seq.fallback?.homework).length > 0) && (
         <More label="오늘 안 되면 · 숙제">
           <Note label="다음 OT">{seq.fallback?.next_line}</Note>
-          {(seq.fallback?.homework || []).filter(Boolean).map((h, i) => <Note key={i} label={`숙제 ${i + 1}`}>{h.do}</Note>)}
+          {arr(seq.fallback?.homework).filter(Boolean).map((h, i) => <Note key={i} label={`숙제 ${i + 1}`}>{h.do}</Note>)}
         </More>
       )}
     </div>
@@ -235,8 +238,8 @@ function cheatLines(kind, d) {
     return { lines: [d.member_read, d.why_now?.proven, ask && `"${ask}"`].filter(Boolean), derived: true };
   }
   const proof = kind === "first"
-    ? (d.exercises || []).find((e) => e?.proof) || (d.exercises || [])[0]
-    : (d.proof?.moves || [])[0];
+    ? arr(d.exercises).find((e) => e?.proof) || arr(d.exercises)[0]
+    : arr(d.proof?.moves)[0];
   const proofLine = kind === "first"
     ? proof && `${splitName(proof).name}${proof.cue ? `: "${proof.cue}"` : ""}`
     : proof && `${proof.exercise}${proof.point_it_out ? `: "${proof.point_it_out}"` : ""}`;
@@ -250,7 +253,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   const [open, setOpen] = useState({});
   // 재등록은 기록된 거절 이유(reg_reason)가 있으면 그 칸부터 보여 준다.
   const [objSel, setObjSel] = useState(() => {
-    const i = rereg && highlightReason ? (d.objection_defense || []).filter(Boolean).findIndex((o) => o.reason === highlightReason) : -1;
+    const i = rereg && highlightReason ? arr(d.objection_defense).filter(Boolean).findIndex((o) => o.reason === highlightReason) : -1;
     return i > 0 ? i : 0;
   });
   const objLabel = (r) => (rereg ? labelOf(REG_REASON_OPTS, r) : OBJ_LABEL[r] || r);
@@ -261,10 +264,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
     : (Array.isArray(d.lib_refs) ? d.lib_refs.filter(Number.isInteger).map((i) => favorites[i]).filter(Boolean) : []);
 
   const { lines, derived } = cheatLines(kind, d);
-  const exercises = (d.exercises || []).filter(Boolean);
-  const plan = (d.session_plan || []).filter(Boolean);
-  const moves = (d.proof?.moves || []).filter(Boolean);
-  const obj = (d.objection_defense || []).filter(Boolean);
+  const exercises = arr(d.exercises).filter((x) => x && typeof x === "object");
+  const plan = arr(d.session_plan).filter((x) => x && typeof x === "object");
+  const moves = arr(d.proof?.moves).filter((x) => x && typeof x === "object");
+  const obj = arr(d.objection_defense).filter((x) => x && typeof x === "object");
   const rp = d.recommended_program || {};
   const seqForHint = d.closing_sequence || {};
   // 만들 때 저장한 패키지(pick_pkg)가 먼저 — 순번만 보면 다른 트레이너·가격표 순서 변경에 엉뚱한 가격이 붙는다(lib/pkgRef).
@@ -272,7 +275,7 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   const alt = resolvePkg({ snap: rp.alt_pkg, ref: rp.alt_ref, packages, hint: rp.alt_why });
   const per = pick?.sessions ? Math.round(pick.price / pick.sessions) : null;
   const priceLine = pick ? `${pick.name} · ${won(pick.price)}${per ? ` · 회당 약 ${wonApprox(per)}` : ""}` : "";
-  const gaps = (d.data_gaps || []).filter((g) => typeof g === "string" && g.trim());
+  const gaps = arr(d.data_gaps).filter((g) => typeof g === "string" && g.trim());
   const seq = d.closing_sequence || {};
   const entry = kind === "first" ? d.opening || {} : d.recall || {};
   // 정보가 거의 없는 회원 — 대사에 ○○ 빈칸이 있다(수업 중 회원이 말한 목표를 넣어 말함).

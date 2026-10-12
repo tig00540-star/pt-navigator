@@ -80,9 +80,11 @@ export async function POST(req) {
   // 2) 결제마다 전액 취소(멱등 키 = 결제 id)
   let done = 0, refunded = 0; const failed = [];
   for (const p of s.targets) {
-    if (!p.toss_payment_key) { failed.push(p.id); continue; }
-    const r = await cancelPayment(p.toss_payment_key, { cancelReason: "첫 결제 7일 안 전액 환불", idempotencyKey: `refund7_${p.id}` });
-    if (!r.ok) { console.error("[billing/refund] 취소 실패", p.id, r.status, r.error?.code || r.error?.message); failed.push(p.id); continue; }
+    if (!p.toss_payment_key) { failed.push({ p, error: "no_payment_key" }); continue; }
+    let r;
+    try { r = await cancelPayment(p.toss_payment_key, { cancelReason: "첫 결제 7일 안 전액 환불", idempotencyKey: `refund7_${p.id}` }); }
+    catch (e) { r = { ok: false, error: { message: String(e?.message || e) } }; }
+    if (!r.ok) { console.error("[billing/refund] 취소 실패", p.id, r.status, r.error?.code || r.error?.message); failed.push({ p, error: r.error?.code || r.status || r.error?.message || null }); continue; }
     done++; refunded += p.amount || 0;
     await sb.from("payment").insert({ account_id: me.account_id, order_id: `refund7_${p.id}`, toss_payment_key: p.toss_payment_key,
       amount: -(p.amount || 0), status: "CANCELED", plan: p.plan, raw: { canceledAt: nowIso, kind: "refund7" } });
@@ -95,7 +97,13 @@ export async function POST(req) {
     return Response.json({ error: "환불하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }
   if (failed.length) {
-    console.error("[billing/refund] 일부 환불 실패 — 수동 처리 필요", me.account_id, failed);
+    // 못 돌려준 결제 = REFUND_FAILED 기록 → 매일 결제 작업(lib/opsCheck ①)이 토스 확인 · 다시 시도(하루 1번 · 3번까지) · 그래도 안 되면 회사 업무 사이트로(2026-10-12)
+    for (const { p, error } of failed) {
+      const { error: ie } = await sb.from("payment").insert({ account_id: me.account_id, order_id: `refund7_${p.id}`, toss_payment_key: p.toss_payment_key || null,
+        amount: -(p.amount || 0), status: "REFUND_FAILED", plan: p.plan, raw: { failedAt: nowIso, kind: "refund7", error } });
+      if (ie) console.error("[billing/refund] 환불 실패 기록 실패", p.id, ie.message);
+    }
+    console.error("[billing/refund] 일부 환불 실패 — 자동 재시도 대상", me.account_id, failed.map((f) => f.p.id));
     return Response.json({ ok: true, partial: true, refunded, error: "일부 금액을 환불하지 못했어요. 고객센터로 알려 주시면 바로 처리해 드릴게요." });
   }
   return Response.json({ ok: true, refunded });

@@ -87,7 +87,8 @@ export async function GET(req) {
   // 센터가 늘어도 시간 안에 끝나게(2026-10-06): ① 오늘 이미 다 만든 센터는 건너뜀(수동 재실행 · 이어 하기)
   //   ② 4곳씩 동시에(AI 한 번 수십 초 · 한 줄로 돌리면 센터 10곳만 넘어도 5분 한도에 걸린다)
   //   ③ 남은 시간이 40초 아래면 새 센터는 시작하지 않음 — 못 만든 센터는 대표가 열 때 화면이 지금 데이터로 만든다(기존 대체 경로).
-  let list = accounts || [];
+  // 구독이 살아 있는 센터만(2026-10-12 · 월간 결산과 같은 규칙) — 끝난 · 볼 수만 · 잠긴 센터에 보고서 · 알림을 계속 만들던 것 막기
+  let list = (accounts || []).filter((a) => a.subscription_status === "active" && (!a.current_period_end || Date.parse(a.current_period_end) > nowMs));
   if (!only && list.length) {
     const { data: have } = await sb.from("owner_daily_report").select("account_id, ai").eq("ymd", ymd).in("account_id", list.map((a) => a.id));
     const ready = new Set((have || []).filter((r) => r.ai?.state && r.ai.state !== "failed").map((r) => r.account_id));

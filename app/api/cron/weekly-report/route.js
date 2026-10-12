@@ -47,14 +47,16 @@ export async function GET(req) {
   const sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
   // 전체 로드(계정 필터 없음 = SaaS 전체 관점). 큰 표는 fetchAllRows로 1000행 잘림 방지.
-  const [membersR, otR, contractsR, logsR, accountsR] = await Promise.all([
+  const [membersR, otR, contractsR, logsR, accountsR, paidR] = await Promise.all([
     fetchAllRows(() => sb.from("user_table").select("*")),
     fetchAllRows(() => sb.from("ot_log").select("*")),
     fetchAllRows(() => sb.from("session_log").select("*")),
     fetchAllRows(() => sb.from("daily_workout_log").select("*")),
-    fetchAllRows(() => sb.from("account").select("id, type, billing_plan, extra_seats, subscription_status, current_period_end")),
+    fetchAllRows(() => sb.from("account").select("id, type, billing_plan, extra_seats, subscription_status, current_period_end, cancel_at_period_end")),
+    // 실제로 구독료를 낸 계정(무료 체험 구분용 · 2026-10-12)
+    fetchAllRows(() => sb.from("payment").select("id, account_id").eq("status", "DONE").in("plan", ["basic", "solo", "center"])),
   ]);
-  const firstErr = membersR.error || otR.error || contractsR.error || logsR.error || accountsR.error;
+  const firstErr = membersR.error || otR.error || contractsR.error || logsR.error || accountsR.error || paidR.error;
   if (firstErr) return Response.json({ error: `조회 실패: ${firstErr.message}` }, { status: 500 });
 
   // 데모 센터(랜딩·영업용 가짜 데이터)는 운영 지표에서 뺀다 — 안 빼면 유료 센터 수·매출이 부풀려진다.
@@ -107,16 +109,22 @@ export async function GET(req) {
   const churn = churnRiskMembers(visible, contracts, logs, { nowISO }).length;
   const expiring = expiringMembers(visible, contracts, logs, { nowISO }).length;
 
-  // 구독 현황 + MRR 추정(활성 구독의 좌석 플랜 금액 합)
+  // 구독 현황 + MRR 추정(2026-10-12 고침): 무료체험 = 이용 중인데 구독 결제(DONE)가 한 번도 없는 계정(예전엔 '3일 안 만료가 아닌 활성 계정' 전부를 셌다)
+  //   유료전환대상 = 그중 3일 안에 체험이 끝나는 계정 · MRR = 실제로 내고 있고 해지 예약이 없는 계정의 월 금액 합
+  const paidAcc = new Set((paidR.data || []).map((p) => p.account_id));
   let activeSub = 0, trial = 0, convTarget = 0, churned = 0, mrr = 0;
   for (const a of accounts) {
     const end = a.current_period_end ? Date.parse(a.current_period_end) : null;
     const active = a.subscription_status === "active" && (end === null || end > now);
     if (active) {
       activeSub += 1;
-      mrr += planAmount(a.billing_plan || (a.type === "center" ? "center" : "solo"), a.extra_seats) ?? 0;
-      if (end !== null && end - now < 3 * 86400000) convTarget += 1;
-      else trial += 1;
+      const paid = paidAcc.has(a.id);
+      if (!paid && end !== null) {          // 기간 없는 시범 · 시드 계정(end null)은 체험도 매출도 아님
+        trial += 1;
+        if (end - now < 3 * 86400000) convTarget += 1;
+      } else if (paid && !a.cancel_at_period_end) {
+        mrr += planAmount(a.billing_plan || (a.type === "center" ? "center" : "solo"), a.extra_seats) ?? 0;
+      }
     } else if (a.subscription_status && a.subscription_status !== "inactive") {
       churned += 1;
     }
