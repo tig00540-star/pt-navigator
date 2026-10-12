@@ -84,7 +84,7 @@ export function FeedbackBody({ fb }) {
         </div>
       )}
       {fb.good && <p className="m-0 rounded-xl bg-sky-50 px-3 py-2 text-[14px] leading-relaxed text-ink"><b className="mb-0.5 block text-[12px] font-semibold text-sky-700">잘한 점</b>{fb.good}</p>}
-      {fb.next && <p className="m-0 rounded-xl bg-primary-soft px-3 py-2 text-[14px] leading-relaxed text-ink"><b className="mb-0.5 block text-[12px] font-semibold text-primary-strong">오늘 하나만</b>{fb.next}</p>}
+      {fb.next && <p className="m-0 rounded-xl bg-primary-soft px-3 py-2 text-[14px] leading-relaxed text-ink"><b className="mb-0.5 block text-[12px] font-semibold text-primary-strong">다음엔 하나만</b>{fb.next}</p>}
       {fb.timing && <p className="m-0 rounded-xl bg-elevate px-3 py-2 text-[14px] leading-relaxed text-ink"><b className="mb-0.5 block text-[12px] font-semibold text-muted">먹은 시간</b>{fb.timing}</p>}
       {fb.note && <p className="m-0 rounded-xl bg-elevate px-3 py-2 text-[14px] leading-relaxed text-ink"><b className="mb-0.5 block text-[12px] font-semibold text-muted">한마디</b>{fb.note}</p>}
       {t && <p className="m-0 text-[12px] text-muted">사진 기준 추정이에요.</p>}

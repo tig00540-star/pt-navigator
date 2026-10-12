@@ -144,7 +144,7 @@ export function DietDayModal({ member, day, onClose, onSent, showToast }) {
             )}
             <label className="block"><span className="mb-1 block text-[12px] font-semibold text-muted">잘한 점</span>
               <textarea value={fb.good} onChange={(e) => setFb((x) => ({ ...x, good: e.target.value }))} rows={2} className={inputCls} /></label>
-            <label className="block"><span className="mb-1 block text-[12px] font-semibold text-muted">오늘 하나만</span>
+            <label className="block"><span className="mb-1 block text-[12px] font-semibold text-muted">다음엔 하나만</span>
               <textarea value={fb.next} onChange={(e) => setFb((x) => ({ ...x, next: e.target.value }))} rows={2} className={inputCls} /></label>
             <label className="block"><span className="mb-1 block text-[12px] font-semibold text-muted">먹은 시간(선택)</span>
               <textarea value={fb.timing} onChange={(e) => setFb((x) => ({ ...x, timing: e.target.value }))} rows={1} className={inputCls} /></label>
