@@ -32,14 +32,15 @@ const eunNeun = (w) => { const c = String(w || "").trim().slice(-1).charCodeAt(0
 const kg = (w) => `${r2(w)}kg`;
 const mdKo = (iso) => { const t = Date.parse(iso || ""); if (Number.isNaN(t)) return ""; const k = new Date(t + 9 * 3600000); return `${k.getUTCMonth() + 1}/${k.getUTCDate()}`; };
 
-function Stepper({ value, onChange, step = 1, min = 0, max = 999, unit = "", label }) {
+// 폰 폭(약 300px)에 세트 · 무게 · 횟수가 한 줄로 들어가게 작게(2026-10-12 대표)
+function Stepper({ value, onChange, step = 1, min = 0, max = 999, unit = "", label, wide = false }) {
   const dec = () => onChange(r2(Math.max(min, value - step)));
   const inc = () => onChange(r2(Math.min(max, value + step)));
   return (
-    <span className="inline-flex items-center gap-0.5" aria-label={label}>
-      <button type="button" onClick={dec} disabled={value <= min} aria-label={`${label} 줄이기`} className="flex h-8 w-8 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
-      <span className="min-w-[3.2rem] text-center text-[14px] font-semibold text-ink">{r2(value)}{unit}</span>
-      <button type="button" onClick={inc} disabled={value >= max} aria-label={`${label} 늘리기`} className="flex h-8 w-8 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
+    <span className="inline-flex shrink-0 items-center" aria-label={label}>
+      <button type="button" onClick={dec} disabled={value <= min} aria-label={`${label} 줄이기`} className="flex h-8 w-6 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Minus className="h-3.5 w-3.5" /></button>
+      <span className={`${wide ? "w-[3rem]" : "w-[2.5rem]"} text-center text-[14px] font-semibold tabular-nums text-ink`}>{r2(value)}<span className="text-[12px] font-medium text-sub">{unit}</span></span>
+      <button type="button" onClick={inc} disabled={value >= max} aria-label={`${label} 늘리기`} className="flex h-8 w-6 items-center justify-center rounded-lg bg-card text-sub disabled:opacity-30"><Plus className="h-3.5 w-3.5" /></button>
     </span>
   );
 }
@@ -189,15 +190,15 @@ export default function RoutineCard({ member, logs = [] }) {
                 /* 세트마다 다르게(2026-10-12) — 줄마다 무게 · 횟수. 가장 무거운 세트가 '본 세트'(진도 · 상한 기준) */
                 <div className="mt-1.5 space-y-1">
                   {it.setPlan.map((r, si) => (
-                    <div key={si} className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="w-10 shrink-0 text-[12.5px] font-bold text-sub">{si + 1}세트</span>
-                      <Stepper label={`${si + 1}세트 무게`} value={r.weight} step={it.step} min={0} unit="kg"
+                    <div key={si} className="flex items-center gap-1">
+                      <span className="w-9 shrink-0 text-[12.5px] font-bold text-sub">{si + 1}세트</span>
+                      <Stepper label={`${si + 1}세트 무게`} value={r.weight} step={it.step} min={0} unit="kg" wide
                         onChange={(v) => setItems(day.items.map((x, j) => (j === k ? syncSetPlan(x, x.setPlan.map((y, yi) => (yi === si ? { ...y, weight: v } : y))) : x)))} />
                       <Stepper label={`${si + 1}세트 횟수`} value={r.reps} step={1} min={1} max={40} unit="회"
                         onChange={(v) => setItems(day.items.map((x, j) => (j === k ? syncSetPlan(x, x.setPlan.map((y, yi) => (yi === si ? { ...y, reps: v } : y))) : x)))} />
                       {it.setPlan.length > 1 && (
                         <button type="button" aria-label={`${si + 1}세트 빼기`} onClick={() => setItems(day.items.map((x, j) => (j === k ? syncSetPlan(x, x.setPlan.filter((_, yi) => yi !== si)) : x)))}
-                          className="flex h-8 w-8 items-center justify-center text-muted hover:text-ink"><Trash2 className="h-3.5 w-3.5" /></button>
+                          className="ml-auto flex h-8 w-7 shrink-0 items-center justify-center text-muted hover:text-ink"><Trash2 className="h-3.5 w-3.5" /></button>
                       )}
                     </div>
                   ))}
@@ -212,10 +213,10 @@ export default function RoutineCard({ member, logs = [] }) {
                   <p className="m-0 text-[12px] text-muted">가장 무거운 세트를 채우면 다음엔 모든 세트가 한 칸씩 같이 올라가요.</p>
                 </div>
               ) : (
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <Stepper label="무게" value={it.weight} step={it.step} min={0} unit="kg" onChange={(v) => setItem(k, { weight: v })} />
-                <Stepper label="횟수" value={it.reps} step={1} min={1} max={40} unit="회" onChange={(v) => setItem(k, { reps: v })} />
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-1 gap-y-1.5">
                 <Stepper label="세트" value={it.sets} step={1} min={1} max={6} unit="세트" onChange={(v) => setItem(k, { sets: v })} />
+                <Stepper label="무게" value={it.weight} step={it.step} min={0} unit="kg" wide onChange={(v) => setItem(k, { weight: v })} />
+                <Stepper label="횟수" value={it.reps} step={1} min={1} max={40} unit="회" onChange={(v) => setItem(k, { reps: v })} />
                 <button type="button" onClick={() => setItems(day.items.map((x, j) => (j === k ? syncSetPlan(x, Array.from({ length: Math.max(1, x.sets || 1) }, () => ({ weight: x.weight, reps: x.reps }))) : x)))}
                   className="min-h-[32px] text-[13px] font-semibold text-sub hover:text-ink">세트마다 다르게</button>
               </div>
@@ -397,7 +398,7 @@ export default function RoutineCard({ member, logs = [] }) {
                   <li key={it.name} className="flex flex-wrap items-baseline gap-x-2 rounded-lg bg-elevate px-3 py-2 text-[13.5px]">
                     <span className="font-semibold text-ink">{it.name}</span>
                     {it.locked && <Lock className="h-3 w-3 text-ot-text" aria-label="무게 고정" />}
-                    <span className="ml-auto text-sub">다음 {hasSetPlan(it) ? planRows(it, nv).map((r) => `${kg(r.weight)}×${r.reps}`).join(" · ") : `${kg(nv.weight)} × ${nv.reps}회 × ${nv.sets}세트`}{nv.painStop ? " · 아파서 멈춤" : nv.capReached ? " · 혼자 상한" : ""}</span>
+                    <span className="ml-auto text-sub">다음 {hasSetPlan(it) ? planRows(it, nv).map((r) => `${kg(r.weight)}×${r.reps}`).join(" · ") : `${nv.sets}세트 · ${kg(nv.weight)} × ${nv.reps}회`}{nv.painStop ? " · 아파서 멈춤" : nv.capReached ? " · 혼자 상한" : ""}</span>
                   </li>
                 );
               })}
