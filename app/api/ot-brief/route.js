@@ -1,8 +1,8 @@
 // app/api/ot-brief/route.js
 // -----------------------------------------------------------------------------
-// OT 여정 AI 지원 (서버 전용). 순수 생성기 — 캐시는 클라이언트가 담당.
-//   phase "first"  → ① 1차 지원 (sonnet): 기본정보+내 패키지 → 6단계 arc·movement_cues·추천 프로그램·클로징 4단계·거절 4종
-//   phase "second" → ③ 2차 지원 (sonnet): 1차 관찰 → 등록 당위성 브리핑·arc·closing 3분기·objections
+// OT · 재등록 AI 지원 (서버 전용). 대본은 서버가 저장까지 한다(save) · 2차+ · 재등록은 저장 뒤 세일즈북을 이어 만든다(follow).
+//   대본(Opus): "first" 1차 OT · "second" 2차+ OT · "reregister" 재등록 — 30초 요약 · 입장 · 운동 · 클로징 · 거절 5종 · 추천 프로그램
+//   회원용(Sonnet): "salesbook" · "reg_salesbook"(세일즈북) · "inbody" · "roadmap" · "posture"(화면에서 뺌) · "first_salesbook"(부르는 곳 없음)
 // system = 가드레일 프리앰블(스파링 파트너/환각 금지/윤리/출력규칙, 문자 그대로).
 // 키 미설정·API 실패·JSON 파싱 실패 → 명확한 상태코드 (프론트가 데모 폴백 판별).
 // -----------------------------------------------------------------------------
@@ -12,6 +12,10 @@ import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
 import { tidyDeep, NO_DASH_RULE } from "@/lib/tidyText";
 import { attachPkgSnapshots } from "@/lib/pkgRef";
+import { OT_PURPOSE_OPTS } from "@/lib/memberOptions";
+import { pkgPace, weeklyNum, WEEKS_PER_MONTH } from "@/lib/pkgPace";
+import { contractPeriod } from "@/lib/regPeriod";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { adminClient, reserveAi, finishAi, quotaResponse, tierOf, preparedThisMonth } from "@/lib/aiQuota";
 
 export const runtime = "nodejs";
@@ -87,8 +91,8 @@ async function saveResult(token, phase, save, brief, model) {
 const PREAMBLE = `너는 피트니스 트레이너의 파트너다. 도메인에 따라 두 얼굴을 갖는다.
 
 [★도메인 분리 — 이 프롬프트의 핵심 원칙]
-- 운동(방법·방향·자각·큐잉·평가)에서는 '스파링 파트너'다. 정답 대본을 주지 말고 근거·방향을
-  제시해, 트레이너가 자기 역량으로 채우고 성장하게 한다. 여기서 대본을 주면 트레이너를 하향평준화시킨다.
+- 운동(방법·방향·자각·큐잉·평가)에서는 '스파링 파트너'다. 왜 이 동작인지 · 무엇을 볼지 · 안전 기준 같은 판단 근거를
+  트레이너가 읽는 칸에 분명히 준다. 회원에게 할 말은 짧은 실제 대사로 주되, 트레이너가 근거를 이해하고 자기 톤으로 말하게 한다.
 - 세일즈(추천 프로그램·클로징·거절 대응·비유)에서는 '실전 클로저'다. 세일즈는 티칭과 다른 별개
   스킬이라, 영업이 약한 트레이너도 결과를 내도록 '바로 말할 수 있는 실전 멘트'를 확신 있게 준다.
   스파링하지 말고 클로징을 완성시켜라. 단, 낭독용 대본이 아니라 트레이너가 자기 톤으로 소화하고,
@@ -104,21 +108,21 @@ const PREAMBLE = `너는 피트니스 트레이너의 파트너다. 도메인에
 - 허용(강하게 OK): 회원 '본인 데이터'로 말하기 / 사실 기반 손실·가치 프레이밍(회원 목적별로 다르게 —
   진행손실 / 유지·안전 / 효율·정확 / 습관형성. ⚠️"지금 멈추면 원점"은 진행손실형 한 축일 뿐, 기본값 아님) /
   "혼자서는 이 세팅을 못 잡는다"(사실인 책임의 말) / 확신 있는 단일 추천 · 분명한 요청 / 트레이너가 책임질 구체 약속 /
-  ★진짜 긴급성(사실 기반: 목표 날짜까지 남은 기간 · 지금 몸 상태 · 오늘 확인한 것) /
+  ★진짜 긴급성(사실 기반: 목표 날짜까지 남은 기간 · 지금 몸 상태 · 지난 OT · 관리 기록에서 확인된 것) /
   그대로 두면 생길 수 있는 구체적 결과(가능성 표현 "~수도 있어요" · 2026-10-07 대표).
 - 금지(효과에도 역효과): 허위 긴급성("오늘만 이 가격"), FOMO 남발, 죄책감 유발, 회원 소진
   강요(지쳐서 등록), 의료·완치·치료 표현. — 신뢰가 깨지면 재등록·소개가 무너진다.
 - 강한 클로징의 원천은 압박이 아니라 "이 트레이너가 나를 정확히 이해했다"는 공감이다.
 
 [출력 규칙]
-- 운동 파트: 대본 통째 금지 — intent(왜)·direction(무엇을) 중심, example(예시)은 '발판'이다.
+- 운동 파트: 판단 근거(왜 · 무엇을 볼지 · 안전)는 트레이너가 읽는 칸에, 회원에게 할 말은 짧은 실제 대사로 준다(긴 설명문 · 통째 강의 금지).
   숫자 처방(각도·템포·세트·중량) 금지, 움직임 '방향'까지만("전방 힙힌지로 둔근 개입").
 - 세일즈 파트: 반대다 — 바로 말할 실전 멘트를 '선명하게' 준다(흐린 '예시'로 물러서지 말 것).
   확신 있게, 결과가 나오게. 조작성 바닥선(위 윤리)만 지킨다.
 - 반드시 지정된 JSON 스키마만 출력. 설명·마크다운·코드펜스 금지(단 [대사 스타일]의 **핵심 강조** 표시는 예외).`;
 
-// 세일즈북 전용 system — 독자가 트레이너가 아니라 '회원 본인'이라 PREAMBLE(실전 클로저)과 톤이 반대.
-//   phase==="salesbook"일 때만 사용(다른 phase는 PREAMBLE 그대로).
+// 회원이 직접 읽는 결과물 전용 system — 독자가 트레이너가 아니라 '회원 본인'이라 PREAMBLE(실전 클로저)과 톤이 반대.
+//   salesbook · reg_salesbook · first_salesbook · inbody · posture · roadmap에 쓴다(대본 3종은 PREAMBLE).
 const SALESBOOK_PREAMBLE = `너는 트레이너가 회원에게 '직접 보여줄' 자료(세일즈북)를 만드는 조력자다. 독자는 트레이너가 아니라 회원 본인이다.
 
 [목적]
@@ -235,7 +239,10 @@ const ANTI_TEMPLATE = `[쓰지 말 것 — 모든 대본이 같은 모양이 되
 
 // ④ 클로징 — 회원이 스스로 'PT를 받아야겠다'고 확신하게 만드는 대화(2026-10-11 재설계).
 //   다섯 가지 확신: 필요 · 효과 · 가치 · 지속 · 이 트레이너에 대한 신뢰. 비유는 선택(요청에 넣지 않음) · 웃으며 한마디(nudge) 없음.
-function closingSeqInstruction({ num, echoHint, trialHint, nextHint, askHint, tone = "", fallback = false }) {
+// gainHint = plan_pitch 둘째 문장 지시(기본 = 예전 그대로 · 2차+는 결과 보장 없는 판을 넘긴다 · 2026-10-13).
+const PITCH_GAIN_DEFAULT = `이어서 그걸로 회원이 얻는 것(목표까지의 그림 ·
+     달라질 생활)을 한 문장.`;
+function closingSeqInstruction({ num, echoHint, trialHint, nextHint, askHint, tone = "", fallback = false, gainHint = PITCH_GAIN_DEFAULT }) {
   return `${num} closing_sequence(클로징 — 압박이 아니라 회원이 스스로 확신하게 만드는 대화): 회원이 끝에
    "PT 받아야겠다 · 도움이 많이 되겠다 · 돈이 아깝지 않겠다 · 아직 더 하는 게 맞다 · 이 쌤이랑이면 후회 없겠다"를
    느끼게 하는 순서다. 각 칸은 트레이너가 그대로 말할 대사(짧게). 순서대로:${tone}
@@ -251,8 +258,7 @@ ${STAKES_AXIS}
      같이 확인하는지 · 이 회원의 걱정(문진 · 관찰 · 그만둔 이유 · 일정)에 대해 무엇을 해 줄지. 이 회원 정보에서 나온 것만.
      "최선을 다할게요" 같은 막연한 말 금지 · 앱 기능 이름 나열 금지(회원이 알아들을 말로).
    - plan_pitch(제안 + 얻는 것 · 두 문장 이내): [recommended_program]의 pick_ref 패키지 하나를 권한다 — 빈도 · 기간(또는 총 회차)
-     + 왜 그게 이 회원에게 맞는지 근거 1개(목표 시점 · 가능 빈도 · 몸 상태). 이어서 그걸로 회원이 얻는 것(목표까지의 그림 ·
-     달라질 생활)을 한 문장. ★세션수는 pick_ref 패키지의 실제 sessions 값 그대로(창작 금지). ★가격 숫자(원 · 회당)는 쓰지 마라
+     + 왜 그게 이 회원에게 맞는지 근거 1개(목표 시점 · 가능 빈도 · 몸 상태). ${gainHint} ★세션수는 pick_ref 패키지의 실제 sessions 값 그대로(창작 금지). ★가격 숫자(원 · 회당)는 쓰지 마라
      — 화면이 이 대사 바로 아래에 가격 한 줄을 따로 보여 준다. "비싸지 않아요" 같은 방어 말투 금지.
    - ask(초대하는 요청 · 한두 문장): 무엇을 하자는지(PT · 빈도 · 기간 또는 총 회차)는 분명히. 문장 모양은 자유 — 아래
      ask_style 중 이 회원에게 맞는 하나를 골라 그 결로 써라. 같은 요청 문구를 반복하지 마라.
@@ -304,9 +310,387 @@ function attachLibSnapshots(out, favs) {
   return out;
 }
 
+// 1차 OT 방문 목적(2026-10-12 · OT 신청서 '오늘 OT에서 가장 알고 싶은 것' · 운동 목표와 별개).
+//   목적을 모르면(예전 회원 · 안 고름) 이 블록 없이 예전 프롬프트 그대로. soft = PT를 생각하고 온 게 아닐 수 있는 회원.
+const OT_PURPOSE_GUIDE = {
+  machine: { soft: true, guide: `기구 사용법을 충분히 알려 주는 수업이 중심이다. 메인 동작 · 목표 부위 자극 칸은 센터 기구로 고르되(이 목적이면 아래 운동 '★고르는 기준'의 머신 동작 제한보다 이 목적이 우선), 세팅 하나로 느낌이 달라지는 기구 동작으로. 기구마다 회원이 혼자 다시 할 수 있을 만큼 세팅 · 자세 · 느낄 곳을 알려 준다. 그 과정에서 '같은 기구도 회원님 몸에 맞춰 잡으면 느낌이 다르다'를 체감시키고, 클로징은 '사용법은 오늘 알려 드렸고, 목표에 맞는 순서 · 강도 조절은 계획과 코칭이 필요하다'로 개인 코칭 · 운동 계획의 가치에 잇는다.` },
+  form: { soft: true, guide: `회원의 움직임을 같이 보고 실제 차이를 확인하는 수업이다. '몸 상태 체크'와 '처음과 비교' 칸이 주인공 · 메인 동작에서 큐 하나로 달라지는 차이를 회원이 직접 확인하게 한다. 확인된 차이만 근거로 쓰고, 아직 확인 안 된 문제는 '~일 수 있어요'로. 클로징은 오늘 본 차이를 혼자서는 유지하기 어렵다는 점과 꾸준한 점검의 가치로 잇는다.` },
+  self: { soft: true, guide: `혼자서도 운동할 수 있게 가르치는 수업이다. 동작마다 혼자 할 때 꼭 기억할 한 가지를 회원 말로 알려 주고, 오늘 배운 걸로 혼자 할 때의 순서도 짧게 안내한다. 클로징은 먼저 '혼자 하실 수 있게 알려 드렸다'를 인정하고, 혼자 하다 막히기 쉬운 지점(입력된 그만둔 이유 · 운동 경험이 있으면 그걸로)을 근거로 정기 점검 · 지속적인 관리의 가치를 소개한다.` },
+  plan: { soft: false, guide: `목표에 맞는 운동 순서와 관리 방향을 구체적으로 보여 주는 수업이다(주 몇 번 · 무엇부터 · 어떤 순서로 · 숫자 처방 없이). workout_intro · so_what · next_goal에 그 계획이 드러나게 하고, 클로징은 그 계획을 같이 실행하는 방법으로 추천 플랜을 분명하게 제안한다(강요 없이).` },
+  pt: { soft: false, guide: `PT 수업 방식과 비용이 궁금해서 왔다. 운동으로 이 회원에게 필요한 것을 확인한 뒤, 추천 플랜 · 비용을 명확하게 설명하고 오늘 등록을 분명하게 제안한다.` },
+  trial: { soft: true, guide: `가볍게 체험하러 왔다. 유용하고 즐거운 운동 경험과 신뢰 형성이 먼저다. 오늘 운동에서 회원이 '도움이 됐다'를 느끼게 하고, 확인한 것을 근거로 '회원님한테 맞는 방법을 한번 상담해 볼까요' 결로 자연스럽게 상담에 잇는다.` },
+};
+
+// 수업 전에 쓰는 대본이라 회원 반응 · 결과를 모른다(2026-10-13 실제 생성 검토 · 대표) — 1차 · 2차+ 공용(모든 칸).
+const BEFORE_CLASS_RULE = `[★수업 전 대본 — 회원 반응 · 결과를 미리 단정하지 마라]
+ - 이 대본은 수업 전에 쓴다. 회원이 실제로 무엇을 느낄지 모른다. 체감을 확정하는 말("엉덩이가 같이 일하죠", "앉는 게 훨씬 편하죠",
+   "등이 당겨지죠")을 쓰지 말고, 질문으로 확인하게 써라("아까보다 어디에 힘이 들어가는 느낌이세요?", "처음과 비교했을 때 어떤 차이가 있으세요?").
+ - 운동 효과 · 체형 변화 · 체중 감량 결과를 보장하지 마라("3개월이면 몸 라인이 달라져요" ❌). 결과는 '~를 목표로 가요' · '~를 같이 확인해요'로.
+ - 대신 트레이너가 실제로 할 일(매 수업 무엇을 하는지 · 언제 무엇을 다시 재서 같이 확인하는지 · 어떤 순서로 강도를 올리는지)은
+   구체적이고 자신 있게 말하라. 소극적이거나 추상적인 말("열심히 해 볼게요", "도움이 될 거예요")로 물러서지 마라.
+ - 거절 대응 · 클로징에서도 '오늘 이미 확인했다'는 결과를 단정하지 말고, 오늘 같이 한 과정(같이 맞춰 본 것)으로 말하라.
+`;
+
+// 재등록 대본 · 재등록 세일즈북 공용 — 기록으로 확인된 것만(2026-10-13 실제 AI 시험: 출석 과장 · 근거 없는 혜택 · 결과 단정이 나왔다).
+const REREG_FACT_RULE = `[★재등록 — 기록으로 확인된 것만 말하라]
+ - 출석: 앱은 '한 번도 안 빠진 출석'을 확인해 주지 않는다. "한 번도 빠지지 않고 · 한 주도 흐트러지지 않고 · 빠짐없이" 같은 절대 표현 금지 → "꾸준히 이어 오셨어요"처럼 기록에 맞게.
+ - 혜택 · 서비스: 할인 · 회당 단가 조정 · 추가 서비스(식단 관리 · 추가 상담 · 무료 수업 등) · 특별 혜택은 입력에 센터가 준다고 적힌 것만 말한다. 지금 입력엔 없으니 어느 칸에서도 새로 약속하지 마라(거절 대응 포함). 관리 약속은 이미 정해진 것(대본의 promise · 세일즈북은 [대본과 같은 상담 방향]의 관리 약속)만.
+ - 목표: 체중 · 체지방률 · 근력 숫자는 '~를 목표로 가요'처럼 앞으로의 목표로만 쓴다. "만들어 드릴게요 · 25%대 만들고" 같은 달성 약속 금지.
+ - 원인: 인바디 · 무게 변화는 기록 사실로 말하고, 원인을 운동 · 특정 관리 방식 하나로 단정하지 마라("~ 덕분에 빠졌어요" ❌ → "그동안 이만큼 달라졌어요").
+ - 기록으로 확인된 성과는 분명히 칭찬하고, 재등록 제안도 분명하게 유지한다.
+`;
+// 출력 안전망(2026-10-13) — 프롬프트를 어겨도 출석 절대 표현은 '꾸준히'로 바꾼다(재등록 대본 · 재등록 세일즈북). 다른 뜻의 '빠지지 않고'(체지방이 빠지지 않고 등)는 건드리지 않게 출석 맥락만.
+const ATTEND_ABS = [
+  [/(한\s*번|한\s*주|하루|한\s*달)도\s*(안\s*빠지고|안\s*빠지셨|빠지지\s*않(고|으시고|으셨|았)|빠짐없이|흐트러지지\s*않(고|으시고|았)|거르지\s*않(고|으시고|았)|쉬지\s*않(고|으시고|았))/g, "꾸준히"],
+  [/빠짐없이/g, "꾸준히"],
+  [/빠지지\s*않고(?=\s*(오|나오|운동|수업|출석|다니))/g, "꾸준히"],
+];
+// 바꾼 뒤 '꾸준히 … 꾸준함'처럼 같은 말이 겹치면 다듬는다(바꾼 문장에만 · 2026-10-13). 꾸준함 · 노력 · 기록은 받침이 같아 조사(이/을/은)가 그대로 맞는다.
+const ATTEND_DUP = [
+  [/주\s*(\d+)\s*회씩?\s*꾸준히\s*(?:오신|나오신|운동하신|다니신|오셨던)\s*꾸준함/g, "주 $1회 운동을 이어 오며 쌓은 노력"],
+  [/꾸준히(\s+[가-힣]+\s?온)\s+꾸준함/g, "꾸준히$1 기록"],
+  [/(꾸준히(?:\s+[가-힣]+){1,3}?\s+)꾸준함/g, "$1노력"],
+  [/꾸준히\s+꾸준히/g, "꾸준히"],
+  [/꾸준히\s+꾸준하게/g, "꾸준하게"],
+];
+function softenAttendance(node) {
+  if (typeof node === "string") {
+    const out = ATTEND_ABS.reduce((s, [re, to]) => s.replace(re, to), node);
+    return out === node ? node : ATTEND_DUP.reduce((s, [re, to]) => s.replace(re, to), out);
+  }
+  if (Array.isArray(node)) return node.map(softenAttendance);
+  if (node && typeof node === "object") { const o = {}; for (const k of Object.keys(node)) o[k] = softenAttendance(node[k]); return o; }
+  return node;
+}
+
+// 패키지 진행 계산 줄(2026-10-13 · lib/pkgPace) — 1차 · 2차+ · 재등록 가격표 줄 뒤에 붙인다. AI는 이 숫자만 쓴다.
+//   freqs = [{ f, label }] (label 예: "주 2회" · "지금까지 주 평균 1.8회"). 기간을 넘겨도 '못 쓰는 상품'이 아니라 '센터 확인'으로 적는다.
+function paceText(p, freqs) {
+  const at = ({ f, label }) => {
+    const r = pkgPace(p, f);
+    if (!r) return "";
+    const w = Math.round(r.weeks);
+    return `${label}면 약 ${w}주(${r.weeks < WEEKS_PER_MONTH ? "1개월 안" : `약 ${Math.round((r.weeks / WEEKS_PER_MONTH) * 2) / 2}개월`})${r.overWeeks ? `, 이용 기간보다 약 ${r.overWeeks}주 더 걸림` : ""}`;
+  };
+  const parts = freqs.map(at).filter(Boolean);
+  if (!parts.length) return "";
+  const r = pkgPace(p, freqs[0].f);
+  const need = r?.availWeeks ? ` · 이용 기간(${p.duration_label}) 안에 다 쓰려면 주 약 ${r.needPerWeek}회` : "";
+  const over = parts.some((t) => t.includes("더 걸림")) ? " → 기간 처리는 센터 규정 확인 필요(연장 약속 금지)" : "";
+  return ` · 진행 계산(앱)=${parts.join(" · ")}${need}${over}`;
+}
+// 회원 주당 횟수를 알면 그것만, 모르면 주 2회 · 3회 두 경우.
+const paceFreqs = (f) => (f ? [{ f, label: `주 ${f}회` }] : [{ f: 2, label: "주 2회" }, { f: 3, label: "주 3회" }]);
+
+// 2차+ · 재등록 추천 패키지 규칙(2026-10-13 · 1차와 같은 원칙) — 계산은 앱 · 이용 기간은 확인 조건 · 연장 약속 금지.
+function laterPickRule(step1) {
+  return `   ★고르는 순서:
+     ① ${step1}
+     ② 그 패키지를 '진행 계산(앱)'으로 이용 기간과 맞춰 본다. 이용 기간은 맞는지 확인하는 조건이지, 패키지를 키우는 이유가 아니다.
+     ③ 이용 기간을 맞추려고 더 큰 패키지로 올리지 마라. 가격 순서(가장 비싼 · 가장 싼)를 기본값으로 삼지 마라. 반대로 무조건 가장 작은 패키지로 물러서지도 마라.
+   ★계산: 회차 · 빈도 · 기간은 '진행 계산(앱)' 숫자만 써라. 빈도 × 기간으로 회차를 거꾸로 맞추지 마라(주 2회로 3개월이면 약 26회
+     전후다. 30회가 아니다). frequency · duration · session_logic · plan_pitch · ask · cheat의 숫자는 모두 같아야 한다. 근거가 없으면 숫자를 지어내지 말고 빼라.
+   ★고른 패키지가 그 빈도로 이용 기간을 넘기면(진행 계산에 '더 걸림'):
+     - 회원에게 하는 말(plan_pitch · ask · 거절 대응 · cheat)에서 기간을 넘기는 조건을 확정해서 말하지 마라. 기간 안에 맞는 빈도로 말하거나, 기간 얘기 없이 회차와 빈도만 말한다.
+     - 기간 연장 · 기간 넘김을 약속하는 말("기간은 연장해 드릴게요", "넘어가도 괜찮아요") 금지. 기간 처리는 트레이너가 센터 규정을 확인한 뒤 정한다.
+     - session_logic에 그 사실을 적고 "센터 규정 확인이 필요해요"로 끝내라. data_gaps 첫 줄에도 같은 확인을 적어라(둘 다 트레이너만 본다).`;
+}
+
+/* 세일즈북 플랜 장 맞추기(2026-10-13) — 회원이 직접 보는 화면이라 숫자는 AI가 아니라 실제 상품 설정에서.
+   A = 대본이 고른 추천(pick_pkg/pick_ref) · B = 대본의 대안(alt_pkg/alt_ref · 없으면 AI가 고른 다른 패키지 · 같거나 없으면 뺀다).
+   패키지는 저장된 스냅샷 id로 지금 가격표에서 찾고(순번이 바뀌어도 같은 상품), 못 찾으면 스냅샷 그대로.
+   meta = '주 N회 기준 약 M개월'(회원이 신청서에 적은 주당 횟수로 이용 기간 안일 때만) + '이용 기간 …' · sessions_label = '함께 K회'.
+   재등록은 weekly를 넘기지 않는다(지난 평균을 회원 화면에 앞으로 일정처럼 쓰지 않게). 모르는 건 비운다. attachPkgSnapshots 전에 부른다. */
+function planMeta(pkg, weekly) {
+  const parts = [];
+  const f = weeklyNum(weekly);
+  if (f) {
+    const r = pkgPace(pkg, f);
+    if (r && !r.overWeeks) parts.push(`주 ${f}회 기준 ${r.weeks < WEEKS_PER_MONTH ? "1개월 안" : `약 ${Math.round((r.weeks / WEEKS_PER_MONTH) * 2) / 2}개월`}`);
+  }
+  const dl = String(pkg?.duration_label ?? "").trim();
+  if (dl) parts.push(`이용 기간 ${dl}`);
+  return parts.join(" · ");
+}
+function alignPlans(out, rp, packages, weekly) {
+  if (!out || typeof out !== "object" || !Array.isArray(out.plans)) return out;
+  const list = Array.isArray(packages) ? packages : [];
+  const hasRp = rp && typeof rp === "object";
+  const r = hasRp ? rp : {};
+  const validRef = (n) => Number.isInteger(n) && n >= 0 && n < list.length;
+  const find = (snap, ref) => {
+    if (snap && typeof snap === "object") {
+      const i = snap.id != null ? list.findIndex((p) => p && p.id === snap.id) : -1;
+      return i >= 0 ? { i, pkg: list[i] } : (snap.price != null ? { i: null, pkg: snap } : null);
+    }
+    return validRef(ref) ? { i: ref, pkg: list[ref] } : null;
+  };
+  const same = (x, y) => Boolean(x && y && ((x.i != null && x.i === y.i) || (x.pkg?.id != null && x.pkg.id === y.pkg?.id)));
+  const fix = (plan, hit, recommended) => {
+    const pkg = hit?.pkg || null;
+    const nm = typeof plan.name === "string" ? plan.name.trim() : "";
+    return {
+      ...plan, ref: hit ? hit.i : null, recommended,
+      name: nm && !/\d/.test(nm) ? nm : (pkg?.name || (recommended ? "추천 코스" : "다른 코스")),
+      meta: pkg ? planMeta(pkg, weekly) : "",
+      sessions_label: pkg?.sessions ? `함께 ${pkg.sessions}회` : "",
+    };
+  };
+  const plans = out.plans.filter((p) => p && typeof p === "object" && !Array.isArray(p));
+  if (!plans.length) return out;
+  // 추천 프로그램이 있는데 고른 패키지가 없으면(패키지 없던 때) A에 숫자 · 가격을 붙이지 않는다(화면 resolvePackage와 같은 규칙).
+  const a = find(r.pick_pkg, r.pick_ref) || (hasRp ? null : find(null, plans[0].ref));
+  let b = find(r.alt_pkg, r.alt_ref);
+  if (!b && plans[1] && (a || !hasRp)) b = find(null, plans[1].ref);   // 추천이 정해지지 않았으면 대안도 AI 번호로 붙이지 않는다
+  const next = [fix(plans[0], a, true)];
+  if (plans[1] && b && !same(a, b)) next.push(fix(plans[1], b, false));
+  out.plans = next;
+  return out;
+}
+
+/* 대본 → 세일즈북 연결(2026-10-13 · 3단계) — 세일즈북이 대본과 다른 약속 · 방향을 만들지 않게, 저장된 대본에서
+   '회원에게 보여도 되는 상담 방향'만 뽑아 넘긴다. 서버 이어 만들기(follow)와 화면 다시 만들기가 같은 함수를 쓴다.
+   ⚠️ 넘기지 않는 것: 거절 대응 · 요청(ask) · 망설이면 · 기다림 · 회원이 말하게 · 비유 · 30초 요약 · 오늘 안 되면 · 세일즈북 대사 ·
+     혜택 · 멈추면 잃는 것 · 과거 케이스 · 더 확인할 점 · 회원 한 줄 · 재등록 숫자(proven · 기간이 섞이지 않게 숫자는 앱 데이터로만). */
+function scriptBasis(brief) {
+  if (!brief || typeof brief !== "object" || Array.isArray(brief)) return null;
+  const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+  const cs = obj(brief.closing_sequence), wn = obj(brief.why_now), rp = obj(brief.recommended_program);
+  const s = (v, n = 200) => (typeof v === "string" ? v.replace(/\*\*/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
+  const out = {
+    echo: s(cs.echo),                                    // 회원이 말한 목표 · 고민(되짚기)
+    reason: s(cs.stakes, 300),                           // 핵심 상담 근거(왜 지금 · 왜 PT)
+    next_goal: s(cs.next_goal) || s(wn.next_roadmap),    // 다음 목표
+    direction: s(wn.next_roadmap) && s(cs.next_goal) ? s(wn.next_roadmap) : "",   // 재등록: 앞으로 더 할 것(다음 목표와 다를 때)
+    future: s(wn.future_change),                         // 재등록: 앞으로의 그림
+    promises: (Array.isArray(cs.promise) ? cs.promise : []).map((p) => s(p)).filter(Boolean).slice(0, 3),
+    pick_why: s(rp.why_fit, 300),
+    alt_why: s(rp.alt_why, 300),
+  };
+  return Object.values(out).some((v) => (Array.isArray(v) ? v.length : v)) ? out : null;
+}
+function basisBlock(b) {
+  if (!b) return "";
+  const line = (k, v) => (v ? `\n ${k}: ${v}` : "");
+  return `\n\n[★대본과 같은 상담 방향 — 트레이너가 이번 상담에서 말할 것(트레이너용 대본에서 뽑음)]${line("회원이 말한 목표 · 고민", b.echo)}${line("핵심 근거", b.reason)}${line("다음 목표", b.next_goal)}${line("앞으로 더 할 것", b.direction)}${line("앞으로의 그림", b.future)}${b.promises.length ? `\n 트레이너의 관리 약속: ${b.promises.map((p, i) => `${i + 1}) ${p}`).join(" ")}` : ""}${line("추천 이유", b.pick_why)}${line("대안 이유", b.alt_why)}
+ ★세일즈북은 이 방향과 같아야 한다 — 목표 장은 위 목표 · 고민, 로드맵(또는 '앞으로') 첫 단계는 위 다음 목표와 같은 쪽으로,
+   closing.services 앞쪽과 vow는 위 관리 약속과 같은 내용으로(새 약속 · 다른 관리 방식을 만들지 마라 · 나머지 services는 일반 서비스),
+   plans[0].why는 추천 이유, plans[1].why는 대안 이유와 같은 쪽으로.
+ ★대본 문장을 그대로 옮기지 마라. 회원에게 보여 줄 짧은 문장으로 다시 쓴다. 핵심 근거의 손실 · 압박 표현은 빼고 목표 쪽으로만 쓴다.`;
+}
+// 화면에서 다시 만드는 세일즈북 — 저장된 대본을 트레이너 본인 토큰으로 읽는다(RLS = 클라 저장과 같은 권한 · 남의 센터 회원은 0행).
+//   ⚠️ 이 세일즈북의 회원(memberId)과 같은 회원의 대본만 — 다른 회원 번호 · 다른 회원 계약이면 null(4단계 · 2026-10-13).
+/* 저장 대상 확인(2026-10-13) — save가 있으면 그 저장 대상이 요청 회원(memberId) 것이어야 한다. 트레이너 본인 토큰으로 읽는다(RLS · 관리자 키 아님).
+   kind ot = save.memberId가 요청 회원과 같고, 그 회원이 이 트레이너에게 보이는 회원(다른 센터 · 없는 회원 = 0행)
+   kind contract = 그 계약이 요청 회원의 계약(같은 센터의 다른 회원 계약 · 다른 센터 · 없는 계약 = 0행)
+   save가 없으면 저장할 게 없으니 통과 · 모르는 kind는 거절. DB 연결 정보가 없으면(데모) 저장도 못 하니 통과. */
+async function saveTargetOk(token, save, memberId) {
+  if (save == null) return true;
+  if (typeof save !== "object" || Array.isArray(save)) return false;
+  if (typeof memberId !== "string" || !memberId) return false;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return true;
+  if (!token) return false;
+  const sb = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false, autoRefreshToken: false } });
+  if (save.kind === "ot") {
+    if (save.memberId !== memberId) return false;
+    const { data, error } = await sb.from("user_table").select("id").eq("id", memberId).maybeSingle();
+    return !error && Boolean(data?.id);
+  }
+  if (save.kind === "contract") {
+    if (typeof save.contractId !== "string" || !save.contractId) return false;
+    const { data, error } = await sb.from("session_log").select("id").eq("id", save.contractId).eq("user_id", memberId).maybeSingle();
+    return !error && Boolean(data?.id);
+  }
+  return false;
+}
+
+async function loadSavedScript(token, ref, memberId) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon || !token || !ref || typeof ref !== "object" || typeof memberId !== "string" || !memberId) return null;
+  const sb = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false, autoRefreshToken: false } });
+  if (ref.kind === "ot" && ref.memberId === memberId) {
+    const round = Math.min(Math.max(Number(ref.round) || 2, 2), 20);
+    const { data } = await sb.from("ot_log").select("report").eq("user_id", memberId).eq("ot_round", round).order("created_at", { ascending: false }).limit(1);
+    return data?.[0]?.report?.brief || null;
+  }
+  if (ref.kind === "contract" && typeof ref.contractId === "string") {
+    const { data } = await sb.from("session_log").select("report").eq("id", ref.contractId).eq("user_id", memberId).maybeSingle();
+    return data?.report?.reg_brief || null;
+  }
+  return null;
+}
+/* 이번 계약 기간을 서버가 기록에서 다시 계산(2026-10-13 · B+C) — 화면이 보낸 regPeriod · ptContext.this_period는 쓰지 않는다.
+   트레이너 본인 토큰(RLS)으로 이 회원의 계약 · 그 계약 일지(끝까지 페이지) · 인바디를 읽고 lib/regPeriod contractPeriod(화면과 같은 계산).
+   반환: { ok:true, round, period(첫 재등록이면 null) } | { ok:false } — 조회 실패 · 이 회원 계약이 아님은 ok:false(0회로 보지 않는다). */
+async function loadContractPeriod(token, memberId, contractId) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon || !token || typeof memberId !== "string" || !memberId || typeof contractId !== "string" || !contractId) return { ok: false };
+  const sb = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: contracts, error: e1 } = await fetchAllRows(() => sb.from("session_log").select("*").eq("user_id", memberId));
+  if (e1 || !Array.isArray(contracts) || !contracts.some((c) => c && c.id === contractId)) return { ok: false };
+  const { data: logs, error: e2 } = await fetchAllRows(() => sb.from("daily_workout_log").select("*").eq("user_id", memberId).eq("contract_id", contractId));
+  if (e2 || !Array.isArray(logs)) return { ok: false };
+  const { data: ib, error: e3 } = await fetchAllRows(() => sb.from("inbody_log").select("*").eq("user_id", memberId));
+  if (e3 || !Array.isArray(ib)) return { ok: false };
+  // 화면은 측정일 오래된 순으로 읽는다(fetchAllRows는 id 순) — 같은 순서로.
+  const inbodyRows = [...ib].sort((a, b) => String(a.measured_at ?? "").localeCompare(String(b.measured_at ?? "")) || String(a.id ?? "").localeCompare(String(b.id ?? "")));
+  const res = contractPeriod({ contracts, logs, inbodyRows, contractId });
+  return res ? { ok: true, round: res.round, period: res.period } : { ok: false };
+}
+
+// 이번 계약 기간 숫자 — 회원이 보는 세일즈북에 쓰이니 모양 · 범위를 한 번 더 확인한다(서버 계산값에도 마지막 안전장치). 이상하면 그 칸을 버린다(4단계).
+function cleanPeriod(p) {
+  if (!p || typeof p !== "object" || Array.isArray(p)) return null;
+  const round = Number(p.round);
+  if (!Number.isInteger(round) || round < 2 || round > 50) return null;
+  const num = (v) => ((typeof v === "number" || (typeof v === "string" && v.trim() !== "")) && Number.isFinite(Number(v)) && Math.abs(Number(v)) < 10000 ? Math.round(Number(v) * 10) / 10 : null);
+  const txt = (v, n) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, n) : "");
+  const sd = Number(p.sessions_done);
+  const rows = (arr, map) => (Array.isArray(arr) ? arr.slice(0, 8).map(map).filter(Boolean) : []);
+  return {
+    round,
+    started: typeof p.started === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.started) ? p.started : null,
+    sessions_done: Number.isInteger(sd) && sd >= 0 && sd <= 10000 ? sd : null,
+    inbody_change: rows(p.inbody_change, (x) => { const lb = txt(x?.label, 20), f = num(x?.first), l = num(x?.latest); return lb && f != null && l != null ? { label: lb, first: f, latest: l, unit: txt(x?.unit, 6) } : null; }),
+    weight_change: rows(p.weight_change, (x) => { const ex = txt(x?.exercise, 30), f = num(x?.first), l = num(x?.latest); return ex && f != null && l != null ? { exercise: ex, first: f, latest: l } : null; }),
+  };
+}
+// 두 번째 이상 재등록 세일즈북 — 표(앱 숫자) = 누적, 이번 계약 기간 숫자는 따로(화면이 계산해 보낸 this_period). 없으면 "".
+function regPeriodBlock(p) {
+  if (!p || typeof p !== "object" || !(Number(p.round) >= 2)) return "";
+  const list = (arr, f) => (Array.isArray(arr) && arr.length ? arr.slice(0, 8).map(f).join(", ") : "없음");
+  return `\n\n[★${Number(p.round)}번째 재등록 — 기간을 나눠 써라]
+ · 표(앱이 그리는 숫자)와 [그동안의 변화 요약] = 처음 시작한 날부터 지금까지 '누적'이다.
+ · 이번 계약 기간(${g(p.started)}부터 · 지난 재등록 이후): 진행 수업=${p.sessions_done != null ? `${p.sessions_done}회` : "없음"} · 인바디=${list(p.inbody_change, (x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`)} · 운동 무게=${list(p.weight_change, (x) => `${x.exercise} ${x.first}→${x.latest}kg`)}
+ · 다음 계약에서 할 것 = [대본과 같은 상담 방향]의 다음 목표(없으면 roadmap의 다음 단계).
+ ★journey · change.caption에서 두 기간의 숫자를 섞지 마라. 누적은 '처음 시작한 날부터', 이번 기간은 '지난 재등록 이후'라고 분명히 밝혀라.
+   이번 기간 숫자는 위 값만 쓰고, '없음'이면 이번 기간 변화를 말하지 마라(숫자 · 변화를 만들지 마라).`;
+}
+
+/* 2차 세일즈북 사진 장 안전망(2026-10-13) — AI는 사진을 보지 않는다(이름표만). 그런데도 변화를 단정하는 말이 나오면
+   중립 문장으로 바꾸고 그런 포인트는 뺀다. 사진이 없으면 '다음에 함께 남겨요'. 프롬프트 규칙과 같은 방향(이중 방어). */
+const PHOTO_CLAIM = /달라졌|달라진\s*게\s*보|좋아졌|변했|개선됐|개선되었|나아졌|확\s*달라|눈에\s*띄게|효과가\s*보|(펴|빠|줄|늘|커|작아|가벼워|얇아|올라|내려|탄탄해|날씬해|슬림해|선명해|곧아)졌|바르게\s*(됐|되었)/;
+function neutralPhotoSlide(out, photoLabels) {
+  const ps = out && typeof out === "object" ? out.photo_slide : null;
+  if (!ps || typeof ps !== "object") return out;
+  const has = Array.isArray(photoLabels) && photoLabels.some(Boolean);
+  const within = ps.mode === "within_session";
+  if (PHOTO_CLAIM.test(String(ps.title || ""))) ps.title = within ? "사진으로 함께 비교해 봐요" : "지금을 시작점으로 남겨요";
+  if (PHOTO_CLAIM.test(String(ps.body || ""))) {
+    ps.body = has ? "사진을 나란히 두고 어디가 어떻게 보이는지 같이 이야기해 봐요."
+      : "사진은 다음에 함께 남겨요. 시작점을 기록해 두면 나중에 같이 비교할 수 있어요.";
+  }
+  if (Array.isArray(ps.points)) ps.points = ps.points.filter((p) => !PHOTO_CLAIM.test(String(p || "")));
+  return out;
+}
+
+/* 가격 비교(2026-10-13) — 실제 저장된 가격으로 패키지마다 총 결제 금액 · 회당 금액이 목록에서 어디쯤인지. 금액 숫자는 내보내지 않는다.
+   2차 세일즈북 프롬프트(말로 넘김)와 아래 안전망(검사)이 같은 함수를 쓴다. 가격이 2개 미만이면 비교 없음. */
+function priceRanks(pkgs) {
+  const list = Array.isArray(pkgs) ? pkgs : [];
+  const tot = list.map((p) => { const v = Number(p?.price); return Number.isFinite(v) && v > 0 ? v : null; });
+  const per = list.map((p, i) => { const s = Number(p?.sessions); return tot[i] != null && Number.isFinite(s) && s > 0 ? Math.round(tot[i] / s) : null; });
+  const rank = (arr, i) => {
+    const xs = arr.filter((v) => v != null);
+    if (xs.length < 2 || arr[i] == null) return null;
+    const lo = Math.min(...xs), hi = Math.max(...xs);
+    return lo === hi ? "same" : arr[i] === lo ? "low" : arr[i] === hi ? "high" : "mid";
+  };
+  return list.map((_, i) => ({ total: rank(tot, i), per: rank(per, i) }));
+}
+function priceCompare(pkgs) {
+  const W = { same: "모두 같음", low: "가장 낮음", high: "가장 높음", mid: "중간" };
+  return priceRanks(pkgs).map((r) => [r.total && `총 결제 금액 ${W[r.total]}`, r.per && `회당 금액 ${W[r.per]}`].filter(Boolean).join(" · "));
+}
+
+/* 2차 세일즈북 약속 · 가격 안전망(2026-10-13) — 회원이 직접 보는 장이라 프롬프트 규칙과 같은 방향으로 한 번 더 거른다(이중 방어).
+   ① 플랜 설명의 가격 말: '총액이 가장 낮다'가 사실이 아니면 회당이 가장 낮을 땐 '회당 금액이 가장 낮아요'로, 아니면 그 문장을 뺀다.
+      '회당이 가장 낮다'가 사실이 아니어도 그 문장을 뺀다. 상품을 못 찾으면(확인 불가) 가격 문장을 뺀다.
+   ② 대본의 관리 약속에 없는 수업 밖 서비스(홈케어 · 사진 · 식단 · 카톡)는 포함 항목 · 제공 서비스에서 뺀다 → 빈자리는 앱이 늘 하는 것으로.
+   ③ 다짐의 '○○까지 책임' → '등록하신 기간 동안 책임' · 결과 보장 문장은 뺀다. ④ '회원 전용 공간' → '회원 전용 페이지'. */
+const SB_LOW_TOTAL = /(?:한\s*번에\s*(?:드는|내는|나가는|드시는)\s*(?:부담|비용|금액|돈)|총\s*(?:결제\s*)?(?:금액|비용|부담)|전체\s*(?:금액|비용|부담))\s*[이가은는도]?\s*(?:가장\s*|제일\s*)?(낮|적|싸|저렴|가볍|가벼)([가-힣]*)/;
+const SB_LOW_PER = /회당\s*(?:금액|가격|비용|부담)?\s*[이가은는도]?\s*(?:가장\s*|제일\s*)?(?:낮|적|싸|저렴|가볍|가벼)/;
+const SB_EXTRA = [/홈\s*케어/, /사진|비포|애프터/, /식단/, /카톡|카카오톡|메신저/];
+const SB_STANDARD = [["운동일지", "매 수업 운동일지를 남기고 회원님이 직접 확인"], ["회원 전용 페이지", "회원 전용 페이지에서 운동 기록과 인바디 변화 확인"]];
+const SB_VOW_UNTIL = /까지\s*(?:꼭\s*|반드시\s*)?책임/;
+const SB_GUARANTEE = /보장|반드시\s*[가-힣\s]{0,12}(?:드릴|만들어|이뤄|이루어)|꼭\s*(?:빼|이뤄|이루어|만들어|달성)[가-힣]*\s*드릴|달성(?:해|시켜)\s*드릴/;
+const sbSentences = (t) => String(t || "").split(/(?<=[.!?])\s+/).filter((s) => s.trim());
+function sbLowEnding(stem, e) {
+  let x = e || "";
+  if (stem === "저렴") x = x.replace(/^해/, "아").replace(/^한/, "은").replace(/^하/, "");
+  else if (stem === "가벼") x = x.replace(/^워/, "아").replace(/^운/, "은");
+  else if (stem === "싸") x = /^[요서]/.test(x) ? `아${x}` : x;
+  else x = x.replace(/^어/, "아");
+  return x || "아요";
+}
+function guardSalesbook(out, packages, basis) {
+  if (!out || typeof out !== "object") return out;
+  const ranks = priceRanks(packages);
+  if (Array.isArray(out.plans)) {
+    out.plans = out.plans.map((pl) => {
+      if (!pl || typeof pl !== "object" || typeof pl.why !== "string") return pl;
+      const r = Number.isInteger(pl.ref) && pl.pkg ? ranks[pl.ref] : null;
+      const totalLow = r?.total === "low" || r?.total === "same";
+      const perLow = r?.per === "low" || r?.per === "same";
+      const why = sbSentences(pl.why).map((s) => {
+        const m = s.match(SB_LOW_TOTAL);
+        if (m && !totalLow) return perLow ? s.replace(m[0], `회당 금액이 가장 낮${sbLowEnding(m[1], m[2])}`) : null;
+        if (!m && SB_LOW_PER.test(s) && !perLow) return null;
+        return s;
+      }).filter(Boolean).join(" ");
+      return { ...pl, why };
+    });
+  }
+  const promised = Array.isArray(basis?.promises) ? basis.promises.join(" ") : "";
+  const keep = (t) => !SB_EXTRA.some((re) => re.test(String(t || "")) && !re.test(promised));
+  const refill = (arr) => {
+    if (!Array.isArray(arr)) return arr;
+    const kept = arr.filter(keep);
+    for (const [key, line] of SB_STANDARD) if (kept.length < arr.length && !kept.some((t) => String(t).includes(key))) kept.push(line);
+    return kept;
+  };
+  if (Array.isArray(out.plans)) out.plans = out.plans.map((pl) => (pl && typeof pl === "object" && Array.isArray(pl.includes) ? { ...pl, includes: refill(pl.includes) } : pl));
+  if (out.closing && typeof out.closing === "object") {
+    if (Array.isArray(out.closing.services)) out.closing.services = refill(out.closing.services);
+    if (typeof out.closing.vow === "string" && out.closing.vow.trim()) {
+      const vow = sbSentences(out.closing.vow).map((s) => {
+        const m = s.match(SB_VOW_UNTIL);
+        if (m) {
+          const start = s.lastIndexOf(",", m.index) + 1;
+          return `${s.slice(0, start)}${start ? " " : ""}등록하신 기간 동안 책임${s.slice(m.index + m[0].length)}`;
+        }
+        return SB_GUARANTEE.test(s) ? null : s;
+      }).filter(Boolean).join(" ");
+      out.closing.vow = vow || "등록하신 기간 동안 매 수업 정성껏 곁에서 도울게요.";
+    }
+  }
+  const term = (v) => (typeof v === "string" ? v.replace(/회원\s*전용\s*공간/g, "회원 전용 페이지")
+    : Array.isArray(v) ? v.map(term) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, term(x)])) : v);
+  return term(out);
+}
+
 function firstPrompt(member, packages, favorites) {
   const m = member || {};
   const has = (v) => v != null && !['', '-', '없음', '미설정'].includes(String(v).trim()); // 빈 칸은 "-"로 저장되기도 한다
+  // 방문 목적(있을 때만) — 목적에 따라 '오늘 등록' 블록 · 클로징 요청의 세기가 바뀐다.
+  const purposeKey = typeof m.ot_purpose === "string" && OT_PURPOSE_GUIDE[m.ot_purpose] ? m.ot_purpose : null;
+  const purpose = purposeKey ? { ...OT_PURPOSE_GUIDE[purposeKey], label: OT_PURPOSE_OPTS.find(([v]) => v === purposeKey)?.[1] || "" } : null;
+  const soft = Boolean(purpose?.soft);
+  const purposeBlock = purpose ? `
+[★오늘 OT 방문 목적 — 회원이 신청서에서 고름: "${purpose.label}"] 운동 목표(goal)와 별개의 정보다. 목표는 '무엇을 바꾸고 싶은지', 이건 '오늘 OT에서 무엇을 얻고 싶은지'다.
+ - ${purpose.guide}
+ - 이 목적은 오늘 수업에서 반드시 충분히 채워라(회원이 '원하던 걸 얻었다'고 느끼게). opening의 ⓒ 오늘 흐름 안내에 이 목적을 넣어라("오늘 ○○ 궁금하다고 하셔서, ~" 결).
+ - 방문 목적만으로 PT 구매 의사를 단정하지 마라(살 생각이 있다고도, 없다고도). 운동 중 회원 반응 · 효과는 아직 관찰 전이니 지어내지 말고 가설 톤으로.
+ - cheat ①(이 회원)에는 이 방문 목적이 드러나게 써라.
+` : "";
+  const goalTodayBlock = soft ? `[★1차 OT의 흐름 = 방문 목적을 채우고 → 확인한 개인별 필요로 상담에 잇기] 이 회원은 PT 등록을 생각하고 온 게 아닐 수 있다.
+갑자기 등록을 요청하는 대본 금지. 순서: 방문 목적을 충분히 채운다 → 운동하며 확인할 이 회원만의 필요(혼자서는 어려운 지점)를
+짚는다 → 그 필요를 근거로 맞는 방법(추천 플랜 · 비용)을 소개하고 같이 해 볼지 부드럽게 묻는다. 회원이 관심을 보이면 그 자리에서
+플랜 · 비용까지 분명히 설명하고 등록을 제안해도 된다. 원하지 않으면 붙잡지 말고 다음 연결(다음 OT · 다음 방문)을 안내한다.
+'다음에 천천히 생각해 보세요'로 흐지부지 끝내지는 마라.` : `[★1차 OT의 목표 = 오늘 PT 등록 (대표 지침 · 못박음)] 1차라고 '맛보기·관계 쌓기'로 끝내지 마라. 오늘 수업의
+끝은 등록 요청이다 — 세 스텝 전부가 그 요청을 받기 위한 빌드업이다. '다음에 천천히 생각해 보세요'로 미루는
+대사 금지. 오늘 등록이 안 되면 다음 OT를 가까운 날로 잡는 것이 차선이다(날짜·시간은 회원에게 묻는다).`;
   const sparse = !has(m.goal) && !has(m.job);
   // 목표도 직업도 없으면 개인 맞춤 근거·비유를 만들 재료가 없다 → 지어내지 말고 수업 중에 회원에게서 얻게 한다(2026-10-02).
   const sparseBlock = sparse ? `
@@ -326,23 +710,26 @@ function firstPrompt(member, packages, favorites) {
 ` : "";
   const machines = Array.isArray(m.machines) ? m.machines.join(", ") : g(m.machines);
   const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
+  // 회차 ÷ 주당 횟수 = 걸리는 기간(2026-10-13 · AI가 '주 2회 × 3개월 = 30회'처럼 거꾸로 계산하던 것) — 계산은 앱이(lib/pkgPace ·
+  //   대본 화면 가격 줄 아래 안내와 같은 계산), AI는 이 숫자만 쓴다. 기간을 넘겨도 '못 쓰는 상품'이 아니라 '센터 확인이 필요한 상품'으로 적는다.
+  const freq = weeklyNum(m.weekly_freq);
+  const pace = (p) => paceText(p, paceFreqs(freq));
   const pkgBlock = pkgs.length
     ? pkgs.map((p, i) => {
         const per = p.sessions ? Math.round(p.price / p.sessions) : null;
-        return `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
+        return `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}${pace(p)}`;
       }).join("\n")
     : "등록된 패키지 없음";
   const favBlock = favoritesBlock(favorites);
-  return `[상황·대전제] 1차 OT 입장 3분 전. 이 출력의 유일한 목적 = 이 회원의 '등록(클로징) 확률 극대화'다.
+  return `[상황·대전제] 1차 OT 입장 3분 전. 이 출력의 목적 = 회원이 신청한 목적을 채우면서, 자연스럽고 분명한 PT 상담 · 등록 제안을 준비하는 것이다(제안의 세기는 아래 1차 OT 흐름 블록을 따른다).
 트레이너는 이걸 30초~1분에 훑어 머리에 넣고 폰을 주머니에 넣는다. '참고 설명'이 아니라 '바로 외워
 바로 말할 완성 대사'로 써라. 추상 지침·개발자용 매핑 설명 금지.
-OT는 [① 인사·라포 → ② 운동(바로 효과 체감) → ③ 클로징] 3스텝으로 흐른다 — 그 순서대로, 각 스텝 핵심만 짧게.
+OT는 [① 인사·라포 → ② 운동(그 자리에서 차이를 느껴 볼 수 있게) → ③ 클로징] 3스텝으로 흐른다 — 그 순서대로, 각 스텝 핵심만 짧게.
 
 ${sparseBlock}
-[★1차 OT의 목표 = 오늘 PT 등록 (대표 지침 · 못박음)] 1차라고 '맛보기·관계 쌓기'로 끝내지 마라. 오늘 수업의
-끝은 등록 요청이다 — 세 스텝 전부가 그 요청을 받기 위한 빌드업이다. '다음에 천천히 생각해 보세요'로 미루는
-대사 금지. 오늘 등록이 안 되면 다음 OT를 가까운 날로 잡는 것이 차선이다(날짜·시간은 회원에게 묻는다).
+${goalTodayBlock}
 
+${BEFORE_CLASS_RULE}
 [이 국면 특칙 — 대본 수위] 세일즈(오프닝·비유·클로징·거절)뿐 아니라 운동 파트도 '회원에게 그대로 말할
 실제 대사'까지 구체적으로 준다. 단 아래는 여전히 절대 금지:
  - 숫자 처방(세트·횟수·각도·중량·템포·시간). 운동은 '방향 + 짚어줄 말'까지, 숫자는 빼라.
@@ -355,7 +742,7 @@ ${sparseBlock}
  운동경험=${g(m.exercise_level)}, 예전중단이유=${g(m.quit_reason)}, 받아본유료운동=${g(m.past_exercise)},
  가능빈도·시간=${g(m.availability)}, 하루활동량=${g(m.activity_level)}, 바라는점=${g(m.member_note)},
  일주일에가능=${m.weekly_freq ? `주 ${m.weekly_freq}번` : "없음"}, 건강체크=${healthLine(m.health_screen)}, 알게된경로=${g(m.lead_source)}
-${unknownBlock}아직 관찰 전이다 — 신체 판단은 '~일 가능성' 가설 톤. 없는 관찰·수치·에피소드 창작 금지. 단 오프닝·
+${purposeBlock}${unknownBlock}아직 관찰 전이다 — 신체 판단은 '~일 가능성' 가설 톤. 없는 관찰·수치·에피소드 창작 금지. 단 오프닝·
 비유·거절 대사는 세일즈 기술이라 확신 있게 완성해도 된다(사실 왜곡이 아니므로).
 
 [내 PT 패키지] (★이 목록에서만 추천. 없는 패키지·가격·세션수 창작 금지. [n]=참조번호)
@@ -370,16 +757,17 @@ ${favBlock}
  ⚠️ goal과 무관하게 pain만 물지 말 것. pain은 goal이 통증개선일 때만 주인공.
 
 [사전 문진 활용 — 클로징 근거 강화]
- - goal_deadline(시점): session_logic 기간 역산과 '왜 지금'에 최우선 반영("데드라인까지 N개월이라 주2회 필수"). 없으면 일반 기간 논리.
+ - goal_deadline(시점): 추천 빈도 · 기간 판단과 '왜 지금'에 최우선 반영("목표 날짜까지 약 N주라, 주 2~3회면 이 회차를 기간 안에 쓸 수 있어요" 결 · 숫자는 '진행 계산(앱)'대로 · '필수' 같은 강요 표현 금지). 없으면 일반 기간 논리.
  - availability(가능 빈도): recommended_program.frequency의 현실 빈도 근거로, 목표에 부족하면 그 격차를 objection_defense의 time(시간부족) 선제 방어로 연결.
  - quit_reason(예전 중단 이유): objection_defense.doubt와 클로징 손실 프레이밍의 직접 근거("혼자 하다 ○○로 멈추셨잖아요. 이번엔 그 지점을 제가 잡아드려요"). 없는 이유 창작 금지.
  - injury_history·exercise_level·activity_level: target_exercise 동작 선택·난이도·안전(부상 부위 우회)과 비유 소재로. injury_history 있으면 의료경계 유지.
  - training_pace·member_note: 오프닝·전반 톤 보조(있을 때만).
 
-[★재정·투자 신호 → 세션·단가 제시 강도] job·past_exercise·training_pace로 지불 여력·투자 의향을 읽어라.
- - 여유·의향 높아 보이면(안정 직군·과거 PT/필라테스 경험·'제대로/집중' 선택): recommended_program에서 위축되지 말고 목표에 필요한 만큼 넉넉한 회차의 패키지(pick_ref)를 확신 있게 골라라. session_logic도 당당하게(할인·최소량으로 미리 물러서지 말 것).
- - 제약 커 보이면(신호 부재·'가볍게 시작'): 최소 필요량부터 제안, 이후 확장 여지 남김.
- - ⚠️ 이 판단은 pick_ref 선택과 session_logic '톤'에만 반영. 회원에게 '여유 있어 보인다/돈' 식 재정 언급은 값 텍스트에 절대 금지.
+[PT 관심도 — 추천 회차의 크기와 제안 톤에만 반영] 회원이 직접 밝힌 것만 신호로 쓴다: 방문 목적(PT 수업과 비용 · 맞춤 계획이면 높음) ·
+ 원하는 페이스('제대로' · '집중해서') · 목표 시점 · 가능 빈도 · 받아본 유료 운동(PT 방식에 익숙한지로만 · 돈 문제로 읽지 마라).
+ - 관심도가 분명히 높으면: 목표까지 가는 계획에 맞는 회차를 분명하게 제안한다.
+ - 관심도가 낮거나 아직 모르면: 첫 단계(자세 · 습관 · 기구 사용이 자리 잡는 데 필요한 만큼)부터 제안하고, 다음 단계는 그때 같이 정하자고 말한다.
+ - ★직업 · 나이 · 거주지로 지불 여력이나 소득을 짐작하지 마라. 회원에게 돈 · 여유를 언급하는 말도 금지.
 
 [컨닝페이퍼 3스텝 — 트레이너가 읽는 순서 = OT 진행 순서]
 
@@ -397,7 +785,7 @@ ${favBlock}
         마지막 비교의 '처음'). 운동이 아니라 체크로 소개한다.
      ② 메인 동작: 회원 목표의 핵심 움직임을 '배워야 제대로 되는' 동작으로. 오늘 수업의 중심.
      ③ 목표 부위 자극: 센터 장비·프리웨이트로 목표 부위를 확실히 느끼게 하는 동작(세팅·큐가 있어야 자극 위치가 달라지는 것).
-     ④ 처음과 비교: ①을 다시 해서 달라진 걸 회원이 직접 확인(가장 극적인 증명). before/after가 분명해야 한다.
+     ④ 처음과 비교: ①을 다시 해서 달라졌는지 회원이 직접 확인(질문으로 · 오늘의 핵심 비교). 처음과 비교하기 쉬운 동작이어야 한다.
    목적별 결: 재활·교정이면 굳은 데를 풀어 그날 가벼워지는 기능성 동작 위주, 체형·근력이면 타겟 부위 직접 자극,
    경험자면 익숙한 것 말고 색다른 자극. 뻔한 일반동작(숄더프레스·체스트프레스류) 반복 금지.
 ${EXERCISE_BAR}
@@ -416,14 +804,16 @@ ${REHAB_TONE}
    - reason: ★"회원님은 이 운동을 ~ 때문에 하셔야 해요"를 회원이 이해하도록 풀어주는 이유(이 회원 goal·pain
      기반, 전문용어 없이). ★이게 이 블록의 핵심 — '혼자선 못 잡는다'는 의존 심기보다, 회원이 '왜 이 운동이
      나한테 필요한지' 스스로 납득하게 하는 '교육형' 설명. 확신 있되 부담 없이.
-   - feel: 그 자리서 바로 느낄 효과·자극을 회원 말로("어? 여기 딱 들어오네 / 목이 트이네").
-   - cue: 그 순간 그대로 말할 대사 한 문장(before→after 차이를 회원이 인정하게 + 이 운동의 가치를 각인). 압박 아님.
+   - feel: 이 동작에서 노리는 자극 · 느낌 한 줄(트레이너가 확인할 기준 · "~가 느껴질 수 있어요" 결 · 회원이 이미 느꼈다고 쓰지 마라).
+   - cue: 그 순간 그대로 말할 대사 한 문장. 짧은 동작 안내 뒤에 회원이 느낀 걸 직접 말하게 하는 질문으로 끝낸다
+     ("발을 조금만 앞으로 옮겨 볼게요. 아까보다 어디에 힘이 들어가는 느낌이세요?" 결). '~죠'로 체감을 확정하지 마라. 압박 아님.
    - proof: '처음과 비교'는 true, 메인 동작도 차이가 극적이면 true, 나머지 false.
    - lib_ref: 위 [내 즐겨찾기 운동자료]에서 쓴 자료 번호(정수). 안 썼으면 null.
    - alts: 같은 칸에 바꿔 끼울 참고 운동 2개(기구가 차 있거나 회원 상태가 다를 때). 각 {name: 동작 이름, why: 왜 이
      회원에게 맞는지 한 줄, feel: 바로 느낄 것 한 줄}. 같은 기준(쉬운 동작 금지)을 지켜라. '몸 상태 체크'·'처음과 비교'
      칸은 빈 배열이어도 된다.
-   그리고 so_what(exercises 밖): 4개를 묶어 'PT를 받는 게 낫겠다'는 회원 스스로의 결론 한 줄(사실 기반·압박 아님).
+   그리고 so_what(exercises 밖): 4개를 묶어 'PT를 받는 게 낫겠다'는 회원 스스로의 결론 한 줄(사실 기반·압박 아님 · 회원이 무엇을
+   느꼈다고 단정하지 말고, 오늘 같이 맞춰 본 과정과 그게 왜 혼자서는 어려운지로).
 
 ③ 클로징 — 운동 끝나고 다시 앉아서. 아래 셋으로 자연히 닫는다.
 
@@ -434,12 +824,17 @@ ${METAPHOR_RULE}
 
 ${closingSeqInstruction({
     num: "",
-    echoHint: "신청서 · 문진에 적은 목표나 바라는 점, 또는 오늘 운동 중 회원 반응(아직 관찰 전이라 '오늘 해 보시니' 결의 가설 톤).",
-    trialHint: "오늘 해 본 것 중 무엇이 가장 다르게 느껴졌는지 묻는다.",
-    nextHint: "PT를 시작하면 첫 한 달쯤 회원이 느낄 변화 한 가지(가능성 표현 · 숫자 약속 금지).",
-    askHint: "★1차 OT의 목표는 오늘 등록이다 — 오늘 결정을 부드럽게 묻는다('생각해 보세요'로 미루지 않는다).",
+    echoHint: `신청서 · 문진에 적은 목표나 바라는 점${purpose ? " · 방문 목적" : ""}(오늘 회원 반응은 아직 모르니 반응을 지어내지 마라).`,
+    trialHint: "오늘 비교해 본 동작에서 어떤 차이가 있었는지 묻는다 — 차이를 느꼈다고 전제하지 말고 '차이가 없어도 괜찮아요'를 붙인다(예: \"두 동작을 비교해 보니 어떤 차이가 있었나요? 차이가 없어도 괜찮아요.\").",
+    nextHint: "PT를 시작하면 첫 한 달 동안 트레이너가 할 일과 그때 같이 확인할 것 한 가지(결과는 보장하지 말고 '~를 목표로' · 숫자 약속 금지 · 자세나 체감이 달라질 거라고 전제하지 말고 '실제로 차이가 있는지 같이 확인해요' 결).",
+    gainHint: "이어서 그 플랜으로 트레이너가 해 줄 관리 한 문장(예: 운동 순서를 정리해 드리고 직접 연습하도록 도와요 · '혼자 할 수 있게 돼요' · 살이 빠져요 같은 결과를 확정하지 마라).",
+    askHint: soft
+      ? "★이 회원은 PT를 생각하고 온 게 아닐 수 있다. 다만 이 ask는 회원이 상담에 관심을 보였을 때 하는 요청이다 — 추천 플랜(빈도 · 기간 또는 총 회차)을 담아 분명하게 등록을 제안하되(확인형), 결제를 재촉하지 마라. PT 구매 의사를 미리 확정하지도, 제안을 아예 빼지도 마라."
+      : "★1차 OT의 목표는 오늘 등록이다 — 오늘 결정을 부드럽게 묻는다('생각해 보세요'로 미루지 않는다).",
     fallback: true,
-    tone: " ★1차도 오늘 등록 요청까지 간다. ask는 '생각해 보세요'로 미루지 않고 오늘 결정을 묻는다. 물러서면 flush에서 진짜 이유를 꺼내고, 그래도 안 되면 다음 OT를 가까운 날로 잡는다(날짜는 회원에게 묻는다).",
+    tone: soft
+      ? " ★방문 목적을 먼저 채운 뒤 상담으로 잇는다. trial_close로 회원의 관심을 열고, stakes · plan_pitch는 신청서 정보와 오늘 같이 해 볼 것에서만(회원 반응 단정 금지). ask는 분명하되 재촉하지 않고, 흐지부지 끝내지 않는다. 물러서면 flush에서 무엇이 걸리는지 묻고, 원하지 않으면 붙잡지 말고 fallback으로 다음 연결을 안내한다. 대본은 한 갈래로 쓴다(수업 중 앱을 보거나 고르게 하지 않는다)."
+      : " ★1차도 오늘 등록 요청까지 간다. ask는 '생각해 보세요'로 미루지 않고 오늘 결정을 묻는다. 물러서면 flush에서 진짜 이유를 꺼내고, 그래도 안 되면 다음 OT를 가까운 날로 잡는다(날짜는 회원에게 묻는다).",
   })}
 
  objection_defense(거절 선제 방어 5종): 아래 5개 각각 미리 무장. 반박이 아니라 '공감으로 빗장 풀고
@@ -449,23 +844,35 @@ ${closingSeqInstruction({
    - trigger: 이 거절이 나올 신호(회원이 흔히 하는 말) 1문장.
    - defense: 공감으로 걱정 풀고 바로 잇는 세일즈 무브 1~2문장.
    - line: 그 자리에서 그대로 말할 실제 대사("○○님, …") 1문장.
-   ⚠️ compare는 경쟁사 비방·가격 맞대응 금지 → '오늘 이미 당신 몸에서 확인한 것'이라는 관계·데이터
-     선점 우위로("다른 데선 0부터 다시 파악해야 해요. 저는 오늘 이미 ○○을 봤고요").
+   ⚠️ compare는 경쟁사 비방·가격 맞대응 금지 → '오늘 같이 한 것'이라는 관계·데이터 선점 우위로
+     ("다른 데선 처음부터 다시 보셔야 해요. 저는 오늘 ○○님 ○○ 동작을 같이 봤고요" 결 · 어떤 감각 · 결과까지 봤다고 단정하지 말 것).
    ⚠️ 허위 긴급성·공포·죄책감 금지(PREAMBLE 상속).
 
-[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 가장 맞는
-   1개(pick_ref)를 확신 있게 골라라. 클로징 직전에 회원에게 '세션수·금액'을 제시할 때 쓸, 반박 안 되는
-   근거를 만드는 게 이 블록의 핵심 — "왜 이 횟수를 받아야 하는지"를 회원 상황에서 역산해 준다.
-   - why_fit: 이 패키지가 이 회원에게 맞는 이유(목적·불편·직업·나이). 2문장 이내.
+[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 맞는 1개(pick_ref)를 골라라.
+   클로징 직전에 회원에게 회차를 제시할 때 쓸, 반박 안 되는 근거를 만드는 블록이다.
+   ★고르는 순서:
+     ① 먼저 목표 · 운동 경험 · 방문 목적 · [PT 관심도]로 '처음에 필요한 양'을 정한다. 목표 시점이 있으면 그 날짜에서 거꾸로,
+        없으면 첫 단계(자세 · 습관 · 기구 사용이 자리 잡는 데 필요한 만큼)에 맞춘다.
+     ② 그 패키지를 '진행 계산(앱)'으로 이용 기간과 맞춰 본다. 이용 기간은 맞는지 확인하는 조건이지, 패키지를 키우는 이유가 아니다.
+     ③ 이용 기간을 맞추려고 더 큰 패키지로 올리지 마라. 가격 순서(가장 비싼 · 가장 싼)를 기본값으로 삼지 마라. PT 구매 의사가
+        확인되지 않은 회원에게 큰 패키지를 기본으로 권하지 말고, 반대로 무조건 가장 작은 패키지로 물러서지도 마라.
+   ★계산: 회차 · 빈도 · 기간은 '진행 계산(앱)' 숫자만 써라. 빈도 × 기간으로 회차를 거꾸로 맞추지 마라(주 2회로 3개월이면 약 26회
+     전후다. 30회가 아니다). frequency · duration · session_logic · plan_pitch · ask · cheat의 숫자는 모두 같아야 한다.
+   ★고른 패키지가 회원 빈도로 이용 기간을 넘기면(진행 계산에 '더 걸림'):
+     - 회원에게 하는 말(plan_pitch · ask · 거절 대응 · cheat)에서 기간을 넘기는 조건(예: '주 2회로 3개월')을 확정해서 말하지 마라.
+       기간 안에 맞는 빈도(예: '주 2~3회')로 말하거나, 기간 얘기 없이 회차와 빈도만 말한다.
+     - 기간 연장 · 기간 넘김을 약속하는 말("기간은 연장해 드릴게요", "넘어가도 괜찮아요") 금지. 기간 처리는 트레이너가 센터 규정을 확인한 뒤 정한다.
+     - session_logic에 그 사실을 적고 "센터 규정 확인이 필요해요"로 끝내라. data_gaps 첫 줄에도 같은 확인을 적어라(둘 다 트레이너만 본다).
+     - 이용 기간 안에 맞는 다른 상품이 이 회원에게 맞지 않으면, 그 상품을 억지로 고르지 말고 필요한 양에 맞는 상품을 고른 뒤 위처럼 확인을 남겨라.
+   - why_fit: 이 패키지가 이 회원에게 맞는 이유(목표 · 운동 경험 · 방문 목적 · 불편 · 가능 빈도). 2문장 이내. 직업으로 지불 여력을 짐작하지 마라.
    - frequency: 권장 주간 빈도(예: "주 2회")와 '왜 그 빈도인지' 근거(회복시간 확보·습관형성 최소빈도·
      목표 속도 등 회원 상황 기반). 1문장.
-   - duration: 권장 총 기간(예: "약 3개월")과 '왜 그 기간인지' 근거(눈에 띄는 변화까지 필요한 시간 등). 1문장.
-   - session_logic: frequency × duration으로 총 세션수를 역산해 'pick_ref 패키지의 회차가 왜 딱 맞는지'를
-     한 줄로 잇는다(예: "주 2회로 약 3개월이면 24~30회라, 이 패키지 회차가 목표에 딱 맞습니다").
-     ★여기 나오는 세션수는 반드시 네가 고른 pick_ref 패키지의 실제 sessions 값에 맞춰 역산하라(새 숫자
-     창작 금지). ★단 '가격(원)'은 값 텍스트에 절대 쓰지 마라 — 금액은 앱이 목록에서 채운다.
+   - duration: 권장 총 기간과 '왜 그 기간인지' 근거. 기간 숫자는 '진행 계산(앱)'과 같게. 1문장.
+   - session_logic: pick_ref 패키지의 회차를 회원 빈도로 하면 얼마나 걸리는지 '진행 계산(앱)' 숫자로 한 줄
+     (예: "주 2회면 50회는 약 25주, 6개월 이용 기간 안이에요" / "주 2회면 30회는 약 15주라 3개월 이용 기간을 약 2주 넘겨요. 센터 규정 확인이 필요해요").
+     ★세션수는 네가 고른 pick_ref 패키지의 실제 sessions 값 그대로(새 숫자 창작 금지). ★단 '가격(원)'은 값 텍스트에 절대 쓰지 마라 — 금액은 앱이 목록에서 채운다.
      ※ 패키지가 '기간제'(세션수 없음)면 session_logic은 '왜 이 기간이 필요한지'로 대체한다.
-   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내.
+   - alt_ref: 추천과 반대 방향(한 단계 가볍거나 무거운) 대안 1개(마땅찮으면 null). alt_why 2문장 이내 · 그 대안의 이용 기간 사정도 '진행 계산(앱)'대로 정직하게.
    - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
 
 [data_gaps — 성장 프레임] 기본정보로 위 전부를 반드시 생성한다("정보 부족" 반환 금지). data_gaps는 결핍이
@@ -474,7 +881,10 @@ ${closingSeqInstruction({
 [cheat — 30초 요약 3줄 · 화면 맨 위 · 화면이 줄마다 '이 회원 / 오늘 꼭 / 요청' 이름을 붙인다] 바빠서 이것만 보고 들어가도 되게.
  ① 이 회원: 한 문장으로 사람을 그려라("연말 검진 전에 8kg 빼고 싶은데, 허리 다칠까 봐 운동이 겁나는 분" 결). ★단어·명사 나열 금지("34세 개발자, 8kg 감량, 운동 겁과 허리 뻐근함" ❌).
  ② 오늘 꼭: 오늘 수업에서 반드시 할 한 가지를 동사로 끝나는 짧은 문장으로("숙이기를 처음과 끝에 시켜 달라진 걸 직접 느끼게 하기" 결).
- ③ 요청: 클로징 ask를 그대로 짧게(따옴표 · 40자 안팎).
+ ③ 요청: ${soft
+    ? `방문 목적을 채운 뒤 상담으로 잇는 한마디(따옴표 · 40자 안팎 · 질문형). ★패키지 횟수 · 가격 · 등록이라는 말을 넣지 마라
+    ("오늘 배운 기구로 살 빠지는 순서까지 같이 짜 볼까요?" 결). 횟수 · 가격이 담긴 분명한 제안은 클로징 ask에 둔다.`
+    : "클로징 ask를 그대로 짧게(따옴표 · 40자 안팎)."}
  각 40자 안팎. 아래 항목과 같은 내용을 짧게 압축(새 내용 창작 금지).
 [분량 — 외우기 쉽게] 각 대사는 짧고 입에 붙게. 아래 [대사 스타일]의 분량을 지켜라.
 [필드명 인용 금지] 값 텍스트에 스키마 키(point_it_out·so_what·objection_defense 등)를 쓰지 마라.
@@ -508,6 +918,13 @@ function secondPrompt(member, report, cases = [], caseTier = "tentative", packag
   const r = report || {};
   const n = Number.isInteger(round) && round >= 2 ? round : 2;
   const hist = Array.isArray(history) ? history.filter(Boolean) : [];
+  // 이전 차수 대본이 권한 패키지(2026-10-13 · 화면 buildHistory가 저장된 스냅샷에서 이름 · 회차 · 기간만) — 있으면 참고 · 바꾸면 이유.
+  const pickTxt = (pp) => {
+    if (!pp || typeof pp !== "object" || typeof pp.name !== "string" || !pp.name.trim()) return "";
+    const bits = [Number(pp.sessions) > 0 ? `${Number(pp.sessions)}회` : "", typeof pp.duration_label === "string" ? pp.duration_label.slice(0, 30) : ""].filter(Boolean).join(" · ");
+    return `${pp.name.slice(0, 40)}${bits ? `(${bits})` : ""}`;
+  };
+  const hasPrevPick = hist.some((h) => pickTxt(h.prev_pick));
   // 클로징 우선 모드 — 바로 앞 차수에서 등록 제안을 했는데 안 됐거나(보류), 제안조차 못 했으면 이번 OT의 1순위는 등록.
   const lastH = hist.length ? hist[hist.length - 1] : null;
   const lastReason = lastH?.closing_reason ? (REASON_KO[lastH.closing_reason] || lastH.closing_reason) : "";
@@ -525,16 +942,18 @@ function secondPrompt(member, report, cases = [], caseTier = "tentative", packag
   const historyBlock = hist.length
     ? `
 [이전 OT 기록 — 차수별 결과·사유${n > 2 ? "·2차 이후 관찰" : ""}] (트레이너가 실제 남긴 기록 · 창작 금지)
-${hist.map((h) => `${h.round}차: 결과=${RESULT_KO[h.closing_result] || "결과 미기록"} · 등록 제안=${h.proposed ? "함" : "못 함"}${h.closing_reason ? ` · 사유=${REASON_KO[h.closing_reason] || h.closing_reason}` : ""}${h.closing_detail ? ` · 클로징 메모=${JSON.stringify(h.closing_detail)}` : ""}${h.observation ? ` · 관찰=${JSON.stringify(h.observation)}` : ""}${h.prev_read ? ` · 지난 리포트 요지=${h.prev_read}` : ""}`).join("\n")}
+${hist.map((h) => `${h.round}차: 결과=${RESULT_KO[h.closing_result] || "결과 미기록"} · 등록 제안=${h.proposed ? "함" : "못 함"}${h.closing_reason ? ` · 사유=${REASON_KO[h.closing_reason] || h.closing_reason}` : ""}${h.closing_detail ? ` · 클로징 메모=${JSON.stringify(h.closing_detail)}` : ""}${h.observation ? ` · 관찰=${JSON.stringify(h.observation)}` : ""}${pickTxt(h.prev_pick) ? ` · 그때 권한 패키지=${pickTxt(h.prev_pick)}` : ""}${h.prev_read ? ` · 지난 리포트 요지=${h.prev_read}` : ""}`).join("\n")}
 ${n > 2 ? `★이번은 ${n}차 — 앞 차수에서 등록이 미뤄진 이유(사유·회원 반응)를 정면으로 풀어라. 앞에서 쓴 증명·대사를 그대로 반복하지 말고, 이번에 새로 확인시킬 것을 골라라.` : "★1차 결과·사유가 있으면 그 걸림돌을 오늘 증명과 클로징에서 먼저 풀어라."}${closingFirst}
 `
     : "";
   const g2 = (v) => (v == null || v === "" ? "없음" : v);
   const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
+  // 진행 계산(2026-10-13) — 회원이 OT 신청서에 적은 주당 횟수(없으면 주 2 · 3회 두 경우) · lib/pkgPace.
+  const freq2 = weeklyNum(m.weekly_freq);
   const pkgBlock = pkgs.length
     ? pkgs.map((p, i) => {
         const per = p.sessions ? Math.round(p.price / p.sessions) : null;
-        return `[${i}] name=${g2(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g2(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
+        return `[${i}] name=${g2(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g2(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}${paceText(p, paceFreqs(freq2))}`;
       }).join("\n")
     : "등록된 패키지 없음";
   const validCases = Array.isArray(cases) ? cases.filter(Boolean) : [];
@@ -551,14 +970,20 @@ ${validCases.map((c, i) => `${i + 1}. [${c.result}] 프로파일=${JSON.stringif
     ? `,
   "case_feedback": { "diagnosis": "과거 케이스에 비춘 이 회원의 진짜 장애물(표면 아닌 근본)", "proven_lead": "비슷한 프로파일에 통한 접근 기반, 회원이 욕구를 자기 말로 꺼내게 할 리딩 방향", "avoid_repeat": "과거 막힌 벡터 있으면 '이번엔 그거 말고 X' + 왜(없으면 null)", "your_read": "트레이너에게 되묻는 넛지 1문장" }`
     : "";
-  return `[상황·대전제] ${n}차 OT 입장 3분 전. 유일한 목적 = 이 회원의 등록(클로징) 확률 극대화. 1차와 달리
+  return `[상황·대전제] ${n}차 OT 입장 3분 전. 목적 = 지난 OT의 반응과 망설인 이유를 바탕으로 필요한 상담을 이어 가, 분명한 등록 제안까지 준비하는 것. 1차와 달리
 아래 '1차 관찰'이라는 실제 근거가 있다 — 이번엔 '증명'으로 클로징을 확실히 닫는다. 트레이너가 30초에
 훑어 외우고 폰을 넣는 컨닝페이퍼니, 바로 말할 완성 대사로.
 
 [이 국면 특칙 — 대본 수위] 세일즈·운동 모두 '그대로 말할 실제 대사'까지. 단 숫자 처방(세트·횟수·각도·
 중량·템포)과 의료 단정(치료·완치·진단)은 절대 금지.
 
+${BEFORE_CLASS_RULE}[★${n}차 대본 — 지난 기록과 이번 수업을 나눠 써라]
+ - 아래 [1차 관찰 기록] · [이전 OT 기록]은 이미 있었던 일(트레이너가 실제로 남긴 기록)이다. 기록에 있는 것만 '지난번 ~하셨죠' 처럼 지난 일로 말해도 된다.
+ - 이번 ${n}차 수업에서 할 운동과 회원이 느낄 것은 아직 모른다. 예정('오늘은 ~해 볼게요')과 질문('어떠세요?')으로만 써라.
+ - 증명 동작에서 회원이 차이를 못 느낀다고 해도 실패가 아니다. 그대로 인정하고 다른 큐로 자연스럽게 이어 가게 써라.
+
 [회원 기본정보] name=${g2(m.name)}, age=${g2(m.age)}, job=${g2(m.job)}, mbti=${g2(m.mbti)}, gender=${g2(m.gender)}, pain=${g2(m.pain)}, goal=${g2(m.goal)}
+[회원이 신청서에 적은 일정 — 추천 빈도 · 기간의 근거] 일주일에가능=${freq2 ? `주 ${m.weekly_freq}번` : "없음"}, 가능시간=${g2(m.availability)}, 목표시점=${g2(m.goal_deadline)}
 
 [1차 관찰 기록 — 유일 근거(가설 아님, 트레이너가 실제 관찰)]
 ${JSON.stringify({
@@ -582,7 +1007,7 @@ ${pkgBlock}
 
 [컨닝페이퍼 — 2차는 '증명 → 클로징']
 ① recall(입장 첫마디 · 지난 시간 소환): ★장면 = 회원이 운동하러 와 있고(센터 · 스튜디오) 트레이너가 맞이하는 순간. 1차의 체감·회원
-   한마디(memberQuote)를 되살려 문을 열고("지난번 ○○ 느끼셨던 거 기억나세요?" 결), 오늘 흐름 한 줄("오늘은 그거
+   한마디(memberQuote)를 되살려 문을 열고("지난번 ○○ 느끼셨던 거 기억나세요?" 결 · 기록에 있는 체감 · 한마디만 · 없으면 지난번 같이 한 동작으로), 오늘 흐름 한 줄("오늘은 그거
    이어서 확인해 보고, 끝나고 앉아서 방향 같이 정해요" 결)을 붙인다. "편하게 오세요" 같은 오기 전 말 금지.
    - line: 그대로 말할 대사 2~3문장. - why: 이걸 여는 이유 1문장.
 
@@ -600,17 +1025,19 @@ ${EXERCISE_BAR}
    [내 즐겨찾기 운동자료] (트레이너가 별표한 자기 자료 — 이 회원 상황에 맞으면 session_plan · proof에서 '우선' 골라 lib_ref로 참조. [fn]=자료번호)
 ${favoritesBlock(favorites)}
 
-③ proof(증명 포인트 2개): 위 수업 구성 중/직후, 회원이 '어? 되네'를 부인 못 하게 터뜨릴 결정적 순간 2개.
+③ proof(증명 포인트 2개): 위 수업 구성 중/직후, 회원이 차이를 직접 느껴 볼 수 있게 준비한 결정적 순간 2개.
    ★동작은 이 회원의 goal·pain·1차 관찰(movements/reaction)에서 도출하라 — 고정 동작 습관 반복 금지,
    직업 비어도 goal·pain으로 개인화, 숫자 처방 금지. 각 동작 before→after 체감 실험으로(먼저 시켜→큐 하나
-   잡아줌→확 달라짐, 그 큐가 혼자선 못 잡는 지점).
+   잡아줌→달라졌는지 회원에게 묻기, 그 큐가 혼자선 찾기 어려운 지점).
 ${SAMEDAY_PROOF}
 ${REHAB_TONE}
-   moves[] 각: exercise(짧은 동작 이름만 · 15자 안팎) / how(어떻게 시켜 비교하는지 한 문장) / target_reaction(before→after 분명한 차이) /
-   point_it_out(그 순간 그대로 말할 대사 — "아까랑 다르죠?" + '혼자선 이 각도(혼자선 못 찾는 지점) 못 잡는다' 심기) /
+   moves[] 각: exercise(짧은 동작 이름만 · 15자 안팎) / how(어떻게 시켜 비교하는지 한 문장) / target_reaction(노리는 차이 · 트레이너가 확인할 기준 ·
+   "~가 느껴질 수 있어요" 결 · 회원이 이미 느꼈다고 쓰지 마라) /
+   point_it_out(그 순간 그대로 말할 대사 — 회원이 느낀 차이를 직접 말하게 하는 질문으로("아까랑 비교하면 어디가 다르게 느껴지세요?" 결) ·
+   '~죠?'로 체감을 확정하지 마라 · 회원이 차이를 말하면 이어서 '그 지점이 혼자서는 찾기 어려운 부분이에요' 결로 잇는다) /
    lib_ref([내 즐겨찾기 운동자료]에서 쓴 자료 번호(정수) · 안 썼으면 null).
-   so_what: 두 증명을 묶어 'PT를 받아야 한다'는 회원 스스로의 결론으로 잇는 한 줄.
-   if_weak: 증거 반응이 약하게 올 때 살릴 큐·조정 한 줄(숫자 없이·방향만).
+   so_what: 두 증명을 묶어 'PT를 받아야 한다'는 회원 스스로의 결론으로 잇는 한 줄(회원이 무엇을 느꼈다고 단정하지 말고, 같이 맞춰 본 과정과 그게 왜 혼자서는 어려운지로).
+   if_weak: 회원이 차이를 못 느낀다고 할 때 그대로 인정하고 이어 갈 대사 + 다른 큐 · 조정 하나(숫자 없이·방향만 · 한두 문장).
 
 ④ sales_metaphor(선택): 어울릴 때만 회원 세계에서 끌어온 비유 하나(운동·기계 클리셰 금지 · 요청에는 넣지 않는다). metaphor + bridge(등록 필요성으로).
 ${METAPHOR_RULE}
@@ -618,34 +1045,43 @@ ${METAPHOR_RULE}
 ${closingSeqInstruction({
     num: "⑤",
     echoHint: "1차 관찰의 회원 말(memberQuote) · 진짜 원하는 것 · 지난번 망설인 이유 중 하나.",
-    trialHint: "오늘 proof에서 확인한 체감을 회원이 자기 말로 말하게 묻는다.",
-    nextHint: "등록하면 목표까지 가는 첫 단계와 그때 회원이 보게 될 것(가능성 표현 · 숫자 약속 금지).",
-    askHint: "★2차는 마지막 OT급 — 1차보다 확신 있게 묻되 강요하지 않는다.",
+    trialHint: "오늘 proof에서 해 본 동작을 콕 집어, 회원이 느낀 차이를 자기 말로 말하게 묻는다(느꼈다고 전제하지 마라).",
+    nextHint: "등록하면 첫 단계에서 트레이너가 할 일과 그때 같이 확인할 것(결과 보장 금지 · 숫자 약속 금지).",
+    // 차수 구분(2026-10-13 · 4단계) — '마지막 OT급'은 2차에만. 3차부터는 앞 차수에서 미뤄진 이유를 풀었는지 확인하며 같은 요청을 되풀이하지 않는다.
+    askHint: n === 2
+      ? "★2차는 마지막 OT급 — 1차보다 확신 있게 묻되 강요하지 않는다."
+      : `★${n}차 — 앞 차수에서 등록이 미뤄진 이유를 오늘 풀었는지 확인하며 묻는다. 지난번과 같은 요청 문구를 되풀이하지 말고, 확신 있게 하되 회원이 원치 않으면 다음 연결로.`,
     fallback: true,
-    tone: " ★2차는 1차 관찰로 '증명'까지 끝낸 국면 — trial_close는 proof의 체감을 회원 입으로 듣고, ask는 1차보다 확신 있게(마지막 OT급).",
+    tone: n === 2
+      ? " ★2차는 1차 관찰이라는 실제 근거가 있는 국면 — trial_close는 오늘 proof에서 회원이 직접 말한 체감을 다시 듣고(지어내지 마라), ask는 1차보다 확신 있게(마지막 OT급)."
+      : ` ★${n}차는 이전 OT 기록이라는 실제 근거가 있는 국면 — trial_close는 오늘 proof에서 회원이 직접 말한 체감을 다시 듣고(지어내지 마라), ask는 지난 걸림돌을 푼 뒤에 분명하게(반복 압박 금지).`,
+    gainHint: "이어서 그 플랜으로 트레이너가 무엇을 해 주고 무엇을 같이 확인하며 목표로 가는지 한 문장(운동 결과 · 체중 감량을 보장하지 마라 · '~를 목표로 가요' 결).",
   })}
 
 ⑤-b ${BOOK_RULE}
    - open: 세일즈북 표지를 펴며 하는 첫마디(오늘 이 회원만 보고 정리했다는 결).
    - cases: '이런 변화를 만들어요'(같은 목표 회원 사례) 장에서 한마디(숫자는 말하지 말고 '회원님과 목표가 같았던 분' 결).
- 2차 세일즈북 장 순서: 표지 → 당신의 목표 → 오늘 함께 확인한 것 → (사진 · 사례) → 로드맵 → 추천 플랜 → (혜택) → 약속.
+ 2차 세일즈북 장 순서: 표지 → 당신의 목표 → 함께 확인한 것(지난 OT 기록) → (사진 · 사례) → 로드맵 → 추천 플랜 → (혜택) → 약속.
  echo는 '목표' 장, trial_close와 stakes는 '확인한 것' 장, next_goal은 '로드맵' 장, plan_pitch는 '추천 플랜' 장, promise와 ask는 마지막 '약속' 장에서 말한다 — 그 장에 맞게 써라.
 
 ⑥ objection_defense(거절 선제 방어 5종): price·hesitation·doubt·time·compare 각 1개. 1차 관찰·(있으면)
    회원 quit_reason을 근거로 더 날카롭게. 각: trigger(나올 신호) / defense(공감+세일즈 무브) /
-   line(그대로 말할 대사). ⚠️compare는 경쟁사 비방 금지→'오늘 이미 당신 몸에서 확인' 데이터 선점 우위.
+   line(그대로 말할 대사). ⚠️compare는 경쟁사 비방 금지→'지난 OT부터 같이 확인해 온 기록' 데이터 선점 우위(기록에 있는 것만 · 오늘 반응은 단정하지 마라).
    ⚠️허위 긴급성·공포·죄책감 금지.
 
-[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 가장 맞는
-   1개(pick_ref)를 확신 있게 골라라. 2차는 1차 관찰로 '증명'까지 끝낸 국면이라, 세션수·기간을 회원 상황에서
-   역산해 '왜 이 횟수가 맞는지' 반박 안 되는 근거를 만든다.
+[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 맞는
+   1개(pick_ref)를 확신 있게 골라라. 2차는 1차 관찰로 '증명'까지 끝낸 국면이라, '왜 이 횟수가 맞는지' 반박 안 되는 근거를 만든다.
+${laterPickRule("1차 관찰 · 목표 · [회원이 신청서에 적은 일정](주당 가능 횟수 · 가능 시간 · 목표 시점)으로 처음에 필요한 양을 정한다. 목표 시점이 있으면 그 날짜에서 거꾸로.")}${hasPrevPick ? `
+   ★이전 차수에서 권한 패키지가 있다([이전 OT 기록]의 '그때 권한 패키지'). 이번 정보로 다시 확인해서, 맞으면 이어 가고(회원이 같은 말을 들어야 믿는다)
+     바꾸면 why_fit 첫 문장에 이유를 적어라 — 이유는 회원 목표 · 일정 · 지난 반응 · 망설인 이유 같은 실제 기록이어야 한다.
+     이전 추천을 확인 없이 그대로 두지도, 이유 없이 더 큰 패키지로 바꾸지도 마라.` : ""}
    - why_fit: 이 패키지가 이 회원에게 맞는 이유(목적·불편·1차 관찰). 2문장 이내.
    - frequency: 권장 주간 빈도와 '왜 그 빈도인지' 근거. 1문장.
-   - duration: 권장 총 기간과 '왜 그 기간인지' 근거. 1문장.
-   - session_logic: frequency × duration으로 총 세션수를 역산해 pick_ref 패키지 회차가 왜 딱 맞는지 한 줄.
-     ★세션수는 pick_ref 패키지의 실제 sessions 값에 맞춰 역산(새 숫자 창작 금지). ★'가격(원)'은 값 텍스트에
+   - duration: 권장 총 기간과 '왜 그 기간인지' 근거. 기간 숫자는 '진행 계산(앱)'과 같게. 1문장.
+   - session_logic: pick_ref 패키지의 회차를 그 빈도로 하면 얼마나 걸리는지 '진행 계산(앱)' 숫자로 한 줄(기간을 넘기면 위 규칙대로).
+     ★세션수는 pick_ref 패키지의 실제 sessions 값 그대로(새 숫자 창작 금지). ★'가격(원)'은 값 텍스트에
      절대 쓰지 마라 — 금액은 앱이 목록에서 채운다. ※기간제(세션수 없음)면 '왜 이 기간'으로 대체.
-   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내.
+   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내 · 그 대안의 이용 기간 사정도 '진행 계산(앱)'대로 정직하게.
    - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
    ★가격 부담 신호(1차 관찰·quit_reason·trainer_note에 '비싸다/부담' 류)가 있으면 why_fit·session_logic에서
      '왜 이 투자가 합리적인지'(혼자 하다 멈춘 손실 대비·목표 도달 시간 단축 등)를 먼저 짚어 부담을 눅인 뒤 회차를
@@ -686,10 +1122,13 @@ function reregisterPrompt(member, ctx, packages = [], favorites = []) {
   const g3 = (v) => (v == null || v === "" ? "없음" : v);
   const recent = Array.isArray(c.recent_logs) ? c.recent_logs.filter(Boolean) : [];
   const pkgs = Array.isArray(packages) ? packages.filter(Boolean) : [];
+  // 진행 계산(2026-10-13) — 실제 수업 기록의 주 평균(화면이 계산해 보냄)은 '참고'로만 · 없으면 주 2 · 3회 두 경우.
+  const avgWk = Number(c.weekly_frequency);
+  const regFreqs = avgWk > 0 && avgWk <= 7 ? [{ f: avgWk, label: `지금까지 주 평균 ${avgWk}회` }] : paceFreqs(null);
   const pkgBlock = pkgs.length
     ? pkgs.map((p, i) => {
         const per = p.sessions ? Math.round(p.price / p.sessions) : null;
-        return `[${i}] name=${g3(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g3(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}`;
+        return `[${i}] name=${g3(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g3(p.duration_label)} · price=${Number(p.price).toLocaleString("ko-KR")}원${per ? ` · 회당=${per.toLocaleString("ko-KR")}원` : ""}${p.note ? ` · note=${p.note}` : ""}${paceText(p, regFreqs)}`;
       }).join("\n")
     : "등록된 패키지 없음";
   const j = c.journey || {};
@@ -712,9 +1151,9 @@ function reregisterPrompt(member, ctx, packages = [], favorites = []) {
 ` : "";
   const roundBlock = round >= 2 ? `
 [★이번이 ${round}번째 재등록 — 지난 재등록 이후를 중심으로]
- 이번 계약 기간(${g3(tp?.started)}부터): 진행 수업=${g3(tp?.sessions_done)}회
+${c.period_unavailable ? ` 이번 계약 기간 기록: 지금 확인하지 못했다. 이번 기간 숫자(진행 수업 · 인바디 · 무게)를 말하지 말고, 누적 숫자를 이번 기간 성과처럼 쓰지 마라.` : ` 이번 계약 기간(${g3(tp?.started)}부터): 진행 수업=${g3(tp?.sessions_done)}회
  이번 기간 인바디 변화=${tp?.inbody_change?.length ? tp.inbody_change.map((x) => `${x.label} ${x.first}→${x.latest}${x.unit || ""}`).join(", ") : "없음"}
- 이번 기간 운동 무게 변화=${tp?.weight_change?.length ? tp.weight_change.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}
+ 이번 기간 운동 무게 변화=${tp?.weight_change?.length ? tp.weight_change.map((x) => `${x.exercise} ${x.first}→${x.latest}kg`).join(", ") : "없음"}`}
  지난 재등록 때: 결과=${pr?.result ? RES_KO[pr.result] || pr.result : "기록 없음"}, 그때 만족도=${pr?.satisfaction?.level ? SAT_KO[pr.satisfaction.level] || pr.satisfaction.level : "없음"}${pr?.satisfaction?.quote ? ` · 회원이 한 말="${pr.satisfaction.quote}"` : ""}
  지난 재등록 때 약속한 다음 단계=${g3(pr?.next_roadmap)}
  지난 재등록 때 그린 앞으로의 모습=${g3(pr?.future_change)}
@@ -731,8 +1170,8 @@ ${gl ? `[숫자 목표 — 트레이너 확인 · 앱 계산] ${g3(gl.goal)} · 
 ` : ""}${ng ? `[★트레이너가 정한 다음 목표] "${String(ng.text).slice(0, 120)}"${ng.goal ? ` (숫자로: ${ng.goal})` : ""}
  ※ next_goal · next_roadmap · 요청의 '다음엔'은 이 목표를 그대로 쓴다. 다른 목표를 지어내지 마라. [현재 PT 방향/목표]는 이미 이 다음 목표로 바뀌어 있을 수 있다.
 ` : ""}` : "";
-  return `[상황·대전제] PT 재등록 대화 준비(재등록은 보통 '오늘 PT 수업 중'에 이뤄진다). 유일한 목적 =
-이 회원의 재등록 확률 극대화. 근거는 관찰(1차)이 아니라 '첫 수업부터 지금까지의 변화'와 '회원 만족도'다.
+  return `[상황·대전제] PT 재등록 대화 준비(재등록은 보통 '오늘 PT 수업 중'에 이뤄진다). 목적 =
+실제 관리 기록과 다음 목표를 바탕으로 분명한 재등록 제안을 준비하는 것. 근거는 관찰(1차)이 아니라 '첫 수업부터 지금까지의 변화'와 '회원 만족도'다.
 ★회원이 납득하는 순서: 그동안 이만큼 변했다(숫자) → 회원이 만족한 점 → 그래서 앞으로 무엇을 더 하고 →
 그러면 앞으로 무엇이 달라지는지 → 그 플랜(횟수·가격 이유) → 요청.
 재등록은 '새로 파는 것'이 아니라 '그동안 쌓은 만족·변화를 이어가는 것'. 트레이너가 30초에 훑어 외우고 오늘
@@ -741,6 +1180,7 @@ ${gl ? `[숫자 목표 — 트레이너 확인 · 앱 계산] ${g3(gl.goal)} · 
 [이 국면 특칙 — 대본 수위] 세일즈·운동 모두 '그대로 말할 실제 대사'까지. 숫자 처방(세트·횟수·각도·중량·
 템포)·의료 단정 금지. 없는 성과·에피소드 창작 금지(관리 데이터에 있는 것만).
 
+${REREG_FACT_RULE}
 [회원 기본정보] name=${g3(m.name)}, age=${g3(m.age)}, job=${g3(m.job)}, mbti=${g3(m.mbti)}, gender=${g3(m.gender)}, pain=${g3(m.pain)}, goal=${g3(m.goal)}
 [현재 PT 방향/목표] ${g3(m.pt_direction)}
 [PT 관리 데이터 — 유일 근거]
@@ -801,26 +1241,24 @@ ${closingSeqInstruction({
    - journey: '그동안의 여정' 장에서 꾸준함을 인정하는 한마디(숫자 반복 금지).
    - photo: 사진 장에서 한마디(사진이 없을 수 있으니 짧게 · 없으면 빈 문자열).
 
-⑤ sweetener(재등록 혜택 — '덤'으로만): 위 이유를 납득시킨 뒤 마지막에 얹을 가격/혜택 한 줄. PT 재등록은
-   보통 가격 혜택이 있으니 활용하되, ★이게 재등록의 '이유'를 대체하면 안 된다(이유가 메인, 혜택은 덤).
-   ⚠️구체 할인율·금액은 만들어내지 마라(트레이너가 현장에서 채움) — "회당 단가도 좀 더 챙겨드릴 수 있어요"
-   수준의 프레이밍까지만. 혜택 얹는 게 부자연스러우면 빈 문자열.
+⑤ sweetener(재등록 혜택 — '덤'으로만): 입력에 센터가 확인한 혜택 정보가 있을 때만 그 사실 한 줄(이유가 메인, 혜택은 덤).
+   ★지금 입력엔 확인된 혜택 정보가 없으니 빈 문자열로 둔다(할인 · 회당 단가 · 추가 서비스를 만들어 내지 마라 · 혜택은 트레이너가 현장에서 직접).
 
 ⑥ objection_defense(재등록 거절 선제 방어 5종): reason 키 고정 — money(금전) · sessions_left(수업 남아 나중에) ·
    low_effect(효과 체감 부족) · time(시간) · schedule(스케줄). 각: trigger(나올 신호) / defense(공감+세일즈 무브,
    반박 아님) / line(그대로 말할 대사). ⚠️low_effect는 방어가 아니라 '왜 아직인지 + 앞으로 어떻게'의 정직한 방향.
    ⚠️허위 긴급성·공포·죄책감 금지.
 
-[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 가장 맞는
-   1개(pick_ref)를 확신 있게 골라라. 재등록은 그동안의 관리 데이터로 '이어갈 근거'가 이미 있는 국면이라,
-   세션수·기간을 회원 상황에서 역산해 '왜 이 횟수가 맞는지' 반박 안 되는 근거를 만든다.
+[recommended_program — 추천 프로그램 + '왜 이 횟수' 근거] 위 [내 PT 패키지]에서 이 회원에게 맞는
+   1개(pick_ref)를 확신 있게 골라라. 재등록은 그동안의 관리 데이터로 '이어갈 근거'가 이미 있는 국면이라, '왜 이 횟수가 맞는지' 반박 안 되는 근거를 만든다.
+${laterPickRule("그동안의 기록 · 다음 목표 · 실제 수업 빈도로 다음 기간에 필요한 양을 정한다. '지금까지 주 평균'은 참고일 뿐 앞으로의 일정으로 확정하지 마라(앞으로 빈도는 회원과 같이 정한다는 말로).")}
    - why_fit: 이 패키지가 이 회원에게 맞는 이유(목적·불편·그동안의 관리 데이터). 2문장 이내.
-   - frequency: 권장 주간 빈도와 '왜 그 빈도인지' 근거(현재 운동 빈도 기준). 1문장.
-   - duration: 권장 총 기간과 '왜 그 기간인지' 근거. 1문장.
-   - session_logic: frequency × duration으로 총 세션수를 역산해 pick_ref 패키지 회차가 왜 딱 맞는지 한 줄.
-     ★세션수는 pick_ref 패키지의 실제 sessions 값에 맞춰 역산(새 숫자 창작 금지). ★'가격(원)'은 값 텍스트에
+   - frequency: 권장 주간 빈도와 '왜 그 빈도인지' 근거(지금까지 실제 빈도는 참고 · 앞으로 일정으로 확정하지 않음). 1문장.
+   - duration: 권장 총 기간과 '왜 그 기간인지' 근거. 기간 숫자는 '진행 계산(앱)'과 같게. 1문장.
+   - session_logic: pick_ref 패키지의 회차를 그 빈도로 하면 얼마나 걸리는지 '진행 계산(앱)' 숫자로 한 줄(기간을 넘기면 위 규칙대로).
+     ★세션수는 pick_ref 패키지의 실제 sessions 값 그대로(새 숫자 창작 금지). ★'가격(원)'은 값 텍스트에
      절대 쓰지 마라 — 금액은 앱이 목록에서 채운다. ※기간제(세션수 없음)면 '왜 이 기간'으로 대체.
-   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내.
+   - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내 · 그 대안의 이용 기간 사정도 '진행 계산(앱)'대로 정직하게.
    - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
 
 [member_read] 이 회원 그동안 어땠고 지금 재등록 국면을 한 줄로(앵커).
@@ -856,14 +1294,14 @@ ${SAY_STYLE}
 // ⚠️ 금액은 값 텍스트 금지(앱이 packages[ref].price 렌더). 거절방어·클로징시퀀스·member_read 등 내부요소 없음.
 //   n차(3차+)면 차수 문구를 따르고, 2차 이후 관찰(history[].observation) 중 가장 최근 것을 같이 근거로 넣는다(2026-10-12).
 //   2차(이전 관찰 없음)는 예전과 같은 프롬프트.
-function salesbookPrompt(member, report, recommendedProgram, packages, photoLabels, round = 2, history = []) {
+function salesbookPrompt(member, report, recommendedProgram, packages, photoLabels, round = 2, history = [], basis = null) {
   const m = member || {};
   const r = report || {};
   const n = Number.isInteger(round) && round >= 2 ? round : 2;
   const later = (Array.isArray(history) ? history : []).filter((h) => h && h.observation && typeof h.observation === "object" && h.round >= 2);
   const lastObs = later.length ? later[later.length - 1] : null;
   const laterBlock = later.length ? `
-[2차 이후 관찰 — 트레이너가 실제 남긴 기록 · 가장 최근 차수가 '오늘 확인한 것'의 첫째 근거]
+[2차 이후 관찰 — 트레이너가 실제 남긴 기록 · 가장 최근 차수가 '함께 확인한 것'의 첫째 근거]
 ${later.map((h) => `${h.round}차: ${JSON.stringify(h.observation)}`).join("\n")}
 ⚠️ 위 JSON 키도 내부 라벨이다. 값 텍스트에 영어 단어를 쓰지 마라.
 ` : "";
@@ -872,14 +1310,18 @@ ${later.map((h) => `${h.round}차: ${JSON.stringify(h.observation)}`).join("\n")
   // ⚠️ 세일즈북 pkgBlock은 금액(price·회당)을 넣지 않는다 — 회원 대면 + 숫자 세이프넷 부재라,
   //    "1,560,000원" 같은 금액이 값 텍스트에 새면 FIELD_TERMS(영어 키만 치환)가 못 잡아 그대로 노출된다.
   //    입력에서 아예 제거가 유일한 확실한 차단. sessions_label·meta엔 sessions·frequency·duration만 필요.
+  //    가격 '비교'만은 실제 저장된 가격에서 앱이 계산해 말로 넘긴다(총 결제 금액 · 회당 금액을 따로 · 금액 숫자는 없음 · 2026-10-13).
+  const cmp = priceCompare(pkgs);
   const pkgBlock = pkgs.length
     ? pkgs.map((p, i) =>
-        `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)}${p.note ? ` · note=${p.note}` : ""}`
+        `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)}${cmp[i] ? ` · 가격 비교(앱 계산)=${cmp[i]}` : ""}${p.note ? ` · note=${p.note}` : ""}`
       ).join("\n")
     : "등록된 패키지 없음";
   const labels = Array.isArray(photoLabels) ? photoLabels.filter(Boolean) : [];
   const labelBlock = labels.length ? labels.join(", ") : "없음(사진 미등록)";
-  return `[상황] 이 회원의 ${n}차 OT 준비 자료(세일즈북)다. 트레이너가 ${n}차 수업을 마친 뒤 회원에게 직접 보여준다.
+  return `[상황] 이 회원의 ${n}차 OT 세일즈북이다. ★만드는 시점 = ${n}차 수업 전(${n}차 대본을 만든 직후). 트레이너가 ${n}차 수업 끝 클로징 때 회원에게 보여준다.
+ - 근거 자료는 아래 [1차 관찰]${later.length ? " · [2차 이후 관찰]" : ""}(지난 OT에서 트레이너가 실제로 남긴 기록)뿐이다. 이 내용은 '지난 OT에서 ~' 시점으로 써라('오늘 ~' ❌).
+ - ${n}차 수업에서 일어날 변화 · 회원 반응은 아직 모른다. 만들어내지 마라.
 너는 회원이 볼 화면의 '텍스트'만 채운다. 폰트·구도·디자인은 이미 정해져 있다. 회원이 직접 읽으니 따뜻한 구어체로.
 
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
@@ -908,13 +1350,13 @@ ${JSON.stringify({
 [내 패키지 목록] (★이 목록에서만 참조. [n]=참조번호 · 회차 표시용 · ★금액은 값 텍스트 금지 — 앱이 채움)
 ${pkgBlock}
 
-[회원 사진 라벨] ${labelBlock}
+[회원 사진 라벨] ${labelBlock}${basisBlock(basis)}
 
 각 슬라이드 채우기:
 ① cover: subtitle 1줄(무엇을 정리한 자료인지, goal 톤). ※회원명·트레이너 정보·서명은 앱이 프로필에서 채우니 생성 금지.
 ② goal: headline(회원 목표를 회원 언어로 1줄) · body(왜 이 목표인지 배경 2문장, 관찰 기반) · current_issues(지금 겪는 것 3개, 짧은 명사구).
-③ confirmed(오늘 확인한 것 — ★트레이너 전문가 시선이 주인공): before(오늘 처음 상태 1줄, 작게) · after(자세 하나
-   잡아드린 뒤 1줄, 작게) · diagnosis('제가 본 원인' 1~2문장 · 트레이너 1인칭 — 왜 이런지·뭐가 관건인지. "제가 보니
+③ confirmed(함께 확인한 것 = 지난 OT에서 확인한 것 — ★트레이너 전문가 시선이 주인공): before(지난 OT 처음 상태 1줄, 작게 · 관찰 기록에 있을 때만,
+   없으면 "") · after(지난 OT에서 자세를 잡아 드린 뒤 달라진 점 1줄, 작게 · 관찰 기록에 그 변화가 있을 때만, 없으면 "" · 기록에 없는 변화를 만들지 마라) · diagnosis('제가 본 원인' 1~2문장 · 트레이너 1인칭 — 왜 이런지·뭐가 관건인지. "제가 보니
    원인은 ~"결) · approach('그래서 이렇게 바꿔드려요' 1~2문장 · 트레이너 1인칭 · 순서 언어. "닫힌 흉곽부터 열고 →
    등 감각 심고 → 어깨 라인 올리는 순서로 잡아드려요"결) · member_quote(${lastObs ? `${lastObs.round}차 관찰의 memberQuote, 없으면 1차 memberQuote` : "1차 memberQuote"} 있으면 그 말 그대로, 짧은
    보조 근거로만. 없으면 ""). ★diagnosis·approach는 회원 감상보다 '전문가 계획'을 앞세운다. "혼자선 못 잡는 지점을
@@ -922,24 +1364,37 @@ ${pkgBlock}
    자세·감각·순서 언어까지만.
 ④ photo_slide:
    - mode: goal이 자세교정·체중감량·체형처럼 '눈에 보이는 변화'면 "within_session"; 벌크업·근력·근비대처럼 '하루에 안 보이는 장기목표'면 "baseline".
-   - title·body: within_session이면 "눈으로도 달라졌어요"(세션 내 비포→애프터). baseline이면 "오늘을 시작점으로, 3개월 뒤 비교 기준"(가짜 성장 금지).
-   - points(3): within_session=함께 확인한 포인트 / baseline=우선 키울 타겟.
+   - ★너는 사진을 보지 않는다(이름표만 받는다). 사진 속 변화를 단정하지 마라("눈으로도 달라졌어요" · "좋아졌어요" · "확 달라졌죠" 금지).
+   - title·body: within_session이면 "사진으로 함께 비교해 봐요" 결(어디를 같이 볼지 안내). baseline이면 "지금을 시작점으로 남겨 두고, 나중에 같이 비교해요" 결(가짜 성장 금지).
+   - points(3): within_session=사진에서 함께 볼 곳(무엇이 달라졌는지가 아니라 어디를 비교할지) / baseline=우선 키울 타겟.
    - [회원 사진 라벨]이 '없음'이면 body에 '사진은 다음에 함께 남겨요' 톤 + points는 유지.
 ⑤ roadmap: 근시일 3단계(steps) + 중장기 3단계(longterm).
    - current_step(정수, 보통 1 · 근시일 steps 기준. longterm은 대상 아님).
    - steps[3] 각 {title · how(화면에 '어떻게?' 머리말이 붙는 1문장 · 이 단계에서 트레이너가 뭘 하는지 · 1인칭 순서 언어) ·
      feel(화면에 '이렇게!' 머리말이 붙는 1문장 · 회원이 느낄 변화 · 머리말은 쓰지 말 것)}. 지금 등록 구간에 실제로 할 것. goal 기반.
-   - longterm[3] 각 {title(짧게) · goal(한 줄 · 회원 최종 목표를 향한 중장기 단계 · 회원 향한 약속 톤)}.
+   - longterm[3] 각 {title(짧게) · goal(한 줄 · 회원 최종 목표를 향한 중장기 단계 · 함께 갈 방향 톤 · 결과 · 기한 보장 금지)}.
      steps 이후의 중장기 여정. ★마지막(6번째)은 '혼자서도 유지'처럼 자립·장기 목표 톤.
      longterm이 애매하면 무리해서 채우지 말고 goal에서 자연스럽게 이어지는 것만.
    - 전체 숫자 처방(세트·중량·각도)·의료 단정(치료·완치·진단명)·없는 결과 창작 금지.
 ⑥ plans[2]: A=추천 프로그램의 pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 패키지 1개 선택). 각
-   {ref(정수) · name(예 "집중 코스"/"기본 코스") · recommended(불린) · meta("주 N회 · 약 M개월" — A는 추천 프로그램의
-   frequency·duration에서, B는 더 가벼운 빈도) · sessions_label("함께 K회" — 패키지 sessions에서) · why(2문장,
-   session_logic을 회원 언어로) · includes[3](포함 서비스, 회원 전용공간 관리 포함)}. ★금액(원)은 값 텍스트에
-   절대 쓰지 마라 — 앱이 packages[ref].price(+ 회당=price/sessions)를 렌더한다. JSON엔 금액 없음.
-⑦ closing: services[4](제공 서비스 — 매 수업 점검·기록 / 홈케어 피드백 / 진행사진 / 회원 전용 공간에 기록 쌓기.
-   goal 톤) · vow(트레이너 다짐 1~2문장 — "등록 권유가 아니라 책임지겠다는 약속" 결. 손글씨로 렌더됨. ★판매 동사 금지).
+   {ref(정수) · name(코스 이름 · 예 "집중 코스"/"기본 코스" · 숫자를 넣지 마라) · recommended(불린) · meta(빈 문자열) ·
+   sessions_label(빈 문자열) · why(2문장 · session_logic을 회원 언어로 · ★회차 · 기간 · 빈도 숫자를 쓰지 마라) ·
+   includes[3](아래 [약속 · 서비스 규칙] 안에서만)}. ★meta · sessions_label(회차 · 빈도 · 이용 기간)은 앱이 실제 상품 설정으로
+   채운다(2026-10-13). ★금액(원)도 값 텍스트에 절대 쓰지 마라 — 앱이 packages[ref].price(+ 회당=price/sessions)를 렌더한다. JSON엔 금액 없음.
+   ★가격 이야기는 [내 패키지 목록]의 '가격 비교(앱 계산)' 값만 근거로, '총 결제 금액'과 '회당 금액'을 구분해서 써라.
+     회당 금액이 낮아도 총 결제 금액은 가장 높을 수 있다. "한 번에 드는 부담이 낮아요" · "부담이 적어요" · "저렴해요"처럼
+     총액인지 회당인지 모호한 말 금지. 가격 비교 값이 없으면 가격 이야기를 하지 마라.
+⑦ closing: services[3~4](제공 서비스 · goal 톤 · 아래 [약속 · 서비스 규칙] 안에서만 · 채울 게 없으면 3개) ·
+   vow(트레이너 다짐 1~2문장 · 손글씨로 렌더됨 · ★판매 동사 금지) — "등록 권유가 아니라, 등록하신 기간 동안 이렇게 함께하겠다는 약속" 결.
+   다짐의 내용은 결과가 아니라 트레이너가 실제로 할 관리 방식(대본의 관리 약속과 같은 쪽)이다. 진심 · 따뜻함은 살려라.
+   ★결과 · 기한 보장 금지: "여름 전 목표까지 책임질게요" · "5kg 꼭 빼 드릴게요" · "반드시 ~해 드릴게요" · "보장" 류,
+     이용 기간을 넘어서는 약속(목표 시점까지 · 끝까지 · 평생) 금지. 목표는 '함께 향해 가는 방향'으로만.
+
+[약속 · 서비스 규칙 — plans.includes · closing.services · vow 공통]
+ - 쓸 수 있는 것 = ① [대본과 같은 상담 방향]의 '트레이너의 관리 약속' ② PT 수업 안에서 원래 하는 것(매 수업 동작 · 자세 점검)
+   ③ 앱이 늘 제공하는 것: 매 수업 운동일지를 남겨 드리고 회원님이 직접 확인 · 회원 전용 페이지에서 운동 기록 · 인바디 · 무게 변화 확인.
+ - 그 밖의 서비스(홈케어 피드백 · 진행 사진 비교 · 식단 관리 · 카톡 관리 · 추가 상담 등)는 ①에 있을 때만. 새 약속 · 새 관리 방식을 만들지 마라.
+ - 앱 이름은 '회원 전용 페이지'('회원 전용 공간' · '회원 앱' 금지).
 
 [data_gaps] 관찰이 얇아도 위 전부 반드시 생성("정보 부족" 반환 금지). 긍정 코칭. 충실하면 빈 배열.
 [출력 언어] 한국어만. 영문 키/코드값 값 텍스트 노출 금지. 아래 JSON만 출력(설명·마크다운·코드펜스 금지).
@@ -950,8 +1405,8 @@ ${pkgBlock}
   "photo_slide": { "mode": "within_session", "title": "...", "body": "...", "points": ["...","...","..."] },
   "roadmap": { "current_step": 1, "steps": [ {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."}, {"title":"...","how":"...","feel":"..."} ], "longterm": [ {"title":"...","goal":"..."}, {"title":"...","goal":"..."}, {"title":"...","goal":"..."} ] },
   "plans": [
-    { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "주 2회 · 약 3개월", "sessions_label": "함께 24회", "why": "...", "includes": ["...","...","..."] },
-    { "ref": 2, "name": "기본 코스", "recommended": false, "meta": "주 1회 · 약 3개월", "sessions_label": "함께 12회", "why": "...", "includes": ["...","...","..."] }
+    { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "", "sessions_label": "", "why": "...", "includes": ["...","...","..."] },
+    { "ref": 2, "name": "기본 코스", "recommended": false, "meta": "", "sessions_label": "", "why": "...", "includes": ["...","...","..."] }
   ],
   "closing": { "services": ["...","...","...","..."], "vow": "..." },
   "data_gaps": []
@@ -1022,7 +1477,7 @@ ${pkgBlock}
 // ⑦ phase="reg_salesbook" user 프롬프트 — 재등록 회원 대면 세일즈북. 독자=회원 본인.
 // ⚠️ 숫자(변화량·횟수·무게·금액)는 앱이 데이터에서 렌더한다. 너는 그 숫자를 '해석·프레이밍'하는 텍스트만.
 // ⚠️ 표에 나올 수치를 값 텍스트에 새 숫자로 만들지 마라(주어진 change 요약 범위에서만 언급). 금액 금지.
-function regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels) {
+function regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels, extra = {}) {
   const m = member || {};
   const ch = change || {};
   const rp = recommendedProgram || {};
@@ -1034,8 +1489,9 @@ function regSalesbookPrompt(member, change, recommendedProgram, packages, photoL
   return `[상황] 이 회원의 '재등록 세일즈북'이다. 트레이너가 오늘 PT 수업 중/후에 회원에게 직접 보여준다.
 너는 회원이 볼 화면의 '텍스트'만 채운다. 숫자(변화량·횟수·무게·금액)는 앱이 데이터에서 직접 렌더하니 만들지 마라.
 회원이 직접 읽으니 따뜻한 구어체로. ★핵심: 그동안의 변화를 확실히 인정해주되, '다 됐다'가 아니라 '여기까지가 토대,
-지금부터가 본론'으로 프레이밍(멈추면 되돌아감 · 남은 단계가 진짜). 판매 압박·공포·죄책감·허위 긴급성 금지.
+지금부터가 본론'으로 프레이밍(남은 단계가 진짜 · '멈추면 되돌아갈 수 있다'는 이 회원 기록에 근거가 있을 때만). 판매 압박·공포·죄책감·허위 긴급성 금지.
 
+${REREG_FACT_RULE}
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
 [현재 PT 방향/목표] ${g(m.pt_direction)}
 
@@ -1054,24 +1510,25 @@ ${JSON.stringify({ pick_ref: rp.pick_ref ?? null, alt_ref: rp.alt_ref ?? null, f
 [내 패키지 목록] (★이 목록에서만 참조 · [n]=참조번호 · ★금액 값 텍스트 금지 — 앱이 채움)
 ${pkgBlock}
 
-[회원 사진 라벨] ${labels.length ? labels.join(", ") : "없음(사진 미등록)"}
+[회원 사진 라벨] ${labels.length ? labels.join(", ") : "없음(사진 미등록)"}${basisBlock(extra.basis)}${regPeriodBlock(extra.period)}
 
 각 슬라이드 채우기:
 ① cover.subtitle: 1줄(그동안의 변화 + 앞으로의 방향 톤). ※회원명·트레이너·서명은 앱이 채움.
 ② journey: headline(그동안의 여정 1줄 · 위 기간/횟수 데이터 존중) · sub(꾸준함이 이미 몸에 남았다는 인정 1줄).
 ③ change: title("숫자로 확인된 변화" 결) · sub(표를 보기 전 한 줄) · caption(★표 아래 프레이밍 1~2문장 —
-   위 변화 요약에서 가장 큰 성과 1개를 짚어 '이게 토대, 지금부터 본론'으로. 근육은 멈추면 먼저 빠진다는 사실 활용 가능.
+   위 변화 요약에서 가장 큰 성과 1개를 짚어 '이게 토대, 지금부터 본론'으로. '쉬면 줄어들 수 있다' 같은 일반 설명은 이 회원 숫자를 짚은 뒤 한 번만 · 겁주는 말로 쓰지 마라.
    ★표에 없는 새 숫자 만들지 말 것. 있는 값만 언급).
 ④ photo: title·body(비포애프터 사진 대면용 1줄+1줄. 라벨 '없음'이면 body에 '사진 이제부터 함께 남겨요' 톤).
 ⑤ roadmap: current_step(정수 · 지금 어느 단계인지 · 보통 2~3) · stages[4] 각 {title(짧게) · desc(1줄 · 이 단계에서
    무엇을 · 회원 향한 톤)}. ★1~current는 '해온 것', current는 '진행중', 이후는 '앞으로'. 마지막은 '혼자서도 유지·자립'.
    숫자 처방·의료 단정 금지.
-⑥ fork: stop[3](지금 멈추면 잃는 것 — 사실 기반 손실, 근육·감각·리듬 되돌아감) · go[3](이어가면 얻는 것 — 남은 단계 진입).
+⑥ fork: stop(1~3개 · 지금 멈추면 잃을 수 있는 것 — 위 [그동안의 변화 요약] · 이번 기간 기록에 근거가 있는 것만(예: 기록에 있는 무게 · 지표 · 꾸준히 온 리듬).
+   기록에 근거가 하나뿐이면 1개만 쓴다 · 일반론으로 개수를 채우지 마라 · '~수도 있어요' 결) · go[3](이어가면 할 것 · 다음 목표 쪽 — 남은 단계 진입).
    ⚠️허위 긴급성·공포 금지 · 정직한 사실로만.
-⑦ plans[2]: A=pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 1개). 각 {ref(정수) · name · recommended(불린) ·
-   meta("주 N회 · 약 M개월") · sessions_label("함께 K회") · why(2문장 · session_logic을 회원 언어로) · includes[3]}.
-   ★금액(원) 값 텍스트 금지 — 앱이 채움.
-⑧ closing: services[4](제공 서비스 · goal 톤) · vow(트레이너 약속 1~2문장 · 손글씨 렌더 · 판매 동사 금지).
+⑦ plans[2]: A=pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 1개). 각 {ref(정수) · name(숫자를 넣지 마라) · recommended(불린) ·
+   meta(빈 문자열) · sessions_label(빈 문자열) · why(2문장 · session_logic을 회원 언어로 · ★회차 · 기간 · 빈도 숫자를 쓰지 마라) · includes[3](PT 수업 안에서 원래 하는 것만 · 새 서비스 · 혜택 금지)}.
+   ★meta · sessions_label(회차 · 이용 기간)은 앱이 실제 상품 설정으로 채운다(2026-10-13). ★금액(원) 값 텍스트 금지 — 앱이 채움.
+⑧ closing: services[4](제공 서비스 · goal 톤 · PT 수업 안에서 원래 하는 것과 정해진 관리 약속만) · vow(트레이너 약속 1~2문장 · 손글씨 렌더 · 판매 동사 금지).
 
 [data_gaps] 데이터 얇아도 위 전부 생성("정보 부족" 금지). 긍정 코칭. 충실하면 빈 배열.
 [출력 언어] 한국어만. 영문 키/코드값 값 텍스트 노출 금지. 아래 JSON만(설명·마크다운·코드펜스 금지).
@@ -1081,10 +1538,10 @@ ${pkgBlock}
   "change": { "title": "...", "sub": "...", "caption": "..." },
   "photo": { "title": "...", "body": "..." },
   "roadmap": { "current_step": 2, "stages": [ {"title":"...","desc":"..."}, {"title":"...","desc":"..."}, {"title":"...","desc":"..."}, {"title":"...","desc":"..."} ] },
-  "fork": { "stop": ["...","...","..."], "go": ["...","...","..."] },
+  "fork": { "stop": ["기록에 근거한 것만 1~3개"], "go": ["...","...","..."] },
   "plans": [
-    { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "주 2회 · 약 3개월", "sessions_label": "함께 24회", "why": "...", "includes": ["...","...","..."] },
-    { "ref": 2, "name": "기본 코스", "recommended": false, "meta": "주 1회 · 약 3개월", "sessions_label": "함께 12회", "why": "...", "includes": ["...","...","..."] }
+    { "ref": 0, "name": "집중 코스", "recommended": true, "meta": "", "sessions_label": "", "why": "...", "includes": ["...","...","..."] },
+    { "ref": 2, "name": "기본 코스", "recommended": false, "meta": "", "sessions_label": "", "why": "...", "includes": ["...","...","..."] }
   ],
   "closing": { "services": ["...","...","...","..."], "vow": "..." },
   "data_gaps": []
@@ -1675,7 +2132,7 @@ export async function POST(request) {
     return Response.json({ error: BAD_REQUEST }, { status: 413 });
   }
 
-  const { phase, member: rawMember, report, ptContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save } = body || {};
+  const { phase, member: rawMember, report, ptContext, packages, favorites, inbody, posture, closingCases, caseTier, recommendedProgram, photoLabels, change, round, history, save, scriptRef, regPeriod } = body || {};
   if (phase !== "first" && phase !== "second" && phase !== "reregister" && phase !== "salesbook" && phase !== "reg_salesbook" && phase !== "first_salesbook" && phase !== "inbody" && phase !== "posture" && phase !== "roadmap") {
     return Response.json({ error: BAD_REQUEST }, { status: 400 });
   }
@@ -1698,6 +2155,11 @@ export async function POST(request) {
     : phase === "reregister" ? `rereg:${typeof save?.contractId === "string" ? save.contractId : once}`
     : usageKind === "inbody" ? `inbody:${once}:${inbody?.latest?.id || inbody?.latest?.measured_at || phase}`
     : phase === "roadmap" ? `roadmap:${once}` : `sb:${phase}:${once}`;
+  // 저장 대상 확인(2026-10-13) — 대본 · 세일즈북을 저장할 회원 · 계약이 이 요청의 회원 것인지, AI 한도를 잡기 전에 본다.
+  //   불일치 · 없는 회원 · 계약 · 다른 센터면 400(한도 · AI 호출 · 저장 모두 없음). 서버 이어 만들기(follow)도 이걸 통과한 요청에서만 돈다.
+  if (!(await saveTargetOk((request.headers.get("authorization") || "").replace(/^Bearer /, "") || null, save, mid).catch(() => false))) {
+    return Response.json({ error: BAD_REQUEST }, { status: 400 });
+  }
   const admin = adminClient();
   const slot = await reserveAi(admin, { userId: auth.user?.id, kind: usageKind, unitKey, memberId: mid });
   if (!slot.ok) return quotaResponse(slot);
@@ -1711,12 +2173,33 @@ export async function POST(request) {
   const model = REPORT_PHASES.has(phase) ? MODEL_REPORT : MODEL_FAST;
   // 별표한 운동자료 — 1차 · 2차+ · 재등록 공용(번호 [fn]이 lib_ref(s)로 돌아오니 화면도 같은 순서로 보낸다).
   const boundedFavs = Array.isArray(favorites) ? favorites.filter(Boolean).slice(0, 30) : [];
+  // 화면에서 다시 만드는 세일즈북(2026-10-13 · 3단계) — 저장된 대본을 트레이너 토큰으로 읽어 같은 상담 방향(scriptBasis)을 넘긴다.
+  //   2차 = save(kind ot · 회원 · 차수) · 재등록 = scriptRef(kind contract · 계약). 못 읽으면(옛 회원 · 대본 없음) 예전 프롬프트 그대로.
+  const bookScript = phase === "salesbook" || phase === "reg_salesbook"
+    ? await loadSavedScript((request.headers.get("authorization") || "").replace(/^Bearer /, "") || null, phase === "salesbook" ? save : scriptRef, member?.id).catch(() => null)
+    : null;
+  const bookBasis = scriptBasis(bookScript);
+  const bookRp = recommendedProgram || bookScript?.recommended_program || null;   // 화면이 안 보냈으면 저장된 대본의 추천
+  // 이번 계약 기간(B+C · 2026-10-13) — 재등록 대본 · 서버 이어 만드는 세일즈북 · 화면 재생성 세일즈북 모두 서버가 기록에서 계산한 한 값.
+  //   화면이 보낸 regPeriod · ptContext.this_period는 쓰지 않는다. 계산 못 하면(조회 실패 · 이 회원 계약 아님) 그 숫자는 빼고 만든다.
+  const periodContractId = phase === "reregister" && save?.kind === "contract" ? save.contractId
+    : phase === "reg_salesbook" && scriptRef?.kind === "contract" ? scriptRef.contractId : null;
+  const srvPeriod = periodContractId
+    ? await loadContractPeriod((request.headers.get("authorization") || "").replace(/^Bearer /, "") || null, mid, periodContractId).catch(() => ({ ok: false }))
+    : null;
+  const periodForBook = srvPeriod?.ok && srvPeriod.period ? cleanPeriod({ round: srvPeriod.round, ...srvPeriod.period }) : null;
+  const bookPeriod = phase === "reg_salesbook" ? periodForBook : null;
+  // 재등록 대본에 넘기는 ptContext — this_period · round는 서버 값으로 바꾼다(계산 실패면 this_period 없음 + '확인 못 함' 표시).
+  //   대본과 세일즈북이 글자까지 같은 숫자를 쓰게 둘 다 cleanPeriod를 거친 값(소수 한 자리 등)을 쓴다.
+  const regCtx = phase !== "reregister" ? ptContext
+    : srvPeriod?.ok ? { ...(ptContext || {}), round: srvPeriod.round, this_period: periodForBook ? (({ round: _r, ...rest }) => rest)(periodForBook) : null }
+    : { ...(ptContext || {}), this_period: null, ...(srvPeriod ? { period_unavailable: true } : {}) };
   const basePrompt =
     phase === "first" ? firstPrompt(member, packages, boundedFavs)
     : phase === "second" ? secondPrompt(member, report, boundedCases, caseTier, packages, otRound, boundedHistory, boundedFavs)
-    : phase === "reregister" ? reregisterPrompt(member, ptContext, packages, boundedFavs)
-    : phase === "salesbook" ? salesbookPrompt(member, report, recommendedProgram, packages, photoLabels, otRound, boundedHistory)
-    : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, recommendedProgram, packages, photoLabels)
+    : phase === "reregister" ? reregisterPrompt(member, regCtx, packages, boundedFavs)
+    : phase === "salesbook" ? salesbookPrompt(member, report, bookRp, packages, photoLabels, otRound, boundedHistory, bookBasis)
+    : phase === "reg_salesbook" ? regSalesbookPrompt(member, change, bookRp, packages, photoLabels, { basis: bookBasis, period: bookPeriod })
     : phase === "first_salesbook" ? firstSalesbookPrompt(member, report, recommendedProgram, packages)
     : phase === "inbody" ? inbodyPrompt(member, inbody)
     : phase === "roadmap" ? roadmapPrompt(member, ptContext)
@@ -1785,7 +2268,17 @@ export async function POST(request) {
     const REQUIRED_POSTURE = ["headline", "findings", "exercise", "lifestyle", "why_now"];
     const reqKeys = phase === "first" ? REQUIRED_FIRST : phase === "second" ? REQUIRED_SECOND : phase === "reregister" ? REQUIRED_REREG : phase === "salesbook" ? REQUIRED_SALESBOOK : phase === "reg_salesbook" ? REQUIRED_REG_SALESBOOK : phase === "first_salesbook" ? REQUIRED_FIRST_SALESBOOK : phase === "inbody" ? REQUIRED_INBODY : phase === "posture" ? REQUIRED_POSTURE : phase === "roadmap" ? REQUIRED_ROADMAP : [];
     let brief;
-    try { brief = attachLibSnapshots(attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase)), packages), boundedFavs); }
+    try {
+      let parsed = tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase));
+      // 재등록 안전망(2026-10-13) — 출석 절대 표현은 '꾸준히'로 · 혜택(sweetener)은 확인된 혜택 정보를 받는 곳이 아직 없어 비운다(AI가 만든 혜택 약속 방지).
+      if (phase === "reregister" || phase === "reg_salesbook") parsed = softenAttendance(parsed);
+      if (phase === "reregister" && typeof parsed.sweetener === "string") parsed.sweetener = "";
+      // 화면에서 다시 만드는 세일즈북도 플랜 숫자는 실제 상품 설정으로(2026-10-13 · 서버 이어 만들기와 같은 함수).
+      const aligned = phase === "salesbook" ? neutralPhotoSlide(alignPlans(parsed, bookRp, packages, member?.weekly_freq), photoLabels)
+        : phase === "reg_salesbook" ? alignPlans(parsed, bookRp, packages, null) : parsed;
+      brief = attachLibSnapshots(attachPkgSnapshots(aligned, packages), boundedFavs);
+      if (phase === "salesbook") brief = guardSalesbook(brief, packages, bookBasis);   // 2차 세일즈북 약속 · 가격 안전망(2026-10-13)
+    }
     catch (e) { await finishAi(admin, slot.id, { ok: false, model, usage: msg.usage }); throw e; }   // 결과가 깨지면 안 셈(원가는 기록)
     await finishAi(admin, slot.id, { ok: true, model, usage: msg.usage });
     console.log(`[ot-brief] 생성 완료 · phase=${phase} · model=${model} · ${Math.round((Date.now() - t0) / 1000)}s · 출력 ${msg.usage?.output_tokens ?? "?"}토큰`);
@@ -1819,15 +2312,22 @@ export async function POST(request) {
       msg = await anthropic.messages.create({
         model: MODEL_FAST, max_tokens: 4096, system: SALESBOOK_PREAMBLE, thinking: thinkingFor(MODEL_FAST),
         messages: [{ role: "user", content: isRereg
-          ? regSalesbookPrompt(member, change, brief?.recommended_program, packages, photoLabels)
+          ? regSalesbookPrompt(member, change, brief?.recommended_program, packages, photoLabels, {
+              basis: scriptBasis(brief),
+              // 두 번째 이상 재등록 — 대본에 넣은 이번 계약 기간(서버가 기록에서 계산)을 세일즈북도 같이 받는다
+              period: periodForBook,   // 대본에 넣은 것과 같은 서버 계산값(화면이 보낸 숫자 아님)
+            })
           : isFirst
           ? firstSalesbookPrompt(member, brief, brief?.recommended_program, packages)
-          : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels, otRound, boundedHistory) }],
+          : salesbookPrompt(member, report, brief?.recommended_program, packages, photoLabels, otRound, boundedHistory, scriptBasis(brief)) }],
       }, { timeout: leftFollow, signal: AbortSignal.timeout(leftFollow) });
       const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       const keys = isRereg ? ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"]
         : isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
-      sbOut = attachPkgSnapshots(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), packages);
+      // 플랜 장 = 방금 저장한 대본의 추천 · 대안 패키지와 실제 상품 설정으로(2026-10-13 · alignPlans)
+      const sbAligned = alignPlans(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), brief?.recommended_program, packages, isRereg ? null : member?.weekly_freq);
+      sbOut = attachPkgSnapshots(isRereg ? softenAttendance(sbAligned) : neutralPhotoSlide(sbAligned, photoLabels), packages);
+      if (!isRereg && !isFirst) sbOut = guardSalesbook(sbOut, packages, scriptBasis(brief));   // 2차 세일즈북 약속 · 가격 안전망(2026-10-13)
     } catch (e) {
       await finishAi(admin, sbSlot.id, { ok: false, model: MODEL_FAST, usage: msg?.usage });
       throw e;

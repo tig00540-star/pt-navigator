@@ -6,7 +6,7 @@
 //   PATCH { app, token, answers, health } → { ok, health } | { error }   (2단계 이어 적기 · 질문 하나 누를 때마다 · 24시간)
 import { createClient } from "@supabase/supabase-js";
 import { CONSENT_VERSION } from "@/lib/consent";
-import { WEEKLY_OPTS, LEAD_SOURCES, HEALTH_SCREEN_ITEMS, TRAINER_GENDER_OPTS } from "@/lib/memberOptions";
+import { WEEKLY_OPTS, LEAD_SOURCES, HEALTH_SCREEN_ITEMS, TRAINER_GENDER_OPTS, OT_PURPOSE_OPTS } from "@/lib/memberOptions";
 import { formatSlots, slotDays } from "@/lib/slots";
 import { after } from "next/server";
 import { sendPush, ownerIds } from "@/lib/pushServer";
@@ -53,6 +53,7 @@ function cleanAnswers(a = {}, health = false) {
   if ("weekly_freq" in a && WEEKLY_OPTS.some(([v]) => v === a.weekly_freq)) out.weekly_freq = a.weekly_freq;
   if ("lead_source" in a && LEAD_SOURCES.includes(a.lead_source)) out.lead_source = a.lead_source;
   if ("pref_trainer_gender" in a && TRAINER_GENDER_OPTS.some(([v]) => v === a.pref_trainer_gender)) out.pref_trainer_gender = a.pref_trainer_gender;
+  if ("ot_purpose" in a && OT_PURPOSE_OPTS.some(([v]) => v === a.ot_purpose)) out.ot_purpose = a.ot_purpose;
   if (health) {
     for (const k of HEALTH_KEYS) if (k in a) out[k] = clip(a[k], 120);
     const h = a.health_screen;

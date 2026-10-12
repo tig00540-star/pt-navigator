@@ -19,10 +19,11 @@ import { BookOpen, Check, Eye, Heart, RefreshCw, Flag } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
 import { remainingSessions, reregisterDue, reregRound } from "@/lib/memberStatus";
-import { buildExerciseSeries } from "@/lib/workout";
-import { INBODY_FIELDS, REG_REASON_OPTS } from "@/lib/labels";
+import { REG_REASON_OPTS } from "@/lib/labels";
+import { dayOf, realDone, inbodyChange, weightChange } from "@/lib/regPeriod";
 import RegSalesbookView from "@/components/views/RegSalesbookView";
 import { loadPackagesFor } from "@/components/salesbook/DeckLauncher";
+import { regBookSlides } from "@/components/salesbook/deck";
 import ReRegReadiness from "@/components/pt/ReRegReadiness";
 import { goalContext } from "@/lib/ptGoal";
 import RegistrationHistory from "@/components/pt/RegistrationHistory";
@@ -53,8 +54,6 @@ const RESULTS = [
 ];
 
 const roundLabel = (i) => (i <= 0 ? "첫 재등록" : `${i + 1}번째 재등록`);
-const dayOf = (l) => String(l.session_at ?? l.created_at ?? "").slice(0, 10);
-const realDone = (l) => l && !l.voided && l.source !== "noshow"; // '진행 수업' = voided·노쇼 제외(CLAUDE.md 숫자 기준)
 
 function Chip({ on, onClick, disabled, children }) {
   return (
@@ -65,32 +64,7 @@ function Chip({ on, onClick, disabled, children }) {
   );
 }
 
-// 인바디 첫↔최신(지표별). rows는 measured_at 오름차순. since(YYYY-MM-DD)가 있으면 '그날 기준'부터:
-//   기준값 = 그날 이전 마지막 측정(없으면 기간 안 첫 측정), 최신값 = 기간 안 마지막 측정.
-function inbodyChange(rows, since = null) {
-  return INBODY_FIELDS.map((f) => {
-    const withVal = rows.filter((r) => r[f.key] != null);
-    let base, last;
-    if (since) {
-      const before = withVal.filter((r) => String(r.measured_at ?? "").slice(0, 10) < since);
-      const inside = withVal.filter((r) => String(r.measured_at ?? "").slice(0, 10) >= since);
-      base = before.at(-1) || inside[0];
-      last = inside.at(-1);
-    } else {
-      base = withVal[0];
-      last = withVal.at(-1);
-    }
-    const first = base?.[f.key] ?? null;
-    const latest = last?.[f.key] ?? null;
-    return (base && last && base !== last && first != null && latest != null && first !== latest)
-      ? { key: f.key, label: f.label, unit: f.unit, goodDir: f.goodDir, first, latest } : null;
-  }).filter(Boolean);
-}
-
-const weightChange = (logs) => buildExerciseSeries(logs)
-  .map((s) => ({ exercise: s.exercise, first: s.points[0]?.topWeight ?? null, latest: s.points.at(-1)?.topWeight ?? null }))
-  .filter((e) => e.first != null && e.latest != null && e.first !== e.latest)
-  .slice(0, 5);
+// 인바디 변화 · 무게 변화 · 진행 수업 판정은 lib/regPeriod(2026-10-13 · 서버가 재등록 대본 · 세일즈북에 같은 계산을 쓰도록 옮김 · 내용 무변).
 
 export default function PtReRegTab({ member, contracts, setContracts, logs, onMemberPatch }) {
   const { toast, showToast } = useToast();
@@ -119,6 +93,23 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
   const [sbGenerating, setSbGenerating] = useState(false);
   const [sbErr, setSbErr] = useState("");
   const [sbOpen, setSbOpen] = useState(false);
+  // 회원 사진 이름표 — 재등록 세일즈북의 사진 장이 생기는지(처음 · 지금 짝 · RegSalesbookView와 같은 최근 12장).
+  //   대본 '세일즈북 장 순서대로 전부 보기'가 없는 사진 장을 소개하지 않게(2026-10-13). 못 읽으면 null = 예전처럼 다 보여 줌.
+  const [bookPhotoLabels, setBookPhotoLabels] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase || !member?.id) return;
+      try {
+        const { data, error } = await supabase.from("member_photo").select("label").eq("user_id", member.id)
+          .order("taken_on", { ascending: false }).limit(12);
+        if (!cancelled) setBookPhotoLabels(error ? null : (data || []).map((p) => p.label).filter(Boolean));
+      } catch {
+        if (!cancelled) setBookPhotoLabels(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [member?.id]);
   const [satLevel, setSatLevel] = useState("");
   const [satQuote, setSatQuote] = useState("");
   const [satSaving, setSatSaving] = useState(false);
@@ -441,7 +432,10 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
       const res = await fetch("/api/ot-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ phase: "reg_salesbook", member, change: changeData, recommendedProgram: rp, packages, photoLabels }),
+        // 3단계(2026-10-13): 서버가 이 계약의 저장된 대본에서 상담 방향을 읽고(scriptRef) · 두 번째 이상 재등록이면 이번 계약 기간 숫자를 따로(regPeriod)
+        body: JSON.stringify({ phase: "reg_salesbook", member, change: changeData, recommendedProgram: rp, packages, photoLabels,
+          scriptRef: { kind: "contract", contractId: cur.id },
+          regPeriod: curIdx >= 1 && thisPeriod ? { round: curIdx + 1, ...thisPeriod } : null }),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); console.error("재등록 세일즈북 실패", d); setSbErr(d.error || "세일즈북을 만들지 못했어요. 다시 시도해 주세요."); return; }
       const data = await res.json();
@@ -550,7 +544,8 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
             <span>{new Date(regBriefMeta.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}에 만들었어요</span>
           )}
         >
-          {regBrief && <PrepReport kind="reregister" data={regBrief} packages={packages} favorites={favorites} highlightReason={regReason} onOpenBook={regSb || isCurrent ? openBook : null} />}
+          {regBrief && <PrepReport kind="reregister" data={regBrief} packages={packages} favorites={favorites} highlightReason={regReason} onOpenBook={regSb || isCurrent ? openBook : null}
+            weeklyAvg={changeData.journey.weekly_frequency} bookSlides={regBookSlides(regSb, bookPhotoLabels)} />}
         </AIBriefBlock>
       )}
 

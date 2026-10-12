@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { ChevronDown, Dumbbell, ExternalLink, Flag, History, MessageCircle, ShieldCheck, Sparkles, BookText, TrendingUp, Route } from "lucide-react";
 import ClosingSequence from "@/components/ui/ClosingSequence";
+import { periodNote, periodNoteAvg } from "@/lib/pkgPace";
 import { won, wonApprox } from "@/lib/format";
 import Emph, { plainText } from "@/components/ui/Emph";
 import { resolvePkg } from "@/lib/pkgRef";
@@ -80,33 +81,33 @@ function More({ label = "자세히", children }) {
    세일즈북이 없으면(onOpenBook 없음 · 지난 회차 등) 장 이름 칸 · 화면 안내는 숨기고 순서 · 대사만. */
 const BOOK_FLOW = {
   second: [
-    { slide: "표지", label: "시작", from: "open" },
-    { slide: "당신의 목표", label: "되짚기", seq: "echo", alt: "goal" },
-    { slide: "오늘 함께 확인한 것", label: "회원이 말하게", seq: "trial_close" },
-    { slide: "오늘 함께 확인한 것", label: "왜 PT가 필요한지", seq: "stakes" },
-    { slide: "오늘 함께 확인한 것", label: "쉽게 말하면", metaphor: true },
-    { slide: "이런 변화를 만들어요", label: "한마디", from: "cases", act: "숫자는 화면이 말하게 2~3초 두기" },
-    { slide: "여기까지 함께 갑니다", label: "앞으로", seq: "next_goal", alt: "roadmap" },
-    { slide: "추천 플랜", label: "추천 플랜", seq: "plan_pitch", price: true },
-    { slide: "약속드릴게요", label: "약속", promise: true },
-    { slide: "약속드릴게요", label: "요청", seq: "ask", ask: true, hold: true },
-    { slide: "약속드릴게요", label: "웃으며 한마디", seq: "nudge" },
-    { slide: "약속드릴게요", label: "망설이면", seq: "flush" },
+    { slide: "표지", key: "cover", label: "시작", from: "open" },
+    { slide: "당신의 목표", key: "goal", label: "되짚기", seq: "echo", alt: "goal" },
+    { slide: "함께 확인한 것", key: "confirmed", label: "회원이 말하게", seq: "trial_close" },
+    { slide: "함께 확인한 것", key: "confirmed", label: "왜 PT가 필요한지", seq: "stakes" },
+    { slide: "함께 확인한 것", key: "confirmed", label: "쉽게 말하면", metaphor: true },
+    { slide: "이런 변화를 만들어요", key: "case", label: "한마디", from: "cases", act: "숫자는 화면이 말하게 2~3초 두기" },
+    { slide: "여기까지 함께 갑니다", key: "roadmap", label: "앞으로", seq: "next_goal", alt: "roadmap" },
+    { slide: "추천 플랜", key: "plans", label: "추천 플랜", seq: "plan_pitch", price: true },
+    { slide: "약속드릴게요", key: "closing", label: "약속", promise: true },
+    { slide: "약속드릴게요", key: "closing", label: "요청", seq: "ask", ask: true, hold: true },
+    { slide: "약속드릴게요", key: "closing", label: "웃으며 한마디", seq: "nudge" },
+    { slide: "약속드릴게요", key: "closing", label: "망설이면", seq: "flush" },
   ],
   reregister: [
-    { slide: "표지", label: "시작", from: "open" },
-    { slide: "그동안의 여정", label: "인정", from: "journey" },
-    { slide: "그동안의 여정", label: "되짚기", seq: "echo" },
-    { slide: "숫자로 확인된 변화", label: "회원이 말하게", seq: "trial_close", act: "회원이 직접 고르게 하고, 고른 걸 끝까지 짚어요" },
-    { slide: "사진 기록", label: "한마디", from: "photo" },
-    { slide: "지금 어디까지 · 앞으로", label: "다음 목표", seq: "next_goal", alt: "roadmap" },
-    { slide: "지금 멈추면 · 이어가면", label: "왜 지금 이어가야 하나", seq: "stakes" },
-    { slide: "지금 멈추면 · 이어가면", label: "쉽게 말하면", metaphor: true },
-    { slide: "추천 플랜", label: "추천 플랜", seq: "plan_pitch", price: true },
-    { slide: "추천 플랜", label: "혜택(덤)", sweet: true },
-    { slide: "약속드릴게요", label: "약속", promise: true },
-    { slide: "약속드릴게요", label: "요청", seq: "ask", ask: true, hold: true },
-    { slide: "약속드릴게요", label: "망설이면", seq: "flush" },
+    { slide: "표지", key: "cover", label: "시작", from: "open" },
+    { slide: "그동안의 여정", key: "journey", label: "인정", from: "journey" },
+    { slide: "그동안의 여정", key: "journey", label: "되짚기", seq: "echo" },
+    { slide: "숫자로 확인된 변화", key: "change", label: "회원이 말하게", seq: "trial_close", act: "회원이 직접 고르게 하고, 고른 걸 끝까지 짚어요" },
+    { slide: "사진 기록", key: "photo", label: "한마디", from: "photo" },
+    { slide: "지금 어디까지 · 앞으로", key: "roadmap", label: "다음 목표", seq: "next_goal", alt: "roadmap" },
+    { slide: "지금 멈추면 · 이어가면", key: "fork", label: "왜 지금 이어가야 하나", seq: "stakes" },
+    { slide: "지금 멈추면 · 이어가면", key: "fork", label: "쉽게 말하면", metaphor: true },
+    { slide: "추천 플랜", key: "plans", label: "추천 플랜", seq: "plan_pitch", price: true },
+    { slide: "추천 플랜", key: "plans", label: "혜택(덤)", sweet: true },
+    { slide: "약속드릴게요", key: "closing", label: "약속", promise: true },
+    { slide: "약속드릴게요", key: "closing", label: "요청", seq: "ask", ask: true, hold: true },
+    { slide: "약속드릴게요", key: "closing", label: "망설이면", seq: "flush" },
   ],
 };
 // 핵심 4줄(2026-10-11 대표 · "클로징이 외울 수 없을 만큼 길다") — 기본 화면은 되짚기 · 왜 · 추천 플랜 · 요청만.
@@ -117,18 +118,22 @@ const CORE_LABEL = { echo: "되짚기", stakes: "왜 PT가 필요한지", plan_p
 const coreLabel = (kind, k) => (kind === "reregister" && k === "stakes" ? "왜 지금 이어가야 하나" : CORE_LABEL[k]);   // 재등록 회원은 이미 PT 중
 const HOLD_TEXT = "요청한 뒤엔 먼저 말하지 말고 기다려요.";
 
-function BookClosing({ kind, d, priceLine, onOpenBook }) {
+function BookClosing({ kind, d, priceLine, priceNote = "", onOpenBook, bookSlides = null }) {
   const [all, setAll] = useState(false);
   const seq = d.closing_sequence || {};
   const bl = d.book_lines || {};
   const promises = (Array.isArray(seq.promise) ? seq.promise : []).filter(Boolean);
   const rows = (BOOK_FLOW[kind] || []).map((r) => ({ ...r, text: r.promise ? (promises.length ? promises : null) : r.metaphor ? (d.sales_metaphor?.metaphor || "").replace(/^쉽게 말하면[,\s]*/, "") : r.sweet ? d.sweetener : r.from ? bl[r.from] : seq[r.seq] || (r.alt ? bl[r.alt] : null) })).filter((r) => r.text)
+    // 저장된 세일즈북에 없는 장(사례를 안 넣었거나 숨긴 장 · 재등록 사진이 없는 경우)을 소개하는 줄은 뺀다 · 핵심 4줄은 늘 남긴다(2026-10-13).
+    //   bookSlides가 null이면(세일즈북이 아직 없음 · 사진을 못 읽음) 예전처럼 다 보여 준다.
+    .filter((r) => !bookSlides || CORE_SEQ.includes(r.seq) || bookSlides.has(r.key))
     .map((r, i, arr) => ({ ...r, newSlide: i === 0 || arr[i - 1].slide !== r.slide }));
   const core = rows.filter((r) => CORE_SEQ.includes(r.seq));
   const slidePill = (slide) => onOpenBook && <p className="m-0 inline-flex items-center gap-1.5 rounded-md bg-ink px-2 py-0.5 text-[12px] font-bold text-white"><BookText className="h-3 w-3" aria-hidden="true" />{slide}</p>;
   const extras = (r) => (
     <>
       {r.price && priceLine && <p className="m-0 text-[13px] font-semibold text-ink">{onOpenBook ? "화면의 추천 칸 · " : ""}{priceLine}</p>}
+      {r.price && priceLine && priceNote && <p className="m-0 text-[12px] text-danger-text">{priceNote}</p>}
       {r.hold && seq.hold && <p className="m-0 text-[12px] text-sub">{HOLD_TEXT}</p>}
     </>
   );
@@ -247,7 +252,7 @@ function cheatLines(kind, d) {
   return { lines: [d.member_read, proofLine, ask && `"${ask}"`].filter(Boolean), derived: true };
 }
 
-export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier, highlightReason = "", onOpenBook = null }) {
+export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier, highlightReason = "", onOpenBook = null, weeklyFreq = null, weeklyAvg = null, bookSlides = null }) {
   const d = data || {};
   const rereg = kind === "reregister";
   const [open, setOpen] = useState({});
@@ -275,6 +280,9 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   const alt = resolvePkg({ snap: rp.alt_pkg, ref: rp.alt_ref, packages, hint: rp.alt_why });
   const per = pick?.sessions ? Math.round(pick.price / pick.sessions) : null;
   const priceLine = pick ? `${pick.name} · ${won(pick.price)}${per ? ` · 회당 약 ${wonApprox(per)}` : ""}` : "";
+  // 1차 · 2차 이상 OT — 저장된 상품 이용 기간 · 회원이 신청서에 적은 주당 횟수로 앱이 계산(AI 아님). 넘길 때만 한 줄 · 모르면 빈칸(2026-10-13).
+  //   재등록(2026-10-13) = 회원의 지난 실제 주 평균(weeklyAvg · 앞으로 일정 아님)으로 같은 계산 · '이전 주 평균 기준 예상'으로 표시.
+  const priceNote = !pick ? "" : kind === "first" || kind === "second" ? periodNote(pick, weeklyFreq) : kind === "reregister" ? periodNoteAvg(pick, weeklyAvg) : "";
   const gaps = arr(d.data_gaps).filter((g) => typeof g === "string" && g.trim());
   const seq = d.closing_sequence || {};
   const entry = kind === "first" ? d.opening || {} : d.recall || {};
@@ -401,10 +409,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
     sections.push({
       k: "close", icon: Flag, title: d.book_lines && onOpenBook ? "클로징 · 세일즈북 넘기며" : "클로징", preview: seq.ask || d.closing_line,
       body: d.book_lines && (kind === "second" || rereg) ? (
-        <BookClosing kind={rereg ? "reregister" : "second"} d={d} priceLine={priceLine} onOpenBook={onOpenBook} />
+        <BookClosing kind={rereg ? "reregister" : "second"} d={d} priceLine={priceLine} priceNote={priceNote} onOpenBook={onOpenBook} bookSlides={bookSlides} />
       ) : (
         <>
-          <ClosingSequence compact rereg={rereg} sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} />
+          <ClosingSequence compact rereg={rereg} sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} priceNote={priceNote} />
           {rereg && d.sweetener && <Note label="혜택(마지막에 덤으로)">{d.sweetener}</Note>}
         </>
       ),
@@ -484,6 +492,15 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
               </li>
             ))}
           </ol>
+          {/* 1차 — 트레이너만 보는 추천 상품 한 칸(2026-10-13 · 요약 ③엔 상품을 안 넣는 방문 목적이 있어서). 클로징 가격 줄과 같은 값 · 상품을 못 찾으면 숨김. */}
+          {kind === "first" && pick && (
+            <div className="mt-3 rounded-lg bg-card px-3 py-2">
+              <p className="m-0 text-[12px] font-semibold text-sub">트레이너 참고 · 추천 상품</p>
+              <p className="m-0 mt-0.5 text-[13px] font-semibold text-ink">{priceLine}</p>
+              {alt && alt !== pick && !(alt.id != null && alt.id === pick.id) && <p className="m-0 text-[12px] text-sub">대안 · {alt.sessions ? `${alt.sessions}회` : alt.name}</p>}
+              {priceNote && <p className="m-0 text-[12px] text-danger-text">{priceNote}</p>}
+            </div>
+          )}
           {derived && <p className="m-0 mt-2 text-[12px] text-sub">대본을 다시 만들면 더 짧은 요약으로 바뀌어요.</p>}
           {fillIn && <p className="m-0 mt-2.5 rounded-lg bg-card px-3 py-2 text-[12.5px] leading-relaxed text-ink"><b className="font-semibold text-primary-strong">○○</b>에는 수업 중 회원이 말한 목표를 넣어 말해요. 첫마디에서 목표를 먼저 물어보세요.</p>}
         </div>

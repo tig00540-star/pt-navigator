@@ -12,6 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import DeckLauncher, { loadPackagesFor } from "@/components/salesbook/DeckLauncher";
+import { otBookSlides } from "@/components/salesbook/deck";
 import Link from "next/link";
 import { otStepPath } from "@/lib/otRounds";
 import { markPending, clearPending, usePendingResult, isNewerThan } from "@/lib/aiPending";
@@ -136,6 +137,11 @@ const DEMO_CLOSING_CASES = [
 
 // 이전 차수 기록(1 ~ round-1) → AI 입력. 1차 관찰은 report로 따로 가니 여기엔 결과만, 2차부터는 관찰까지.
 //   rows는 created_at 내림차순 — 차수별 첫 행이 최신.
+const prevPick = (script) => {
+  const pp = script?.recommended_program?.pick_pkg;
+  return pp && typeof pp.name === "string" && pp.name
+    ? { prev_pick: { name: pp.name, sessions: pp.sessions ?? null, duration_label: pp.duration_label ?? null } } : {};
+};
 function buildHistory(rows, round) {
   const out = [];
   for (let k = 1; k < round; k++) {
@@ -151,6 +157,8 @@ function buildHistory(rows, round) {
       closing_detail: row.closing_detail || null,
       ...(k >= 2 ? { observation: { movements: r.movements ?? [], reaction: r.reaction ?? {}, goal: r.goal ?? {}, memberQuote: r.memberQuote ?? "", trainer_note: r.trainer_note ?? "" } } : {}),
       ...(r.brief?.member_read ? { prev_read: r.brief.member_read } : {}),
+      // 그 차수 대본이 권한 패키지(2026-10-13) — 저장된 스냅샷의 이름 · 회차 · 기간만(가격 · 순번 없음). 옛 대본은 없음.
+      ...prevPick(k === 1 ? r.first_assist?.data : r.brief),
     });
   }
   return out;
@@ -182,6 +190,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
   const [packages, setPackages] = useState([]); // 내 active PT 패키지(recommended_program 실가격 재료)
   const [favorites, setFavorites] = useState([]); // 내 라이브러리에서 별표한 운동자료(대본이 수업 구성에 우선 반영 · lib_ref)
   const [bookRow, setBookRow] = useState(null); // 클로징에서 연 세일즈북(2026-10-11 시안)
+  const [seenBook, setSeenBook] = useState(null); // 마지막으로 읽은 세일즈북 {id, sb} — 닫은 뒤에도 대본이 실제 장 구성을 알게(2026-10-13)
   const [sbMaking, setSbMaking] = useState(false);
   // 클로징의 '세일즈북 열기'(2026-10-11) — 세일즈북은 서버가 대본 뒤에 이어 만든다. 열 때 최신 행을 다시 읽고,
   //   대본을 만든 지 2분이 지났는데도 없으면(이어 만들기 실패) 그 자리에서 만든다(약 20초 · 회원 앞에서 막히지 않게 · 점검).
@@ -190,7 +199,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
     if (!supabase || !existingRow2Id) return;
     try {
       const { data } = await supabase.from("ot_log").select("id, report").eq("id", existingRow2Id).maybeSingle();
-      if (data?.report?.salesbook) { setBookRow(data); return; }
+      if (data?.report?.salesbook) { setBookRow(data); setSeenBook({ id: data.id, sb: data.report.salesbook }); return; }
       const made = Date.parse(data?.report?.briefMeta?.generatedAt || "") || 0;
       if (new Date().getTime() - made < 120000) { showToast("세일즈북을 아직 만드는 중이에요. 잠시 뒤 다시 눌러 주세요."); return; }
       setSbMaking(true);
@@ -203,7 +212,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
       });
       if (!res.ok) { showToast("세일즈북을 만들지 못했어요. 다시 시도해 주세요."); return; }
       const { data: again } = await supabase.from("ot_log").select("id, report").eq("id", existingRow2Id).maybeSingle();
-      if (again?.report?.salesbook) setBookRow(again); else showToast("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
+      if (again?.report?.salesbook) { setBookRow(again); setSeenBook({ id: again.id, sb: again.report.salesbook }); } else showToast("세일즈북을 저장하지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요.");
     } catch (e) {
       console.error("세일즈북 열기 실패", e);
       showToast("인터넷 연결을 확인하고 다시 시도해 주세요.");
@@ -550,7 +559,8 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           </div>
         )}
         <PrepReport kind="second" data={b} packages={packages} favorites={favorites} caseTier={meta?.caseTier}
-          onOpenBook={existingRow2Id ? openBook : null} />
+          onOpenBook={existingRow2Id ? openBook : null} weeklyFreq={member?.weekly_freq ?? null}
+          bookSlides={otBookSlides((seenBook?.id === existingRow2Id ? seenBook.sb : null) || row2Report?.salesbook)} />
 
         </AIBriefBlock>
 

@@ -62,6 +62,7 @@ export function mapMemberRow(r) {
     weekly_freq: r.weekly_freq ?? null,           // OT 신청서: 일주일에 몇 번('1'|'2'|'3'|'4+')
     health_screen: r.health_screen ?? null,       // OT 신청서: 건강 체크({none}|{items, note} · 건강정보 동의했을 때만)
     lead_source: r.lead_source ?? null,           // OT 신청서: 알게 된 경로
+    ot_purpose: r.ot_purpose ?? null,             // OT 신청서: 오늘 OT에서 가장 알고 싶은 것(lib/memberOptions OT_PURPOSE_OPTS 키 · 2026-10-12)
     activity_level: r.activity_level ?? null,
     member_note: r.member_note ?? null,
     machines: r.machines ?? [],

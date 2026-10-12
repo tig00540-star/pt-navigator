@@ -21,7 +21,7 @@ import BrandMark from "@/components/ui/BrandMark";
 import Wordmark from "@/components/ui/Wordmark";
 import PriceSheet from "@/components/salesbook/PriceSheet";
 import { resolvePkg } from "@/lib/pkgRef";
-import { caseKeys, careKeys, caseChunk, deckOrder } from "@/components/salesbook/deck";
+import { caseKeys, careKeys, caseChunk, deckOrder, photoSlideState, photoSlideText } from "@/components/salesbook/deck";
 import { CaseSlideBody, CareSlideBody, DeckPanel, useDeckCases } from "@/components/salesbook/DeckParts";
 import { guessCategory } from "@/lib/salesCase";
 import useTrainerIntro from "@/components/intro/useTrainerIntro";
@@ -261,6 +261,7 @@ export default function SalesbookView({
   };
 
   const photos = pickPhotos(sb.photo_slide?.mode, rows, urls); // 가벼운 계산이라 메모 없이(장 구성 계산과 React Compiler 충돌 회피)
+  const photoText = photoSlideText(sb.photo_slide, photoSlideState(sb.photo_slide?.mode, photos)); // 제목 · 본문 = 지금 보이는 사진 상태대로(2026-10-13)
 
   const tr = trainer || {};
   // 프로필에 '표시 이름'을 안 적었으면 계정 이름으로(표지 · 약속 장이 '담당 트레이너'만 남던 것 · 2026-10-06)
@@ -428,11 +429,11 @@ export default function SalesbookView({
                 const diagText = cf.diagnosis || (!cf.approach ? cf.bridge : "") || "";
                 return (
                   <div className="flex h-full flex-col">
-                    <SlideHead eyebrow="오늘 함께 확인한 것" className="sb-stg" style={{ "--sb-i": 0 }} />
-                    {/* 상단 — before/after 작은 근거 2칸 */}
-                    <div className="grid gap-2.5 sm:grid-cols-2">
+                    <SlideHead eyebrow="함께 확인한 것" className="sb-stg" style={{ "--sb-i": 0 }} />
+                    {/* 상단 — before/after 작은 근거 2칸(2026-10-13 · 지난 OT 기록이라 '오늘' 뺌 · 기록이 없어 둘 다 비면 발표에선 숨김) */}
+                    {(editable || cf.before || cf.after) && <div className="grid gap-2.5 sm:grid-cols-2">
                       <div className="rounded-xl border border-line bg-elevate px-3 py-2">
-                        <div className="text-[10px] font-bold text-muted">오늘 처음</div>
+                        <div className="text-[10px] font-bold text-muted">처음</div>
                         <EditField editable={editable} value={cf.before} onChange={(v) => setConfirmed("before", v)} multiline placeholder="처음 상태">
                           <p className="mt-0.5 text-[12px] leading-relaxed text-sub">{cf.before}</p>
                         </EditField>
@@ -443,7 +444,7 @@ export default function SalesbookView({
                           <p className="mt-0.5 text-[12px] leading-relaxed text-ink">{cf.after}</p>
                         </EditField>
                       </div>
-                    </div>
+                    </div>}
                     {/* 중앙 — 제가 본 원인(흰) + 그래서 이렇게(빨강). 크게, 세로 채움. */}
                     <div className="mt-3 flex flex-1 flex-col justify-center gap-3">
                       {(editable || diagText) && (
@@ -504,8 +505,8 @@ export default function SalesbookView({
 
             {/* ④ 사진 */}
             {show("photo") && <Slide n={pos("photo")} idx={idx} total={total} editable={editable}>
-              <SlideHead eyebrow={sb.photo_slide?.title || "사진 기록"} className="sb-stg" style={{ "--sb-i": 0 }} />
-              {sb.photo_slide?.body && <p className="sb-stg mb-3 max-w-[52ch] text-[13px] leading-relaxed text-sub" style={{ "--sb-i": 1 }}>{sb.photo_slide.body}</p>}
+              <SlideHead eyebrow={photoText.title} className="sb-stg" style={{ "--sb-i": 0 }} />
+              {photoText.body && <p className="sb-stg mb-3 max-w-[52ch] text-[13px] leading-relaxed text-sub" style={{ "--sb-i": 1 }}>{photoText.body}</p>}
               <div className="sb-stg grid grid-cols-2 gap-3" style={{ "--sb-i": 2 }}>
                 {photos.map((ph, i) => (
                   <figure key={i} className="overflow-hidden rounded-2xl border border-line bg-elevate">

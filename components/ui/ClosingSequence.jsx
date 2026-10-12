@@ -47,7 +47,8 @@ function CompactMore({ label, children }) {
   );
 }
 
-export default function ClosingSequence({ sequence, fallbackLine = "", sweetener = "", metaphor = null, icon = null, compact = false, priceLine = "", rereg = false }) {
+// priceNote = 가격 줄 바로 아래 작은 한 줄(1차 OT · 이용 기간 확인 필요할 때만 · lib/pkgPace periodNote · 2026-10-13). 없으면 아무것도 안 그림.
+export default function ClosingSequence({ sequence, fallbackLine = "", sweetener = "", metaphor = null, icon = null, compact = false, priceLine = "", priceNote = "", rereg = false }) {
   const whyLabel = rereg ? "왜 지금 이어가야 하나" : "왜 PT가 필요한지";   // 재등록 회원은 이미 PT 중(2026-10-11 점검)
   const seq = sequence && typeof sequence === "object" && !Array.isArray(sequence) ? sequence : null;
   const has = Boolean(seq && (seq.echo || seq.trial_close || seq.stakes || seq.plan_pitch || seq.ask || seq.hold || seq.flush));
@@ -65,7 +66,12 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
     //   전체 순서(회원이 말하게 · 쉽게 말하면 · 앞으로 · 약속 · 망설이면 포함)는 접어 둔다. AI 출력은 그대로.
     const promises = (Array.isArray(seq.promise) ? seq.promise : []).filter(Boolean);
     const mpText = hasMetaphor ? plainText(mp.metaphor).replace(/^쉽게 말하면[,\s]*/, "") : "";
-    const price = priceLine && <p className="m-0 mt-1.5 inline-block rounded-lg bg-elevate px-2.5 py-1 text-[13px] font-semibold text-ink">{priceLine}</p>;
+    const price = priceLine && (
+      <>
+        <p className="m-0 mt-1.5 inline-block rounded-lg bg-elevate px-2.5 py-1 text-[13px] font-semibold text-ink">{priceLine}</p>
+        {priceNote && <p className="m-0 mt-1 text-[12px] text-danger-text">{priceNote}</p>}
+      </>
+    );
     const hold = seq.hold && <p className="m-0 mt-1 text-[12.5px] text-muted">요청한 뒤엔 먼저 말하지 말고 기다려요.</p>;
     const total = [seq.echo, seq.trial_close, seq.stakes, mpText, seq.next_goal, seq.plan_pitch, promises.length ? 1 : null, seq.ask, seq.flush].filter(Boolean).length;
     return (
@@ -125,6 +131,7 @@ export default function ClosingSequence({ sequence, fallbackLine = "", sweetener
         <div>
           <Line label="③ 추천 플랜" text={seq.plan_pitch} />
           {priceLine && <p className="m-0 mt-1.5 inline-block rounded-lg bg-elevate px-2.5 py-1 text-[13px] font-semibold text-ink">{priceLine}</p>}
+          {priceLine && priceNote && <p className="m-0 mt-1 text-[12px] text-danger-text">{priceNote}</p>}
         </div>
         <div>
           <Line label="④ 요청" text={seq.ask} ask />

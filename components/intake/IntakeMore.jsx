@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
 import { HEALTH_CONSENT } from "@/lib/consent";
-import { MEMBER_OPTS, GENDER_OPTS, WEEKLY_OPTS, LEAD_SOURCES, HEALTH_SCREEN_ITEMS, TRAINER_GENDER_OPTS } from "@/lib/memberOptions";
+import { MEMBER_OPTS, GENDER_OPTS, WEEKLY_OPTS, LEAD_SOURCES, HEALTH_SCREEN_ITEMS, TRAINER_GENDER_OPTS, OT_PURPOSE_OPTS } from "@/lib/memberOptions";
 
 const inputCls = "w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[16px] text-ink placeholder-muted outline-none focus:border-primary";
 
@@ -51,11 +51,13 @@ export default function IntakeMore({ app, token, kind, healthAgreed = false, onD
   const setOne = (k, v) => setA((x) => ({ ...x, [k]: x[k] === v ? "" : v }));
 
   const screens = [
-    { t: "운동해서 제일 바뀌었으면 하는 건 뭐예요?", keys: ["goal", "goal_deadline"], body: (
+    { t: "운동해서 제일 바뀌었으면 하는 건 뭐예요?", keys: ["goal", "goal_deadline", "ot_purpose"], body: (
       <>
         <div className="grid grid-cols-2 gap-2">{MEMBER_OPTS.goal.map((g) => <Opt key={g} on={a.goal === g} onClick={() => setOne("goal", g)}>{g}</Opt>)}</div>
         <Sub>언제까지 · 계기 (선택)</Sub>
         <input value={a.goal_deadline || ""} onChange={(e) => setA((x) => ({ ...x, goal_deadline: e.target.value }))} maxLength={60} placeholder="예: 8월 결혼식 / 여름 전에" className={inputCls} />
+        <Sub>오늘 OT에서 가장 알고 싶은 건 무엇인가요? (선택)</Sub>
+        <div className="grid gap-2">{OT_PURPOSE_OPTS.map(([v, l]) => <Opt key={v} on={a.ot_purpose === v} onClick={() => setOne("ot_purpose", v)}>{l}</Opt>)}</div>
       </>) },
     { t: "일주일에 몇 번 운동할 수 있어요?", auto: true, body: (
       <div className="grid gap-2">{WEEKLY_OPTS.map(([v, l]) => <Opt key={v} on={a.weekly_freq === v} onClick={() => pick("weekly_freq", v)}>{l}</Opt>)}</div>) },
