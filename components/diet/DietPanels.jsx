@@ -95,8 +95,22 @@ export function DietDayModal({ member, day, onClose, onSent, showToast }) {
 
   const ended = day < dietToday();
   return (
-    <Modal variant="sheet" title={`${member.name} · ${dayLabel(day)} 식단`} onClose={onClose}>
+    <Modal variant="sheet" title={`${member.name} · ${dayLabel(day)} 하루 피드백`} onClose={onClose}>
       <div className="space-y-4 break-keep">
+        {/* 회원이 '오늘 식단 끝'을 눌렀나 — 마지막 식단인지 알 수 있게(2026-10-12 대표) */}
+        {!row?.feedback && (row?.closed_at ? (
+          <p className="m-0 rounded-lg bg-sky-50 px-3 py-2 text-[13px] leading-relaxed text-sky-800">
+            회원이 {timeLabel(row.closed_at)}에 <b>&lsquo;오늘 식단 끝&rsquo;</b>을 눌렀어요. 이 날 식단을 다 올렸으니 하루 피드백을 보내면 돼요.
+          </p>
+        ) : !ended ? (
+          <p className="m-0 rounded-lg bg-amber-50 px-3 py-2 text-[13px] leading-relaxed text-amber-800">
+            회원이 아직 <b>&lsquo;오늘 식단 끝&rsquo;</b>을 누르지 않았어요. 지금 보내면 그 뒤에 올리는 끼니는 피드백에 안 들어가요.
+          </p>
+        ) : (
+          <p className="m-0 rounded-lg bg-elevate px-3 py-2 text-[13px] leading-relaxed text-sub">
+            회원이 &lsquo;끝&rsquo;을 누르지 않은 채 지난 하루예요. 올린 끼니까지만 보고 피드백해 주세요.
+          </p>
+        ))}
         {meals.length === 0 ? <p className="m-0 text-[13px] text-muted">이 날 올린 식단이 없어요.</p> : (
           <div className="flex gap-2 overflow-x-auto pb-1">
             {meals.map((m) => (
@@ -138,8 +152,8 @@ export function DietDayModal({ member, day, onClose, onSent, showToast }) {
           </div>
         ) : meals.length > 0 ? (
           <div className="space-y-2">
-            <Button variant="primary" fullWidth onClick={draft} disabled={busy}><Sparkles className="h-4 w-4" aria-hidden="true" /> {busy ? "만드는 중… 20초쯤 걸려요" : "AI 초안 보고 보내기"}</Button>
-            <Button fullWidth onClick={() => setMode("own")} disabled={busy}>직접 쓰기</Button>
+            <Button variant="primary" fullWidth onClick={draft} disabled={busy}><Sparkles className="h-4 w-4" aria-hidden="true" /> {busy ? "만드는 중… 20초쯤 걸려요" : "AI 초안으로 하루 피드백 쓰기"}</Button>
+            <Button fullWidth onClick={() => setMode("own")} disabled={busy}>하루 피드백 직접 쓰기</Button>
             <p className="m-0 text-center text-[12px] text-muted">{ended ? "그냥 두면 곧 AI가 트레이너 이름으로 보내요." : "그냥 두면 하루가 끝나는 오전 6시에 AI가 트레이너 이름으로 보내요."}</p>
             <AiQuotaNote kind="diet" className="text-center" />
           </div>
@@ -211,8 +225,8 @@ export function DietRequestModal({ member, req, onClose, onSent, showToast }) {
           </div>
         ) : (
           <div className="space-y-2">
-            <Button variant="primary" fullWidth onClick={draft} disabled={busy}><Sparkles className="h-4 w-4" aria-hidden="true" /> {busy ? "만드는 중… 20초쯤 걸려요" : "AI 초안 보고 보내기"}</Button>
-            <Button fullWidth onClick={() => setMode("own")} disabled={busy}>직접 쓰기</Button>
+            <Button variant="primary" fullWidth onClick={draft} disabled={busy}><Sparkles className="h-4 w-4" aria-hidden="true" /> {busy ? "만드는 중… 20초쯤 걸려요" : "AI 초안으로 요청에 답하기"}</Button>
+            <Button fullWidth onClick={() => setMode("own")} disabled={busy}>요청에 직접 답하기</Button>
             {req.seq > DIET_AUTO_SEQ
               ? <Button variant="ghost" fullWidth onClick={() => save({ status: "skipped" }, "요청을 넘겼어요")} disabled={busy}>넘기기(회원과 직접 이야기할게요)</Button>
               : null}

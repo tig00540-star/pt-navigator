@@ -56,18 +56,18 @@ export default function DietToday({ members = [], onSelect }) {
         const auto = q.seq <= DIET_AUTO_SEQ && !(q.day && q.day < addDays(today, -1));
         const left = auto ? Math.max(0, Math.ceil((Date.parse(q.created_at) + DIET_AUTO_AFTER_MIN * 60000 - now) / 60000)) : null;
         const when = q.day && q.day !== today ? (q.day === addDays(today, -1) ? "어제 " : "지난 ") : "";
-        out.push({ id: `rq-${q.id}`, member: q.user_id, kind: "req", aiTag: left != null, text: `${when}식단 요청 · ${q.scope === "today" ? (when ? "그날 남은 끼니" : "오늘 남은 끼니") : "이번 주"}`, tag: left == null ? "직접 답하기" : left > 0 ? `${left}분 뒤 AI` : "곧 AI" });
+        out.push({ id: `rq-${q.id}`, reqId: q.id, member: q.user_id, kind: "req", aiTag: left != null, text: `${when}식단 요청 · ${q.scope === "today" ? (when ? "그날 남은 끼니" : "오늘 남은 끼니") : "이번 주"}`, tag: left == null ? "직접 답하기" : left > 0 ? `${left}분 뒤 AI` : "곧 AI" });
       }
       const mealsBy = new Map();
       for (const x of ml.data || []) mealsBy.set(`${x.user_id}|${x.day}`, (mealsBy.get(`${x.user_id}|${x.day}`) || 0) + 1);
       for (const d of dy.data || []) {
-        if (!d.feedback && d.closed_at && d.day === today) out.push({ id: `wait-${d.user_id}`, member: d.user_id, kind: "wait", text: "오늘 식단을 다 올렸어요", tag: "오전 6시 AI" });
-        if (d.feedback && d.ai && d.day === addDays(today, -1)) out.push({ id: `ai-${d.user_id}`, member: d.user_id, kind: "ai", text: "어제 피드백을 AI가 보냈어요", tag: "한마디" });
+        if (!d.feedback && d.closed_at && d.day === today) out.push({ id: `wait-${d.user_id}`, day: d.day, member: d.user_id, kind: "wait", text: "오늘 식단을 다 올렸어요 · 하루 피드백", tag: "오전 6시 AI" });
+        if (d.feedback && d.ai && d.day === addDays(today, -1)) out.push({ id: `ai-${d.user_id}`, day: d.day, member: d.user_id, kind: "ai", text: "어제 피드백을 AI가 보냈어요", tag: "한마디" });
       }
       // 어제 끼니가 있는데 피드백이 아직(자동이 한도 등으로 못 보냄)
       for (const id of on) {
         const yd = addDays(today, -1);
-        if (mealsBy.get(`${id}|${yd}`) && !(dy.data || []).some((d) => d.user_id === id && d.day === yd && d.feedback)) out.push({ id: `late-${id}`, member: id, kind: "late", text: "어제 식단 피드백이 아직이에요", tag: "직접 보내기" });
+        if (mealsBy.get(`${id}|${yd}`) && !(dy.data || []).some((d) => d.user_id === id && d.day === yd && d.feedback)) out.push({ id: `late-${id}`, day: yd, member: id, kind: "late", text: "어제 식단 피드백이 아직이에요", tag: "직접 보내기" });
       }
       // 사진 없이 3일 연속(켠 지 3일 넘은 회원만)
       for (const p of plans) {
@@ -91,7 +91,11 @@ export default function DietToday({ members = [], onSelect }) {
       <SectionHeader tone="renewal" icon={Salad} title="식단" count={rows.length} hint="안 보내도 요청 1 · 2번째는 1시간 뒤, 하루 피드백은 오전 6시에 AI가 트레이너 이름으로 보내요." />
       <div className="grid gap-2">
         {rows.map((r) => (
-          <ListRow key={r.id} tone="renewal" name={nameOf(r.member)} onClick={() => onSelect?.(r.member, 13)}>
+          <ListRow key={r.id} tone="renewal" name={nameOf(r.member)} onClick={() => {
+            // 케어 탭 식단 카드가 이 요청 · 이 날 창을 바로 연다(DietCard)
+            try { if (r.reqId || r.day) sessionStorage.setItem("ot.dietOpen", JSON.stringify({ member: r.member, reqId: r.reqId || null, day: r.day || null, at: Date.now() })); } catch { /* 없어도 케어 탭까지는 간다 */ }
+            onSelect?.(r.member, 13);
+          }}>
             <div className="mt-0.5 flex items-center justify-between gap-2 text-[12.5px] text-sub">
               <span>{r.text}</span>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold ${tagCls(r)}`}>{tagOf(r)}</span>

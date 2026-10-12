@@ -9,7 +9,7 @@
    AI 표시는 트레이너에게만('AI가 보냈어요').
    ========================================================================= */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Salad, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { authHeader } from "@/lib/authHeader";
@@ -33,6 +33,7 @@ export default function DietCard({ member }) {
   const [sheet, setSheet] = useState(false);
   const [dayOpen, setDayOpen] = useState(null);
   const [reqOpen, setReqOpen] = useState(null);
+  const jumped = useRef(false);
   const [exOpen, setExOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [nowMs] = useState(() => new Date().getTime());
@@ -54,6 +55,19 @@ export default function DietCard({ member }) {
     setState({ plan: plan || null, consent: Boolean(c.data?.[0]?.agreed), inbody: ib.data?.[0] || null, days: d.data || [], meals: m.data || [], reqs: r.data || [] });
   }, [memberId, today]);
   useEffect(() => { (async () => { await load(); })(); }, [load]);
+  // '오늘' 탭 식단 카드에서 누르고 들어왔으면 그 요청 · 그 날 창을 바로(2026-10-12 · 케어 탭에서 다시 찾지 않게)
+  useEffect(() => {
+    if (!state || state.missing || jumped.current) return;
+    jumped.current = true;
+    try {
+      const j = JSON.parse(sessionStorage.getItem("ot.dietOpen") || "null");
+      sessionStorage.removeItem("ot.dietOpen");
+      if (!j || j.member !== member.id || new Date().getTime() - (j.at || 0) > 60000) return;
+      const q = j.reqId ? (state.reqs || []).find((x) => x.id === j.reqId) : null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (q) setReqOpen(q); else if (j.day) setDayOpen(j.day);
+    } catch { /* 없으면 그냥 카드 */ }
+  }, [state, member.id]);
 
   if (!state || state.missing) return null;
   const { plan, consent, inbody } = state;
@@ -142,9 +156,9 @@ export default function DietCard({ member }) {
             <p className="m-0 text-[12px] font-semibold text-muted">최근 식단</p>
             {dayRows.length === 0 ? <p className="m-0 text-[13px] text-muted">아직 올린 식단이 없어요.</p> : dayRows.map(({ day, n, d }) => (
               <button key={day} type="button" onClick={() => setDayOpen(day)} className="flex min-h-[44px] w-full items-center gap-2 rounded-xl bg-elevate px-3 py-2 text-left">
-                <span className="min-w-0 flex-1 text-[14px] text-ink">{day === today ? "오늘" : dayLabel(day)} <span className="text-[12px] text-muted">· {n}끼{d?.closed_at ? " · 끝 누름" : ""}</span></span>
-                <span className={`shrink-0 text-[12px] font-semibold ${d?.feedback ? (d.ai ? "text-amber-700" : "text-sky-700") : "text-muted"}`}>
-                  {d?.feedback ? (d.ai ? "AI가 보냈어요" : "보냈어요") : day === today ? "오전 6시 AI" : "곧 AI"}
+                <span className="min-w-0 flex-1 text-[14px] text-ink">{day === today ? "오늘" : dayLabel(day)} <span className="text-[12px] text-muted">· {n}끼{d?.closed_at ? " · 회원이 끝 누름" : day === today ? " · 올리는 중" : ""}</span></span>
+                <span className={`shrink-0 text-[12px] font-semibold ${d?.feedback ? (d.ai ? "text-amber-700" : "text-sky-700") : d?.closed_at ? "text-primary-strong" : "text-muted"}`}>
+                  {d?.feedback ? (d.ai ? "AI가 보냈어요" : "보냈어요") : d?.closed_at ? "피드백 보내 주세요" : day === today ? "오전 6시 AI" : "곧 AI"}
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
               </button>
