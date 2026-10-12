@@ -175,10 +175,15 @@ export default function SalesbookView({
   // 장 구성(2단계) — 순서·숨김·사례 장. deck이 없으면 예전 순서 그대로.
   // 트레이너 소개 장(2026-10-11 · 설정 '내 소개 페이지'를 만든 경우만 · 표지 바로 다음)
   const intro = useTrainerIntro(trainer, personName(me.trainerName));
+  // 사진 — 장 구성보다 먼저 계산(가벼운 계산이라 메모 없이 · 장 구성 계산과 React Compiler 충돌 회피).
+  //   회원에게 보여 주는 화면(발표 · 인쇄)은 보이는 사진이 0장이면 사진 장을 뺀다(2026-10-13 · 빈 틀 두 칸 대신 · 사진이 생기면 다시 나옴). 편집 화면은 그대로.
+  const photos = pickPhotos(sb.photo_slide?.mode, rows, urls);
+  const noPhoto = !editable && photoSlideState(sb.photo_slide?.mode, photos) === "none";
   const keys0 = showcase ? ["trainer", ...careKeys(salesbook?.deck?.care || []), "closing"]
     : slideKeys || ["cover", "goal", "confirmed", "photo", "roadmap", "plans", "closing"];
   const coreKeys = intro && keys0.includes("cover") ? keys0.flatMap((k) => (k === "cover" ? ["cover", "trainer"] : [k])) : keys0;
-  const baseKeys = hasBenefits ? [...coreKeys.filter((k) => k !== "closing"), "benefits", ...(coreKeys.includes("closing") ? ["closing"] : [])] : coreKeys;
+  const baseKeys0 = hasBenefits ? [...coreKeys.filter((k) => k !== "closing"), "benefits", ...(coreKeys.includes("closing") ? ["closing"] : [])] : coreKeys;
+  const baseKeys = noPhoto ? baseKeys0.filter((k) => k !== "photo") : baseKeys0;
   // 모음집: 변화 사례는 관리 모습 앞(관리 모습이 없으면 혜택 앞 · 그것도 없으면 약속 앞)
   const deck = deckOrder(baseKeys, sb.deck, showcase ? (careKeys(sb.deck?.care || [])[0] || (hasBenefits ? "benefits" : "closing")) : caseAnchor);
   const total = Math.max(1, deck.visible.length);
@@ -260,7 +265,6 @@ export default function SalesbookView({
     setTouchX(null);
   };
 
-  const photos = pickPhotos(sb.photo_slide?.mode, rows, urls); // 가벼운 계산이라 메모 없이(장 구성 계산과 React Compiler 충돌 회피)
   const photoText = photoSlideText(sb.photo_slide, photoSlideState(sb.photo_slide?.mode, photos)); // 제목 · 본문 = 지금 보이는 사진 상태대로(2026-10-13)
 
   const tr = trainer || {};
@@ -430,20 +434,20 @@ export default function SalesbookView({
                 return (
                   <div className="flex h-full flex-col">
                     <SlideHead eyebrow="함께 확인한 것" className="sb-stg" style={{ "--sb-i": 0 }} />
-                    {/* 상단 — before/after 작은 근거 2칸(2026-10-13 · 지난 OT 기록이라 '오늘' 뺌 · 기록이 없어 둘 다 비면 발표에선 숨김) */}
-                    {(editable || cf.before || cf.after) && <div className="grid gap-2.5 sm:grid-cols-2">
-                      <div className="rounded-xl border border-line bg-elevate px-3 py-2">
+                    {/* 상단 — before/after 작은 근거 2칸(2026-10-13 · 지난 OT 기록이라 '오늘' 뺌 · 발표에선 글이 있는 칸만 · 둘 다 비면 숨김 · 편집은 늘 2칸) */}
+                    {(editable || cf.before || cf.after) && <div className={editable || (cf.before && cf.after) ? "grid gap-2.5 sm:grid-cols-2" : "grid gap-2.5"}>
+                      {(editable || cf.before) && <div className="rounded-xl border border-line bg-elevate px-3 py-2">
                         <div className="text-[10px] font-bold text-muted">처음</div>
                         <EditField editable={editable} value={cf.before} onChange={(v) => setConfirmed("before", v)} multiline placeholder="처음 상태">
                           <p className="mt-0.5 text-[12px] leading-relaxed text-sub">{cf.before}</p>
                         </EditField>
-                      </div>
-                      <div className="rounded-xl border border-primary/25 bg-primary-soft px-3 py-2">
+                      </div>}
+                      {(editable || cf.after) && <div className="rounded-xl border border-primary/25 bg-primary-soft px-3 py-2">
                         <div className="text-[10px] font-bold text-primary-strong">자세 하나 잡아드린 뒤</div>
                         <EditField editable={editable} value={cf.after} onChange={(v) => setConfirmed("after", v)} multiline placeholder="잡아드린 뒤">
                           <p className="mt-0.5 text-[12px] leading-relaxed text-ink">{cf.after}</p>
                         </EditField>
-                      </div>
+                      </div>}
                     </div>}
                     {/* 중앙 — 제가 본 원인(흰) + 그래서 이렇게(빨강). 크게, 세로 채움. */}
                     <div className="mt-3 flex flex-1 flex-col justify-center gap-3">

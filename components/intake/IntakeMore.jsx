@@ -56,7 +56,7 @@ export default function IntakeMore({ app, token, kind, healthAgreed = false, onD
         <div className="grid grid-cols-2 gap-2">{MEMBER_OPTS.goal.map((g) => <Opt key={g} on={a.goal === g} onClick={() => setOne("goal", g)}>{g}</Opt>)}</div>
         <Sub>언제까지 · 계기 (선택)</Sub>
         <input value={a.goal_deadline || ""} onChange={(e) => setA((x) => ({ ...x, goal_deadline: e.target.value }))} maxLength={60} placeholder="예: 8월 결혼식 / 여름 전에" className={inputCls} />
-        <Sub>오늘 OT에서 가장 알고 싶은 건 무엇인가요? (선택)</Sub>
+        <Sub>OT에서 가장 알고 싶은 건 무엇인가요? (선택)</Sub>
         <div className="grid gap-2">{OT_PURPOSE_OPTS.map(([v, l]) => <Opt key={v} on={a.ot_purpose === v} onClick={() => setOne("ot_purpose", v)}>{l}</Opt>)}</div>
       </>) },
     { t: "일주일에 몇 번 운동할 수 있어요?", auto: true, body: (
@@ -150,9 +150,8 @@ export default function IntakeMore({ app, token, kind, healthAgreed = false, onD
       <div className="mt-4">{cur.body}</div>
       <div className="mt-6 flex items-center gap-2">
         <button type="button" onClick={() => (i + 1 >= n ? onDone?.() : setI(i + 1))} className="min-h-[48px] px-3 text-[15px] font-semibold text-sub">건너뛰기</button>
-        {!cur.auto && (!cur.health || health) && (
-          <button type="button" onClick={next} className="ml-auto min-h-[52px] flex-1 rounded-xl bg-primary text-[16px] font-bold text-white">{cur.last ? "마치기" : "다음"}</button>
-        )}
+        {/* '다음'은 모든 질문에 늘 보인다(2026-10-13 · 하나만 고르는 질문에서 숨겨 버튼이 떴다 안 떴다 했다). 보기를 누르면 예전처럼 자동으로도 넘어간다. */}
+        <button type="button" onClick={next} className="ml-auto min-h-[52px] flex-1 rounded-xl bg-primary text-[16px] font-bold text-white">{cur.last ? "마치기" : "다음"}</button>
       </div>
       {saved && <p className="m-0 mt-3 text-center text-[13px] text-muted">답은 바로 저장돼요</p>}
     </div>
