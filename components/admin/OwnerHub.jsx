@@ -24,7 +24,7 @@ function Stat({ label, value, sub, accent = false }) {
     <div className="rounded-xl bg-elevate px-3.5 py-3">
       <span className="block text-[12px] text-muted">{label}</span>
       <span className={`mt-0.5 block text-[18px] font-bold tracking-[-0.02em] ${accent ? "text-primary-strong" : "text-ink"}`}>{value}</span>
-      {sub && <span className="block truncate text-[12px] text-sub">{sub}</span>}
+      {sub && <span className="block break-keep text-[12px] leading-snug text-sub">{sub}</span>}
     </div>
   );
 }
@@ -89,7 +89,7 @@ export default function OwnerHub({
           <Stat label="오늘 수업" value={`${todays.length}건`} sub={todays.length ? `완료 ${done} · 남음 ${todays.length - done}` : "예약 없음"} />
           <Stat label="오늘 신규 OT" value={`${newOt}명`} accent={newOt > 0} sub={newOt ? "등록 기회" : "없음"} />
           <Stat label="이달 매출" value={manwon(rev.net)} sub={target ? `목표의 ${pct(rev.net / target)}` : `신규 ${rev.cntNew} · 재등록 ${rev.cntRe}건`} />
-          <Stat label="이번 달 신규 클로징률" value={pct(closing.rate)} sub={closing.den ? `OT ${closing.den}명 중 ${closing.num}명 등록 · 재등록률 ${pct(rereg.rate)}` : `재등록률 ${pct(rereg.rate)}`} />
+          <Stat label="신규 클로징 · 재등록률" value={`${pct(closing.rate)} · ${pct(rereg.rate)}`} sub={closing.den ? `이번 달 OT ${closing.den}명 중 ${closing.num}명 등록` : "이번 달 OT 없음"} />
         </div>
         <button type="button" onClick={() => onGoTab("briefing")}
           className="mt-3 flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl bg-primary px-4 text-left text-white transition hover:bg-primary-strong active:scale-[0.99]">
