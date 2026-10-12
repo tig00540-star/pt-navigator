@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Dumbbell, Hand, Lock, MessageCircle, Minus, Plus, X } from "lucide-react";
-import { nextValues, latestPtTop, pickDayIndex, recentPtGroups, effectiveSet, warmupFor } from "@/lib/routine";
+import { nextValues, latestPtTop, pickDayIndex, recentPtGroups, effectiveSet, warmupFor, planRows } from "@/lib/routine";
 import { notifyPush } from "@/lib/pushClient";
 
 const r2 = (x) => Math.round(x * 100) / 100;
@@ -39,15 +39,15 @@ function MiniStep({ label, value, unit, onDec, onInc, decOff, incOff, wide }) {
 }
 
 // 세트별 입력(2026-10-06 대표: 한 줄로 적기 없앰 · 세트마다 무게 · 횟수). 무게는 회원이 실제 든 그대로(상한을 넘겨도 기록 · 트레이너에게 표시 · 처방은 상한 안).
-function SetRows({ rows, step, lockedWeight, onChange, maxSets = 8 }) {
+function SetRows({ rows, step, locked = false, onChange, maxSets = 8 }) {
   const set = (i, patch) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   return (
     <div className="mt-2 space-y-1">
       {rows.map((r, i) => (
         <div key={i} className="flex items-center gap-1 rounded-lg bg-card/60 px-1 py-1">
           <span className="w-4 shrink-0 text-center text-[12.5px] font-bold text-sub">{i + 1}</span>
-          {lockedWeight != null ? (
-            <span className="w-[6.7rem] shrink-0 text-center text-[14px] font-bold text-ink">{wTxt(lockedWeight)}</span>
+          {locked ? (
+            <span className="w-[6.7rem] shrink-0 text-center text-[14px] font-bold text-ink">{wTxt(r.weight)}</span>
           ) : (
             <MiniStep label="무게" unit="kg" wide value={r2(r.weight)} onDec={() => set(i, { weight: r2(Math.max(0, r.weight - step)) })} onInc={() => set(i, { weight: r2(r.weight + step) })} decOff={r.weight <= 0} incOff={r.weight >= 300} />
           )}
@@ -173,7 +173,8 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
   }
 
   const today = todayKst();
-  const rowsOf = (it, nv) => Array.from({ length: Math.max(1, nv.sets || 1) }, () => ({ weight: it.locked ? it.weight : nv.weight, reps: nv.reps }));
+  // 트레이너가 세트마다 정했으면 그 줄대로(본 세트가 오른 만큼 전부 같이 · 2026-10-12) · 아니면 같은 무게 × 세트 수
+  const rowsOf = (it, nv) => planRows(it, nv);
   const v = (it, nv) => vals[it.name] || { weight: nv.weight, reps: nv.reps, sets: nv.sets, done: false, pain: false, skip: null, rows: rowsOf(it, nv) };
   const setV = (it, nv, patch) => setVals((m) => ({ ...m, [it.name]: { ...v(it, nv), ...patch } }));
   const extraDone = extras.filter((e) => e.name.trim());
@@ -251,7 +252,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
                   <button type="button" onClick={() => setV(it, nv, { skip: null })} className="min-h-[34px] text-[13px] font-semibold text-primary-strong">되돌리기</button>
                 </div>
               ) : (<>
-              <SetRows rows={x.rows || rowsOf(it, nv)} step={step} lockedWeight={it.locked ? it.weight : null} maxSets={6}
+              <SetRows rows={x.rows || rowsOf(it, nv)} step={step} locked={Boolean(it.locked)} maxSets={6}
                 onChange={(rows) => setV(it, nv, { rows: rows.length ? rows : rowsOf(it, nv) })} />
               {!it.locked && (x.rows || []).some((r) => r.weight > nv.cap + 1e-9) && (
                 <p className="mt-1.5 text-[12.5px] text-sub">혼자 하는 상한({r2(nv.cap)}kg)보다 무거워요. 그대로 기록되고, 다음 PT 때 트레이너와 확인해요.</p>
@@ -299,7 +300,7 @@ export default function RoutineSection({ supabase, me, ptLogs = [], onSaved, hea
               <span className="text-[14px] font-bold text-ink">+ {e.name}</span>
               <button type="button" onClick={() => setExtras((xs) => xs.filter((z) => z.key !== e.key))} aria-label="빼기" className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-muted"><X className="h-4 w-4" /></button>
             </div>
-            <SetRows rows={e.rows} step={2.5} lockedWeight={null} onChange={(rows) => setExtra(e.key, { rows: rows.length ? rows : [{ weight: 0, reps: 12 }] })} />
+            <SetRows rows={e.rows} step={2.5} onChange={(rows) => setExtra(e.key, { rows: rows.length ? rows : [{ weight: 0, reps: 12 }] })} />
           </div>
         ))}
         <div className="mt-2 flex gap-2">
