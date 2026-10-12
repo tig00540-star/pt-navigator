@@ -239,11 +239,13 @@ export default function LandingPage() {
               트레이너가 직접 만든 PT 세일즈·회원관리 앱
             </span>
             <h1 className="m-0 text-[clamp(36px,8vw,60px)] font-black leading-[1.16] tracking-[-0.045em]">
-              <span className="block">트레이너는 말만 하세요.</span>
-              <span className="block text-primary">기록하고 정리하는 건 앱이.</span>
+              <span className="block">수업일지는 말로 끝내고,</span>
+              <span className="block">회원관리는 자동화하고,</span>
+              <span className="block text-primary">세일즈 준비는 맡기세요.</span>
             </h1>
             <p className="m-0 max-w-[540px] text-[clamp(17px,2.6vw,20px)] leading-[1.6] text-sub">
-              운동일지 · 회원 변화 · 재등록 자료 · OT 대본까지, 앱이 기록하고 앱이 정리해요.
+              <span className="block">AI 운동일지부터 맞춤 OT 대본,<br className="sm:hidden" /> 재등록 세일즈북까지.</span>
+              <span className="block">트레이너는 수업에 집중하세요.</span>
             </p>
             <div className="mt-1.5 flex w-full max-w-[420px] flex-col gap-2.5 sm:max-w-none sm:flex-row sm:justify-center">
               <a href="/signup" className={BTN_PRIMARY}>지금 시작하기 <Arrow /></a>
