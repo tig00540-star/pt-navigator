@@ -123,7 +123,7 @@ export default function AppChrome({ children }) {
         uid={myUid}
         onUnreadCount={setUnreadCount}
         reviewOpen={bellOpen}
-        onReviewClose={() => setBellOpen(false)}
+        onCloseReview={() => setBellOpen(false)}
       />
 
       {/* 헤더 — 폰: 로고·공지·대표 화면 + 서브탭. 태블릿·PC: 로고·공지·대표 화면은 왼쪽 메뉴로 가고 서브탭만 남는다(없으면 헤더도 없음). */}
@@ -198,6 +198,9 @@ export default function AppChrome({ children }) {
             )}
             <MemberList
               compact
+              // /members/ot · /members/pt 로 들어오면 왼쪽 목록도 그 묶음으로(2026-10-12 점검 · 예전엔 늘 '전체')
+              key={info.section === "members" ? `seg-${info.seg}` : "seg-keep"}
+              initialSegment={info.section === "members" && ["ot", "pt", "inactive"].includes(info.seg) ? info.seg : "all"}
               members={members}
               selectedId={info.memberId}
               uid={myUid}

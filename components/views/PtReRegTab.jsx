@@ -22,6 +22,7 @@ import { remainingSessions, reregisterDue, reregRound } from "@/lib/memberStatus
 import { buildExerciseSeries } from "@/lib/workout";
 import { INBODY_FIELDS, REG_REASON_OPTS } from "@/lib/labels";
 import RegSalesbookView from "@/components/views/RegSalesbookView";
+import { loadPackagesFor } from "@/components/salesbook/DeckLauncher";
 import ReRegReadiness from "@/components/pt/ReRegReadiness";
 import { goalContext } from "@/lib/ptGoal";
 import RegistrationHistory from "@/components/pt/RegistrationHistory";
@@ -93,7 +94,8 @@ const weightChange = (logs) => buildExerciseSeries(logs)
 
 export default function PtReRegTab({ member, contracts, setContracts, logs, onMemberPatch }) {
   const { toast, showToast } = useToast();
-  const [packages, setPackages] = useState([]); // 본인 active PT 패키지(recommended_program 재료)
+  const [packages, setPackages] = useState([]); // 담당 트레이너 active PT 패키지(recommended_program 재료)
+  const [trainerProfile, setTrainerProfile] = useState(null); // 재등록 세일즈북 이름 · 자격 · 서명
   const [favorites, setFavorites] = useState([]); // 내 라이브러리에서 별표한 운동자료(대본이 다음 단계 운동에 우선 반영 · lib_refs)
   const [inbodyRows, setInbodyRows] = useState([]); // 인바디 이력(변화량 재료)
 
@@ -126,17 +128,17 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
   const [autoOpened, setAutoOpened] = useState(false);
   if (wantSb && regSb && !autoOpened) { setAutoOpened(true); setSbOpen(true); }
 
-  // 본인 active 패키지 로드(마운트 1회 · uid 기준 · 회원 무관).
+  // 담당 트레이너 active 패키지 · 프로필 · 내 별표 자료 로드(담당이 바뀔 때만).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!supabase) return;
       const { data: au } = await supabase.auth.getUser();
       const uid = au?.user?.id ?? null;
-      const { data: pkgs } = await supabase.from("pt_package").select("*")
-        .eq("trainer_id", uid).eq("active", true)
-        .order("sort", { ascending: true }).order("created_at", { ascending: true });
-      if (!cancelled) setPackages(pkgs || []);
+      // 담당 트레이너 가격표 · 프로필(대표가 열어도 담당 것 · 2026-10-12 점검: 재등록 세일즈북에 서명 · 자격이 빠지던 것)
+      const pkgs = await loadPackagesFor(member?.trainer_id);
+      const { data: prof } = await supabase.from("trainer_profile").select("*").eq("trainer_id", member?.trainer_id || uid).maybeSingle();
+      if (!cancelled) { setPackages(pkgs || []); setTrainerProfile(prof || null); }
       // 별표한 운동자료(1차 OT와 같은 조회 · favorite 컬럼이 없으면 에러 → [] 비차단).
       const { data: favs } = await supabase
         .from("library_item").select("id, title, category, url, note")
@@ -145,7 +147,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
       if (!cancelled) setFavorites(favs || []);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [member?.trainer_id]);
 
   // 인바디 이력 로드(measured_at 오름차순 = 첫→최신).
   useEffect(() => {
@@ -634,7 +636,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
         <RegSalesbookView
           regSalesbook={regSb}
           member={member}
-          trainer={null}
+          trainer={trainerProfile}
           packages={packages}
           recommendedProgram={regBrief?.recommended_program || null}
           change={changeData}

@@ -28,6 +28,9 @@ export default function AuthGate({ children }) {
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // 비밀번호 찾기(2026-10-12) — 로그인 카드 안에서 이메일만 받아 재설정 메일을 보낸다
+  const [forgot, setForgot] = useState(false);
+  const [sent, setSent] = useState(false);
   const pathname = usePathname(); // /signup 등 공개 경로 판정
   const router = useRouter();
 
@@ -60,9 +63,13 @@ export default function AuthGate({ children }) {
       setSession(null);
       setReady(true);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
       setSession(s ?? null);
+      // 비밀번호 찾기 링크로 들어온 세션 — 재설정 주소가 아니라 다른 곳에 떨어졌어도 새 비밀번호부터 정하게
+      if (e === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") window.location.replace("/reset-password");
     });
+    // /login?forgot=1 (만료된 링크에서 '다시 하기') → 바로 비밀번호 찾기 칸
+    if (typeof window !== "undefined" && /[?&]forgot=1/.test(window.location.search)) setForgot(true);
     return () => {
       alive = false;
       clearTimeout(stallTimer);
@@ -113,6 +120,27 @@ export default function AuthGate({ children }) {
     // 성공 시 onAuthStateChange가 session을 채워 자동 전환.
   };
 
+  // 비밀번호 찾기 — 재설정 메일 보내기. 가입 여부와 상관없이 같은 안내(이메일이 가입됐는지 알려 주지 않게).
+  const sendReset = async () => {
+    if (!supabase || busy) return;
+    const addr = email.trim();
+    if (!/^\S+@\S+\.\S+$/.test(addr)) { setErr("가입한 이메일을 입력해 주세요."); return; }
+    setBusy(true); setErr("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(addr, { redirectTo: `${window.location.origin}/reset-password` });
+      if (error && /rate|too many|429/i.test(String(error.code || "") + " " + String(error.message || "") + " " + String(error.status || ""))) {
+        setErr("방금 메일을 보냈어요. 1분쯤 뒤에 다시 시도해 주세요.");
+      } else {
+        if (error) console.error("비밀번호 찾기 메일 실패", error);
+        setSent(true);
+      }
+    } catch {
+      setErr("인터넷 연결을 확인하고 다시 시도해 주세요.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const signOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -136,7 +164,8 @@ export default function AuthGate({ children }) {
     pathname === "/lp" || pathname === "/center" || pathname === "/download" || pathname.startsWith("/legal")
     || pathname.startsWith("/join/")   // OT 신청서(QR · 링크 · 로그인 없음 · 2026-10-06)
     || pathname === "/try"               // 기능 체험(로그인 없음 · 이 화면 안에서만 움직임 · 2026-10-06)
-    || pathname === "/check";            // 1분 진단(로그인 없음 · 답은 화면 안에서만 · 2026-10-08)
+    || pathname === "/check"             // 1분 진단(로그인 없음 · 답은 화면 안에서만 · 2026-10-08)
+    || pathname === "/reset-password";   // 비밀번호 찾기 메일 링크(2026-10-12 · 결제벽 · 읽기 전용이어도 바꿀 수 있게)
   if (isPublicMarketing) return <>{children}</>;
 
   // 초기 세션 조회 전 — 깜빡임 방지용 최소 화면
@@ -231,21 +260,43 @@ export default function AuthGate({ children }) {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-lg bg-elevate border border-line px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
           />
-          <input
-            type="password"
-            autoComplete="current-password"
-            placeholder="비밀번호"
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") signIn();
-            }}
-            className="w-full rounded-lg bg-elevate border border-line px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
-          />
-          {err && <div className="text-xs text-red-600">{err}</div>}
-          <Button variant="primary" size="md" fullWidth onClick={signIn} disabled={busy}>
-            {busy ? "로그인 중…" : "로그인"}
-          </Button>
+          {forgot ? (
+            sent ? (
+              <p className="m-0 rounded-lg bg-elevate px-3 py-2.5 text-[13px] leading-relaxed text-sub">
+                가입한 이메일이면 비밀번호를 다시 정하는 메일이 1~2분 안에 가요. 메일 속 링크를 눌러 새 비밀번호를 정해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.
+              </p>
+            ) : (
+              <>
+                <p className="m-0 text-[13px] leading-relaxed text-sub">가입한 이메일을 입력하면 비밀번호를 다시 정하는 링크를 보내 드려요.</p>
+                {err && <div className="text-[12px] text-red-600">{err}</div>}
+                <Button variant="primary" size="md" fullWidth onClick={sendReset} disabled={busy}>
+                  {busy ? "보내는 중…" : "재설정 메일 보내기"}
+                </Button>
+              </>
+            )
+          ) : (
+            <>
+              <input
+                type="password"
+                autoComplete="current-password"
+                placeholder="비밀번호"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") signIn();
+                }}
+                className="w-full rounded-lg bg-elevate border border-line px-3 py-2.5 text-sm text-ink placeholder-muted outline-none focus:border-primary"
+              />
+              {err && <div className="text-[12px] text-red-600">{err}</div>}
+              <Button variant="primary" size="md" fullWidth onClick={signIn} disabled={busy}>
+                {busy ? "로그인 중…" : "로그인"}
+              </Button>
+            </>
+          )}
+          <button type="button" onClick={() => { setForgot((v) => !v); setSent(false); setErr(""); }}
+            className="block w-full py-1 text-center text-[13px] font-semibold text-sub hover:text-ink">
+            {forgot ? "로그인으로 돌아가기" : "비밀번호를 잊었어요"}
+          </button>
         </div>
         <div className="mt-4 text-center text-[12px] text-muted">
           트레이너는 대표 초대로 참여해요 ·{" "}

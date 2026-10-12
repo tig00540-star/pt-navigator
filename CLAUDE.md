@@ -260,6 +260,7 @@ Per MASTERPLAN §5: **plumbing is real**(member 등록/목록/선택·클립보�
 - **공개 신청서:** IP당 10분 5번 · 같은 번호 다시 내면 열쇠 안 돌려줌(DB도) · 잘못된 입력은 400.
 - **사례 사진 경로는 믿지 않는다:** 저장소 규칙 · 내려받기 · '내 자료 가져오기' 모두 그 계정 폴더 · 그 계정 회원 폴더만.
 - **1차 대본 '최신 아님' 해시:** 신청서 건강 체크 · 주 몇 번 등까지 포함(`inputHashV: 2` · 옛 대본은 옛 해시로 비교). 대본 가격은 **담당 트레이너 가격표**(`loadPackagesFor`). AI JSON 목록 칸은 서버가 배열로 고쳐 저장.
+- **비밀번호 찾기**(2026-10-12): 로그인 카드 '비밀번호를 잊었어요' → `resetPasswordForEmail(redirectTo /reset-password)` · 가입 여부와 상관없이 같은 안내 · `/login?forgot=1` → `app/reset-password`(복구 세션 → `PasswordChange forced` → 앱) · AuthGate는 이 주소를 게이트 없이 통과 · `PASSWORD_RECOVERY` 세션이 다른 주소에 떨어지면 /reset-password로. ⚠️ Supabase Auth Redirect URLs에 `https://www.onlytrainer.co.kr/reset-password` 필요 · 메일 발송(SMTP) 설정 확인.
 - 없는 주소 = `app/not-found.jsx`(한글). 서버 오류 문구도 해요체 · 개발 용어 없음(`requireTrainer` · billing · voice-log · ot-brief).
 
 ### 처음 시작하기 · 회원 한꺼번에 등록 (2026-10-12 · SQL `docs/migrations/2026-10-12-bulk-members.sql` · 설계 `docs/v2-계획-처음시작-회원일괄등록.md`)

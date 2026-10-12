@@ -60,7 +60,7 @@ async function has(q) {
   try { const { count, error } = await q; return !error && (count || 0) > 0; } catch { return false; }
 }
 
-export default function StartChecklist({ members = [] }) {
+export default function StartChecklist({ members = [], onGoTab }) {
   const acc = useAccount();
   const [factsRaw, setFacts] = useState(null);
   const [isNew, setIsNew] = useState(false);
@@ -183,7 +183,12 @@ export default function StartChecklist({ members = [] }) {
             <span className="text-[14px] text-muted line-through">{it.label}</span>
           </div>
         ) : (
-          <Link href={it.href} className="flex min-h-[44px] items-center gap-2.5 py-2 no-underline">
+          <Link href={it.href} className="flex min-h-[44px] items-center gap-2.5 py-2 no-underline"
+            onClick={(e) => {
+              // 대표 화면 안에서 /admin?tab=… 은 주소만 바뀌고 탭이 안 바뀐다 → 탭을 직접 바꾼다(2026-10-12 점검)
+              const m = String(it.href).match(/^\/admin\?tab=(\w+)/);
+              if (m && onGoTab) { e.preventDefault(); onGoTab(m[1]); }
+            }}>
             <span className="h-5 w-5 shrink-0 rounded-full border-2 border-line-strong" aria-hidden="true" />
             <span className="min-w-0 flex-1">
               <span className="text-[14px] font-medium text-ink">{it.label}</span>

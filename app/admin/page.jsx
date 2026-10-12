@@ -433,7 +433,7 @@ export default function AdminDashboard() {
 
         {/* OT 신청 배정 대기(센터 QR · 2026-10-06) — 홈 맨 위 · 있을 때만 */}
         {/* 처음 시작하기(2026-10-12 · 대표용 줄 · 가입 30일 안만) */}
-        {atab === "hub" && <div className="mb-4"><StartChecklist members={rows.filter((m) => !m.hidden)} /></div>}
+        {atab === "hub" && <div className="mb-4"><StartChecklist members={rows.filter((m) => !m.hidden)} onGoTab={goTab} /></div>}
         {atab === "hub" && <OtPendingCard onGo={() => goTab("flow")} />}
         {atab === "hub" && <MonthlyReadyCard kind="owner" onGo={() => goTab("monthly")} />}
 
