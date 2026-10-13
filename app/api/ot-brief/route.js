@@ -339,15 +339,49 @@ const REREG_GOAL_RULE = `[★다음 목표 숫자 — 데이터에 근거한 도
    회원이 '이 정도 변화를 해 보고 싶다'고 느낄 만큼 매력적이고 도전적이되, 트레이너가 근거를 설명할 수 있어야 한다.
    근거 = 출발 수치 · 지금까지 변화 속도([인바디 한 달 평균 변화]) · 다음 기간 길이(추천 플랜의 '진행 계산(앱)') · 출석 리듬 · 운동 경력 · 생활 패턴 · 불편 부위.
    지난 속도를 기계적으로 늘리지도, 누구에게나 같은 작은 변화로 줄이지도 마라. 모든 회원에게 같은 감량률 · 근육 증가량을 쓰지 마라.
-   지금까지 정체였다면 정체를 인정하고, 이번 기간에 무엇을 바꾸면(리듬 · 강도 · 운동 구성) 어디까지 가 볼 수 있는지로 제안하라.
+   지금까지 정체였다면 정체를 인정하되, '처음 수치로 돌아가기'만으로 목표를 잡지 마라. 기록에 함께 보이는 요인(출석 · 노쇼 · 주 평균 빈도 · 일지의 강도 · 불편)을 짚되
+   정체의 확정 원인으로 단정하지 마라(출석이 불규칙했고 체지방률이 정체였다는 것만으로 '출석 때문'이라고 하지 마라 · '리듬도 영향이 있었을 수 있어요' 결).
+   그 요인은 이번 기간에 개선할 관리 항목(출석 리듬 · 강도 · 운동 구성 · 측정 주기)으로 다루고, 그 관리로 기대할 만한 범위에서 의미 있는 목표를 검토하라
+   (체지방률도 근거가 있으면 도전적으로). 근거가 약하면 숫자를 공격적으로 키우지 마라. 특정 수치를 모든 회원에게 적용하지 마라.
+ - 체성분만 말하지 마라. 운동 무게 · 수행 기록이 충분하면 그 종목의 다음 기간 숫자 목표를 적극적으로 검토하라
+   (예: 레그프레스 60→70kg 기록이 있으면 '한 단계 위' 대신 75kg · 80kg 같은 숫자 · 이 예시 숫자를 그대로 쓰지 말고 이 회원 기록으로 정하라).
+   같은 종목 · 같은 수행 조건(횟수 · 세트 · 자세 메모)끼리만 비교하고, 최근 일지의 횟수 · 자세 · 불편 기록이 받쳐 줄 때만 숫자를 낸다.
+   불편 부위가 걸린 종목은 무게 대신 범위 · 자세 목표로, 무리한 숫자는 내지 마라.
  - 단위를 구분하라: 체지방률은 %p, 체지방량 · 체중 · 골격근량은 kg. 체지방 감소와 골격근 증가를 함께 제안하면 이 회원(운동 경력 · 나이 · 지금까지 변화)에게 현실적인 조합인지 따져라.
  - 새로 제안하는 숫자는 제안형으로: "다음 기간엔 체지방률 ○%대를 목표로 잡아 볼 수 있어요" · "○kg까지 도전해 볼 만해요".
    이미 합의한 목표처럼("목표는 ○%예요") 쓰거나 달성을 약속하지 마라("만들어 드릴게요" · "됩니다" ❌).
- - 숫자 목표에는 PT에서 어떻게 갈지를 붙여라(어떤 운동 · 강도 조절 · 언제 다시 재서 같이 확인하는지 · 피드백).
+ - 숫자 목표에는 이번 PT에서 무엇을 다르게 관리할지를 붙여라(개선할 관리 항목 · 어떤 운동 · 강도 조절 · 무게 · 횟수 기록 · 언제 다시 재서 같이 확인하는지 · 피드백).
  - 인바디 기록이 없으면 체지방률 · 체지방량 · 골격근량 숫자를 만들지 마라(운동 무게 · 수행 목표나 숫자 없는 목표로).
    불편 부위 · 건강 주의가 있으면 무리한 숫자를 내지 말고 보수적으로, 필요하면 숫자 없이.
  - 숫자 목표가 없어도 된다. 다음에 키울 능력과 관리 계획만으로도 설득력 있게 말할 수 있다.
 `;
+
+// 재등록 세일즈북 목표 표현 안전망(2026-10-13) — 대본의 다음 목표가 '새로 제안한' 숫자면(제안형 문장), 세일즈북에서 숫자 목표를
+//   '목표로 잡고 가요 · 목표로 가요'처럼 정해진 목표로 쓴 말을 '목표로 제안드려요'로 바꾼다. 이미 정한 목표(대본이 단정형)는 그대로.
+const REG_GOAL_PROPOSED = /잡아\s*볼\s*수|제안|도전해\s*볼|검토해\s*볼/;
+const REG_GOAL_FIRM = /목표로\s*(?:잡고\s*)?(?:가요|가 봐요|가봐요|해요|합니다|갈게요)/g;
+const REG_GOAL_NUM = /\d\s*(?:%|kg|㎏)/;
+function guardRegGoal(out, basis) {
+  if (!out || typeof out !== "object" || !REG_GOAL_PROPOSED.test(String(basis?.next_goal || ""))) return out;
+  const fix = (v) => (typeof v === "string" ? (REG_GOAL_NUM.test(v) ? v.replace(REG_GOAL_FIRM, "목표로 제안드려요") : v)
+    : Array.isArray(v) ? v.map(fix) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === "plans" ? x : fix(x)])) : v);
+  return fix(out);
+}
+
+// 재등록 약속 안전망(2026-10-13) — ① '그 주 안에(서) · 그 주에 맞춰' 다시 잡는 확정 약속 → '센터 규정과 예약 가능한 시간을 확인해'
+//   ② 세일즈북 다짐의 '~될 때까지 · 끝까지'(기간 없는 결과 책임) → '등록하신 과정 동안'. 재등록 대본 · 재등록 세일즈북에만(1차 · 2차는 기존 규칙).
+const REG_SCHED_WEEK = /그\s*주(?:\s*안에서?|에)\s*(?:맞춰\s*)?/g;
+const REG_SCHED_ACT = /다시|보강|조정|조율|잡|맞춰|맞추/;
+const REG_VOW_UNTIL = /\s*[^,.!?]*?(?:되실|될|이루실|이룰|만들어질|해내실|해낼)\s*때까지\s*/g;
+function guardRegPromise(out) {
+  const sched = (t) => (typeof t === "string" && REG_SCHED_ACT.test(t) ? sbNoForce(t.replace(REG_SCHED_WEEK, "센터 규정과 예약 가능한 시간을 확인해 ")) : t);
+  const walk = (v) => (typeof v === "string" ? sched(v) : Array.isArray(v) ? v.map(walk) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === "pkg" || k === "pick_pkg" || k === "alt_pkg" ? x : walk(x)])) : v);
+  const o = walk(out);
+  if (o?.closing && typeof o.closing.vow === "string") {
+    o.closing.vow = o.closing.vow.replace(REG_VOW_UNTIL, " 등록하신 과정 동안 ").replace(/끝까지\s*/g, "등록하신 과정 동안 ").replace(/\s{2,}/g, " ").replace(/\s+([,.!?])/g, "$1").trim();
+  }
+  return o;
+}
 
 // 재등록 대본 · 재등록 세일즈북 공용 — 기록으로 확인된 것만(2026-10-13 실제 AI 시험: 출석 과장 · 근거 없는 혜택 · 결과 단정이 나왔다).
 const REREG_FACT_RULE = `[★재등록 — 기록으로 확인된 것만 말하라]
@@ -355,6 +389,8 @@ const REREG_FACT_RULE = `[★재등록 — 기록으로 확인된 것만 말하�
  - 혜택 · 서비스: 할인 · 회당 단가 조정 · 추가 서비스(식단 관리 · 추가 상담 · 무료 수업 등) · 특별 혜택은 입력에 센터가 준다고 적힌 것만 말한다. 지금 입력엔 없으니 어느 칸에서도 새로 약속하지 마라(거절 대응 포함). 관리 약속은 이미 정해진 것(대본의 promise · 세일즈북은 [대본과 같은 상담 방향]의 관리 약속)만.
  - 목표: 체중 · 체지방률 · 근력 숫자는 앞으로의 목표로만 쓴다(정한 목표는 '~를 목표로 가요' · 새로 제안하는 숫자는 [★다음 목표 숫자]대로 제안형). "만들어 드릴게요 · 25%대 만들고" 같은 달성 약속 금지.
  - 원인: 인바디 · 무게 변화는 기록 사실로 말하고, 원인을 운동 · 특정 관리 방식 하나로 단정하지 마라("~ 덕분에 빠졌어요" ❌ → "그동안 이만큼 달라졌어요").
+ - 일정: 일정 변경 · 보강은 확정해 약속하지 마라("그 주 안에 다시 잡아 드릴게요" · "가능한 날로 다시 잡을게요" ❌) —
+   "센터 규정과 예약 가능한 시간을 확인해서 조율할게요" 결(약속 · 거절 대응 · 세일즈북 서비스 · 포함 항목 · 다짐 공통).
  - 기록으로 확인된 성과는 분명히 칭찬하고, 재등록 제안도 분명하게 유지한다.
 `;
 // 출력 안전망(2026-10-13) — 프롬프트를 어겨도 출석 절대 표현은 '꾸준히'로 바꾼다(재등록 대본 · 재등록 세일즈북). 다른 뜻의 '빠지지 않고'(체지방이 빠지지 않고 등)는 건드리지 않게 출석 맥락만.
@@ -408,6 +444,15 @@ function freqOptions({ applied = null, avg = null } = {}) {
 }
 // 세일즈북 플랜 meta가 쓸 빈도(2026-10-13) — 대본이 정한 주당 횟수(recommended_program.weekly · 후보 안의 값만)로 대본과 같은 계산.
 //   대본이 null(기록이 엇갈려 트레이너 확인 필요)이면 빈도 계산 없이 상품에 적힌 기간만 · weekly가 없는 옛 대본은 예전 기준(fallback).
+// 대안 플랜 빈도(2026-10-13) — 기본은 추천과 같은 빈도. 대본이 대안만 다른 빈도로 설명했으면(alt_weekly · 후보 안 · 추천과 다름) 그 빈도로,
+//   세일즈북 meta도 '지금까지 주 평균 1.6회 기준 …'처럼 조건이 보이게.
+function altFreqs(rp, options, main) {
+  const o = rp && typeof rp === "object" ? rp : {};
+  const w = Number(o.alt_weekly);
+  if (o.alt_weekly == null || !Number.isFinite(w)) return main;
+  const hit = options.find((x) => Math.abs(x.f - w) < 0.05);
+  return hit && !(main.length === 1 && Math.abs(main[0].f - hit.f) < 0.05) ? [hit] : main;
+}
 function planFreqs(rp, options, fallback) {
   const o = rp && typeof rp === "object" ? rp : {};
   if (Object.prototype.hasOwnProperty.call(o, "weekly")) {
@@ -421,10 +466,13 @@ function planFreqs(rp, options, fallback) {
 // 저장 전 정리 — weekly가 후보 밖이면 지운다(세일즈북은 예전 기준으로) · null은 그대로(트레이너 확인 필요 표시).
 function normalizeWeekly(out, options) {
   const rp = out && typeof out === "object" && out.recommended_program && typeof out.recommended_program === "object" ? out.recommended_program : null;
-  if (!rp || !Object.prototype.hasOwnProperty.call(rp, "weekly") || rp.weekly === null) return out;
-  const w = Number(rp.weekly);
-  const hit = Number.isFinite(w) ? options.find((x) => Math.abs(x.f - w) < 0.05) : null;
-  if (hit) rp.weekly = hit.f; else delete rp.weekly;
+  if (!rp) return out;
+  for (const key of ["weekly", "alt_weekly"]) {
+    if (!Object.prototype.hasOwnProperty.call(rp, key) || rp[key] === null) continue;
+    const w = Number(rp[key]);
+    const hit = Number.isFinite(w) ? options.find((x) => Math.abs(x.f - w) < 0.05) : null;
+    if (hit) rp[key] = hit.f; else delete rp[key];
+  }
   return out;
 }
 
@@ -462,7 +510,7 @@ function planMeta(pkg, freqs) {
   const dl = String(pkg?.duration_label ?? "").trim();
   return dl ? `예상 기간 ${dl}` : "";
 }
-function alignPlans(out, rp, packages, freqs) {
+function alignPlans(out, rp, packages, freqs, freqsB = freqs) {
   if (!out || typeof out !== "object" || !Array.isArray(out.plans)) return out;
   const list = Array.isArray(packages) ? packages : [];
   const hasRp = rp && typeof rp === "object";
@@ -478,11 +526,12 @@ function alignPlans(out, rp, packages, freqs) {
   const same = (x, y) => Boolean(x && y && ((x.i != null && x.i === y.i) || (x.pkg?.id != null && x.pkg.id === y.pkg?.id)));
   const fix = (plan, hit, recommended) => {
     const pkg = hit?.pkg || null;
+    const fq = recommended ? freqs : freqsB;
     const nm = typeof plan.name === "string" ? plan.name.trim() : "";
     return {
       ...plan, ref: hit ? hit.i : null, recommended,
       name: nm && !/\d/.test(nm) ? nm : (pkg?.name || (recommended ? "추천 코스" : "다른 코스")),
-      meta: pkg ? planMeta(pkg, freqs) : "",
+      meta: pkg ? planMeta(pkg, fq) : "",
       sessions_label: pkg?.sessions ? `함께 ${pkg.sessions}회` : "",
     };
   };
@@ -709,9 +758,23 @@ function priceRanks(pkgs) {
   };
   return list.map((_, i) => ({ total: rank(tot, i), per: rank(per, i) }));
 }
-function priceCompare(pkgs) {
-  const W = { same: "모두 같음", low: "가장 낮음", high: "가장 높음", mid: "중간" };
-  return priceRanks(pkgs).map((r) => [r.total && `총 결제 금액 ${W[r.total]}`, r.per && `회당 금액 ${W[r.per]}`].filter(Boolean).join(" · "));
+// (2026-10-13) 목록 순위('가장 낮음 · 중간')를 넘기면 AI가 회원에게 순위를 읽어 준다 → 추천 패키지와의 차이(많음 · 적음 · 같음)로만 넘긴다.
+//   추천을 모르면 비교 없음(가격 이야기 안 함). 금액 숫자는 여전히 넘기지 않는다(카드에 앱이 실제 금액을 보여 준다).
+function pricePair(pkgs) {
+  const list = Array.isArray(pkgs) ? pkgs : [];
+  const tot = list.map((p) => { const v = Number(p?.price); return Number.isFinite(v) && v > 0 ? v : null; });
+  const per = list.map((p, i) => { const s = Number(p?.sessions); return tot[i] != null && Number.isFinite(s) && s > 0 ? Math.round(tot[i] / s) : null; });
+  return { tot, per };
+}
+function priceCompare(pkgs, pickIdx = null) {
+  const { tot, per } = pricePair(pkgs);
+  const cmp = (a, b, more, less) => (a == null || b == null ? "" : a === b ? "같음" : a > b ? more : less);
+  return (Array.isArray(pkgs) ? pkgs : []).map((_, i) => {
+    if (!Number.isInteger(pickIdx) || tot[pickIdx] == null) return "";
+    if (i === pickIdx) return "추천 패키지";
+    return [cmp(tot[i], tot[pickIdx], "많음", "적음") && `추천보다 총 결제 금액 ${cmp(tot[i], tot[pickIdx], "많음", "적음")}`,
+      cmp(per[i], per[pickIdx], "높음", "낮음") && `회당 금액 ${cmp(per[i], per[pickIdx], "높음", "낮음")}`].filter(Boolean).join(" · ");
+  });
 }
 
 /* 2차 세일즈북 약속 · 가격 안전망(2026-10-13) — 회원이 직접 보는 장이라 프롬프트 규칙과 같은 방향으로 한 번 더 거른다(이중 방어).
@@ -721,6 +784,9 @@ function priceCompare(pkgs) {
    ③ 다짐의 '○○까지 책임' → '등록하신 기간 동안 책임' · 결과 보장 문장 · 다짐의 성격을 설명하는 문장('등록 권유가 아니라' 류)은 뺀다. ④ '회원 전용 공간' → '회원 전용 페이지'. */
 const SB_LOW_TOTAL = /(?:한\s*번에\s*(?:드는|내는|나가는|드시는)\s*(?:부담|비용|금액|돈)|총\s*(?:결제\s*)?(?:금액|비용|부담)|전체\s*(?:금액|비용|부담))\s*[이가은는도]?\s*(?:가장\s*|제일\s*)?(낮|적|싸|저렴|가볍|가벼)([가-힣]*)/;
 const SB_LOW_PER = /회당\s*(?:금액|가격|비용|부담)?\s*[이가은는도]?\s*(?:가장\s*|제일\s*)?(?:낮|적|싸|저렴|가볍|가벼)/;
+const SB_HIGH_TOTAL = /(?:총\s*(?:결제\s*)?(?:금액|비용|부담)|전체\s*(?:금액|비용|부담))\s*[이가은는도]?\s*(?:조금\s*|좀\s*|더\s*)*(?:많|높|크|비싸)/;
+const SB_HIGH_PER = /회당\s*(?:금액|가격|비용|부담)?\s*[이가은는도]?\s*(?:조금\s*|좀\s*|더\s*)*(?:높|비싸|많|크)/;
+const SB_PRICE_RANK = /(?:총\s*(?:결제\s*)?금액|회당\s*금액)[^.!?]{0,12}(?:중간|모두\s*같)/;   // 가격표 순위 읽기(2026-10-13)
 const SB_EXTRA = [/홈\s*케어/, /사진|비포|애프터/, /식단/, /카톡|카카오톡|메신저/];
 // 앱이 늘 하는 것(빈자리 채움) — 인바디 변화는 이 회원에게 실제 인바디 기록이 있을 때만(2026-10-13 · 인바디를 안 재는 트레이너도 있다).
 const sbStandard = (hasInbody) => [["운동일지", "매 수업 운동일지를 남기고 회원님이 직접 확인"], ["회원 전용 페이지", hasInbody ? "회원 전용 페이지에서 운동 기록과 인바디 변화 확인" : "회원 전용 페이지에서 운동 기록과 무게 변화 확인"]];
@@ -754,13 +820,26 @@ function guardSalesbook(out, packages, basis, { hasInbody = false, moves = [] } 
     if (b.size && a.size && ![...a].some((n) => b.has(n))) out.confirmed = { ...cf, after: "" };
   }
   const ranks = priceRanks(packages);
+  // 추천 플랜(plans[0])의 실제 가격 — '추천 코스보다 ~' 비교 문장은 이것과 견줘 맞는지 본다(2026-10-13).
+  const priceOf = (pl) => { const t = Number(pl?.pkg?.price), s = Number(pl?.pkg?.sessions); return t > 0 ? { t, per: s > 0 ? Math.round(t / s) : null } : null; };
+  const pickPrice = Array.isArray(out.plans) ? priceOf(out.plans[0]) : null;
   if (Array.isArray(out.plans)) {
     out.plans = out.plans.map((pl) => {
       if (!pl || typeof pl !== "object" || typeof pl.why !== "string") return pl;
       const r = Number.isInteger(pl.ref) && pl.pkg ? ranks[pl.ref] : null;
       const totalLow = r?.total === "low" || r?.total === "same";
       const perLow = r?.per === "low" || r?.per === "same";
+      const mine = priceOf(pl);
       const why = sbSentences(pl.why).map((s) => {
+        if (SB_PRICE_RANK.test(s)) return null;   // 가격표 순위를 읽어 주는 문장('총 결제 금액은 중간' 류)
+        if (/보다/.test(s) && (SB_LOW_TOTAL.test(s) || SB_LOW_PER.test(s) || SB_HIGH_TOTAL.test(s) || SB_HIGH_PER.test(s))) {
+          // 추천과의 차이 문장 — 실제 가격으로 맞는 말만 남긴다(추천 가격 · 이 플랜 가격을 모르면 뺀다)
+          if (!pickPrice || !mine || pl === out.plans[0]) return null;
+          const wrong = (SB_LOW_TOTAL.test(s) && !(mine.t < pickPrice.t)) || (SB_HIGH_TOTAL.test(s) && !(mine.t > pickPrice.t))
+            || (SB_LOW_PER.test(s) && !(mine.per != null && pickPrice.per != null && mine.per < pickPrice.per))
+            || (SB_HIGH_PER.test(s) && !(mine.per != null && pickPrice.per != null && mine.per > pickPrice.per));
+          return wrong ? null : s;
+        }
         const m = s.match(SB_LOW_TOTAL);
         if (m && !totalLow) return perLow ? s.replace(m[0], `회당 금액이 가장 낮${sbLowEnding(m[1], m[2])}`) : null;
         if (!m && SB_LOW_PER.test(s) && !perLow) return null;
@@ -1239,6 +1318,8 @@ ${laterPickRule("1차 관찰 · 목표 · 일정(주당 가능 횟수 · 가능 
      절대 쓰지 마라 — 금액은 앱이 목록에서 채운다. ※기간제(세션수 없음)면 '왜 이 기간'으로 대체.
    - weekly: frequency에서 권한 주당 횟수 숫자 하나('진행 계산(앱)'에 있는 빈도 중 하나 · 예 1). 세일즈북 플랜 장의 예상 기간을 앱이 이 숫자로 계산한다.
      frequency · duration · session_logic · plan_pitch · ask의 빈도와 같아야 한다. 주당 횟수가 기록끼리 엇갈리고 최신 의사가 분명하지 않으면 null.
+   - alt_weekly: 대안의 예상 기간은 기본으로 weekly(추천과 같은 빈도)로 계산해 비교한다 → null. 대안에서 빈도 자체가 달라질 분명한 이유가
+     기록에 있을 때만 그 빈도 숫자를 적고, alt_why에 '주 ○회로 진행한다면'처럼 조건을 밝혀라(세일즈북도 그 조건으로 보여 준다).
    - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내 · 그 대안의 예상 진행 기간도 '진행 계산(앱)'대로 정직하게.
    - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
    ★가격 부담 신호(1차 관찰·quit_reason·trainer_note에 '비싸다/부담' 류)가 있으면 why_fit·session_logic에서
@@ -1266,7 +1347,7 @@ ${SAY_STYLE}
   ${CLOSING_SEQ_JSON_OT},
   "book_lines": { "open": "...", "cases": "..." },
   "objection_defense": [ { "reason": "price|hesitation|doubt|time|compare", "trigger": "...", "defense": "...", "line": "..." } ],
-  "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "weekly": 2, "alt_ref": null, "alt_why": "" },
+  "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "weekly": 2, "alt_ref": null, "alt_weekly": null, "alt_why": "" },
   "data_gaps": ["..."]${caseSchemaLine}
 }
 ※ objection_defense는 5개 각 1개. proof.moves는 2개. lib_ref는 정수 또는 null.`;
@@ -1427,6 +1508,8 @@ ${laterPickRule("그동안의 기록 · 다음 목표 · 실제 수업 빈도로
      절대 쓰지 마라 — 금액은 앱이 목록에서 채운다. ※기간제(세션수 없음)면 '왜 이 기간'으로 대체.
    - weekly: frequency에서 권한 주당 횟수 숫자 하나('진행 계산(앱)'에 있는 빈도 중 하나 · 지금까지 주 평균을 그대로 쓰면 그 숫자, 예 1.6).
      세일즈북 플랜 장의 예상 기간을 앱이 이 숫자로 계산한다 — frequency · duration · session_logic · plan_pitch · ask의 빈도와 같아야 한다. 정하지 못했으면 null.
+   - alt_weekly: 대안의 예상 기간은 기본으로 weekly(추천과 같은 빈도)로 계산해 비교한다 → null. 대안에서 빈도 자체가 달라질 분명한 이유가
+     기록에 있을 때만 그 빈도 숫자를 적고(예: 지금까지 주 평균 1.6), alt_why에 '지금처럼 주 평균 1.6회로 진행한다면'처럼 조건을 밝혀라(세일즈북도 그 조건으로 보여 준다).
    - alt_ref: 결이 다른 대안 1개(마땅찮으면 null), alt_why 2문장 이내 · 그 대안의 예상 진행 기간도 '진행 계산(앱)'대로 정직하게.
    - 패키지 없으면 pick_ref=null + data_gaps에 "가격 설정 탭에 패키지를 등록하면 콕 집어드려요".
 
@@ -1452,7 +1535,7 @@ ${SAY_STYLE}
   "book_lines": { "open": "...", "journey": "...", "photo": "..." },
   "sweetener": "재등록 혜택 한 줄(덤 · 구체 금액 없이) 또는 빈 문자열",
   "objection_defense": [ { "reason": "money|sessions_left|low_effect|time|schedule", "trigger": "...", "defense": "...", "line": "..." } ],
-  "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "weekly": 2, "alt_ref": null, "alt_why": "" },
+  "recommended_program": { "pick_ref": 0, "why_fit": "...", "frequency": "...", "duration": "...", "session_logic": "...", "weekly": 2, "alt_ref": null, "alt_weekly": null, "alt_why": "" },
   "data_gaps": ["..."]
 }
 ※ objection_defense 5개 각 1개. lib_refs는 쓴 자료 번호(정수) 배열, 안 썼으면 [].`;
@@ -1480,7 +1563,12 @@ ${later.map((h) => `${h.round}차: ${JSON.stringify(h.observation)}`).join("\n")
   //    "1,560,000원" 같은 금액이 값 텍스트에 새면 FIELD_TERMS(영어 키만 치환)가 못 잡아 그대로 노출된다.
   //    입력에서 아예 제거가 유일한 확실한 차단. sessions_label·meta엔 sessions·frequency·duration만 필요.
   //    가격 '비교'만은 실제 저장된 가격에서 앱이 계산해 말로 넘긴다(총 결제 금액 · 회당 금액을 따로 · 금액 숫자는 없음 · 2026-10-13).
-  const cmp = priceCompare(pkgs);
+  const pickIdx = (() => {   // 추천 패키지 자리(저장된 스냅샷 id 우선 · 없으면 순번)
+    const id = rp.pick_pkg && typeof rp.pick_pkg === "object" ? rp.pick_pkg.id : null;
+    const i = id != null ? pkgs.findIndex((p) => p && p.id === id) : -1;
+    return i >= 0 ? i : Number.isInteger(rp.pick_ref) && rp.pick_ref >= 0 && rp.pick_ref < pkgs.length ? rp.pick_ref : null;
+  })();
+  const cmp = priceCompare(pkgs, pickIdx);
   const pkgBlock = pkgs.length
     ? pkgs.map((p, i) =>
         `[${i}] name=${g(p.name)} · sessions=${p.sessions ?? "기간제"} · duration=${g(p.duration_label)}${cmp[i] ? ` · 가격 비교(앱 계산)=${cmp[i]}` : ""}${p.note ? ` · note=${p.note}` : ""}`
@@ -1555,9 +1643,10 @@ ${pkgBlock}
    sessions_label(빈 문자열) · why(2문장 · session_logic을 회원 언어로 · ★회차 · 기간 · 빈도 숫자를 쓰지 마라) ·
    includes[3](아래 [약속 · 서비스 규칙] 안에서만)}. ★meta · sessions_label(회차 · 빈도에 따른 예상 진행 기간)은 앱이 실제 상품 설정으로
    채운다(2026-10-13). ★금액(원)도 값 텍스트에 절대 쓰지 마라 — 앱이 packages[ref].price(+ 회당=price/sessions)를 렌더한다. JSON엔 금액 없음.
-   ★가격 이야기는 [내 패키지 목록]의 '가격 비교(앱 계산)' 값만 근거로, '총 결제 금액'과 '회당 금액'을 구분해서 써라.
-     회당 금액이 낮아도 총 결제 금액은 가장 높을 수 있다. "한 번에 드는 부담이 낮아요" · "부담이 적어요" · "저렴해요"처럼
-     총액인지 회당인지 모호한 말 금지. 가격 비교 값이 없으면 가격 이야기를 하지 마라.
+   ★실제 금액은 카드에 앱이 보여 준다. why에서 가격표 순위('가장 낮은' · '중간' · '가장 높은')를 읽어 주지 마라.
+     가격 차이를 말하려면 대안(plans[1]) why에서 [내 패키지 목록]의 '가격 비교(앱 계산)'(추천과의 차이)만 근거로 한 번, 자연스럽게
+     ("추천 코스보다 총 결제 금액은 적고, 회당 금액은 조금 더 높아요" 결). '총 결제 금액'과 '회당 금액'을 구분하고,
+     "부담이 적어요" · "저렴해요"처럼 총액인지 회당인지 모호한 말 금지. 가격 비교 값이 없으면 가격 이야기를 하지 마라.
    ★why는 회원에게 보여 줄 추천 이유다. 대본에 섞인 트레이너용 메모는 옮기지 마라. 예상 진행 기간(주 N회면 약 몇 주)은 앱이 meta에 보여 준다.
      상품 기간은 만료일이 아니라 예상 진행 기간이다. '기간 초과' · '센터 규정 확인' · '기간 연장' 같은 만료를 전제한 말을 쓰지 마라.
 ⑦ closing: services[3~4](제공 서비스 · goal 톤 · 아래 [약속 · 서비스 규칙] 안에서만 · 채울 게 없으면 3개) ·
@@ -1669,8 +1758,9 @@ function regSalesbookPrompt(member, change, recommendedProgram, packages, photoL
 회원이 직접 읽으니 따뜻한 구어체로. ★핵심: 그동안의 변화를 확실히 인정해주되, '다 됐다'가 아니라 '여기까지가 토대,
 지금부터가 본론'으로 프레이밍(남은 단계가 진짜 · '멈추면 되돌아갈 수 있다'는 이 회원 기록에 근거가 있을 때만). 판매 압박·공포·죄책감·허위 긴급성 금지.
 
-${REREG_FACT_RULE}[★다음 목표 숫자 — 세일즈북] 다음 목표 숫자는 [★대본과 같은 상담 방향]의 '다음 목표'에 있는 숫자만 쓴다(새 숫자 금지).
- 대본이 제안형("~를 목표로 잡아 볼 수 있어요")이면 세일즈북도 제안형으로, 이미 정한 목표면 그대로. 달성 약속 금지 · 단위(%p · kg)는 대본과 같게.
+${REREG_FACT_RULE}[★다음 목표 숫자 — 세일즈북] 다음 목표 숫자는 [★대본과 같은 상담 방향]의 '다음 목표'에 있는 숫자만 쓴다(새 숫자 금지 · 숫자는 대본과 똑같이).
+ 대본이 제안형("~를 목표로 잡아 볼 수 있어요")이면 세일즈북도 제안형으로("~를 목표로 제안드려요" · "함께 목표로 잡아 볼 수 있어요").
+ '목표로 잡고 가요' · '목표로 가요'처럼 정해진 목표로 들리는 말은 이미 정한 목표에만 쓴다. 달성 약속 금지 · 단위(%p · kg)는 대본과 같게.
 [회원 기본정보] name=${g(m.name)}, age=${g(m.age)}, job=${g(m.job)}, gender=${g(m.gender)}, pain=${g(m.pain)}, goal=${g(m.goal)}
 [현재 PT 방향/목표] ${g(m.pt_direction)}
 
@@ -1707,7 +1797,9 @@ ${pkgBlock}
 ⑦ plans[2]: A=pick_ref, B=alt_ref(없으면 목록에서 더 가벼운 1개). 각 {ref(정수) · name(숫자를 넣지 마라) · recommended(불린) ·
    meta(빈 문자열) · sessions_label(빈 문자열) · why(2문장 · session_logic을 회원 언어로 · ★회차 · 기간 · 빈도 숫자를 쓰지 마라) · includes[3](PT 수업 안에서 원래 하는 것만 · 새 서비스 · 혜택 금지)}.
    ★meta · sessions_label(회차 · 예상 기간)은 앱이 실제 상품 설정으로 채운다(2026-10-13). ★금액(원) 값 텍스트 금지 — 앱이 채움.
-⑧ closing: services[4](제공 서비스 · goal 톤 · PT 수업 안에서 원래 하는 것과 정해진 관리 약속만) · vow(트레이너 약속 1~2문장 · 손글씨 렌더 · 판매 동사 금지).
+⑧ closing: services[4](제공 서비스 · goal 톤 · PT 수업 안에서 원래 하는 것과 정해진 관리 약속만) · vow(트레이너 약속 1~2문장 · 손글씨 렌더 · 판매 동사 금지 · 따뜻하게).
+   ★vow는 등록하신 PT 과정 동안 실제로 할 일(자세 점검 · 강도 조절 · 변화 기록 · 피드백)을 구체적으로 약속한다.
+     '~이 될 때까지 · 끝까지 · 평생'처럼 기간 없이 결과까지 책임지는 말은 쓰지 마라. 소극적이거나 기계적인 문장으로 만들지는 마라.
 
 [data_gaps] 데이터 얇아도 위 전부 생성("정보 부족" 금지). 긍정 코칭. 충실하면 빈 배열.
 [출력 언어] 한국어만. 영문 키/코드값 값 텍스트 노출 금지. 아래 JSON만(설명·마크다운·코드펜스 금지).
@@ -2462,13 +2554,14 @@ export async function POST(request) {
     try {
       let parsed = tidyDeep(sanitizeFieldNames(parseBrief(textOut, reqKeys)), REPORT_PHASES.has(phase));
       // 재등록 안전망(2026-10-13) — 출석 절대 표현은 '꾸준히'로 · 혜택(sweetener)은 확인된 혜택 정보를 받는 곳이 아직 없어 비운다(AI가 만든 혜택 약속 방지).
-      if (phase === "reregister" || phase === "reg_salesbook") parsed = softenAttendance(parsed);
+      if (phase === "reregister" || phase === "reg_salesbook") parsed = guardRegPromise(softenAttendance(parsed));
       if (phase === "reregister" && typeof parsed.sweetener === "string") parsed.sweetener = "";
       if (phase === "second") parsed = normalizeWeekly(parsed, otFreqOpts);
       if (phase === "reregister") parsed = normalizeWeekly(parsed, regFreqOpts);
       // 화면에서 다시 만드는 세일즈북도 플랜 숫자는 실제 상품 설정으로(2026-10-13 · 서버 이어 만들기와 같은 함수).
-      const aligned = phase === "salesbook" ? neutralPhotoSlide(alignPlans(parsed, bookRp, packages, planFreqs(bookRp, otFreqOpts, otFreqFallback)), photoLabels)
-        : phase === "reg_salesbook" ? alignPlans(parsed, bookRp, packages, planFreqs(bookRp, regFreqOpts, regFreqFallback)) : parsed;
+      const otMain = planFreqs(bookRp, otFreqOpts, otFreqFallback), regMain = planFreqs(bookRp, regFreqOpts, regFreqFallback);
+      const aligned = phase === "salesbook" ? neutralPhotoSlide(alignPlans(parsed, bookRp, packages, otMain, altFreqs(bookRp, otFreqOpts, otMain)), photoLabels)
+        : phase === "reg_salesbook" ? guardRegGoal(alignPlans(parsed, bookRp, packages, regMain, altFreqs(bookRp, regFreqOpts, regMain)), bookBasis) : parsed;
       brief = attachLibSnapshots(attachPkgSnapshots(aligned, packages), boundedFavs);
       if (phase === "salesbook") brief = guardSalesbook(brief, packages, bookBasis, { hasInbody, moves: obsMoveNames(report, boundedHistory) });   // 2차 세일즈북 약속 · 가격 안전망(2026-10-13)
     }
@@ -2518,9 +2611,11 @@ export async function POST(request) {
       const keys = isRereg ? ["cover", "journey", "change", "roadmap", "fork", "plans", "closing"]
         : isFirst ? ["cover", "goal", "today", "roadmap", "closing"] : ["cover", "goal", "confirmed", "photo_slide", "roadmap", "plans", "closing"];
       // 플랜 장 = 방금 저장한 대본의 추천 · 대안 패키지와 실제 상품 설정으로(2026-10-13 · alignPlans)
-      const sbAligned = alignPlans(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), brief?.recommended_program, packages,
-        isRereg ? planFreqs(brief?.recommended_program, regFreqOpts, regFreqFallback) : planFreqs(brief?.recommended_program, otFreqOpts, otFreqFallback));
-      sbOut = attachPkgSnapshots(isRereg ? softenAttendance(sbAligned) : neutralPhotoSlide(sbAligned, photoLabels), packages);
+      const brp = brief?.recommended_program;
+      const sbMain = isRereg ? planFreqs(brp, regFreqOpts, regFreqFallback) : planFreqs(brp, otFreqOpts, otFreqFallback);
+      const sbAligned0 = alignPlans(tidyDeep(sanitizeFieldNames(parseBrief(text, keys)), false), brp, packages, sbMain, altFreqs(brp, isRereg ? regFreqOpts : otFreqOpts, sbMain));
+      const sbAligned = isRereg ? guardRegGoal(sbAligned0, scriptBasis(brief)) : sbAligned0;
+      sbOut = attachPkgSnapshots(isRereg ? guardRegPromise(softenAttendance(sbAligned)) : neutralPhotoSlide(sbAligned, photoLabels), packages);
       if (!isRereg && !isFirst) sbOut = guardSalesbook(sbOut, packages, scriptBasis(brief), { hasInbody, moves: obsMoveNames(report, boundedHistory) });   // 2차 세일즈북 약속 · 가격 안전망(2026-10-13)
     } catch (e) {
       await finishAi(admin, sbSlot.id, { ok: false, model: MODEL_FAST, usage: msg?.usage });
