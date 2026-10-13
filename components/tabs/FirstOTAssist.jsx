@@ -217,7 +217,7 @@ export default function FirstOTAssist({ member, onSaved }) {
               이전 형식 대본이에요. &lsquo;다시 생성&rsquo;을 누르면 새 형식으로 바뀌어요.
             </div>
           )}
-          <PrepReport kind="first" data={data} packages={packages} favorites={favorites} weeklyFreq={member?.weekly_freq ?? null} />
+          <PrepReport kind="first" data={data} packages={packages} favorites={favorites} />
           <p className="text-[12px] leading-relaxed text-muted">
             ※ 1차도 목표는 <strong className="font-semibold text-primary-strong">오늘 PT 등록</strong>이에요. 클로징의 요청까지 꼭 가세요. 운동 부분은 관찰 전 &lsquo;가설&rsquo;이라 회원 반응을 보며 조정하세요.
           </p>

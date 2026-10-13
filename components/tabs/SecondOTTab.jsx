@@ -559,7 +559,7 @@ export default function SecondOTTab({ member, round = 2, onSaved }) {
           </div>
         )}
         <PrepReport kind="second" data={b} packages={packages} favorites={favorites} caseTier={meta?.caseTier}
-          onOpenBook={existingRow2Id ? openBook : null} weeklyFreq={member?.weekly_freq ?? null}
+          onOpenBook={existingRow2Id ? openBook : null}
           bookSlides={otBookSlides((seenBook?.id === existingRow2Id ? seenBook.sb : null) || row2Report?.salesbook)} />
 
         </AIBriefBlock>

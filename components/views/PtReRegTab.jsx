@@ -545,7 +545,7 @@ export default function PtReRegTab({ member, contracts, setContracts, logs, onMe
           )}
         >
           {regBrief && <PrepReport kind="reregister" data={regBrief} packages={packages} favorites={favorites} highlightReason={regReason} onOpenBook={regSb || isCurrent ? openBook : null}
-            weeklyAvg={changeData.journey.weekly_frequency} bookSlides={regBookSlides(regSb, bookPhotoLabels)} />}
+            bookSlides={regBookSlides(regSb, bookPhotoLabels)} />}
         </AIBriefBlock>
       )}
 

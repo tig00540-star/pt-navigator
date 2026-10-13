@@ -15,7 +15,6 @@
 import { useState } from "react";
 import { ChevronDown, Dumbbell, ExternalLink, Flag, History, MessageCircle, ShieldCheck, Sparkles, BookText, TrendingUp, Route } from "lucide-react";
 import ClosingSequence from "@/components/ui/ClosingSequence";
-import { periodNote, periodNoteAvg } from "@/lib/pkgPace";
 import { won, wonApprox } from "@/lib/format";
 import Emph, { plainText } from "@/components/ui/Emph";
 import { resolvePkg } from "@/lib/pkgRef";
@@ -118,7 +117,7 @@ const CORE_LABEL = { echo: "되짚기", stakes: "왜 PT가 필요한지", plan_p
 const coreLabel = (kind, k) => (kind === "reregister" && k === "stakes" ? "왜 지금 이어가야 하나" : CORE_LABEL[k]);   // 재등록 회원은 이미 PT 중
 const HOLD_TEXT = "요청한 뒤엔 먼저 말하지 말고 기다려요.";
 
-function BookClosing({ kind, d, priceLine, priceNote = "", onOpenBook, bookSlides = null }) {
+function BookClosing({ kind, d, priceLine, onOpenBook, bookSlides = null }) {
   const [all, setAll] = useState(false);
   const seq = d.closing_sequence || {};
   const bl = d.book_lines || {};
@@ -133,7 +132,6 @@ function BookClosing({ kind, d, priceLine, priceNote = "", onOpenBook, bookSlide
   const extras = (r) => (
     <>
       {r.price && priceLine && <p className="m-0 text-[13px] font-semibold text-ink">{onOpenBook ? "화면의 추천 칸 · " : ""}{priceLine}</p>}
-      {r.price && priceLine && priceNote && <p className="m-0 text-[12px] text-danger-text">{priceNote}</p>}
       {r.hold && seq.hold && <p className="m-0 text-[12px] text-sub">{HOLD_TEXT}</p>}
     </>
   );
@@ -252,7 +250,7 @@ function cheatLines(kind, d) {
   return { lines: [d.member_read, proofLine, ask && `"${ask}"`].filter(Boolean), derived: true };
 }
 
-export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier, highlightReason = "", onOpenBook = null, weeklyFreq = null, weeklyAvg = null, bookSlides = null }) {
+export default function PrepReport({ kind = "first", data, packages = [], favorites = [], caseTier, highlightReason = "", onOpenBook = null, bookSlides = null }) {
   const d = data || {};
   const rereg = kind === "reregister";
   const [open, setOpen] = useState({});
@@ -280,9 +278,6 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
   const alt = resolvePkg({ snap: rp.alt_pkg, ref: rp.alt_ref, packages, hint: rp.alt_why });
   const per = pick?.sessions ? Math.round(pick.price / pick.sessions) : null;
   const priceLine = pick ? `${pick.name} · ${won(pick.price)}${per ? ` · 회당 약 ${wonApprox(per)}` : ""}` : "";
-  // 1차 · 2차 이상 OT — 저장된 상품 이용 기간 · 회원이 신청서에 적은 주당 횟수로 앱이 계산(AI 아님). 넘길 때만 한 줄 · 모르면 빈칸(2026-10-13).
-  //   재등록(2026-10-13) = 회원의 지난 실제 주 평균(weeklyAvg · 앞으로 일정 아님)으로 같은 계산 · '이전 주 평균 기준 예상'으로 표시.
-  const priceNote = !pick ? "" : kind === "first" || kind === "second" ? periodNote(pick, weeklyFreq) : kind === "reregister" ? periodNoteAvg(pick, weeklyAvg) : "";
   const gaps = arr(d.data_gaps).filter((g) => typeof g === "string" && g.trim());
   const seq = d.closing_sequence || {};
   const entry = kind === "first" ? d.opening || {} : d.recall || {};
@@ -409,10 +404,10 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
     sections.push({
       k: "close", icon: Flag, title: d.book_lines && onOpenBook ? "클로징 · 세일즈북 넘기며" : "클로징", preview: seq.ask || d.closing_line,
       body: d.book_lines && (kind === "second" || rereg) ? (
-        <BookClosing kind={rereg ? "reregister" : "second"} d={d} priceLine={priceLine} priceNote={priceNote} onOpenBook={onOpenBook} bookSlides={bookSlides} />
+        <BookClosing kind={rereg ? "reregister" : "second"} d={d} priceLine={priceLine} onOpenBook={onOpenBook} bookSlides={bookSlides} />
       ) : (
         <>
-          <ClosingSequence compact rereg={rereg} sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} priceNote={priceNote} />
+          <ClosingSequence compact rereg={rereg} sequence={d.closing_sequence} fallbackLine={d.closing_line || ""} metaphor={d.sales_metaphor} priceLine={priceLine} />
           {rereg && d.sweetener && <Note label="혜택(마지막에 덤으로)">{d.sweetener}</Note>}
         </>
       ),
@@ -498,7 +493,6 @@ export default function PrepReport({ kind = "first", data, packages = [], favori
               <p className="m-0 text-[12px] font-semibold text-sub">트레이너 참고 · 추천 상품</p>
               <p className="m-0 mt-0.5 text-[13px] font-semibold text-ink">{priceLine}</p>
               {alt && alt !== pick && !(alt.id != null && alt.id === pick.id) && <p className="m-0 text-[12px] text-sub">대안 · {alt.sessions ? `${alt.sessions}회` : alt.name}</p>}
-              {priceNote && <p className="m-0 text-[12px] text-danger-text">{priceNote}</p>}
             </div>
           )}
           {derived && <p className="m-0 mt-2 text-[12px] text-sub">대본을 다시 만들면 더 짧은 요약으로 바뀌어요.</p>}
