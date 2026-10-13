@@ -147,7 +147,7 @@ export function CareSlideBody({ items, urls, SlideHead }) {
 // 보관함 행 한 줄 요약(고르는 목록용).
 export function caseSummary(c) {
   const d = c.data || {};
-  if (c.kind === "photo") return `사진 2장${d.weeks ? ` · ${d.weeks}주` : ""}`;
+  if (c.kind === "photo") return `${d.combined ? "비포 · 애프터 사진 1장" : "사진 2장"}${d.weeks ? ` · ${d.weeks}주` : ""}`;
   if (c.kind === "lift") return `${d.exercise} ${d.first}→${d.latest}kg`;
   if (c.kind === "inbody") {
     const m = (d.metrics || []).find((x) => x.key === "body_fat_pct") || (d.metrics || [])[0];

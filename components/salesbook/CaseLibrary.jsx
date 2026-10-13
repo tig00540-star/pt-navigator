@@ -16,7 +16,7 @@
    DB: sales_case(docs/migrations/2026-10-02-sales-case.sql) · 후기 이미지 = 비공개 버킷 sales-cases/{account_id}/…
    ========================================================================= */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookImage, Check, Dumbbell, HeartHandshake, ImagePlus, MessageSquareQuote, Plus, Scale, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { PHOTO_URL_TTL } from "@/lib/photoUrl";
@@ -251,7 +251,8 @@ export default function CaseLibrary() {
         </div>
       )}
 
-      {adding === "photo" && <PhotoPicker uid={myUid} members={scoped} onClose={() => setAdding(null)} onAdd={insertCase} />}
+      {adding === "photo" && <PhotoPicker uid={myUid} members={scoped} onClose={() => setAdding(null)} onAdd={insertCase} onUpload={() => setAdding("photo_upload")} />}
+      {adding === "photo_upload" && <PhotoUploadForm uid={myUid} onBack={() => setAdding("photo")} onClose={() => setAdding(null)} onAdd={insertCase} showToast={showToast} />}
       {adding === "inbody" && <InbodyPicker members={scoped} cases={cases} onClose={() => setAdding(null)} onAdd={insertCase} />}
       {adding === "lift" && <LiftPicker members={scoped} cases={cases} onClose={() => setAdding(null)} onAdd={insertCase} />}
       {(adding === "review" || adding === "care") && <ReviewForm kind={adding} uid={myUid} onClose={() => setAdding(null)} onAdd={insertCase} showToast={showToast} />}
@@ -263,7 +264,7 @@ export default function CaseLibrary() {
 }
 
 /* ── 비포·애프터: 회원 고르기 → 사진 2장 고르기 → 라벨 → 담기 ── */
-function PhotoPicker({ uid, members, onClose, onAdd }) {
+function PhotoPicker({ uid, members, onClose, onAdd, onUpload }) {
   const [rows, setRows] = useState(null);
   const [memberId, setMemberId] = useState(null);
   const [urls, setUrls] = useState({});
@@ -323,9 +324,20 @@ function PhotoPicker({ uid, members, onClose, onAdd }) {
           <Button variant="primary" fullWidth onClick={save} disabled={picked.length !== 2 || saving || !agreed}>{saving ? "담는 중…" : "보관함에 담기"}</Button>
         </div>
       ) : null}>
+      {!group && (
+        // 앱을 쓰기 전에 모아 둔 비포 · 애프터(2026-10-13) — 회원 기록과 상관없이 사진을 직접 올린다
+        <button type="button" onClick={onUpload}
+          className="mb-3 flex w-full items-center gap-3 rounded-xl border border-dashed border-line-strong bg-elevate px-3.5 py-3 text-left transition hover:border-primary">
+          <ImagePlus className="h-5 w-5 shrink-0 text-primary-strong" aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="block text-[14px] font-semibold text-ink">앱 밖 사진 직접 올리기</span>
+            <span className="block text-[12px] text-sub">앱을 쓰기 전에 모아 둔 비포 · 애프터 사진이에요</span>
+          </span>
+        </button>
+      )}
       {rows == null ? <p className="text-[13px] text-muted">불러오는 중…</p>
         : !group ? (
-          groups.length === 0 ? <p className="text-[13px] text-sub">사진이 2장 이상인 회원이 아직 없어요. 회원 전용 페이지나 자료남기기에서 사진이 쌓이면 여기 떠요.</p> : (
+          groups.length === 0 ? <p className="text-[13px] text-sub">회원 전용 페이지나 자료남기기에 사진이 2장 이상 쌓인 회원은 아직 없어요. 그런 회원이 생기면 여기서 바로 고를 수 있어요.</p> : (
             <ul className="m-0 list-none space-y-1.5 p-0">
               {groups.map((g) => (
                 <li key={g.member.id}>
@@ -362,6 +374,109 @@ function PhotoPicker({ uid, members, onClose, onAdd }) {
             )}
           </div>
         )}
+    </Modal>
+  );
+}
+
+/* ── 비포·애프터 직접 올리기(2026-10-13) — 앱을 쓰기 전에 모아 둔 사진. 2장(비포 · 애프터) 또는 이미 합친 1장.
+   저장 = 진짜 비포 · 애프터 사례(kind photo · 파일은 sales-cases/{계정}/… · data.before/after.bucket = 'sales-cases' — '내 자료 가져오기'와 같은 모양)
+   → 내 소개 · 세일즈북 사례 장 · 변화 모음집이 그대로 보여 준다. 합친 1장은 data.combined(카드가 통째로 보여 줌). 회원과 잇지 않는다(member_id 없음). */
+function UploadSlot({ cap, preview, onPick }) {
+  return (
+    <label className="flex min-h-[140px] flex-1 cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-dashed border-line-strong bg-elevate text-[13px] text-sub">
+      {preview ? <img src={preview} alt={`${cap} 미리보기`} className="max-h-[260px] w-full object-contain" /> : (<><ImagePlus className="h-6 w-6" aria-hidden="true" /> {cap} 사진 고르기</>)}
+      <input type="file" accept="image/*" className="sr-only" onChange={onPick} />
+    </label>
+  );
+}
+function PhotoUploadForm({ uid, onBack, onClose, onAdd, showToast }) {
+  const [combined, setCombined] = useState(false);
+  const [files, setFiles] = useState({ before: null, after: null, one: null });
+  const [previews, setPreviews] = useState({});
+  const [weeks, setWeeks] = useState("");
+  const [label, setLabel] = useState("");
+  const [note, setNote] = useState("");
+  const [category, setCategory] = useState(null);
+  const [agreed, setAgreed] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // 미리보기 주소 — 같은 칸을 다시 고르면 그 칸 것만 풀고, 창을 닫을 때 남은 것을 푼다(다른 칸 미리보기가 깨지지 않게).
+  const previewRef = useRef({});
+  useEffect(() => () => { Object.values(previewRef.current).forEach((u) => u && URL.revokeObjectURL(u)); }, []);
+
+  const pick = (key, e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (previewRef.current[key]) URL.revokeObjectURL(previewRef.current[key]);
+    const url = URL.createObjectURL(f);
+    previewRef.current = { ...previewRef.current, [key]: url };
+    setFiles((x) => ({ ...x, [key]: f }));
+    setPreviews((x) => ({ ...x, [key]: url }));
+  };
+  const ready = combined ? !!files.one : !!(files.before && files.after);
+  const wk = Number(weeks);
+  const weeksOk = weeks === "" || (Number.isInteger(wk) && wk >= 1 && wk <= 260);
+
+  const save = async () => {
+    if (!ready || !weeksOk || saving || !agreed) return;
+    setSaving(true);
+    const uploaded = [];
+    try {
+      // 경로 첫 폴더 = account_id(버킷 정책 · 후기와 같음). 트레이너 본인 행에서 읽는다.
+      const { data: me } = await supabase.from("trainer").select("account_id").eq("id", uid).maybeSingle();
+      if (!me?.account_id) { showToast("올리지 못했어요. 권한이 없거나 구독이 만료됐을 수 있어요."); return; }
+      const put = async (file) => {
+        const blob = await compressImage(file, 1600, 0.85);
+        const path = `${me.account_id}/${crypto.randomUUID()}.jpg`;
+        const { error } = await supabase.storage.from("sales-cases").upload(path, blob, { contentType: "image/jpeg" });
+        if (error) throw error;
+        uploaded.push(path);
+        return { path, bucket: "sales-cases" };
+      };
+      const data = combined
+        ? { before: await put(files.one), combined: true }
+        : { before: await put(files.before), after: await put(files.after) };
+      const ok = await onAdd({
+        kind: "photo", label: label.trim() || "회원 비포 · 애프터", note: note.trim() || null,
+        data: { ...data, ...(weeks !== "" ? { weeks: wk } : {}), category, source: "upload" }, ...consentFields(uid),
+      });
+      if (ok) { uploaded.length = 0; onClose(); }
+    } catch (e) {
+      console.error("비포 · 애프터 올리기 실패", e);
+      showToast(e?.message === "이미지를 읽을 수 없어요" ? "이 사진은 읽을 수 없어요. 다른 사진으로 시도해 주세요." : "사진을 올리지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+    } finally {
+      if (uploaded.length) await supabase.storage.from("sales-cases").remove(uploaded).catch(() => {});   // 담기 실패 = 올린 파일 정리
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal variant="sheet" title="비포·애프터 직접 올리기" subtitle="앱을 쓰기 전에 모아 둔 사진을 올려 주세요" onClose={onClose}
+      footer={(
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={onBack} disabled={saving} className="shrink-0 whitespace-nowrap">뒤로</Button>
+          <Button variant="primary" fullWidth onClick={save} disabled={!ready || !weeksOk || saving || !agreed}>{saving ? "올리는 중…" : "보관함에 담기"}</Button>
+        </div>
+      )}>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip selected={!combined} onClick={() => setCombined(false)}>비포 · 애프터 따로 2장</FilterChip>
+          <FilterChip selected={combined} onClick={() => setCombined(true)}>이미 합친 사진 1장</FilterChip>
+        </div>
+        {combined ? <UploadSlot cap="합친" preview={previews.one} onPick={(e) => pick("one", e)} /> : (
+          <div className="flex gap-2">
+            <UploadSlot cap="비포" preview={previews.before} onPick={(e) => pick("before", e)} />
+            <UploadSlot cap="애프터" preview={previews.after} onPick={(e) => pick("after", e)} />
+          </div>
+        )}
+        <p className="m-0 text-[12px] text-muted">얼굴 · 이름 · 문신처럼 회원을 알아볼 수 있는 부분은 가리거나 잘라서 올려 주세요.</p>
+        <CategoryChips value={category} onChange={setCategory} />
+        <Input label="화면에 보일 이름" hint="실명 대신 익명으로 · 선택" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="예) 30대 여성 · 12주" />
+        <Input label="몇 주 동안의 변화인가요" hint="선택 · 숫자만" inputMode="numeric" value={weeks} onChange={(e) => setWeeks(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
+          placeholder="예) 12" error={weeksOk ? undefined : "1~260 사이 숫자로 적어 주세요"} />
+        <Input label="한 줄 메모" hint="선택" value={note} onChange={(e) => setNote(e.target.value)} placeholder="예) 주 2회, 식단 같이 관리" />
+        <ConsentCheck checked={agreed} onChange={setAgreed} />
+      </div>
     </Modal>
   );
 }

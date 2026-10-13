@@ -107,7 +107,7 @@ export async function POST(req) {
     (cases.data || []).forEach((c, i) => {
       const base = `사례/${String(i + 1).padStart(3, "0")}_${safe(c.label)}`;
       const d = c.data || {};
-      if (c.kind === "photo") for (const [k, l] of [["before", "처음"], ["after", "지금"]]) {
+      if (c.kind === "photo") for (const [k, l] of [["before", d.combined ? "비포애프터" : "처음"], ["after", "지금"]]) {
         if (!d[k]?.path) continue;
         (d[k].bucket === "sales-cases" ? fromCases : fromMember).push({ path: d[k].path, name: uniq(`${base}_${l}.jpg`) });
       }
@@ -151,7 +151,7 @@ export async function POST(req) {
     const d = c.data || {};
     if (c.kind === "inbody") return (d.metrics || []).map((x) => `${x.label} ${x.first}${x.unit}→${x.latest}${x.unit}`).join(", ");
     if (c.kind === "lift") return `${d.exercise || ""} ${d.first}kg→${d.latest}kg`;
-    if (c.kind === "photo") return `${day(d.before?.taken_on)} → ${day(d.after?.taken_on)}`;
+    if (c.kind === "photo") return d.before?.taken_on || d.after?.taken_on ? `${day(d.before?.taken_on)} → ${day(d.after?.taken_on)}` : `직접 올린 사진${d.weeks ? ` · ${d.weeks}주` : ""}`;
     return "";
   };
 

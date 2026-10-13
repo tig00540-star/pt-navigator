@@ -3,7 +3,7 @@
 
 /* =========================================================================
    CaseCard — 사례 한 건 표시(사례 보관함 · 2단계 세일즈북 장에서도 같이 쓴다).
-   종류: photo(비포·애프터 2장) · inbody(전후 숫자) · lift(종목 최고중량 전후 + 추이) · review(후기 캡처) · care(관리 모습 캡처).
+   종류: photo(비포·애프터 2장 · 직접 올린 합친 사진이면 1장 = data.combined) · inbody(전후 숫자) · lift(종목 최고중량 전후 + 추이) · review(후기 캡처) · care(관리 모습 캡처).
    숫자는 담을 때 스냅샷(data) 그대로 — 여기서 계산하지 않는다(변화량 표기만).
    실명은 쓰지 않는다 — label(익명 라벨)만.
    ========================================================================= */
@@ -23,6 +23,9 @@ function Photo({ url, cap, onOpen }) {
     </figure>
   );
 }
+
+// 사진 아래 글 — 날짜가 없으면(직접 올린 사진) '처음' · '지금'만
+const dayCap = (word, day) => (shortDay(day) ? `${word} · ${shortDay(day)}` : word);
 
 export default function CaseCard({ item, urls = {}, onOpenImage, onDelete, onCategory, busy }) {
   const d = item.data || {};
@@ -52,12 +55,25 @@ export default function CaseCard({ item, urls = {}, onOpenImage, onDelete, onCat
 
       {item.kind === "photo" && (
         <>
-          <div className="flex gap-2">
-            <Photo url={urls[d.before?.path]} cap={`처음 · ${shortDay(d.before?.taken_on)}`} onOpen={onOpenImage} />
-            <Photo url={urls[d.after?.path]} cap={`지금 · ${shortDay(d.after?.taken_on)}`} onOpen={onOpenImage} />
-          </div>
+          {d.combined ? (
+            // 앱 밖에서 이미 합쳐 둔 비포 · 애프터 1장(2026-10-13 · 직접 올리기) — 자르지 않고 통째로
+            <figure className="m-0">
+              <button type="button" onClick={() => urls[d.before?.path] && onOpenImage?.(urls[d.before.path])} disabled={!urls[d.before?.path]}
+                className="flex w-full items-center justify-center overflow-hidden rounded-lg bg-elevate">
+                {urls[d.before?.path]
+                  ? <img src={urls[d.before.path]} alt="비포 · 애프터" className="max-h-[360px] w-full object-contain" />
+                  : <span className="flex h-24 items-center"><ImageOff className="h-5 w-5 text-muted" aria-label="사진 없음" /></span>}
+              </button>
+              <figcaption className="mt-1 text-center text-[12px] text-sub">비포 · 애프터</figcaption>
+            </figure>
+          ) : (
+            <div className="flex gap-2">
+              <Photo url={urls[d.before?.path]} cap={dayCap("처음", d.before?.taken_on)} onOpen={onOpenImage} />
+              <Photo url={urls[d.after?.path]} cap={dayCap("지금", d.after?.taken_on)} onOpen={onOpenImage} />
+            </div>
+          )}
           {!urls[d.before?.path] && !urls[d.after?.path] && (
-            <p className="m-0 mt-1.5 text-[12px] text-muted">사진을 불러오지 못했어요. 회원이 사진을 지웠을 수 있어요.</p>
+            <p className="m-0 mt-1.5 text-[12px] text-muted">{d.source === "upload" ? "사진을 불러오지 못했어요. 다시 열어 주세요." : "사진을 불러오지 못했어요. 회원이 사진을 지웠을 수 있어요."}</p>
           )}
         </>
       )}
