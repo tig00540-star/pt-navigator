@@ -8,7 +8,7 @@
 
 import { Analytics } from "@vercel/analytics/next";
 
-const EXACT = new Set(["/", "/lp", "/center", "/download", "/signup"]);
+const EXACT = new Set(["/", "/lp", "/center", "/download", "/signup", "/guide"]);
 const PREFIX = ["/legal/", "/try", "/check", "/join/"];
 
 function signedIn() {

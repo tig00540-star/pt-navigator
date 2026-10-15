@@ -103,8 +103,11 @@ export default function AuthGate({ children }) {
   }, [session]);
 
   // 로그인 상태로 /login 에 있으면 앱 루트로 정리(로그인 직후 착지·직접 진입 모두).
+  //   ?next=/guide(사용 가이드에서 온 로그인 · 2026-10-15)만 그 주소로 돌려보낸다 — 다른 값은 무시(밖으로 튀는 주소 막기).
   useEffect(() => {
-    if (supabase && session && pathname === "/login") router.replace("/");
+    if (!(supabase && session && pathname === "/login")) return;
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.replace(next === "/guide" ? "/guide" : "/");
   }, [session, pathname, router]);
 
   const signIn = async () => {
@@ -165,6 +168,7 @@ export default function AuthGate({ children }) {
     || pathname.startsWith("/join/")   // OT 신청서(QR · 링크 · 로그인 없음 · 2026-10-06)
     || pathname === "/try"               // 기능 체험(로그인 없음 · 이 화면 안에서만 움직임 · 2026-10-06)
     || pathname === "/check"             // 1분 진단(로그인 없음 · 답은 화면 안에서만 · 2026-10-08)
+    || pathname === "/guide"             // 사용 가이드(2026-10-15 · 앞 두 장 공개 · 나머지는 화면이 로그인 확인 · 결제 전이어도 보게)
     || pathname === "/reset-password";   // 비밀번호 찾기 메일 링크(2026-10-12 · 결제벽 · 읽기 전용이어도 바꿀 수 있게)
   if (isPublicMarketing) return <>{children}</>;
 

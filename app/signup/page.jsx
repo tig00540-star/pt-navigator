@@ -61,7 +61,8 @@ export default function SignupPage() {
     });
     setBusy(false);
     if (error) { console.error("가입 실패", error); setErr("가입하지 못했어요. " + authErrorKo(error)); return; }
-    if (data?.session) { router.replace("/"); return; }        // 이메일 인증 OFF → 즉시 로그인 → 앱으로
+    // 이메일 인증 OFF → 즉시 로그인 → 앱으로(사용 가이드에서 왔으면 가이드로 · ?next=/guide만 허용 · 2026-10-15)
+    if (data?.session) { router.replace(new URLSearchParams(window.location.search).get("next") === "/guide" ? "/guide" : "/"); return; }
     setSent(true);                                             // 인증 ON → 메일 확인 안내
   };
 
