@@ -79,6 +79,10 @@ function Block({ b }) {
           {b.lines.map((l, i) => <p key={i} className="m-0"><Rich text={l} /></p>)}
         </blockquote>
       );
+    case "link":
+      return (
+        <a href={b.href} target="_blank" rel="noopener noreferrer" className={`${BTN_OUTLINE} self-start`}>{b.c}</a>
+      );
     case "code":
       return <pre className="m-0 overflow-x-auto rounded-xl border border-line bg-elevate px-4 py-3 font-mono text-[14px] leading-[1.7] text-ink">{b.c}</pre>;
     default:
