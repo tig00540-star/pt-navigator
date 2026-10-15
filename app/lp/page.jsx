@@ -458,7 +458,7 @@ export default function LandingPage() {
         <section className="border-t border-line bg-card px-5 py-[clamp(64px,11vw,112px)]">
           <div className="mx-auto flex w-full max-w-[760px] flex-col items-center gap-[18px] text-center">
             <h2 className={`rv ${H2} text-[clamp(24px,4.6vw,36px)] leading-[1.35] [text-wrap:balance]`}>
-              <span className="block">트레이너 경력 10년. 팀장·관리자까지 다 해본 사람이</span>
+              <span className="block">트레이너 경력 7년. 팀장·관리자까지 다 해본 사람이</span>
               <span className="block text-primary">답답해서 직접 만들었습니다.</span>
             </h2>
             <p className="rv m-0 max-w-[500px] text-[16px] leading-[1.6] text-sub" style={stagger(1)}>

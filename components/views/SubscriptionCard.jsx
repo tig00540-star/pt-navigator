@@ -95,7 +95,7 @@ export default function SubscriptionCard() {
     if (!supabase) return;
     const [{ data: s }, { data: a }] = await Promise.all([
       supabase.rpc("my_account_status"),
-      supabase.from("account").select("billing_plan, next_billing_plan, extra_seats, next_extra_seats, last_payment_at, current_period_end, cancel_at_period_end, subscription_status").maybeSingle(),
+      supabase.from("account").select("billing_plan, billing_provider, next_billing_plan, extra_seats, next_extra_seats, last_payment_at, current_period_end, cancel_at_period_end, subscription_status").maybeSingle(),
     ]);
     const row = s?.[0] || {};
     const end = a?.current_period_end ?? row.current_period_end ?? null;
@@ -107,6 +107,7 @@ export default function SubscriptionCard() {
       mode, end, cancel: Boolean(a?.cancel_at_period_end ?? row.cancel_at_period_end), plan: a?.billing_plan || null,
       lastPay: a?.last_payment_at || null, untilRo: row.read_only_until || plusDays(end, READ_ONLY_DAYS),
       nextPlan: a?.next_billing_plan || null, seats: a?.extra_seats || 0, nextSeats: a?.next_extra_seats ?? null,
+      card: Boolean(a?.billing_provider),   // 카드 등록 여부(빌링키 자체는 못 읽음 · 카드 등록 때 billing_provider가 채워짐)
     });
     // 7일 전액 환불 가능 여부 — 실패해도 카드는 그대로(버튼만 안 보임)
     if (mode === "full") {
@@ -245,6 +246,8 @@ export default function SubscriptionCard() {
   if (st.mode === "read_only") line = <>이용 기간이 {dateKo(st.end)}에 끝났어요. <b className="text-ink">{dateKo(st.untilRo)}까지 볼 수만 있고</b>, 그 뒤 기록이 지워져요. 카드를 등록하면 바로 다시 쓸 수 있어요.</>;
   else if (!st.end) line = <>기간 제한 없이 쓰는 계정이에요.</>;
   else if (st.cancel) line = <><b className="text-ink">해지 예약됨</b> · {dateKo(st.end)}까지 그대로 써요. 그 뒤 {dateKo(st.untilRo)}까지 볼 수만 있고, 그다음 기록이 지워져요. 다음 결제는 없어요.</>;
+  // 카드 없는 무료 이용(업무 사이트에서 열어 준 계정 · 2026-10-15) — 카드가 없으면 결제도 없다 → 등록 안내
+  else if (trial && !st.card) line = <><b className="text-ink">무료 이용 중</b> · {dateKo(st.end)}까지예요. 계속 쓰시려면 그 전에 아래에서 카드를 등록해 주세요. 지금은 결제되지 않고, {dateKo(st.end)} 무렵 첫 결제{monthly ? `(월 ${won(monthly)})` : ""}가 돼요. 그 결제부터 7일 안엔 전액 환불돼요.</>;
   else if (trial) line = <><b className="text-ink">무료 체험 중</b> · {dateKo(st.end)}에 첫 결제가 돼요{monthly ? `(월 ${won(monthly)})` : ""}.</>;
   else line = <><b className="text-ink">이용 중</b> · 다음 결제일 {dateKo(st.end)}{monthly ? ` · 월 ${won(monthly)}` : ""}</>;
 
@@ -297,8 +300,8 @@ export default function SubscriptionCard() {
 
         <div className="mt-4 flex flex-col gap-2">
           {st.mode === "full" && st.end && (
-            <Button variant="ghost" size="md" fullWidth onClick={changeCard} disabled={busy !== ""}>
-              <CreditCard className="h-4 w-4" aria-hidden="true" /> {busy === "card" ? "카드 등록 창 여는 중…" : "카드 바꾸기"}
+            <Button variant={st.card ? "ghost" : "primary"} size="md" fullWidth onClick={changeCard} disabled={busy !== ""}>
+              <CreditCard className="h-4 w-4" aria-hidden="true" /> {busy === "card" ? "카드 등록 창 여는 중…" : st.card ? "카드 바꾸기" : "카드 등록하기"}
             </Button>
           )}
           <Button variant="ghost" size="md" fullWidth onClick={exportData} disabled={busy !== ""}>
