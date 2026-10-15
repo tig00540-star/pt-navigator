@@ -46,6 +46,7 @@ function Block({ b }) {
         <h3 className="m-0 mt-3 flex flex-wrap items-center gap-2 text-[18px] font-extrabold tracking-[-0.02em] text-ink">
           {b.c}
           {b.hot && <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-[13px] font-bold text-primary-strong">🔥 인기</span>}
+          {b.auto && <span className="rounded-full bg-elevate px-2.5 py-0.5 text-[13px] font-bold text-ink ring-1 ring-inset ring-line-strong">⚙️ 자동</span>}
         </h3>
       );
     case "ol":
@@ -71,6 +72,12 @@ function Block({ b }) {
             </tbody>
           </table>
         </div>
+      );
+    case "quote":
+      return (
+        <blockquote className="m-0 flex flex-col gap-3 rounded-xl border-l-4 border-primary bg-card px-5 py-4 text-[16px] leading-[1.7] text-ink break-keep shadow-sm">
+          {b.lines.map((l, i) => <p key={i} className="m-0"><Rich text={l} /></p>)}
+        </blockquote>
       );
     case "code":
       return <pre className="m-0 overflow-x-auto rounded-xl border border-line bg-elevate px-4 py-3 font-mono text-[14px] leading-[1.7] text-ink">{b.c}</pre>;
