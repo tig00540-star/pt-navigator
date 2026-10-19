@@ -1,4 +1,4 @@
-/* 설정 — /settings(내 정보) · /settings/money · /settings/gear · /settings/library · /settings/reward · /settings/notify */
+/* 설정 — /settings(내 정보) · /settings/money · /settings/gear · /settings/library · /settings/reward · /settings/notify · /settings/billing(구독 관리) */
 
 import SettingsScreen from "@/components/screens/SettingsScreen";
 

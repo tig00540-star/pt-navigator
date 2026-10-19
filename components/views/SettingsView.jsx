@@ -26,15 +26,17 @@ export const SETTINGS_SUBTABS = [
   { id: "library", label: "도서관" },
   { id: "reward",  label: "이벤트" }, // 회원 이벤트(2026-10-06 · 옛 '포상' 흡수 · 주소는 /settings/reward 그대로)
   { id: "notify",  label: "알림" },   // 폰 푸시 알림 켜기 · 종류별 on/off(2026-10-06)
+  { id: "billing", label: "구독 관리", owner: true }, // 2026-10-19 대표: 내 정보에서 따로 뺌 · 대표 · 개인 계정 주인만
 ];
 
 // isFreelance = 개인 계정 중 프리랜서 — 급여 방식은 선택(센터 · 짐과 매출을 나누면 정함 · 안 정하면 PT 매출 전부가 내 몫 · 2026-10-06)
-export default function SettingsView({ isSolo = false, isFreelance = false, sub = "me" }) {
+export default function SettingsView({ isSolo = false, isFreelance = false, isOwner = false, sub = "me" }) {
   return (
     <div className="space-y-6 break-keep text-pretty">
+      {/* 탭이 화면보다 길면 옆으로 밀어 본다 — 회색 바탕이 탭 길이만큼 따라가게 w-max(예전엔 바탕이 화면 폭에서 끊기고 '알림'이 밖으로 나갔다 · 2026-10-19) */}
       <div className="flex overflow-x-auto">
-        <nav className="flex gap-1 rounded-full bg-elevate p-[3px]" aria-label="설정">
-          {SETTINGS_SUBTABS.map((t) => {
+        <nav className="flex w-max shrink-0 gap-1 rounded-full bg-elevate p-[3px]" aria-label="설정">
+          {SETTINGS_SUBTABS.filter((t) => !t.owner || isOwner).map((t) => {
             const on = t.id === sub;
             return (
               <Link key={t.id} href={`/settings/${t.id}`} aria-current={on ? "page" : undefined}
@@ -56,7 +58,6 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
           <SoloProfileCard />
           <TrainerGoalSetter />
           <PasswordChange />
-          <SubscriptionCard />
           <ImportFromIdCard />
           {/* 로그아웃 — AuthGate의 전 화면 플로팅에서 이관(콘텐츠 가림 제거). signOut 시 onAuthStateChange가
               session=null로 만들어 로그인 폼으로 자동 전환(기존 흐름 재사용). supabase?는 데모모드 가드. */}
@@ -82,6 +83,11 @@ export default function SettingsView({ isSolo = false, isFreelance = false, sub 
       {sub === "library" && <TrainerLibrary />}
       {sub === "reward" && <EventManager />}
       {/* 알림 = 폰 알림 + 회원 예약 요청 받기(2026-10-11 · 대표: '받는 설정'이라 내 정보에서 옮김) */}
+      {sub === "billing" && (
+        <div className="space-y-6 lg:max-w-3xl">
+          <SubscriptionCard />
+        </div>
+      )}
       {sub === "notify" && (
         <div className="space-y-6">
           <NotifySettings />

@@ -20,7 +20,7 @@ function FailInner() {
         <p className="mt-2 text-sm leading-relaxed text-muted">
           {reason || (card ? "등록된 카드는 그대로예요. 다시 시도하거나 다른 카드로 바꿔 주세요." : "결제가 완료되지 않았어요. 다시 시도하시거나 다른 카드로 등록해 주세요.")}
         </p>
-        <Link href={pack || card ? "/settings/me#subscription" : "/"} className="mt-5 inline-block w-full">
+        <Link href={pack || card ? "/settings/billing" : "/"} className="mt-5 inline-block w-full">
           <Button variant="primary" size="md" fullWidth>{pack || card ? "구독 관리로 돌아가기" : "다시 시도"}</Button>
         </Link>
       </div>

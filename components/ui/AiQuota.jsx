@@ -55,7 +55,7 @@ export function AiLockCard({ kind, className = "", children }) {
       </p>
       {children}
       {acc.isOwner && (
-        <Link href="/settings/me#subscription"
+        <Link href="/settings/billing"
           className="mt-3 inline-flex min-h-[40px] items-center rounded-lg bg-primary px-4 text-[14px] font-bold text-white no-underline">
           {basic ? "프로로 올리기" : "추가 팩 보기"}
         </Link>

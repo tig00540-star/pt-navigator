@@ -54,7 +54,7 @@ function PackConfirm() {
           </>
         )}
         {state !== "confirming" && (
-          <Link href="/settings/me#subscription" className="mt-5 inline-block w-full">
+          <Link href="/settings/billing" className="mt-5 inline-block w-full">
             <Button variant="primary" size="md" fullWidth>구독 관리로 돌아가기</Button>
           </Link>
         )}

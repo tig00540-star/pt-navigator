@@ -68,7 +68,7 @@ function Confirm() {
                 ? `첫 달 결제가 끝났어요. 다음 달부터 같은 날 등록하신 카드로 자동 결제돼요(언제든 해지 가능).${refundable ? " 7일 안에는 써 봤어도 설정 › 구독 관리에서 전액 환불받을 수 있어요." : ""}`
                 : "지금 결제된 건 없어요. 이번 이용 기간은 그대로이고, 다음 결제일부터 이 카드로 결제돼요."}
             </p>
-            <Link href={cardOnly ? "/settings/me#subscription" : "/"} className="mt-5 inline-block w-full">
+            <Link href={cardOnly ? "/settings/billing" : "/"} className="mt-5 inline-block w-full">
               <Button variant="primary" size="md" fullWidth>{cardOnly ? "구독 관리로 돌아가기" : "앱 시작하기"}</Button>
             </Link>
           </>
