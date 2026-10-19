@@ -28,6 +28,7 @@ import TrainerEventForm from "@/components/views/TrainerEventForm";
 import { expandEvents, colorOf, repeatLabel } from "@/lib/trainerEvents";
 import MemberBadge, { viewMeta } from "@/components/ui/MemberBadge";
 import { holidayName } from "@/lib/holidays";
+import { useAppUi } from "@/components/app/AppChrome";
 
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -70,6 +71,7 @@ async function copyToClipboard(text) {
 }
 
 export default function ScheduleBoard({ members = [], onSelect }) {
+  const { openMemberForm } = useAppUi();   // 회원이 없을 때 예약 창에서 바로 등록(2026-10-19)
   const [mode, setMode] = useState("week"); // 'week' | 'today'
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [startHour, setStartHour] = useState(6);
@@ -621,7 +623,11 @@ export default function ScheduleBoard({ members = [], onSelect }) {
             </div>
             <div className="max-h-64 space-y-1 overflow-y-auto">
               {filtered.length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted">회원이 없어요.</p>
+                <div className="py-4 text-center">
+                  <p className="m-0 text-[13px] text-muted">{members.length === 0 ? "아직 등록한 회원이 없어요." : "찾는 회원이 없어요."}</p>
+                  <p className="m-0 mt-1 text-[12px] text-muted">회원을 먼저 등록하고 이 칸을 다시 눌러 주세요. 첫 OT 회원은 이름만 넣어도 돼요.</p>
+                  <Button variant="primary" size="sm" className="mt-3" onClick={() => { setPick(null); openMemberForm(); }}>회원 등록하기</Button>
+                </div>
               ) : filtered.map((m) => (
                 <button key={m.id} onClick={() => book(m)} disabled={saving} className="flex w-full items-center gap-2 rounded-lg border border-line bg-elevate px-3 py-2 text-left transition hover:border-primary disabled:opacity-50">
                   <MemberBadge view={viewFor(m)} />

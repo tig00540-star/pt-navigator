@@ -3,8 +3,9 @@
 /* 처음 시작하기 체크리스트(2026-10-12 · docs/v2-계획-처음시작-회원일괄등록.md 5장) — 홈 맨 위.
    ■ 지금 기록을 읽어 끝난 줄을 자동으로 지운다(직접 체크 없음 · 새 저장 없음).
    ■ 계정 종류별 줄: 센터 소속 트레이너 · 개인(+ 프리랜서) · 센터 대표.
-   ■ '첫 주'는 '첫날 10분'을 다 끝내면 펼쳐짐 · '나중에 하기' = 한 줄로 접기(이 기기 기억 · 대표 결정).
-   ■ 가입한 지 30일 안 아이디에만 보인다(쓰던 트레이너에게 갑자기 뜨지 않게) · 다 끝나면 하루 축하 한 줄 뒤 사라짐.
+   ■ 2026-10-19 대표("기능이 너무 많아 뭐부터 할지 복잡하다"): '첫날'은 3줄만(회원 1명 · AI 한 번 · 알림) — 나머지는 '있으면 좋아요'로 접힘.
+     첫날 3줄을 끝내면 = 처음 시작하기 끝 → 축하 카드 하루 뒤 사라짐 · '그만 보기' = 언제든 바로 영영 숨김(이 기기) · '접기' = 한 줄로.
+   ■ 가입한 지 30일 안 아이디에만 보인다(쓰던 트레이너에게 갑자기 뜨지 않게).
    ■ 표가 없거나 조회가 실패하면 그 줄은 '아직'으로 둔다(잠그지 않음). */
 
 import { useEffect, useMemo, useState } from "react";
@@ -16,6 +17,7 @@ import { pushState } from "@/lib/pushClient";
 
 const COLLAPSE_KEY = "ot.startChecklist.collapsed";
 const DONE_KEY = "ot.startChecklist.doneAt";
+const HIDE_KEY = "ot.startChecklist.hidden";
 const NEW_DAYS = 30;
 
 const ITEMS = {
@@ -23,7 +25,8 @@ const ITEMS = {
   workMode: { label: "일하는 방식 · 상호", href: "/settings/me" },
   pkg:      { label: "PT 가격표 등록", href: "/settings/money", ai: true },
   profile:  { label: "내 소개 (이름 · 사진 · 한 줄)", href: "/settings/me" },
-  members:  { label: "기존 회원 옮겨 오기", sub: "여러 명 한꺼번에 · 남은 수업까지", href: "/members/import" },
+  members:  { label: "첫 회원 등록", sub: "OT 회원 1명도 좋아요 · 기존 회원은 여러 명 한꺼번에 옮길 수 있어요", href: "/members" },
+  first:    { label: "AI 한 번 써 보기", sub: "OT 회원은 OT 대본 · PT 회원은 말로 운동일지", href: "/members" },
   assign:   { label: "회원 옮겨 오기 · 트레이너 배정", sub: "여러 명 한꺼번에 · 담당까지", href: "/members/import" },
   log:      { label: "첫 운동일지 말로 남기기", href: "/members/pt" },
   link:     { label: "회원에게 회원 전용 페이지 링크 보내기", sub: "회원 화면 › 케어 › 회원 전용 페이지에서 링크를 복사해요", href: "/members/pt" },
@@ -43,13 +46,14 @@ const ITEMS = {
 };
 
 // 계정 종류별 줄 순서
+// 첫날 = 3줄만(2026-10-19) · 나머지는 '있으면 좋아요'
 function plan({ isOwner, isCenter, isSolo, isFreelance }) {
-  if (isCenter && isOwner) return { day: ["trainers", "machines", "scheme", "centerQr", "assign"], week: ["push", "settle", "event", "profile"] };
+  if (isCenter && isOwner) return { day: ["trainers", "assign", "push"], week: ["machines", "scheme", "centerQr", "settle", "event", "profile"] };
   if (isSolo) return {
-    day: ["push", "workMode", "pkg", "profile", "members", "log", "link"],
-    week: ["machines", "goal", "ot", "fav", "cases", "sign", "sched", ...(isFreelance ? ["ledger"] : [])],
+    day: ["members", "first", "push"],
+    week: ["pkg", "profile", "link", "goal", "fav", "cases", "sign", "sched", "machines", ...(isFreelance ? ["ledger"] : [])],
   };
-  return { day: ["push", "pkg", "profile", "members", "log", "link"], week: ["goal", "ot", "fav", "cases", "sign", "sched"] };
+  return { day: ["members", "first", "push"], week: ["pkg", "profile", "link", "goal", "fav", "cases", "sign", "sched"] };
 }
 
 const readLS = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -67,11 +71,13 @@ export default function StartChecklist({ members = [], onGoTab }) {
   const [collapsed, setCollapsed] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
   const [doneAt, setDoneAt] = useState(null);
+  const [hidden, setHidden] = useState(false);
   const memberKey = (members || []).filter((m) => m && !m.hidden).map((m) => m.id).sort().join(",");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCollapsed(readLS(COLLAPSE_KEY) === "1");
+    setHidden(readLS(HIDE_KEY) === "1");
     setDoneAt(Number(readLS(DONE_KEY)) || null);
   }, []);
 
@@ -133,13 +139,15 @@ export default function StartChecklist({ members = [], onGoTab }) {
     ...factsRaw,
     members: live.length > 0, assign: live.length > 0,
     link: live.some((m) => m.member_auth_id),
+    first: factsRaw.log || factsRaw.ot,
     goal: factsRaw.inbody && live.some((m) => m.goal && m.goal !== "미설정"),
   };
   const dayDone = facts ? p.day.filter((k) => facts[k]).length : 0;
   const weekDone = facts ? p.week.filter((k) => facts[k]).length : 0;
-  const allDone = facts && dayDone === p.day.length && weekDone === p.week.length;
+  // 첫날 3줄을 끝내면 처음 시작하기 끝(2026-10-19 · 예전: '있으면 좋아요'까지 다 해야 사라져서 한 달 내내 떠 있었다)
+  const allDone = facts && dayDone === p.day.length;
 
-  // 다 끝나면 축하 한 줄을 하루만
+  // 다 끝나면 축하 카드를 하루만
   useEffect(() => {
     if (!allDone || doneAt) return;
     const t = new Date().getTime();
@@ -147,30 +155,6 @@ export default function StartChecklist({ members = [], onGoTab }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDoneAt(t);
   }, [allDone, doneAt]);
-
-  if (!supabase || acc.loading || !isNew || !facts) return null;
-  if (allDone) {
-    if (doneAt && new Date().getTime() - doneAt > 86400000) return null;
-    return (
-      <div className="rounded-2xl bg-elevate px-4 py-3 text-[14px] text-ink">
-        <Check className="mr-1 inline h-4 w-4 text-cyan-700" aria-hidden="true" /> 처음 시작하기를 다 마쳤어요. 이제 수업에만 집중하세요.
-      </div>
-    );
-  }
-
-  const toggleCollapse = (v) => { setCollapsed(v); writeLS(COLLAPSE_KEY, v ? "1" : null); };
-  const dayAll = dayDone === p.day.length;
-  const head = dayAll ? `첫 주 ${weekDone} / ${p.week.length}` : `${dayDone} / ${p.day.length} · 첫날 10분`;
-
-  if (collapsed) {
-    return (
-      <button type="button" onClick={() => toggleCollapse(false)}
-        className="flex min-h-[48px] w-full items-center justify-between rounded-2xl border border-line bg-card px-4 text-left shadow-sm">
-        <span className="text-[14px] font-semibold text-ink">처음 시작하기 <span className="font-normal text-muted">{head}</span></span>
-        <ChevronRight className="h-4 w-4 text-muted" aria-hidden="true" />
-      </button>
-    );
-  }
 
   const row = (k) => {
     const it = ITEMS[k];
@@ -202,30 +186,66 @@ export default function StartChecklist({ members = [], onGoTab }) {
     );
   };
 
-  const showWeek = dayAll || weekOpen;
+  const hideForever = () => { setHidden(true); writeLS(HIDE_KEY, "1"); };
+  if (!supabase || acc.loading || !isNew || !facts || hidden) return null;
+  if (allDone) {
+    if (doneAt && new Date().getTime() - doneAt > 86400000) return null;
+    const left = p.week.filter((k) => !facts[k]);
+    return (
+      <section className="rounded-2xl bg-elevate px-4 py-3 text-[14px] text-ink">
+        <div className="flex items-start gap-2">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-cyan-700" aria-hidden="true" />
+          <p className="m-0 min-w-0 flex-1 break-keep">처음 시작하기를 마쳤어요. 이제 수업에만 집중하세요.</p>
+          <button type="button" onClick={hideForever} className="min-h-[32px] shrink-0 text-[12px] font-semibold text-muted hover:text-ink">닫기</button>
+        </div>
+        {left.length > 0 && (
+          <>
+            <button type="button" onClick={() => setWeekOpen((v) => !v)} className="mt-1 flex min-h-[36px] items-center gap-1 text-[13px] font-semibold text-sub">
+              더 해 보면 좋은 것 <span className="font-normal text-muted">· {left.length}개</span>
+              <ChevronDown className={`h-4 w-4 text-muted transition-transform ${weekOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+            </button>
+            {weekOpen && <ul className="m-0 list-none p-0">{left.map((k) => row(k))}</ul>}
+          </>
+        )}
+      </section>
+    );
+  }
+
+  const toggleCollapse = (v) => { setCollapsed(v); writeLS(COLLAPSE_KEY, v ? "1" : null); };
+  const head = `${dayDone} / ${p.day.length}`;
+
+  if (collapsed) {
+    return (
+      <button type="button" onClick={() => toggleCollapse(false)}
+        className="flex min-h-[48px] w-full items-center justify-between rounded-2xl border border-line bg-card px-4 text-left shadow-sm">
+        <span className="text-[14px] font-semibold text-ink">처음 시작하기 <span className="font-normal text-muted">{head}</span></span>
+        <ChevronRight className="h-4 w-4 text-muted" aria-hidden="true" />
+      </button>
+    );
+  }
+
   return (
     <section className="rounded-2xl border border-line border-l-[3px] border-l-primary bg-card px-4 py-3.5 shadow-sm">
       <div className="flex items-center gap-2">
         <Rocket className="h-4 w-4 shrink-0 text-primary-strong" aria-hidden="true" />
         <h2 className="m-0 text-[15px] font-bold tracking-[-0.02em] text-ink">처음 시작하기</h2>
         <span className="text-[13px] text-muted">{head}</span>
-        <button type="button" onClick={() => toggleCollapse(true)} className="ml-auto min-h-[32px] text-[12px] font-semibold text-muted hover:text-ink">나중에 하기</button>
+        <span className="ml-auto flex shrink-0 items-center gap-3">
+          <button type="button" onClick={() => toggleCollapse(true)} className="min-h-[32px] text-[12px] font-semibold text-muted hover:text-ink">접기</button>
+          <button type="button" onClick={hideForever} className="min-h-[32px] text-[12px] font-semibold text-muted hover:text-ink">그만 보기</button>
+        </span>
       </div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-elevate">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round(((dayDone + weekDone) / (p.day.length + p.week.length)) * 100)}%` }} />
+        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round((dayDone / p.day.length) * 100)}%` }} />
       </div>
-      {!dayAll && (
-        <>
-          <p className="m-0 mt-3 text-[13px] font-semibold text-sub">첫날 10분</p>
-          <ul className="m-0 list-none p-0">{p.day.map(row)}</ul>
-        </>
-      )}
-      <button type="button" onClick={() => setWeekOpen((v) => !v)} disabled={dayAll}
-        className="mt-3 flex w-full items-center gap-1 text-left text-[13px] font-semibold text-sub">
-        첫 주 <span className="font-normal text-muted">· 있으면 좋아요 · {weekDone} / {p.week.length}</span>
-        {!dayAll && <ChevronDown className={`h-4 w-4 text-muted transition-transform ${weekOpen ? "rotate-180" : ""}`} aria-hidden="true" />}
+      <p className="m-0 mt-3 text-[13px] text-sub break-keep">이 3가지만 하면 돼요. 나머지 기능은 쓰면서 하나씩 알게 돼요.</p>
+      <ul className="m-0 list-none p-0">{p.day.map(row)}</ul>
+      <button type="button" onClick={() => setWeekOpen((v) => !v)}
+        className="mt-2 flex min-h-[36px] w-full items-center gap-1 text-left text-[13px] font-semibold text-sub">
+        있으면 좋아요 <span className="font-normal text-muted">· 나중에 · {weekDone} / {p.week.length}</span>
+        <ChevronDown className={`h-4 w-4 text-muted transition-transform ${weekOpen ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
-      {showWeek && <ul className="m-0 list-none p-0">{p.week.map(row)}</ul>}
+      {weekOpen && <ul className="m-0 list-none p-0">{p.week.map(row)}</ul>}
     </section>
   );
 }
