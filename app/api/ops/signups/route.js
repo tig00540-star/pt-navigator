@@ -2,7 +2,8 @@
 // -----------------------------------------------------------------------------
 // 가입 = account 한 행(센터 대표 · 개인 트레이너가 가입하면 계정이 생긴다 · 센터 트레이너는 대표가 만들어 같은 계정에 들어감).
 // GET ?days=60 → 숫자(오늘 · 7일 · 이번 달 · 전체 · 지금 상태별) + 최근 30일 날마다 가입 수 + 최근 N일 가입 목록.
-// 목록에 나가는 것 = 센터명 또는 이름 · 이메일 가림(앞 2자) · 종류 · 상태 · 기간 · 쓰는 정도(회원 수 · 트레이너 수 · AI 사용 수).
+// 목록에 나가는 것 = 센터명 또는 이름 · 이메일 가림(앞 2자) · 종류 · 상태 · 기간 · 쓰는 정도(회원 수 · 트레이너 수 · AI 사용 수)
+//   + contact{email, phone}(전체 · 업무 사이트가 '연락처 보기'를 눌렀을 때만 보여 줌 · 가입 때 받은 휴대폰 = auth user_metadata.phone · 2026-10-15).
 // 회원(PT 회원) 정보는 숫자만 · 이름 · 번호는 안 나간다. 시연 계정(lib/demo)은 아예 뺀다.
 // 테스트 계정(회사 도메인 · 가짜 도메인 · 파일럿 · 업무 사이트가 ?hide=로 넘긴 계정 앞 8자리)은 숫자에서 빼고 목록엔 test 표시로만.
 // -----------------------------------------------------------------------------
@@ -28,7 +29,7 @@ async function emailsById(sb, ids) {
   for (let page = 1; page <= 50 && Object.keys(out).length < want.size; page++) {
     const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw new Error("users");
-    for (const u of data?.users || []) if (want.has(u.id)) out[u.id] = u.email;
+    for (const u of data?.users || []) if (want.has(u.id)) out[u.id] = { email: u.email, phone: u.user_metadata?.phone || null };
     if ((data?.users || []).length < 1000) break;
   }
   return out;
@@ -96,7 +97,7 @@ export async function GET(req) {
   } catch {
     console.error("[ops/signups] 이메일 조회 실패");
   }
-  const testOf = Object.fromEntries(all.map((a) => [a.id, testReason(a, emails[owners[a.id]?.id], hide)]));
+  const testOf = Object.fromEntries(all.map((a) => [a.id, testReason(a, emails[owners[a.id]?.id]?.email, hide)]));
   const real = all.filter((a) => !testOf[a.id]);
   const recent = all.filter((a) => Date.parse(a.created_at) >= nowMs - days * DAY);
   const recentIds = recent.map((a) => a.id);
@@ -154,7 +155,8 @@ export async function GET(req) {
         workMode: a.type === "center" ? null : a.work_mode === "freelance" ? "freelance" : "employed",
         name: a.type === "center" ? (a.name || "") : (o?.name || a.name || ""),
         brand: a.type === "center" ? null : (a.brand_name || null),
-        email: maskEmail(emails[o?.id]),
+        email: maskEmail(emails[o?.id]?.email),
+        contact: { email: emails[o?.id]?.email || null, phone: emails[o?.id]?.phone || null },
         state: stateOf(a),
         plan: a.billing_plan || null,
         periodEnd: a.current_period_end || null,

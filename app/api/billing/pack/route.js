@@ -8,7 +8,7 @@
 // 쓰는 순서 = 기본 한도 먼저, 다 쓰면 기간이 먼저 끝나는 팩부터 — DB ai_reserve가 팩의 used를 올린다(2026-10-11-pack-carryover.sql).
 // -----------------------------------------------------------------------------
 import { serviceClient, callerOf } from "@/lib/serverCaller";
-import { confirmPayment, cancelPayment, getPayment, tossReady } from "@/lib/toss";
+import { confirmPayment, cancelPayment, getPayment, tossPayReady } from "@/lib/toss";
 import { PACKS, REFUND_DAYS } from "@/lib/plans";
 
 export const runtime = "nodejs";
@@ -53,7 +53,7 @@ export async function POST(req) {
   const g = await guard(req);
   if (g.res) return g.res;
   const { sb, me, q } = g;
-  if (!tossReady()) return Response.json({ error: "결제 설정이 아직 준비되지 않았어요. 고객센터로 알려 주세요." }, { status: 503 });
+  if (!tossPayReady()) return Response.json({ error: "추가 팩 결제는 곧 열려요. 조금만 기다려 주세요." }, { status: 503 });
   const body = await req.json().catch(() => ({}));
 
   if (body.action === "confirm") {
@@ -83,7 +83,7 @@ export async function POST(req) {
     let done = r.ok && r.data?.status === "DONE";
     // 승인은 됐는데 응답 전에 끊겨 다시 들어온 경우(2026-10-08) — 토스에 실제 상태를 물어 이어 처리(예전엔 돈만 나가고 팩이 안 들어갔다)
     if (!done && r.error?.code === "ALREADY_PROCESSED_PAYMENT") {
-      const g2 = await getPayment(String(body.paymentKey || ""));
+      const g2 = await getPayment(String(body.paymentKey || ""), { mid: "pay" });
       if (g2.ok && g2.data?.status === "DONE" && g2.data.orderId === body.orderId && Number(g2.data.totalAmount) === pack.price) { r = g2; done = true; }
     }
     let { data: pay } = await sb.from("payment").upsert({
@@ -111,7 +111,7 @@ export async function POST(req) {
     const nowIso = new Date().toISOString();
     const { data: locked } = await sb.from("ai_credit").update({ refunded_at: nowIso }).eq("id", c.id).is("refunded_at", null).eq("used", 0).select("id");
     if (!locked?.length) return Response.json({ error: "이미 쓰였거나 환불한 팩이에요." }, { status: 409 });
-    const r = await cancelPayment(pay.toss_payment_key, { cancelReason: "추가 팩 미사용 환불(7일 안)", idempotencyKey: `packrefund_${c.id}` });
+    const r = await cancelPayment(pay.toss_payment_key, { cancelReason: "추가 팩 미사용 환불(7일 안)", idempotencyKey: `packrefund_${c.id}`, mid: "pay" });
     if (!r.ok) {
       await sb.from("ai_credit").update({ refunded_at: null }).eq("id", c.id);
       console.error("[billing/pack] 환불 실패", r.status, r.error?.code || r.error?.message);

@@ -11,11 +11,11 @@
 // -----------------------------------------------------------------------------
 import { bearerOk } from "@/lib/bearerOk";
 import { serviceClient } from "@/lib/serverCaller";
+import { trialState, grantTrial } from "@/lib/trialGrant";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const DAY = 86400000;
 
 function guard(req) {
   const secret = process.env.OPS_SECRET;
@@ -51,31 +51,20 @@ async function lookup(sb, email) {
     .select("id, name, type, plan, billing_plan, subscription_status, current_period_end, billing_key")
     .eq("id", tr.account_id).maybeSingle();
   if (!acct) return { error: "계정을 찾지 못했어요.", status: 404 };
-  const [{ data: pays }, { data: granted }] = await Promise.all([
-    sb.from("payment").select("id, status").eq("account_id", acct.id).in("status", ["DONE", "TRIAL"]).limit(5),
-    sb.from("ops_alert").select("id, created_at, detail").eq("key", `trial_${acct.id}`).maybeSingle(),
-  ]);
-  const now = Date.now();
-  const end = acct.current_period_end ? Date.parse(acct.current_period_end) : 0;
-  const activeNow = acct.subscription_status === "active" && end > now;
+  const st = await trialState(sb, { role: tr.role, acct });
   const info = {
     email: maskEmail(user.email),
     name: acct.name || tr.name || "",
     type: acct.type === "center" ? "center" : "solo",
     role: tr.role,
-    activeNow,
+    activeNow: st.activeNow,
     periodEnd: acct.current_period_end || null,
-    paid: (pays || []).some((p) => p.status === "DONE"),
-    oldTrial: (pays || []).some((p) => p.status === "TRIAL"),
+    paid: st.paid,
+    oldTrial: st.oldTrial,
     card: !!acct.billing_key,
-    granted: granted ? { at: granted.created_at, until: granted.detail?.until || null } : null,
+    granted: st.granted,
   };
-  let block = null;
-  if (tr.role !== "owner") block = "센터 트레이너 아이디예요. 센터 대표가 가입한 이메일로 열어 주세요.";
-  else if (info.granted) block = "이미 무료 이용을 열어 준 계정이에요(계정당 한 번).";
-  else if (info.paid) block = "이미 결제한 계정이에요. 무료 이용 대상이 아니에요.";
-  else if (info.oldTrial) block = "예전 무료 체험을 쓴 계정이에요.";
-  else if (activeNow) block = "지금 이용 중인 계정이에요.";
+  const block = st.block;
   return { user, tr, acct, info, block };
 }
 
@@ -108,28 +97,9 @@ export async function POST(req) {
     const r = await lookup(sb, email);
     if (r.error) return Response.json({ error: r.error }, { status: r.status });
     if (r.block) return Response.json({ error: r.block }, { status: 409 });
-    const now = Date.now();
-    const until = new Date(now + days * DAY).toISOString();
-    // 기록부터(계정당 한 번 · key 고유) — 두 번 눌러도 한 번만 열린다
-    const { data: rec, error: re } = await sb.from("ops_alert").insert({
-      key: `trial_${r.acct.id}`, kind: "trial_grant", severity: "info", status: "done", account_id: r.acct.id,
-      title: `${r.info.type === "center" ? "센터" : "개인"} 무료 이용 ${days}일 열어 줌 · ${r.info.name || r.info.email}`,
-      detail: { email: r.info.email, type: r.info.type, days, until },
-      handled_at: new Date(now).toISOString(), handled_by: by, note,
-    }).select("id");
-    if (re || !rec?.length) {
-      const dup = /duplicate|unique/i.test(re?.message || "");
-      return Response.json({ error: dup ? "이미 무료 이용을 열어 준 계정이에요(계정당 한 번)." : "기록을 남기지 못했어요. 다시 시도해 주세요." }, { status: dup ? 409 : 500 });
-    }
-    const { data: up, error: ue } = await sb.from("account").update({
-      subscription_status: "active", plan: "premium", current_period_end: until, cancel_at_period_end: false,
-      billing_plan: r.acct.billing_plan || (r.info.type === "center" ? "center" : "solo"),
-    }).eq("id", r.acct.id).select("id, current_period_end");
-    if (ue || !up?.length) {
-      await sb.from("ops_alert").delete().eq("id", rec[0].id); // 못 열었으면 기록도 되돌려 다시 할 수 있게
-      return Response.json({ error: "계정을 열지 못했어요. 다시 시도해 주세요." }, { status: 500 });
-    }
-    return Response.json({ ok: true, account: { ...r.info, activeNow: true, periodEnd: up[0].current_period_end }, days, until });
+    const g = await grantTrial(sb, { acct: r.acct, days, by, note, label: r.info.name || r.info.email, email: r.info.email });
+    if (!g.ok) return Response.json({ error: g.error }, { status: g.status });
+    return Response.json({ ok: true, account: { ...r.info, activeNow: true, periodEnd: g.periodEnd }, days, until: g.until });
   } catch {
     return Response.json({ error: "처리하지 못했어요. 다시 시도해 주세요." }, { status: 500 });
   }

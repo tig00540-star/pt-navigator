@@ -21,6 +21,9 @@ const dayKo = (iso) => { const d = new Date(Date.parse(iso) + 9 * 3600000); retu
 const lastDayKo = (iso) => dayKo(new Date(Date.parse(iso) - 1).toISOString());
 // 오늘 사면 언제까지(산 날 + 1개월 − 1일 · DB 기본값과 같은 규칙)
 const buyEndKo = () => { const d = new Date(Date.now() + 9 * 3600000); const e = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate() - 1)); return `${e.getUTCMonth() + 1}월 ${e.getUTCDate()}일`; };
+// 추가 팩 결제창 키(2026-10-19) — 일반결제 상점 키가 따로 있으면 그것, 없으면 자동결제 키가 아직 테스트 키일 때만(실제 키는 상점이 달라 결제창이 안 열림)
+const BILL_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "";
+const PACK_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_PAY_CLIENT_KEY || (BILL_KEY.startsWith("test_") ? BILL_KEY : "");
 const PACK_UNIT = { prep: ["대본", "번"], voice: ["음성일지", "건"], diet: ["식단 AI", "건"] };
 
 export default function AiPackSection({ showToast }) {
@@ -43,7 +46,7 @@ export default function AiPackSection({ showToast }) {
   }, [load]);
 
   const pay = async () => {
-    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+    const clientKey = PACK_CLIENT_KEY;
     if (!buy || !agree) return;
     if (!clientKey || !supabase) { showToast("결제가 곧 열려요. 잠시만 기다려 주세요."); return; }
     setBusy("pay");
@@ -86,13 +89,14 @@ export default function AiPackSection({ showToast }) {
   return (
     <div className="mt-3 rounded-xl border border-line px-3.5 py-3">
       <p className="m-0 text-[13px] font-bold text-ink">추가 팩 <span className="font-medium text-muted">· 산 날부터 1개월</span></p>
+      {!PACK_CLIENT_KEY && BILL_KEY && <p className="m-0 mt-1 text-[12px] text-muted">추가 팩 결제는 곧 열려요. 조금만 기다려 주세요.</p>}
       <div className="mt-2 space-y-2.5">
         {PACK_GROUPS.map((g) => (
           <div key={g.kind}>
             <p className="m-0 mb-1 text-[12px] font-semibold text-sub">{g.label}</p>
             <div className="grid grid-cols-2 gap-2">
               {packsOf(g.kind).map((p) => (
-                <button key={p.key} type="button" onClick={() => { setBuy(p); setAgree(false); }} disabled={busy !== ""}
+                <button key={p.key} type="button" onClick={() => { setBuy(p); setAgree(false); }} disabled={busy !== "" || (!PACK_CLIENT_KEY && !!BILL_KEY)}
                   className="flex min-h-[52px] flex-col items-start justify-center rounded-lg border border-line bg-card px-3 py-2 text-left hover:border-line-strong disabled:opacity-50">
                   <span className="text-[14px] font-bold text-ink">{p.amount}{g.unit} · {won(p.price)}</span>
                   <span className="text-[12px] text-muted">{g.unit}당 {won(perUnit(p))}{p.big ? <b className="ml-1 font-semibold text-primary-strong">더 저렴</b> : null}</span>

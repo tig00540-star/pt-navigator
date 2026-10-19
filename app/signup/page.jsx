@@ -2,21 +2,20 @@
 
 import { authErrorKo } from "@/lib/authError";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
 import { inputCls } from "@/components/ui/Field";
-import { PLANS } from "@/lib/plans";
+import { PLANS, BETA_FREE_DAYS } from "@/lib/plans";
 import { won } from "@/lib/format";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [type, setType] = useState("solo");     // 'solo' | 'center'
   const [planChoice, setPlanChoice] = useState(""); // 홈페이지에서 고른 요금제(basic | solo · 개인만)
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [displayName, setDisplayName] = useState("");   // 내 이름(트레이너/원장 실명)
+  const [phone, setPhone] = useState("");               // 휴대폰(가입 안내 · 이용 문의 연락용 · 2026-10-15 · auth user_metadata.phone)
   const [accountName, setAccountName] = useState("");   // 센터명(center만)
   // 개인 트레이너: 일하는 방식(센터 소속 = 급여 · 수수료 / 프리랜서 = 회원비 직접) + 소속 센터 또는 상호(선택) · 2026-10-06
   const [workMode, setWorkMode] = useState("");
@@ -42,6 +41,8 @@ export default function SignupPage() {
     if (busy) return;
     if (!supabase) { setErr("데모 모드라 가입할 수 없어요. 키를 설정한 뒤 다시 시도해 주세요."); return; }
     if (!email.trim() || !pw || !displayName.trim()) { setErr("이메일 · 비밀번호 · 이름을 입력해 주세요."); return; }
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (!/^01[016789]\d{7,8}$/.test(phoneDigits)) { setErr(phoneDigits ? "휴대폰 번호를 다시 확인해 주세요." : "휴대폰 번호를 입력해 주세요."); return; }
     if (pw.length < 6) { setErr("비밀번호를 6자 이상으로 입력해 주세요."); return; }
     if (type === "center" && !accountName.trim()) { setErr("센터명을 입력해 주세요."); return; }
     if (type === "solo" && !workMode) { setErr("어떻게 일하시는지 골라 주세요."); return; }
@@ -54,6 +55,7 @@ export default function SignupPage() {
         data: {
           account_type: type,                                  // 트리거가 읽어 account 생성
           display_name: displayName.trim(),
+          phone: phoneDigits,
           account_name: type === "center" ? accountName.trim() : displayName.trim(),
           ...(type === "solo" ? { work_mode: workMode, brand_name: brand.trim().slice(0, 40), ...(planChoice ? { plan_choice: planChoice } : {}) } : {}),
         },
@@ -62,7 +64,16 @@ export default function SignupPage() {
     setBusy(false);
     if (error) { console.error("가입 실패", error); setErr("가입하지 못했어요. " + authErrorKo(error)); return; }
     // 이메일 인증 OFF → 즉시 로그인 → 앱으로(사용 가이드에서 왔으면 가이드로 · ?next=/guide만 허용 · 2026-10-15)
-    if (data?.session) { router.replace(new URLSearchParams(window.location.search).get("next") === "/guide" ? "/guide" : "/"); return; }
+    if (data?.session) {
+      // 베타 무료 이용 바로 열기(2026-10-19) — 실패해도 가입은 끝 · 결제 화면에 [7일 무료로 시작하기]가 다시 보인다
+      if (BETA_FREE_DAYS) {
+        try { await fetch("/api/billing/beta-trial", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}` } }); }
+        catch (e) { console.error("베타 무료 이용 열기 실패", e); }
+      }
+      // 새로 불러오기(location) — 가입 순간 앱 관문이 '결제 전' 상태를 먼저 읽어 두므로, 무료 이용을 연 뒤 상태를 다시 읽게
+      window.location.replace(new URLSearchParams(window.location.search).get("next") === "/guide" ? "/guide" : "/");
+      return;
+    }
     setSent(true);                                             // 인증 ON → 메일 확인 안내
   };
 
@@ -85,6 +96,13 @@ export default function SignupPage() {
           <div className="text-lg font-semibold text-ink">새 계정 만들기</div>
           <div className="mt-1 text-sm text-muted">개인 트레이너 또는 센터 대표로 시작</div>
         </div>
+
+        {BETA_FREE_DAYS > 0 && (
+          <div className="mb-4 rounded-xl border border-primary/30 bg-primary-soft px-3.5 py-3 text-center">
+            <p className="m-0 text-[14px] font-bold text-primary-strong">지금은 베타 기간이에요</p>
+            <p className="m-0 mt-1 text-[13px] leading-relaxed text-ink break-keep">가입하면 카드 없이 <b>{BETA_FREE_DAYS}일 동안 무료</b>로 모든 기능을 써 보고, 마음에 들면 그 뒤에 결제하세요.</p>
+          </div>
+        )}
 
         {/* 유형 선택 */}
         <div className="mb-4 grid grid-cols-2 gap-2">
@@ -110,6 +128,9 @@ export default function SignupPage() {
             value={pw} onChange={(e) => setPw(e.target.value)} className={inputCls} />
           <input type="text" placeholder="이름(실명)"
             value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={inputCls} />
+          <input type="tel" inputMode="tel" autoComplete="tel" placeholder="휴대폰 번호"
+            value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
+          <p className="-mt-1 text-[12px] leading-relaxed text-muted">가입 안내와 이용 문의 연락에만 써요.</p>
           {type === "center" && (
             <input type="text" placeholder="센터명"
               value={accountName} onChange={(e) => setAccountName(e.target.value)} className={inputCls} />

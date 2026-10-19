@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import PasswordChange from "@/components/views/PasswordChange";
 import Button from "@/components/ui/Button";
 import Wordmark, { Slogan } from "@/components/ui/Wordmark";
-import { PLANS, planAmount, SEAT_AI } from "@/lib/plans";
+import { PLANS, planAmount, SEAT_AI, BETA_FREE_DAYS } from "@/lib/plans";
 import { won } from "@/lib/format";
 import LandingPage from "@/app/lp/page";
 import { trainerCloseAt, kstDay } from "@/lib/trainerClose";
@@ -351,6 +351,36 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
   const [staff, setStaff] = useState(false);
   const [noTrial, setNoTrial] = useState(false);   // 센터에서 독립한 개인 계정 = 체험 없이 바로 첫 결제(2026-10-07)
   const [extraSeats, setExtraSeats] = useState(0);  // 센터 추가 자리 — 결제 금액에 들어간다(2026-10-08 · 화면 = 결제 금액)
+  // 베타 무료 이용(2026-10-19) — 열 수 있는 계정이면 카드 등록보다 먼저 [N일 무료로 시작하기]
+  const [beta, setBeta] = useState(false);
+  const [betaBusy, setBetaBusy] = useState(false);
+  useEffect(() => {
+    if (!BETA_FREE_DAYS || !supabase || !uid) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { data: s0 } = await supabase.auth.getSession();
+        const r = await fetch("/api/billing/beta-trial", { headers: { Authorization: `Bearer ${s0?.session?.access_token || ""}` } });
+        const j = await r.json().catch(() => ({}));
+        if (alive) setBeta(Boolean(r.ok && j.eligible));
+      } catch (e) { console.error("베타 무료 이용 확인 실패", e); }
+    })();
+    return () => { alive = false; };
+  }, [uid]);
+  const startBeta = async () => {
+    setPayErr("");
+    setBetaBusy(true);
+    try {
+      const { data: s0 } = await supabase.auth.getSession();
+      const r = await fetch("/api/billing/beta-trial", { method: "POST", headers: { Authorization: `Bearer ${s0?.session?.access_token || ""}` } });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok || r.status === 409) { window.location.reload(); return; }   // 409 = 이미 열림(가입 화면이 먼저 열었음)
+      setPayErr(j.error || "무료 이용을 열지 못했어요. 다시 시도해 주세요.");
+    } catch {
+      setPayErr("인터넷 연결을 확인하고 다시 시도해 주세요.");
+    }
+    setBetaBusy(false);
+  };
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -421,8 +451,19 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
           <p className="mt-2 text-sm leading-relaxed text-muted">{staff ? "센터의 오직 트레이너 구독이 끝나서 지금은 쓸 수 없어요. 대표에게 알려 주세요." : noTrial && !expired ? "센터에서 독립한 개인 계정이에요. 카드를 등록하면 바로 쓸 수 있어요." : desc}</p>
         </div>
 
+        {!noAccount && !staff && beta && (
+          <div className="mb-4 rounded-xl border border-primary/30 bg-primary-soft px-3.5 py-3 text-center">
+            <p className="m-0 text-[14px] font-bold text-primary-strong">지금은 베타 기간이에요</p>
+            <p className="m-0 mt-1 text-[13px] leading-relaxed text-ink break-keep">카드 없이 <b>{BETA_FREE_DAYS}일 동안 무료</b>로 모든 기능을 써 보고, 마음에 들면 그 뒤에 결제하세요.</p>
+            <Button variant="primary" size="md" fullWidth onClick={startBeta} disabled={betaBusy} className="mt-3">
+              {betaBusy ? "여는 중…" : `${BETA_FREE_DAYS}일 무료로 시작하기`}
+            </Button>
+          </div>
+        )}
+
         {!noAccount && !staff && (
           <>
+            {beta && <p className="m-0 mb-2 text-center text-[12px] font-semibold text-muted">바로 결제하고 시작하려면</p>}
             <div className="mb-4 grid gap-2">
               {(isCenterAcct ? [PLANS.center] : [PLANS.solo, PLANS.basic]).map((p) => (
                 <button
@@ -446,7 +487,7 @@ function Paywall({ status, onSignOut, uid, onBack = null }) {
               ))}
             </div>
             {payErr && <div className="mb-2 text-xs font-semibold text-danger-text">{payErr}</div>}
-            <Button variant="primary" size="md" fullWidth onClick={startCheckout} disabled={busy || !plan}>
+            <Button variant={beta ? "ghost" : "primary"} size="md" fullWidth onClick={startCheckout} disabled={busy || !plan}>
               {busy ? "결제창 여는 중…" : expired ? "카드 등록하고 이어서 이용하기" : "카드 등록하고 시작하기"}
             </Button>
             <p className="mt-2 text-center text-[12px] leading-relaxed text-muted">
